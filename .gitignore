@@ -71,6 +71,7 @@ Thumbs.db
 # Backups
 *.sql
 !migrations/*.sql
+!database/backup/*.sql
 backup_*.sql
 
 # Configuración de PC actual

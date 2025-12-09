@@ -39,7 +39,10 @@
       "Bash(powershell -ExecutionPolicy Bypass -Command \"cd ''C:\\Users\\Morales\\.gemini\\antigravity\\scratch\\PROVIAL\\backend''; npm run build 2>&1 > build_output.txt; type build_output.txt\")",
       "Bash(powershell -ExecutionPolicy Bypass -Command \"cd ''C:\\Users\\Morales\\.gemini\\antigravity\\scratch\\PROVIAL''; docker exec provial-db psql -U postgres -d provabordo -c \"\"SELECT codigo, tipo_unidad, placa FROM unidad LIMIT 10;\"\"\")",
       "Bash(git add:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Sistema de asignaciones de turno y mejoras móvil\n\nCambios principales:\n- Sistema de asignaciones de turno con fechas futuras\n- Vista v_mi_asignacion_hoy con soporte para turnos\n- Vista v_mi_salida_activa con UNION para turnos y permanentes\n- GPS manual en modo pruebas para todas las pantallas de situaciones\n  (IncidenteScreen, AsistenciaScreen, EmergenciaScreen, NuevaSituacionScreen)\n- Fix error ''asignacion doesn''t exist'' en NuevaSituacionScreen\n- Fix datos vacíos al editar salida desde Bitácora (km_inicial, combustible_inicial)\n- Modo edición en CrearAsignacionPage\n- Validación de unidad no duplicada por día\n- Endpoint /api/turnos/pendientes\n- Token JWT extendido a 12 horas\n- Sistema de diseño web estandarizado\n\nMigraciones:\n- 038_add_rol_brigada.sql\n- 039_fix_validar_disponibilidad_brigada.sql\n- 040_turnos_rango_fechas.sql\n- 041_fix_vista_mi_asignacion.sql\n- 042_fix_vista_mi_salida_activa.sql\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(timeout /t 30 /nobreak)"
     ],
     "deny": [],
     "ask": []
