@@ -24,6 +24,7 @@ import multimediaRoutes from './multimedia.routes';
 import asignacionAvanzadaRoutes from './asignacionAvanzada.routes';
 import ubicacionBrigadaRoutes from './ubicacionBrigada.routes';
 import situacionPersistenteRoutes from './situacionPersistente.routes';
+import administracionRoutes from './administracion.routes';
 
 const router = Router();
 
@@ -101,5 +102,8 @@ router.use('/ubicacion-brigadas', ubicacionBrigadaRoutes);
 
 // Rutas de situaciones persistentes (derrumbes, obras, etc.)
 router.use('/situaciones-persistentes', situacionPersistenteRoutes);
+
+// Rutas de administración del sistema (SUPER_ADMIN, ADMIN_COP)
+router.use('/admin', administracionRoutes);
 
 export default router;

@@ -10,6 +10,9 @@ export interface SubRolCop {
   puede_cerrar_persistentes: boolean;
   puede_promover_situaciones: boolean;
   puede_asignar_unidades: boolean;
+  puede_gestionar_usuarios: boolean;
+  puede_gestionar_grupos: boolean;
+  puede_ver_todos_departamentos: boolean;
   solo_lectura: boolean;
 }
 

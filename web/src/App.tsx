@@ -18,6 +18,7 @@ import SituacionesFijasPage from './pages/SituacionesFijasPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 import MovimientosBrigadasPage from './pages/MovimientosBrigadasPage';
 import SituacionesPersistentesPage from './pages/SituacionesPersistentesPage';
+import SuperAdminPage from './pages/SuperAdminPage';
 
 // Crear QueryClient
 const queryClient = new QueryClient({
@@ -40,7 +41,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Componente para rutas de Operaciones (OPERACIONES, ADMIN y ENCARGADO_NOMINAS)
+// Componente para rutas de Operaciones (OPERACIONES, ADMIN, SUPER_ADMIN y ENCARGADO_NOMINAS)
 function OperacionesRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user } = useAuthStore();
 
@@ -49,8 +50,23 @@ function OperacionesRoute({ children }: { children: React.ReactNode }) {
   }
 
   // ENCARGADO_NOMINAS puede acceder en modo lectura
-  if (user?.rol !== 'OPERACIONES' && user?.rol !== 'ADMIN' && user?.rol !== 'ENCARGADO_NOMINAS') {
+  if (user?.rol !== 'OPERACIONES' && user?.rol !== 'ADMIN' && user?.rol !== 'SUPER_ADMIN' && user?.rol !== 'ENCARGADO_NOMINAS') {
     return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// Componente para rutas de Super Admin (SUPER_ADMIN y ADMIN)
+function SuperAdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, user } = useAuthStore();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user?.rol !== 'SUPER_ADMIN' && user?.rol !== 'ADMIN') {
+    return <Navigate to="/operaciones" replace />;
   }
 
   return <>{children}</>;
@@ -62,6 +78,11 @@ function RoleBasedRedirect() {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Super Admin va directamente a su panel
+  if (user?.rol === 'SUPER_ADMIN') {
+    return <Navigate to="/super-admin" replace />;
   }
 
   // Usuarios de Operaciones y Encargado de Nóminas van a su módulo
@@ -209,6 +230,14 @@ function App() {
               <OperacionesRoute>
                 <AdminPanelPage />
               </OperacionesRoute>
+            }
+          />
+          <Route
+            path="/super-admin"
+            element={
+              <SuperAdminRoute>
+                <SuperAdminPage />
+              </SuperAdminRoute>
             }
           />
           <Route path="/" element={<RoleBasedRedirect />} />
