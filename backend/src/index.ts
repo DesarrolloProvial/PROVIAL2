@@ -2,24 +2,19 @@ import express from 'express';
 import http from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
-import { Server as SocketIOServer } from 'socket.io';
+import path from 'path';
 import { config } from './config/env';
 import { /* db, */ testConnection, closeConnection } from './config/database';
 import { /* redis, */ testRedisConnection, closeRedis } from './config/redis';
 import routes from './routes';
+import { initSocketService, getConnectionStats } from './services/socket.service';
 
 // Crear app Express
 const app = express();
 const server = http.createServer(app);
 
-// Configurar Socket.io
-const io = new SocketIOServer(server, {
-  cors: {
-    origin: config.socket.corsOrigins,
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
-});
+// Inicializar Socket.io con el servicio
+const io = initSocketService(server);
 
 // Middlewares globales
 app.use(helmet());
@@ -65,21 +60,16 @@ app.get(config.apiPrefix, (_req, res) => {
   });
 });
 
+// Servir archivos estáticos de uploads (multimedia)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Rutas de la API
 app.use(config.apiPrefix, routes);
 
-// Socket.io - conexiones
-io.on('connection', (socket) => {
-  console.log(`🔌 Cliente conectado: ${socket.id}`);
-
-  socket.on('disconnect', () => {
-    console.log(`🔌 Cliente desconectado: ${socket.id}`);
-  });
-
-  // Ping/pong para mantener conexión
-  socket.on('ping', () => {
-    socket.emit('pong');
-  });
+// Endpoint para estadísticas de WebSocket
+app.get('/api/socket/stats', async (_req, res) => {
+  const stats = await getConnectionStats();
+  res.json(stats || { error: 'Socket service not available' });
 });
 
 // 404 handler

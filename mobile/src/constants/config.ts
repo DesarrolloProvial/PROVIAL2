@@ -1,8 +1,8 @@
-// Configuración de la aplicación - PC 2
-// Red: 192.168.10.105
+// Configuración de la aplicación - PC 1
+// Red: 172.20.10.4
 
 // API Configuration
-export const API_URL = 'http://192.168.10.105:3001/api';
+export const API_URL = 'http://172.20.10.4:3000/api';
 
 // Configuración de timeouts
 export const REQUEST_TIMEOUT = 10000; // 10 segundos

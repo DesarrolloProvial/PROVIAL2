@@ -11,15 +11,27 @@ import {
 } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
 import { COLORS } from '../../constants/colors';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, CommonActions, RouteProp } from '@react-navigation/native';
 import axios from 'axios';
 import { API_URL } from '../../constants/config';
 import FuelSelector from '../../components/FuelSelector';
-import { turnosAPI } from '../../services/api';
+import { Picker } from '@react-native-picker/picker';
+import { turnosAPI, geografiaAPI } from '../../services/api';
+import api from '../../services/api';
+
+type IniciarSalidaScreenRouteProp = RouteProp<{
+  IniciarSalida: {
+    editMode?: boolean;
+    salidaData?: any;
+  };
+}, 'IniciarSalida'>;
 
 export default function IniciarSalidaScreen() {
   const navigation = useNavigation();
-  const { asignacion, salidaActiva, refreshEstadoBrigada } = useAuthStore();
+  const route = useRoute<IniciarSalidaScreenRouteProp>();
+  const { editMode, salidaData } = route.params || {};
+
+  const { asignacion, salidaActiva, refreshEstadoBrigada, refreshSalidaActiva } = useAuthStore();
 
   const [kmSalida, setKmSalida] = useState('');
   const [combustibleFraccion, setCombustibleFraccion] = useState<string | null>(null);
@@ -31,18 +43,67 @@ export default function IniciarSalidaScreen() {
   const [asignacionTurno, setAsignacionTurno] = useState<any>(null);
   const [loadingAsignacion, setLoadingAsignacion] = useState(true);
 
+  // Seleccion de ruta (para unidades de reaccion)
+  const [rutas, setRutas] = useState<any[]>([]);
+  const [rutaSeleccionadaId, setRutaSeleccionadaId] = useState<number | null>(null);
+  const [loadingRutas, setLoadingRutas] = useState(false);
+
   const handleCombustibleChange = (fraccion: string, decimal: number) => {
     setCombustibleFraccion(fraccion);
     setCombustibleDecimal(decimal);
   };
 
-  // Cargar asignacion de turno al montar
+  // Cargar datos en modo edición
   useEffect(() => {
-    const loadAsignacionTurno = async () => {
+    if (editMode && salidaData) {
+      // Pre-llenar formulario con datos existentes
+      const kmValue = salidaData.km_inicial || salidaData.km_salida;
+      setKmSalida(kmValue ? Math.round(kmValue).toString() : '');
+      setObservaciones(salidaData.observaciones_salida || '');
+
+      // Convertir decimal a fracción para el selector
+      const combustible = salidaData.combustible_inicial || salidaData.combustible_salida;
+      if (combustible !== null && combustible !== undefined) {
+        setCombustibleDecimal(combustible);
+        if (combustible >= 1) setCombustibleFraccion('LLENO');
+        else if (combustible >= 0.75) setCombustibleFraccion('3/4');
+        else if (combustible >= 0.5) setCombustibleFraccion('1/2');
+        else if (combustible >= 0.25) setCombustibleFraccion('1/4');
+        else setCombustibleFraccion('VACIO');
+      }
+
+      // En modo edición no necesitamos cargar asignación de turno
+      setLoadingAsignacion(false);
+    }
+  }, [editMode, salidaData]);
+
+  // Cargar asignacion de turno al montar (solo si NO es modo edición)
+  useEffect(() => {
+    if (editMode) {
+      setLoadingAsignacion(false);
+      return;
+    }
+
+    const loadData = async () => {
       try {
         setLoadingAsignacion(true);
         const data = await turnosAPI.getMiAsignacionHoy();
         setAsignacionTurno(data);
+
+        // Si es unidad de reaccion (es_reaccion=true) o no tiene ruta (null), cargamos rutas
+        // Nota: data puede traer es_reaccion, o deducimos por falta de ruta
+        if (data && (data.es_reaccion || !data.ruta_id)) {
+          setLoadingRutas(true);
+          try {
+            const rutasData = await geografiaAPI.getRutas();
+            setRutas(rutasData);
+          } catch (err) {
+            console.error('Error cargando rutas:', err);
+            Alert.alert('Error', 'No se pudieron cargar las rutas. Verifica tu conexión.');
+          } finally {
+            setLoadingRutas(false);
+          }
+        }
       } catch (error) {
         console.log('[INICIAR SALIDA] No hay asignacion de turno');
         setAsignacionTurno(null);
@@ -50,21 +111,27 @@ export default function IniciarSalidaScreen() {
         setLoadingAsignacion(false);
       }
     };
-    loadAsignacionTurno();
-  }, []);
+    loadData();
+  }, [editMode]);
 
+  // Verificar si ya tiene salida activa AL MONTAR (solo si NO es modo edición)
   useEffect(() => {
-    // Verificar si ya tiene salida activa
-    if (salidaActiva) {
+    // En modo edición, no verificar salida activa (es la que estamos editando)
+    if (editMode) return;
+
+    // Solo verificar si ya tenía salida activa al entrar a la pantalla
+    // (no cuando cambia después de iniciar)
+    if (salidaActiva && !loading) {
       Alert.alert(
         'Salida Activa',
-        'Ya tienes una salida activa. Debes finalizar el dia antes de iniciar una nueva salida.',
+        'Ya tienes una salida activa. Ve al Home para continuar tu jornada.',
         [
           { text: 'OK', onPress: () => navigation.goBack() }
         ]
       );
     }
-  }, [salidaActiva]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editMode]); // Solo al montar
 
   // La asignacion efectiva es la de turno o la permanente
   const asignacionEfectiva = asignacionTurno || asignacion;
@@ -81,7 +148,13 @@ export default function IniciarSalidaScreen() {
       return;
     }
 
-    const kmNum = parseFloat(kmSalida);
+    // Validar ruta si es REACCION (solo en modo creación)
+    if (!editMode && (asignacionTurno?.es_reaccion || (asignacionTurno && !asignacionTurno.ruta_id)) && !rutaSeleccionadaId) {
+      Alert.alert('Error', 'Debes seleccionar una ruta para iniciar salida (Unidad de Reacción)');
+      return;
+    }
+
+    const kmNum = parseInt(kmSalida, 10);
 
     if (isNaN(kmNum) || kmNum < 0) {
       Alert.alert('Error', 'El kilometraje debe ser un número válido');
@@ -91,31 +164,65 @@ export default function IniciarSalidaScreen() {
     try {
       setLoading(true);
 
-      const response = await axios.post(`${API_URL}/salidas/iniciar`, {
-        km_salida: kmNum,
-        combustible_salida: combustibleDecimal,
-        combustible_fraccion: combustibleFraccion,
-        observaciones: observaciones.trim() || undefined,
-      });
+      if (editMode) {
+        // MODO EDICIÓN: PATCH para actualizar datos de salida existente
+        await api.patch('/salidas/editar-datos-salida', {
+          km_inicial: kmNum,
+          combustible_inicial_fraccion: combustibleFraccion,
+          observaciones_salida: observaciones.trim() || undefined,
+        });
 
-      console.log('[INICIAR SALIDA] Respuesta:', response.data);
+        console.log('[EDITAR SALIDA] Actualización exitosa');
 
-      // Actualizar estado
-      await refreshEstadoBrigada();
+        await refreshSalidaActiva();
 
-      Alert.alert(
-        '¡Salida Iniciada!',
-        response.data.message || 'Tu jornada laboral ha comenzado. Ya puedes reportar situaciones.',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack()
-          }
-        ]
-      );
+        Alert.alert(
+          'Salida Actualizada',
+          'Los datos de salida han sido actualizados correctamente.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack()
+            }
+          ]
+        );
+      } else {
+        // MODO CREACIÓN: POST para iniciar nueva salida
+        const response = await axios.post(`${API_URL}/salidas/iniciar`, {
+          unidad_id: asignacionEfectiva.unidad_id,
+          ruta_inicial_id: rutaSeleccionadaId || undefined,
+          km_inicial: kmNum,
+          combustible_inicial: combustibleDecimal,
+          observaciones_salida: observaciones.trim() || undefined,
+        });
+
+        console.log('[INICIAR SALIDA] Respuesta:', response.data);
+
+        // Actualizar estado
+        await refreshEstadoBrigada();
+
+        Alert.alert(
+          '¡Salida Iniciada!',
+          response.data.message || 'Tu jornada laboral ha comenzado. Ya puedes reportar situaciones.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Usar reset para volver al home de forma segura
+                navigation.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'BrigadaHome' }],
+                  })
+                );
+              }
+            }
+          ]
+        );
+      }
     } catch (error: any) {
-      console.error('[INICIAR SALIDA] Error:', error);
-      const mensaje = error.response?.data?.error || error.message || 'No se pudo iniciar la salida';
+      console.error('[INICIAR/EDITAR SALIDA] Error:', error);
+      const mensaje = error.response?.data?.error || error.message || (editMode ? 'No se pudo actualizar la salida' : 'No se pudo iniciar la salida');
       Alert.alert('Error', mensaje);
     } finally {
       setLoading(false);
@@ -134,8 +241,8 @@ export default function IniciarSalidaScreen() {
     );
   }
 
-  // Mostrar error si no hay ninguna asignacion (ni turno ni permanente)
-  if (!asignacionEfectiva) {
+  // Mostrar error si no hay ninguna asignacion (ni turno ni permanente) - SOLO en modo creación
+  if (!editMode && !asignacionEfectiva) {
     return (
       <View style={styles.container}>
         <View style={styles.errorCard}>
@@ -158,18 +265,25 @@ export default function IniciarSalidaScreen() {
   return (
     <ScrollView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Iniciar Salida</Text>
+      <View style={[styles.header, editMode && { backgroundColor: COLORS.warning }]}>
+        <Text style={styles.headerTitle}>
+          {editMode ? 'Editar Salida' : 'Iniciar Salida'}
+        </Text>
         <Text style={styles.headerSubtitle}>
-          Registra el inicio de tu jornada laboral
+          {editMode
+            ? 'Modifica los datos de tu salida de unidad'
+            : 'Registra el inicio de tu jornada laboral'
+          }
         </Text>
       </View>
 
-      {/* Card de Unidad Asignada */}
+      {/* Card de Unidad Asignada (en modo edición mostramos datos de la salida) */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Tu Unidad Asignada</Text>
-        {/* Indicador si es asignacion de turno */}
-        {asignacionTurno && (
+        <Text style={styles.cardTitle}>
+          {editMode ? 'Datos de la Salida' : 'Tu Unidad Asignada'}
+        </Text>
+        {/* Indicador si es asignacion de turno (solo en modo creación) */}
+        {!editMode && asignacionTurno && (
           <View style={[styles.tipoBadge, { backgroundColor: asignacionTurno.dias_para_salida === 0 ? COLORS.success : COLORS.info }]}>
             <Text style={styles.tipoBadgeText}>
               {asignacionTurno.dias_para_salida === 0 ? 'TURNO DE HOY' : asignacionTurno.dias_para_salida === 1 ? 'TURNO DE MANANA' : `EN ${asignacionTurno.dias_para_salida} DIAS`}
@@ -180,25 +294,38 @@ export default function IniciarSalidaScreen() {
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Unidad:</Text>
             <Text style={styles.infoValue}>
-              {asignacionEfectiva.unidad_codigo || asignacionEfectiva.codigo}
+              {editMode
+                ? (salidaData?.unidad_codigo || '-')
+                : (asignacionEfectiva?.unidad_codigo || asignacionEfectiva?.codigo || '-')
+              }
             </Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Tipo:</Text>
-            <Text style={styles.infoValue}>
-              {asignacionEfectiva.tipo_unidad || 'N/A'}
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Tu Rol:</Text>
-            <Text style={styles.infoValue}>
-              {asignacionEfectiva.mi_rol || asignacionEfectiva.rol_tripulacion || 'N/A'}
-            </Text>
-          </View>
-          {asignacionTurno?.ruta_codigo && (
+          {!editMode && (
+            <>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Tipo:</Text>
+                <Text style={styles.infoValue}>
+                  {asignacionEfectiva?.tipo_unidad || 'N/A'}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Tu Rol:</Text>
+                <Text style={styles.infoValue}>
+                  {asignacionEfectiva?.mi_rol || asignacionEfectiva?.rol_tripulacion || 'N/A'}
+                </Text>
+              </View>
+              {asignacionTurno?.ruta_codigo && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Ruta:</Text>
+                  <Text style={styles.infoValue}>{asignacionTurno.ruta_codigo}</Text>
+                </View>
+              )}
+            </>
+          )}
+          {editMode && salidaData?.mi_rol && (
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Ruta:</Text>
-              <Text style={styles.infoValue}>{asignacionTurno.ruta_codigo}</Text>
+              <Text style={styles.infoLabel}>Tu Rol:</Text>
+              <Text style={styles.infoValue}>{salidaData.mi_rol}</Text>
             </View>
           )}
         </View>
@@ -215,9 +342,9 @@ export default function IniciarSalidaScreen() {
           <TextInput
             style={styles.input}
             value={kmSalida}
-            onChangeText={setKmSalida}
-            placeholder="Ej: 12345.6"
-            keyboardType="decimal-pad"
+            onChangeText={(text) => setKmSalida(text.replace(/[^0-9]/g, ''))}
+            placeholder="Ej: 125000"
+            keyboardType="number-pad"
             editable={!loading}
           />
           <Text style={styles.hint}>Kilometraje actual del odómetro</Text>
@@ -246,16 +373,18 @@ export default function IniciarSalidaScreen() {
         </View>
       </View>
 
-      {/* Instrucciones */}
-      <View style={styles.instructionsCard}>
-        <Text style={styles.instructionsTitle}>📋 Importante</Text>
-        <Text style={styles.instructionsText}>
-          • Verifica el kilometraje y combustible antes de iniciar{'\n'}
-          • Una vez iniciada la salida, podrás reportar situaciones{'\n'}
-          • Puedes ingresar a sedes durante tu jornada{'\n'}
-          • Al finalizar el día, debes registrar el ingreso final
-        </Text>
-      </View>
+      {/* Instrucciones (solo en modo creación) */}
+      {!editMode && (
+        <View style={styles.instructionsCard}>
+          <Text style={styles.instructionsTitle}>📋 Importante</Text>
+          <Text style={styles.instructionsText}>
+            • Verifica el kilometraje y combustible antes de iniciar{'\n'}
+            • Una vez iniciada la salida, podrás reportar situaciones{'\n'}
+            • Puedes ingresar a sedes durante tu jornada{'\n'}
+            • Al finalizar el día, debes registrar el ingreso final
+          </Text>
+        </View>
+      )}
 
       {/* Botones */}
       <View style={styles.buttonsContainer}>
@@ -268,19 +397,21 @@ export default function IniciarSalidaScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.button, styles.confirmButton]}
+          style={[styles.button, styles.confirmButton, editMode && { backgroundColor: COLORS.warning }]}
           onPress={handleIniciarSalida}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.confirmButtonText}>Iniciar Salida</Text>
+            <Text style={styles.confirmButtonText}>
+              {editMode ? 'Guardar Cambios' : 'Iniciar Salida'}
+            </Text>
           )}
         </TouchableOpacity>
       </View>
 
-      <View style={{ height: 40 }} />
+      <View style={{ height: 80 }} />
     </ScrollView>
   );
 }

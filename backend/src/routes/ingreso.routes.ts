@@ -3,8 +3,10 @@ import {
   registrarIngreso,
   registrarSalidaDeSede,
   getMiIngresoActivo,
+  getMisIngresosHoy,
   getHistorialIngresos,
-  getIngreso
+  getIngreso,
+  editarIngreso
 } from '../controllers/ingreso.controller';
 import { authenticate, authorize } from '../middlewares/auth';
 
@@ -27,10 +29,16 @@ router.post('/:id/salir', authenticate, authorize('BRIGADA'), registrarSalidaDeS
 // Mi ingreso activo (Brigada)
 router.get('/mi-ingreso-activo', authenticate, authorize('BRIGADA'), getMiIngresoActivo);
 
+// Mis ingresos de hoy (Brigada) - para bitácora
+router.get('/mis-ingresos-hoy', authenticate, authorize('BRIGADA'), getMisIngresosHoy);
+
 // Historial de ingresos de una salida
 router.get('/historial/:salidaId', authenticate, getHistorialIngresos);
 
 // Obtener ingreso específico
 router.get('/:id', authenticate, getIngreso);
+
+// Editar ingreso (Brigada) - km, combustible, observaciones
+router.patch('/:id', authenticate, authorize('BRIGADA'), editarIngreso);
 
 export default router;

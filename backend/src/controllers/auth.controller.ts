@@ -39,6 +39,10 @@ export async function login(req: Request, res: Response) {
       userId: usuario.id,
       rol: usuario.rol_nombre!,
       sede: usuario.sede_id || undefined,
+      puede_ver_todas_sedes: usuario.puede_ver_todas_sedes || false,
+      // Incluir sub-rol COP si existe
+      sub_rol_cop_id: usuario.sub_rol_cop_id || undefined,
+      sub_rol_cop_codigo: usuario.sub_rol_cop_codigo || undefined,
     });
 
     const { token: refreshToken, tokenId } = generateRefreshToken(usuario.id);
@@ -50,6 +54,18 @@ export async function login(req: Request, res: Response) {
       7 * 24 * 60 * 60 // 7 días
     );
 
+    // Construir objeto subRolCop solo si el usuario es COP y tiene sub-rol
+    const subRolCop = usuario.rol_nombre === 'COP' && usuario.sub_rol_cop_id ? {
+      id: usuario.sub_rol_cop_id,
+      codigo: usuario.sub_rol_cop_codigo,
+      nombre: usuario.sub_rol_cop_nombre,
+      puede_crear_persistentes: usuario.puede_crear_persistentes || false,
+      puede_cerrar_persistentes: usuario.puede_cerrar_persistentes || false,
+      puede_promover_situaciones: usuario.puede_promover_situaciones || false,
+      puede_asignar_unidades: usuario.puede_asignar_unidades || false,
+      solo_lectura: usuario.solo_lectura || false,
+    } : null;
+
     // Responder
     return res.json({
       message: 'Login exitoso',
@@ -58,7 +74,10 @@ export async function login(req: Request, res: Response) {
         username: usuario.username,
         nombre: usuario.nombre_completo,
         rol: usuario.rol_nombre,
-        sede: usuario.sede_nombre,
+        sede_id: usuario.sede_id,
+        sede_nombre: usuario.sede_nombre,
+        puede_ver_todas_sedes: usuario.puede_ver_todas_sedes || false,
+        subRolCop,
       },
       accessToken,
       refreshToken,
@@ -101,6 +120,10 @@ export async function refresh(req: Request, res: Response) {
       userId: usuario.id,
       rol: usuario.rol_nombre!,
       sede: usuario.sede_id || undefined,
+      puede_ver_todas_sedes: usuario.puede_ver_todas_sedes || false,
+      // Incluir sub-rol COP si existe
+      sub_rol_cop_id: usuario.sub_rol_cop_id || undefined,
+      sub_rol_cop_codigo: usuario.sub_rol_cop_codigo || undefined,
     });
 
     return res.json({
@@ -144,6 +167,18 @@ export async function me(req: Request, res: Response) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
+    // Construir objeto subRolCop solo si el usuario es COP y tiene sub-rol
+    const subRolCop = usuario.rol_nombre === 'COP' && usuario.sub_rol_cop_id ? {
+      id: usuario.sub_rol_cop_id,
+      codigo: usuario.sub_rol_cop_codigo,
+      nombre: usuario.sub_rol_cop_nombre,
+      puede_crear_persistentes: usuario.puede_crear_persistentes || false,
+      puede_cerrar_persistentes: usuario.puede_cerrar_persistentes || false,
+      puede_promover_situaciones: usuario.puede_promover_situaciones || false,
+      puede_asignar_unidades: usuario.puede_asignar_unidades || false,
+      solo_lectura: usuario.solo_lectura || false,
+    } : null;
+
     return res.json({
       id: usuario.id,
       username: usuario.username,
@@ -153,6 +188,7 @@ export async function me(req: Request, res: Response) {
       rol: usuario.rol_nombre,
       sede: usuario.sede_nombre,
       ultimo_acceso: usuario.ultimo_acceso,
+      subRolCop,
     });
   } catch (error) {
     console.error('Error en me:', error);

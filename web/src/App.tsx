@@ -9,6 +9,15 @@ import CrearAsignacionPage from './pages/CrearAsignacionPage';
 import GeneradorTurnosPage from './pages/GeneradorTurnosPage';
 import BrigadasPage from './pages/BrigadasPage';
 import UnidadesPage from './pages/UnidadesPage';
+import BitacoraPage from './pages/BitacoraPage';
+import EventosPage from './pages/EventosPage';
+import GaleriaMultimediaPage from './pages/GaleriaMultimediaPage';
+import DashboardSedesPage from './pages/DashboardSedesPage';
+import ConfiguracionSedesPage from './pages/ConfiguracionSedesPage';
+import SituacionesFijasPage from './pages/SituacionesFijasPage';
+import AdminPanelPage from './pages/AdminPanelPage';
+import MovimientosBrigadasPage from './pages/MovimientosBrigadasPage';
+import SituacionesPersistentesPage from './pages/SituacionesPersistentesPage';
 
 // Crear QueryClient
 const queryClient = new QueryClient({
@@ -31,7 +40,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Componente para rutas de Operaciones (solo OPERACIONES y ADMIN)
+// Componente para rutas de Operaciones (OPERACIONES, ADMIN y ENCARGADO_NOMINAS)
 function OperacionesRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user } = useAuthStore();
 
@@ -39,7 +48,8 @@ function OperacionesRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user?.rol !== 'OPERACIONES' && user?.rol !== 'ADMIN') {
+  // ENCARGADO_NOMINAS puede acceder en modo lectura
+  if (user?.rol !== 'OPERACIONES' && user?.rol !== 'ADMIN' && user?.rol !== 'ENCARGADO_NOMINAS') {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -54,8 +64,8 @@ function RoleBasedRedirect() {
     return <Navigate to="/login" replace />;
   }
 
-  // Usuarios de Operaciones van a su módulo
-  if (user?.rol === 'OPERACIONES') {
+  // Usuarios de Operaciones y Encargado de Nóminas van a su módulo
+  if (user?.rol === 'OPERACIONES' || user?.rol === 'ENCARGADO_NOMINAS') {
     return <Navigate to="/operaciones" replace />;
   }
 
@@ -86,6 +96,46 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/bitacora/:unidadId"
+            element={
+              <ProtectedRoute>
+                <BitacoraPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/eventos"
+            element={
+              <ProtectedRoute>
+                <EventosPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/galeria"
+            element={
+              <ProtectedRoute>
+                <GaleriaMultimediaPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/movimientos-brigadas"
+            element={
+              <ProtectedRoute>
+                <MovimientosBrigadasPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/situaciones-persistentes"
+            element={
+              <ProtectedRoute>
+                <SituacionesPersistentesPage />
               </ProtectedRoute>
             }
           />
@@ -126,6 +176,38 @@ function App() {
             element={
               <OperacionesRoute>
                 <UnidadesPage />
+              </OperacionesRoute>
+            }
+          />
+          <Route
+            path="/operaciones/dashboard-sedes"
+            element={
+              <OperacionesRoute>
+                <DashboardSedesPage />
+              </OperacionesRoute>
+            }
+          />
+          <Route
+            path="/operaciones/configuracion-sedes"
+            element={
+              <OperacionesRoute>
+                <ConfiguracionSedesPage />
+              </OperacionesRoute>
+            }
+          />
+          <Route
+            path="/operaciones/situaciones-fijas"
+            element={
+              <OperacionesRoute>
+                <SituacionesFijasPage />
+              </OperacionesRoute>
+            }
+          />
+          <Route
+            path="/operaciones/admin"
+            element={
+              <OperacionesRoute>
+                <AdminPanelPage />
               </OperacionesRoute>
             }
           />

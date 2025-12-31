@@ -2,7 +2,15 @@ import { Request, Response } from 'express';
 import { SituacionModel, DetalleSituacionModel } from '../models/situacion.model';
 import { TurnoModel } from '../models/turno.model';
 import { UsuarioModel } from '../models/usuario.model';
+import { SalidaModel } from '../models/salida.model';
+import { UbicacionBrigadaModel } from '../models/ubicacionBrigada.model';
 import { db } from '../config/database';
+import {
+  emitSituacionNueva,
+  emitSituacionActualizada,
+  emitSituacionCerrada,
+  SituacionEvent,
+} from '../services/socket.service';
 
 // ========================================
 // HELPERS
@@ -42,6 +50,7 @@ export async function createSituacion(req: Request, res: Response) {
     const {
       tipo_situacion,
       unidad_id,
+      salida_unidad_id,
       turno_id,
       asignacion_id,
       ruta_id,
@@ -62,17 +71,88 @@ export async function createSituacion(req: Request, res: Response) {
 
     const userId = req.user!.userId;
 
-    // Si es un brigada, intentar obtener su asignación automáticamente
+    // Si es un brigada, siempre buscar su asignación
     let unidadFinal = unidad_id;
     let turnoFinal = turno_id;
     let asignacionFinal = asignacion_id;
+    let rutaFinal = ruta_id;
 
-    if (req.user!.rol === 'BRIGADA' && !unidad_id) {
-      const miAsignacion = await TurnoModel.getMiAsignacionHoy(userId);
-      if (miAsignacion) {
-        unidadFinal = miAsignacion.unidad_id;
-        turnoFinal = miAsignacion.turno_id;
-        asignacionFinal = miAsignacion.asignacion_id;
+    if (req.user!.rol === 'BRIGADA') {
+      // Primero verificar si tiene una ubicación activa (préstamo, división, etc.)
+      const ubicacionActual = await UbicacionBrigadaModel.getUbicacionActual(userId);
+
+      if (ubicacionActual) {
+        // El brigada tiene un registro de ubicación activo
+        switch (ubicacionActual.estado) {
+          case 'EN_PUNTO_FIJO':
+            // No puede crear situaciones normales desde punto fijo
+            return res.status(403).json({
+              error: 'No puedes crear situaciones desde un punto fijo',
+              message: 'Estás en un punto fijo sin unidad. Solo puedes agregar información a situaciones persistentes.',
+              estado: ubicacionActual.estado,
+              situacion_persistente_id: ubicacionActual.situacion_persistente_id
+            });
+
+          case 'PRESTADO':
+            // Usar la unidad donde está prestado, no la original
+            unidadFinal = ubicacionActual.unidad_actual_id;
+            // Obtener datos de la asignación de la unidad destino
+            const asignacionDestino = await db.oneOrNone(`
+              SELECT a.id, a.turno_id, a.ruta_id, a.ruta_activa_id
+              FROM asignacion_unidad a
+              JOIN turno t ON a.turno_id = t.id
+              WHERE a.unidad_id = $1
+                AND t.fecha = CURRENT_DATE
+                AND a.estado IN ('INICIADA', 'LISTA')
+              LIMIT 1
+            `, [ubicacionActual.unidad_actual_id]);
+            if (asignacionDestino) {
+              turnoFinal = asignacionDestino.turno_id;
+              asignacionFinal = asignacionDestino.id;
+              if (!rutaFinal) {
+                rutaFinal = asignacionDestino.ruta_activa_id || asignacionDestino.ruta_id;
+              }
+            }
+            break;
+
+          case 'CON_UNIDAD':
+          default:
+            // Usar la asignación normal
+            const miAsignacionUbicacion = await TurnoModel.getMiAsignacionHoy(userId);
+            if (miAsignacionUbicacion) {
+              unidadFinal = miAsignacionUbicacion.unidad_id;
+              turnoFinal = miAsignacionUbicacion.turno_id;
+              asignacionFinal = miAsignacionUbicacion.asignacion_id;
+              if (!rutaFinal && miAsignacionUbicacion.ruta_id) {
+                rutaFinal = miAsignacionUbicacion.ruta_id;
+              }
+            }
+            break;
+        }
+      } else {
+        // Sin registro de ubicación, usar flujo normal de asignación
+        const miAsignacion = await TurnoModel.getMiAsignacionHoy(userId);
+        if (miAsignacion) {
+          // Si el brigada proporciona unidad_id, validar que sea su unidad asignada
+          if (unidad_id && unidad_id !== miAsignacion.unidad_id) {
+            return res.status(403).json({
+              error: 'No tienes autorización para crear situaciones en esta unidad',
+              tu_unidad: miAsignacion.unidad_codigo
+            });
+          }
+          unidadFinal = miAsignacion.unidad_id;
+          turnoFinal = miAsignacion.turno_id;
+          asignacionFinal = miAsignacion.asignacion_id;
+          // Usar ruta asignada si no se proporciona ruta_id
+          if (!rutaFinal && miAsignacion.ruta_id) {
+            rutaFinal = miAsignacion.ruta_id;
+          }
+        } else if (!unidad_id) {
+          return res.status(400).json({
+            error: 'No tienes asignación para hoy',
+            message: 'Contacta a Operaciones para que te asignen a una unidad.'
+          });
+        }
       }
     }
 
@@ -81,13 +161,88 @@ export async function createSituacion(req: Request, res: Response) {
       return res.status(400).json({ error: 'unidad_id es requerido' });
     }
 
+    // VALIDACIÓN OBLIGATORIA: ruta_id es requerido para todas las situaciones
+    // Si no se proporcionó ruta, intentar obtenerla de la asignación
+    if (!rutaFinal && asignacionFinal) {
+      const asignacion = await db.oneOrNone(
+        'SELECT ruta_activa_id, ruta_id FROM asignacion_unidad WHERE id = $1',
+        [asignacionFinal]
+      );
+      if (asignacion) {
+        rutaFinal = asignacion.ruta_activa_id || asignacion.ruta_id;
+      }
+    }
+
+    if (!rutaFinal) {
+      return res.status(400).json({
+        error: 'ruta_id es requerido',
+        message: 'No se puede crear una situación sin una ruta asignada. Verifica tu asignación o solicita que te asignen una ruta.'
+      });
+    }
+
+    // IMPORTANTE: Cerrar situación activa anterior de esta unidad
+    // Solo puede haber UNA situación activa por unidad a la vez
+    const situacionAnterior = await db.oneOrNone(
+      `SELECT id, uuid, tipo_situacion, unidad_id, ruta_id, km, latitud, longitud, estado
+       FROM situacion
+       WHERE unidad_id = $1 AND estado = 'ACTIVA'
+       ORDER BY created_at DESC LIMIT 1`,
+      [unidadFinal]
+    );
+
+    if (situacionAnterior) {
+      // Cerrar la situación anterior
+      await SituacionModel.cerrar(
+        situacionAnterior.id,
+        userId,
+        `Cerrada automáticamente al iniciar ${tipo_situacion}`
+      );
+
+      // Emitir evento de cierre por WebSocket
+      const unidadInfo = await db.oneOrNone(
+        'SELECT codigo FROM unidad WHERE id = $1',
+        [unidadFinal]
+      );
+
+      const eventoCierre: SituacionEvent = {
+        id: situacionAnterior.id,
+        uuid: situacionAnterior.uuid,
+        tipo_situacion: situacionAnterior.tipo_situacion,
+        unidad_id: situacionAnterior.unidad_id,
+        unidad_codigo: unidadInfo?.codigo || `U-${unidadFinal}`,
+        ruta_codigo: null,
+        km: situacionAnterior.km,
+        latitud: situacionAnterior.latitud,
+        longitud: situacionAnterior.longitud,
+        estado: 'CERRADA',
+        sede_id: null,
+      };
+      emitSituacionCerrada(eventoCierre);
+
+      console.log(`📍 Situación anterior ${situacionAnterior.tipo_situacion} (ID: ${situacionAnterior.id}) cerrada automáticamente`);
+    }
+
+    // IMPORTANTE: Buscar salida activa de la unidad si no se proporciona
+    let salidaFinal = salida_unidad_id;
+    if (!salidaFinal && unidadFinal) {
+      const salidaActiva = await db.oneOrNone(
+        `SELECT id FROM salida_unidad WHERE unidad_id = $1 AND estado = 'EN_SALIDA' LIMIT 1`,
+        [unidadFinal]
+      );
+      if (salidaActiva) {
+        salidaFinal = salidaActiva.id;
+        console.log(`📍 Vinculando situación a salida activa ID: ${salidaFinal}`);
+      }
+    }
+
     // Crear la situación
     const situacion = await SituacionModel.create({
       tipo_situacion,
       unidad_id: unidadFinal,
+      salida_unidad_id: salidaFinal,
       turno_id: turnoFinal,
       asignacion_id: asignacionFinal,
-      ruta_id,
+      ruta_id: rutaFinal,
       km,
       sentido,
       latitud,
@@ -118,8 +273,24 @@ export async function createSituacion(req: Request, res: Response) {
     // Obtener la situación completa para devolver
     const situacionCompleta = await SituacionModel.getById(situacion.id);
 
-    // TODO: Emitir evento WebSocket para tiempo real
-    // io.to('cop').emit('situacion:nueva', situacionCompleta);
+    // Emitir evento WebSocket para tiempo real
+    if (situacionCompleta) {
+      const sc = situacionCompleta as any;
+      const evento: SituacionEvent = {
+        id: sc.id,
+        uuid: sc.uuid,
+        tipo_situacion: sc.tipo_situacion,
+        unidad_id: sc.unidad_id,
+        unidad_codigo: sc.unidad_codigo || `U-${sc.unidad_id}`,
+        ruta_codigo: sc.ruta_codigo,
+        km: sc.km,
+        latitud: sc.latitud,
+        longitud: sc.longitud,
+        estado: sc.estado,
+        sede_id: sc.sede_id,
+      };
+      emitSituacionNueva(evento);
+    }
 
     return res.status(201).json({
       message: 'Situación creada exitosamente',
@@ -140,19 +311,40 @@ export async function getSituacion(req: Request, res: Response) {
     const { id } = req.params;
 
     let situacion;
+    let situacionId: number;
 
     // Intentar obtener por UUID primero, luego por ID
     if (id.includes('-')) {
       situacion = await SituacionModel.getByUuid(id);
+      if (!situacion) {
+        return res.status(404).json({ error: 'Situación no encontrada' });
+      }
+      situacionId = situacion.id;
     } else {
-      situacion = await SituacionModel.getById(parseInt(id, 10));
+      situacionId = parseInt(id, 10);
+      situacion = await SituacionModel.getById(situacionId);
     }
 
     if (!situacion) {
       return res.status(404).json({ error: 'Situación no encontrada' });
     }
 
-    return res.json({ situacion });
+    // Obtener detalles adicionales (vehículos, grúas, ajustadores, etc.)
+    const detalles = await DetalleSituacionModel.getBySituacionId(situacionId);
+
+    // Organizar detalles por tipo
+    const detallesOrganizados = {
+      vehiculos: detalles.filter(d => d.tipo_detalle === 'VEHICULO').map(d => d.datos),
+      gruas: detalles.filter(d => d.tipo_detalle === 'GRUA').map(d => d.datos),
+      ajustadores: detalles.filter(d => d.tipo_detalle === 'AJUSTADOR').map(d => d.datos),
+      autoridades_socorro: detalles.find(d => d.tipo_detalle === 'AUTORIDADES_SOCORRO')?.datos,
+      danios: detalles.find(d => d.tipo_detalle === 'DANIOS')?.datos,
+      subtipo: detalles.find(d => d.tipo_detalle === 'SUBTIPO')?.datos,
+    };
+
+    return res.json({
+      situacion: { ...situacion, detalles: detallesOrganizados },
+    });
   } catch (error) {
     console.error('Error en getSituacion:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -229,8 +421,14 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
       });
     }
 
-    // Obtener situaciones de la unidad
-    const situaciones = await SituacionModel.getMiUnidadHoy(miAsignacion.unidad_id);
+    // Obtener salida activa para filtrar situaciones
+    const miSalida = await SalidaModel.getMiSalidaActiva(userId);
+
+    // Obtener situaciones de la unidad (filtrando por salida si existe)
+    const situaciones = await SituacionModel.getMiUnidadHoy(
+      miAsignacion.unidad_id,
+      miSalida?.salida_id
+    );
 
     return res.json({ situaciones, asignacion: miAsignacion });
   } catch (error) {
@@ -294,6 +492,7 @@ export async function updateSituacion(req: Request, res: Response) {
   try {
     const { id } = req.params;
     const userId = req.user!.userId;
+    const situacionId = parseInt(id, 10);
 
     const {
       tipo_situacion,
@@ -308,9 +507,36 @@ export async function updateSituacion(req: Request, res: Response) {
       kilometraje_unidad,
       descripcion,
       observaciones,
+      // Datos adicionales
+      vehiculos,
+      gruas,
+      ajustadores,
+      // Estructura legacy (campos planos)
+      autoridadesSeleccionadas: autoridadesLegacy,
+      detallesAutoridades: detallesAutoridadesLegacy,
+      socorroSeleccionados: socorroLegacy,
+      detallesSocorro: detallesSocorroLegacy,
+      danios_materiales: daniosMaterialesLegacy,
+      danios_infraestructura: daniosInfraLegacy,
+      descripcion_danios_infra: descripcionDaniosLegacy,
+      // Nueva estructura (objetos anidados)
+      autoridades_socorro,
+      danios,
+      tipoIncidente,
+      subtipo_situacion,
     } = req.body;
 
-    const situacion = await SituacionModel.update(parseInt(id, 10), {
+    // Normalizar datos: soportar estructura nueva y legacy
+    const autoridadesSeleccionadas = autoridades_socorro?.autoridades || autoridadesLegacy;
+    const detallesAutoridades = autoridades_socorro?.detalles_autoridades || detallesAutoridadesLegacy;
+    const socorroSeleccionados = autoridades_socorro?.socorro || socorroLegacy;
+    const detallesSocorro = autoridades_socorro?.detalles_socorro || detallesSocorroLegacy;
+
+    const danios_materiales = danios?.materiales ?? daniosMaterialesLegacy;
+    const danios_infraestructura = danios?.infraestructura ?? daniosInfraLegacy;
+    const descripcion_danios_infra = danios?.descripcion_infra || descripcionDaniosLegacy;
+
+    const situacion = await SituacionModel.update(situacionId, {
       tipo_situacion,
       estado,
       ruta_id,
@@ -326,15 +552,137 @@ export async function updateSituacion(req: Request, res: Response) {
       actualizado_por: userId,
     });
 
+    // Guardar detalles adicionales
+    // Función helper para guardar/actualizar detalles por tipo
+    const guardarDetalles = async (tipoDetalle: string, datos: any[]) => {
+      if (!datos || !Array.isArray(datos)) return;
+
+      // Eliminar detalles existentes de este tipo
+      await db.none(
+        'DELETE FROM detalle_situacion WHERE situacion_id = $1 AND tipo_detalle = $2',
+        [situacionId, tipoDetalle]
+      );
+
+      // Insertar nuevos detalles
+      for (const item of datos) {
+        await DetalleSituacionModel.create({
+          situacion_id: situacionId,
+          tipo_detalle: tipoDetalle as any,
+          datos: item,
+          creado_por: userId,
+        });
+      }
+    };
+
+    // Guardar vehículos
+    if (vehiculos) {
+      await guardarDetalles('VEHICULO', vehiculos);
+    }
+
+    // Guardar grúas
+    if (gruas) {
+      await guardarDetalles('GRUA', gruas);
+    }
+
+    // Guardar ajustadores
+    if (ajustadores) {
+      await guardarDetalles('AJUSTADOR', ajustadores);
+    }
+
+    // Guardar autoridades y socorro como un detalle especial
+    if (autoridadesSeleccionadas || socorroSeleccionados) {
+      await db.none(
+        'DELETE FROM detalle_situacion WHERE situacion_id = $1 AND tipo_detalle = $2',
+        [situacionId, 'AUTORIDADES_SOCORRO']
+      );
+
+      await DetalleSituacionModel.create({
+        situacion_id: situacionId,
+        tipo_detalle: 'AUTORIDADES_SOCORRO' as any,
+        datos: {
+          autoridades: autoridadesSeleccionadas || [],
+          detallesAutoridades: detallesAutoridades || {},
+          socorro: socorroSeleccionados || [],
+          detallesSocorro: detallesSocorro || {},
+        },
+        creado_por: userId,
+      });
+    }
+
+    // Guardar daños como detalle
+    if (danios_materiales !== undefined || danios_infraestructura !== undefined) {
+      await db.none(
+        'DELETE FROM detalle_situacion WHERE situacion_id = $1 AND tipo_detalle = $2',
+        [situacionId, 'DANIOS']
+      );
+
+      await DetalleSituacionModel.create({
+        situacion_id: situacionId,
+        tipo_detalle: 'DANIOS' as any,
+        datos: {
+          materiales: danios_materiales || false,
+          infraestructura: danios_infraestructura || false,
+          descripcion_infra: descripcion_danios_infra || '',
+        },
+        creado_por: userId,
+      });
+    }
+
+    // Guardar subtipo/tipo de incidente
+    if (tipoIncidente || subtipo_situacion) {
+      await db.none(
+        'DELETE FROM detalle_situacion WHERE situacion_id = $1 AND tipo_detalle = $2',
+        [situacionId, 'SUBTIPO']
+      );
+
+      await DetalleSituacionModel.create({
+        situacion_id: situacionId,
+        tipo_detalle: 'SUBTIPO' as any,
+        datos: {
+          subtipo: tipoIncidente || subtipo_situacion,
+        },
+        creado_por: userId,
+      });
+    }
+
     // Obtener situación completa
     const situacionCompleta = await SituacionModel.getById(situacion.id);
 
-    // TODO: Emitir evento WebSocket
-    // io.to('cop').emit('situacion:actualizada', situacionCompleta);
+    // Obtener detalles para la respuesta
+    const detalles = await DetalleSituacionModel.getBySituacionId(situacionId);
+
+    // Organizar detalles por tipo
+    const detallesOrganizados = {
+      vehiculos: detalles.filter(d => d.tipo_detalle === 'VEHICULO').map(d => d.datos),
+      gruas: detalles.filter(d => d.tipo_detalle === 'GRUA').map(d => d.datos),
+      ajustadores: detalles.filter(d => d.tipo_detalle === 'AJUSTADOR').map(d => d.datos),
+      autoridades_socorro: detalles.find(d => d.tipo_detalle === 'AUTORIDADES_SOCORRO')?.datos,
+      danios: detalles.find(d => d.tipo_detalle === 'DANIOS')?.datos,
+      subtipo: detalles.find(d => d.tipo_detalle === 'SUBTIPO')?.datos,
+    };
+
+    // Emitir evento WebSocket
+    if (situacionCompleta) {
+      const sc = situacionCompleta as any;
+      const evento: SituacionEvent = {
+        id: sc.id,
+        uuid: sc.uuid,
+        tipo_situacion: sc.tipo_situacion,
+        unidad_id: sc.unidad_id,
+        unidad_codigo: sc.unidad_codigo || `U-${sc.unidad_id}`,
+        ruta_codigo: sc.ruta_codigo,
+        km: sc.km,
+        latitud: sc.latitud,
+        longitud: sc.longitud,
+        estado: sc.estado,
+        sede_id: sc.sede_id,
+      };
+      emitSituacionActualizada(evento);
+    }
 
     return res.json({
       message: 'Situación actualizada exitosamente',
-      situacion: situacionCompleta,
+      situacion: { ...situacionCompleta, detalles: detallesOrganizados },
     });
   } catch (error) {
     console.error('Error en updateSituacion:', error);
@@ -357,8 +705,24 @@ export async function cerrarSituacion(req: Request, res: Response) {
     // Obtener situación completa
     const situacionCompleta = await SituacionModel.getById(situacion.id);
 
-    // TODO: Emitir evento WebSocket
-    // io.to('cop').emit('situacion:cerrada', situacionCompleta);
+    // Emitir evento WebSocket
+    if (situacionCompleta) {
+      const sc = situacionCompleta as any;
+      const evento: SituacionEvent = {
+        id: sc.id,
+        uuid: sc.uuid,
+        tipo_situacion: sc.tipo_situacion,
+        unidad_id: sc.unidad_id,
+        unidad_codigo: sc.unidad_codigo || `U-${sc.unidad_id}`,
+        ruta_codigo: sc.ruta_codigo,
+        km: sc.km,
+        latitud: sc.latitud,
+        longitud: sc.longitud,
+        estado: 'CERRADA',
+        sede_id: sc.sede_id,
+      };
+      emitSituacionCerrada(evento);
+    }
 
     return res.json({
       message: 'Situación cerrada exitosamente',
@@ -470,6 +834,99 @@ export async function deleteDetalle(req: Request, res: Response) {
 }
 
 // ========================================
+// CAMBIAR TIPO DE SITUACIÓN
+// ========================================
+
+/**
+ * Cambiar el tipo de una situación (INCIDENTE <-> ASISTENCIA_VEHICULAR)
+ * Solo permite cambios entre tipos relacionados y registra auditoría
+ */
+export async function cambiarTipoSituacion(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { nuevo_tipo, motivo } = req.body;
+    const userId = req.user!.userId;
+
+    // Validar que se proporcione el nuevo tipo
+    if (!nuevo_tipo) {
+      return res.status(400).json({ error: 'El nuevo tipo de situación es requerido' });
+    }
+
+    // Tipos permitidos para cambio
+    const tiposPermitidos = ['INCIDENTE', 'ASISTENCIA_VEHICULAR'];
+    if (!tiposPermitidos.includes(nuevo_tipo)) {
+      return res.status(400).json({
+        error: 'Solo se permite cambiar entre INCIDENTE y ASISTENCIA_VEHICULAR'
+      });
+    }
+
+    // Obtener la situación actual
+    const situacionActual = await SituacionModel.getById(parseInt(id, 10));
+    if (!situacionActual) {
+      return res.status(404).json({ error: 'Situación no encontrada' });
+    }
+
+    // Validar que el tipo actual sea uno de los permitidos
+    if (!tiposPermitidos.includes(situacionActual.tipo_situacion)) {
+      return res.status(400).json({
+        error: `No se puede cambiar el tipo de una situación ${situacionActual.tipo_situacion}. Solo INCIDENTE y ASISTENCIA_VEHICULAR.`
+      });
+    }
+
+    // Validar que no sea el mismo tipo
+    if (situacionActual.tipo_situacion === nuevo_tipo) {
+      return res.status(400).json({
+        error: `La situación ya es de tipo ${nuevo_tipo}`
+      });
+    }
+
+    // Guardar tipo anterior para auditoría
+    const tipoAnterior = situacionActual.tipo_situacion;
+
+    // Actualizar el tipo
+    const situacionActualizada = await SituacionModel.update(parseInt(id, 10), {
+      tipo_situacion: nuevo_tipo,
+      actualizado_por: userId,
+    });
+
+    // Registrar en auditoría (si existe la tabla)
+    try {
+      await db.none(`
+        INSERT INTO auditoria_cambios (
+          tabla, registro_id, campo, valor_anterior, valor_nuevo,
+          motivo, usuario_id, created_at
+        ) VALUES (
+          'situacion', $1, 'tipo_situacion', $2, $3, $4, $5, NOW()
+        )
+      `, [id, tipoAnterior, nuevo_tipo, motivo || 'Cambio de tipo de situación', userId]);
+    } catch (auditError) {
+      // Si la tabla de auditoría no existe, solo loguear
+      console.log('[AUDITORIA] Tabla auditoria_cambios no existe, cambio no registrado en auditoría');
+    }
+
+    // Obtener situación completa para devolver
+    const situacionCompleta = await SituacionModel.getById(situacionActualizada.id);
+
+    console.log(`[SITUACION] Tipo cambiado: ${tipoAnterior} -> ${nuevo_tipo} (ID: ${id}, Usuario: ${userId})`);
+
+    return res.json({
+      message: `Tipo de situación cambiado de ${tipoAnterior} a ${nuevo_tipo}`,
+      situacion: situacionCompleta,
+      cambio: {
+        tipo_anterior: tipoAnterior,
+        tipo_nuevo: nuevo_tipo,
+        motivo: motivo || null,
+        cambiado_por: userId,
+        fecha: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Error en cambiarTipoSituacion:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+// ========================================
 // RESUMEN DE UNIDADES (DASHBOARD)
 // ========================================
 
@@ -488,6 +945,7 @@ export async function getResumenUnidades(req: Request, res: Response) {
         u.codigo as unidad_codigo,
         u.tipo_unidad,
         u.placa,
+        u.sede_id,
         s.nombre as sede_nombre,
 
         -- Última situación
@@ -533,10 +991,11 @@ export async function getResumenUnidades(req: Request, res: Response) {
         ) as tripulacion
 
       FROM unidad u
+      JOIN salida_unidad sal ON u.id = sal.unidad_id AND sal.estado = 'EN_SALIDA'
       LEFT JOIN sede s ON u.sede_id = s.id
       LEFT JOIN v_ultima_situacion_unidad us ON u.id = us.unidad_id
       LEFT JOIN asignacion_unidad au ON u.id = au.unidad_id
-        AND au.turno_id = (SELECT id FROM turno WHERE fecha = CURRENT_DATE)
+        AND au.turno_id IN (SELECT id FROM turno WHERE fecha = CURRENT_DATE)
       LEFT JOIN turno t ON au.turno_id = t.id
       LEFT JOIN ruta ra ON au.ruta_activa_id = ra.id
       LEFT JOIN tripulacion_turno tt ON au.id = tt.asignacion_id
@@ -544,7 +1003,7 @@ export async function getResumenUnidades(req: Request, res: Response) {
       WHERE u.activa = true
         ${unidadesPermitidas !== null ? 'AND u.id = ANY($1::int[])' : ''}
       GROUP BY
-        u.id, u.codigo, u.tipo_unidad, u.placa, s.nombre,
+        u.id, u.codigo, u.tipo_unidad, u.placa, u.sede_id, s.nombre,
         us.situacion_id, us.situacion_uuid, us.tipo_situacion, us.estado,
         us.km, us.sentido, us.ruta_codigo, us.ruta_nombre, us.latitud, us.longitud,
         us.combustible, us.combustible_fraccion, us.kilometraje_unidad,

@@ -104,7 +104,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Tipo Vehículo *"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 mode="outlined"
                                 style={styles.input}
@@ -121,7 +121,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                             render={({ field: { onChange, value } }) => (
                                 <TextInput
                                     label="Color"
-                                    value={value}
+                                    value={value || ''}
                                     onChangeText={onChange}
                                     mode="outlined"
                                     style={[styles.input, styles.half]}
@@ -134,7 +134,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                             render={({ field: { onChange, value } }) => (
                                 <TextInput
                                     label="Marca"
-                                    value={value}
+                                    value={value || ''}
                                     onChangeText={onChange}
                                     mode="outlined"
                                     style={[styles.input, styles.half]}
@@ -153,9 +153,9 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                                 name={`vehiculos.${index}.placa_extranjera`}
                                 render={({ field: { onChange: onExtranjeroChange, value: esExtranjero } }) => (
                                     <PlacaInput
-                                        value={value}
+                                        value={value || ''}
                                         onChange={onChange}
-                                        esExtranjero={esExtranjero}
+                                        esExtranjero={esExtranjero || false}
                                         onExtranjeroChange={onExtranjeroChange}
                                     />
                                 )}
@@ -170,7 +170,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         name={`vehiculos.${index}.estado_piloto`}
                         defaultValue="ILESO"
                         render={({ field: { onChange, value } }) => (
-                            <RadioButton.Group onValueChange={onChange} value={value}>
+                            <RadioButton.Group onValueChange={onChange} value={value || 'ILESO'}>
                                 <View style={styles.radioContainer}>
                                     <RadioButton.Item label="Ileso" value="ILESO" mode="android" />
                                     <RadioButton.Item label="Herido" value="HERIDO" mode="android" />
@@ -216,7 +216,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="No. Tarjeta Circulación"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 keyboardType="numeric"
                                 mode="outlined"
@@ -231,7 +231,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="NIT Propietario"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 keyboardType="numeric"
                                 mode="outlined"
@@ -246,7 +246,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Nombre Propietario"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 mode="outlined"
                                 style={styles.input}
@@ -260,7 +260,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Dirección Propietario"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 mode="outlined"
                                 multiline
@@ -276,7 +276,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Modelo (Año)"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 keyboardType="numeric"
                                 mode="outlined"
@@ -305,7 +305,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Nombre Completo del Piloto"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 mode="outlined"
                                 style={styles.input}
@@ -319,7 +319,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         name={`vehiculos.${index}.licencia_tipo`}
                         render={({ field: { onChange, value } }) => (
                             <SegmentedButtons
-                                value={value}
+                                value={value || ''}
                                 onValueChange={onChange}
                                 buttons={[
                                     { value: 'A', label: 'A' },
@@ -342,7 +342,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="No. Licencia"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 keyboardType="numeric"
                                 mode="outlined"
@@ -359,7 +359,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Antigüedad Licencia (años)"
-                                value={value?.toString()}
+                                value={value?.toString() || ''}
                                 onChangeText={(text) => onChange(parseInt(text) || 0)}
                                 keyboardType="numeric"
                                 mode="outlined"
@@ -376,7 +376,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Etnia del Piloto"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 mode="outlined"
                                 placeholder="Ej: Ladino, Maya, Garífuna"
@@ -396,7 +396,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                     control={control}
                     name={`vehiculos.${index}.cargado`}
                     render={({ field: { onChange, value } }) => (
-                        <Switch value={value} onValueChange={onChange} />
+                        <Switch value={value || false} onValueChange={onChange} />
                     )}
                 />
             </View>
@@ -416,7 +416,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                             render={({ field: { onChange, value } }) => (
                                 <TextInput
                                     label="Tipo de Carga"
-                                    value={value}
+                                    value={value || ''}
                                     onChangeText={onChange}
                                     mode="outlined"
                                     placeholder="Ej: Granos, Materiales, Mercadería"
@@ -431,7 +431,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                             render={({ field: { onChange, value } }) => (
                                 <TextInput
                                     label="Descripción de Carga"
-                                    value={value}
+                                    value={value || ''}
                                     onChangeText={onChange}
                                     mode="outlined"
                                     multiline
@@ -453,7 +453,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                     control={control}
                     name={`vehiculos.${index}.tiene_contenedor`}
                     render={({ field: { onChange, value } }) => (
-                        <Switch value={value} onValueChange={onChange} />
+                        <Switch value={value || false} onValueChange={onChange} />
                     )}
                 />
             </View>
@@ -473,7 +473,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                             render={({ field: { onChange, value } }) => (
                                 <TextInput
                                     label="No. Contenedor/Remolque"
-                                    value={value}
+                                    value={value || ''}
                                     onChangeText={onChange}
                                     mode="outlined"
                                     style={styles.input}
@@ -487,7 +487,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                             render={({ field: { onChange, value } }) => (
                                 <TextInput
                                     label="Empresa Contenedor"
-                                    value={value}
+                                    value={value || ''}
                                     onChangeText={onChange}
                                     mode="outlined"
                                     placeholder="Ej: MAERSK, EVERGREEN"
@@ -508,7 +508,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                     control={control}
                     name={`vehiculos.${index}.es_bus`}
                     render={({ field: { onChange, value } }) => (
-                        <Switch value={value} onValueChange={onChange} />
+                        <Switch value={value || false} onValueChange={onChange} />
                     )}
                 />
             </View>
@@ -528,7 +528,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                             render={({ field: { onChange, value } }) => (
                                 <TextInput
                                     label="Empresa de Transporte"
-                                    value={value}
+                                    value={value || ''}
                                     onChangeText={onChange}
                                     mode="outlined"
                                     style={styles.input}
@@ -542,7 +542,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                             render={({ field: { onChange, value } }) => (
                                 <TextInput
                                     label="Ruta del Bus"
-                                    value={value}
+                                    value={value || ''}
                                     onChangeText={onChange}
                                     mode="outlined"
                                     placeholder="Ej: Guatemala - Quetzaltenango"
@@ -557,7 +557,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                             render={({ field: { onChange, value } }) => (
                                 <TextInput
                                     label="Cantidad de Pasajeros"
-                                    value={value?.toString()}
+                                    value={value?.toString() || ''}
                                     onChangeText={(text) => onChange(parseInt(text) || 0)}
                                     keyboardType="numeric"
                                     mode="outlined"
@@ -578,7 +578,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                     control={control}
                     name={`vehiculos.${index}.tiene_sancion`}
                     render={({ field: { onChange, value } }) => (
-                        <Switch value={value} onValueChange={onChange} />
+                        <Switch value={value || false} onValueChange={onChange} />
                     )}
                 />
             </View>
@@ -598,7 +598,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                             render={({ field: { onChange, value } }) => (
                                 <TextInput
                                     label="Artículo"
-                                    value={value}
+                                    value={value || ''}
                                     onChangeText={onChange}
                                     mode="outlined"
                                     placeholder="Ej: Art. 145, Art. 146"
@@ -613,7 +613,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                             render={({ field: { onChange, value } }) => (
                                 <TextInput
                                     label="Descripción de Sanción"
-                                    value={value}
+                                    value={value || ''}
                                     onChangeText={onChange}
                                     mode="outlined"
                                     multiline
@@ -630,7 +630,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                             render={({ field: { onChange, value } }) => (
                                 <TextInput
                                     label="Monto (Q)"
-                                    value={value?.toString()}
+                                    value={value?.toString() || ''}
                                     onChangeText={(text) => onChange(parseFloat(text) || 0)}
                                     keyboardType="decimal-pad"
                                     mode="outlined"

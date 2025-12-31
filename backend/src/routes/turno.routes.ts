@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getTurnoHoy,
+  getTurnoByFecha,
   getAsignacionesPendientes,
   getMiAsignacionHoy,
   createTurno,
@@ -20,18 +21,19 @@ const router = Router();
 
 // Rutas públicas (requieren autenticación básica)
 router.get('/hoy', authenticate, getTurnoHoy);
-router.get('/pendientes', authenticate, authorize('OPERACIONES', 'ADMIN'), getAsignacionesPendientes);
+router.get('/fecha/:fecha', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), getTurnoByFecha);
+router.get('/pendientes', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), getAsignacionesPendientes);
 router.get('/mi-asignacion-hoy', authenticate, getMiAsignacionHoy);
 
-// Crear turno (solo Operaciones y Admin)
-router.post('/', authenticate, authorize('OPERACIONES', 'ADMIN'), createTurno);
+// Crear turno (Operaciones, Admin y Encargado Nóminas)
+router.post('/', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), createTurno);
 
-// Crear asignación (solo Operaciones y Admin)
-router.post('/:id/asignaciones', authenticate, authorize('OPERACIONES', 'ADMIN'), createAsignacion);
+// Crear asignación (Operaciones, Admin y Encargado Nóminas)
+router.post('/:id/asignaciones', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), createAsignacion);
 
-// Actualizar y eliminar asignación (solo Operaciones y Admin)
-router.put('/asignaciones/:id', authenticate, authorize('OPERACIONES', 'ADMIN'), updateAsignacion);
-router.delete('/asignaciones/:id', authenticate, authorize('OPERACIONES', 'ADMIN'), deleteAsignacion);
+// Actualizar y eliminar asignación (Operaciones, Admin y Encargado Nóminas)
+router.put('/asignaciones/:id', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), updateAsignacion);
+router.delete('/asignaciones/:id', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), deleteAsignacion);
 
 // Marcar salida/entrada (Brigadas)
 router.post('/marcar-salida', authenticate, authorize('BRIGADA'), marcarSalida);

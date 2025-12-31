@@ -88,7 +88,7 @@ export async function getPersonalDeSede(req: Request, res: Response) {
 
 /**
  * GET /api/sedes/mi-sede
- * Obtener mi sede efectiva (considerando reasignaciones)
+ * Obtener mi sede efectiva (considerando múltiples fuentes)
  */
 export async function getMiSede(req: Request, res: Response) {
   try {
@@ -96,23 +96,60 @@ export async function getMiSede(req: Request, res: Response) {
       return res.status(401).json({ error: 'No autorizado' });
     }
 
-    // Obtener mi unidad asignada (que incluye sede)
+    // 1. Primero buscar en asignación permanente (brigada_unidad)
     const miUnidad: any = await SalidaModel.getMiUnidadAsignada(req.user.userId);
 
-    if (!miUnidad) {
-      return res.status(404).json({
-        error: 'No tienes unidad asignada'
+    if (miUnidad) {
+      return res.json({
+        mi_sede_id: miUnidad.mi_sede_id,
+        mi_sede_codigo: miUnidad.mi_sede_codigo,
+        mi_sede_nombre: miUnidad.mi_sede_nombre,
+        unidad_sede_id: miUnidad.unidad_sede_id,
+        unidad_sede_codigo: miUnidad.unidad_sede_codigo,
+        unidad_sede_nombre: miUnidad.unidad_sede_nombre
       });
     }
 
-    // Retornar información de mi sede
-    return res.json({
-      mi_sede_id: miUnidad.mi_sede_id,
-      mi_sede_codigo: miUnidad.mi_sede_codigo,
-      mi_sede_nombre: miUnidad.mi_sede_nombre,
-      unidad_sede_id: miUnidad.unidad_sede_id,
-      unidad_sede_codigo: miUnidad.unidad_sede_codigo,
-      unidad_sede_nombre: miUnidad.unidad_sede_nombre
+    // 2. Si no tiene asignación permanente, buscar en salida activa
+    const miSalida = await SalidaModel.getMiSalidaActiva(req.user.userId);
+
+    if (miSalida) {
+      // Obtener sede de la unidad en salida
+      const sedeInfo = await SalidaModel.getSedeDeUnidad(miSalida.unidad_id);
+      if (sedeInfo) {
+        return res.json({
+          mi_sede_id: sedeInfo.sede_id,
+          mi_sede_codigo: sedeInfo.sede_codigo,
+          mi_sede_nombre: sedeInfo.sede_nombre,
+          unidad_sede_id: sedeInfo.sede_id,
+          unidad_sede_codigo: sedeInfo.sede_codigo,
+          unidad_sede_nombre: sedeInfo.sede_nombre
+        });
+      }
+    }
+
+    // 3. Si no tiene salida activa, buscar la sede del propio usuario
+    const { db } = require('../config/database');
+    const userSede = await db.oneOrNone(`
+      SELECT u.sede_id as mi_sede_id, s.codigo as mi_sede_codigo, s.nombre as mi_sede_nombre
+      FROM usuario u
+      JOIN sede s ON u.sede_id = s.id
+      WHERE u.id = $1
+    `, [req.user.userId]);
+
+    if (userSede) {
+      return res.json({
+        mi_sede_id: userSede.mi_sede_id,
+        mi_sede_codigo: userSede.mi_sede_codigo,
+        mi_sede_nombre: userSede.mi_sede_nombre,
+        unidad_sede_id: userSede.mi_sede_id,
+        unidad_sede_codigo: userSede.mi_sede_codigo,
+        unidad_sede_nombre: userSede.mi_sede_nombre
+      });
+    }
+
+    return res.status(404).json({
+      error: 'No se encontró información de sede'
     });
   } catch (error) {
     console.error('Error en getMiSede:', error);

@@ -6,6 +6,10 @@ export interface JWTPayload {
   userId: number;
   rol: string;
   sede?: number;
+  puede_ver_todas_sedes?: boolean;
+  // Sub-rol COP (solo para usuarios COP)
+  sub_rol_cop_id?: number;
+  sub_rol_cop_codigo?: string;
 }
 
 export interface RefreshTokenPayload {

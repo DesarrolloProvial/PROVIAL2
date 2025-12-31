@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import { COLORS } from '../constants/colors';
 import { geografiaAPI } from '../services/api';
 
@@ -15,11 +15,13 @@ interface Props {
   onChange: (rutaId: number) => void;
   label?: string;
   required?: boolean;
+  showSearch?: boolean;
 }
 
-export default function RutaSelector({ value, onChange, label = 'Ruta', required = false }: Props) {
+export default function RutaSelector({ value, onChange, label = 'Ruta', required = false, showSearch = false }: Props) {
   const [rutas, setRutas] = useState<Ruta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState('');
 
   useEffect(() => {
     loadRutas();
@@ -46,6 +48,22 @@ export default function RutaSelector({ value, onChange, label = 'Ruta', required
     }
   };
 
+  // Filtrar rutas según el texto de búsqueda
+  const rutasFiltradas = useMemo(() => {
+    if (!searchText.trim()) return rutas;
+    const searchLower = searchText.toLowerCase().trim();
+    return rutas.filter(
+      (ruta) =>
+        ruta.codigo.toLowerCase().includes(searchLower) ||
+        ruta.nombre.toLowerCase().includes(searchLower)
+    );
+  }, [rutas, searchText]);
+
+  // Obtener la ruta seleccionada para mostrar info
+  const rutaSeleccionada = useMemo(() => {
+    return rutas.find((r) => r.id === value);
+  }, [rutas, value]);
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -65,12 +83,50 @@ export default function RutaSelector({ value, onChange, label = 'Ruta', required
         {required && <Text style={styles.required}> *</Text>}
       </Text>
 
+      {/* Mostrar ruta seleccionada actual */}
+      {rutaSeleccionada && (
+        <View style={styles.selectedInfo}>
+          <Text style={styles.selectedLabel}>Seleccionada:</Text>
+          <Text style={styles.selectedValue}>{rutaSeleccionada.codigo} - {rutaSeleccionada.nombre}</Text>
+        </View>
+      )}
+
+      {/* Campo de búsqueda */}
+      {showSearch && (
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar ruta por código o nombre..."
+            placeholderTextColor={COLORS.text.disabled}
+            value={searchText}
+            onChangeText={setSearchText}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchText.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={() => setSearchText('')}
+            >
+              <Text style={styles.clearButtonText}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {/* Contador de resultados */}
+      {showSearch && searchText.trim() && (
+        <Text style={styles.resultCount}>
+          {rutasFiltradas.length} ruta{rutasFiltradas.length !== 1 ? 's' : ''} encontrada{rutasFiltradas.length !== 1 ? 's' : ''}
+        </Text>
+      )}
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {rutas.map((ruta) => {
+        {rutasFiltradas.map((ruta) => {
           const isSelected = value === ruta.id;
 
           return (
@@ -102,6 +158,11 @@ export default function RutaSelector({ value, onChange, label = 'Ruta', required
             </TouchableOpacity>
           );
         })}
+        {rutasFiltradas.length === 0 && searchText.trim() && (
+          <View style={styles.noResultsContainer}>
+            <Text style={styles.noResultsText}>No se encontraron rutas</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -131,6 +192,57 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 14,
     color: COLORS.text.secondary,
+  },
+  selectedInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.success + '20',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.success,
+  },
+  selectedLabel: {
+    fontSize: 12,
+    color: COLORS.text.secondary,
+    marginRight: 4,
+  },
+  selectedValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.success,
+    flex: 1,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: COLORS.text.primary,
+  },
+  clearButton: {
+    padding: 4,
+    marginLeft: 4,
+  },
+  clearButtonText: {
+    fontSize: 16,
+    color: COLORS.text.secondary,
+  },
+  resultCount: {
+    fontSize: 12,
+    color: COLORS.text.secondary,
+    marginBottom: 8,
   },
   scrollContent: {
     gap: 8,
@@ -165,5 +277,17 @@ const styles = StyleSheet.create({
   optionNombreSelected: {
     color: COLORS.white,
     opacity: 0.9,
+  },
+  noResultsContainer: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.background,
+    borderRadius: 8,
+    minWidth: 200,
+    alignItems: 'center',
+  },
+  noResultsText: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
   },
 });

@@ -72,7 +72,7 @@ export default function SalidaDeSedeScreen() {
 
     // Validar campos opcionales
     if (kmSalida.trim()) {
-      const kmNum = parseFloat(kmSalida);
+      const kmNum = parseInt(kmSalida, 10);
       if (isNaN(kmNum) || kmNum < 0) {
         Alert.alert('Error', 'El kilometraje debe ser un número válido');
         return;
@@ -221,9 +221,9 @@ export default function SalidaDeSedeScreen() {
           <TextInput
             style={styles.input}
             value={kmSalida}
-            onChangeText={setKmSalida}
-            placeholder="Ej: 12345.6"
-            keyboardType="decimal-pad"
+            onChangeText={(text) => setKmSalida(text.replace(/[^0-9]/g, ''))}
+            placeholder="Ej: 125000"
+            keyboardType="number-pad"
             editable={!loading}
           />
           <Text style={styles.hint}>
@@ -290,7 +290,7 @@ export default function SalidaDeSedeScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={{ height: 40 }} />
+      <View style={{ height: 80 }} />
     </ScrollView>
   );
 }

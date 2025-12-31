@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // Convertir decimal a fracción para mostrar combustible
 const decimalToFraccion = (decimal: number | null): string => {
@@ -24,6 +25,7 @@ interface ResumenUnidad {
   unidad_codigo: string;
   tipo_unidad: string;
   placa: string;
+  sede_id: number | null;
   sede_nombre: string;
   situacion_id: number | null;
   tipo_situacion: string | null;
@@ -42,6 +44,19 @@ interface ResumenUnidad {
   }>;
 }
 
+// Colores por sede (mismo que en DashboardPage)
+const COLORES_SEDE: Record<number, string> = {
+  1: '#3B82F6', // Central - Azul
+  2: '#10B981', // Mazatenango - Verde
+  3: '#F59E0B', // Poptún - Amarillo
+  4: '#8B5CF6', // San Cristóbal - Púrpura
+  5: '#EC4899', // Quetzaltenango - Rosa
+  6: '#14B8A6', // Coatepeque - Teal
+  7: '#EF4444', // Palín - Rojo
+  8: '#6366F1', // Morales - Indigo
+  9: '#F97316', // Río Dulce - Naranja
+};
+
 interface Props {
   resumen: ResumenUnidad[];
   onSelectUnidad?: (unidadId: number) => void;
@@ -49,6 +64,8 @@ interface Props {
 
 export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props) {
   const [search, setSearch] = useState('');
+  const [soloActivas, setSoloActivas] = useState(true); // Por defecto, solo mostrar activas
+  const navigate = useNavigate();
 
   const formatHora = (fecha: string | null) => {
     if (!fecha) return '-';
@@ -79,14 +96,25 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
   };
 
   const filteredResumen = resumen.filter((u) => {
+    // Filtro de búsqueda
     const searchLower = search.toLowerCase();
-    return (
+    const matchesSearch =
       u.unidad_codigo.toLowerCase().includes(searchLower) ||
       u.tipo_unidad.toLowerCase().includes(searchLower) ||
       u.sede_nombre?.toLowerCase().includes(searchLower) ||
-      u.placa?.toLowerCase().includes(searchLower)
-    );
+      u.placa?.toLowerCase().includes(searchLower);
+
+    // Filtro de solo activas (unidades con situación activa)
+    const isActiva = u.situacion_estado === 'ACTIVA' || u.tipo_situacion !== null;
+
+    if (soloActivas) {
+      return matchesSearch && isActiva;
+    }
+    return matchesSearch;
   });
+
+  // Contar unidades activas para el contador
+  const unidadesActivas = resumen.filter(u => u.situacion_estado === 'ACTIVA' || u.tipo_situacion !== null).length;
 
   return (
     <div className="bg-white rounded-lg shadow">
@@ -96,17 +124,34 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
           <h2 className="text-xl font-semibold text-gray-800">
             Resumen de Unidades
           </h2>
-          <span className="text-sm text-gray-500">
-            {filteredResumen.length} de {resumen.length} unidades
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500">
+              {filteredResumen.length} de {resumen.length} unidades
+              {soloActivas && ` (${unidadesActivas} activas)`}
+            </span>
+          </div>
         </div>
-        <input
-          type="text"
-          placeholder="Buscar unidad, tipo, sede..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
+        <div className="flex gap-2 mb-2">
+          <input
+            type="text"
+            placeholder="Buscar unidad, tipo, sede..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          {/* Toggle para mostrar solo activas */}
+          <button
+            onClick={() => setSoloActivas(!soloActivas)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              soloActivas
+                ? 'bg-green-600 text-white hover:bg-green-700'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            title={soloActivas ? 'Mostrando solo activas' : 'Mostrando todas'}
+          >
+            {soloActivas ? 'Solo Activas' : 'Ver Todas'}
+          </button>
+        </div>
       </div>
 
       {/* Tabla */}
@@ -135,29 +180,40 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Última Hora
               </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Acciones
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredResumen.map((unidad) => (
               <tr
                 key={unidad.unidad_id}
-                onClick={() => onSelectUnidad?.(unidad.unidad_id)}
+                onClick={() => navigate(`/bitacora/${unidad.unidad_id}`)}
                 className="hover:bg-gray-50 cursor-pointer transition"
               >
                 {/* Unidad */}
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {unidad.unidad_codigo}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {unidad.tipo_unidad}
-                    </div>
-                    {unidad.sede_nombre && (
-                      <div className="text-xs text-gray-400">
-                        {unidad.sede_nombre}
+                  <div className="flex items-start gap-2">
+                    {/* Indicador de color de sede */}
+                    <div
+                      className="w-2 h-full min-h-[40px] rounded-full flex-shrink-0"
+                      style={{ backgroundColor: unidad.sede_id ? COLORES_SEDE[unidad.sede_id] || '#6B7280' : '#6B7280' }}
+                      title={unidad.sede_nombre || 'Sin sede'}
+                    />
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {unidad.unidad_codigo}
                       </div>
-                    )}
+                      <div className="text-xs text-gray-500">
+                        {unidad.tipo_unidad}
+                      </div>
+                      {unidad.sede_nombre && (
+                        <div className="text-xs" style={{ color: unidad.sede_id ? COLORES_SEDE[unidad.sede_id] : '#6B7280' }}>
+                          {unidad.sede_nombre}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </td>
 
@@ -250,6 +306,19 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
                   <div className="text-sm text-gray-900">
                     {formatHora(unidad.situacion_fecha)}
                   </div>
+                </td>
+
+                {/* Acciones */}
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // Evitar navegar a bitácora
+                      onSelectUnidad?.(unidad.unidad_id);
+                    }}
+                    className="text-green-600 hover:text-green-900 text-sm font-medium"
+                  >
+                    📍 Ver en mapa
+                  </button>
                 </td>
               </tr>
             ))}

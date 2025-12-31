@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../services/api';
+import api, { geografiaAPI } from '../../services/api';
 import * as Location from 'expo-location';
 import { useDraftSave } from '../../hooks/useDraftSave';
 import {
@@ -13,7 +13,7 @@ import {
     TextInput,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { COLORS } from '../../constants/colors';
 import {
     TIPOS_HECHO_TRANSITO,
@@ -30,15 +30,49 @@ import { Provider as PaperProvider, SegmentedButtons, TextInput as PaperInput, B
 import { VehiculoForm } from '../../components/VehiculoForm';
 import { GruaForm } from '../../components/GruaForm';
 import { AjustadorForm } from '../../components/AjustadorForm';
+import MultimediaCapture from '../../components/MultimediaCapture';
+
+interface Departamento {
+    id: number;
+    nombre: string;
+    codigo: string;
+}
+
+interface Municipio {
+    id: number;
+    nombre: string;
+    departamento_id: number;
+}
+
+type IncidenteScreenRouteProp = RouteProp<{
+    IncidenteScreen: {
+        editMode?: boolean;
+        incidenteId?: number;
+        situacionId?: number;
+    };
+}, 'IncidenteScreen'>;
 
 export default function IncidenteScreen() {
     const navigation = useNavigation();
+    const route = useRoute<IncidenteScreenRouteProp>();
+    const { editMode, incidenteId, situacionId: situacionIdParam } = route.params || {};
+
+    // Estado para situacionId (se obtiene del param o después de crear)
+    const [situacionId, setSituacionId] = useState<number | null>(situacionIdParam || null);
+    const [multimediaComplete, setMultimediaComplete] = useState(false);
+
     const { salidaActiva } = useAuthStore();
     const { testModeEnabled } = useTestMode();
+    const [loadingData, setLoadingData] = useState(false);
 
     // Coordenadas manuales para modo pruebas
     const [latitudManual, setLatitudManual] = useState('14.6349');
     const [longitudManual, setLongitudManual] = useState('-90.5069');
+
+    // Departamentos y Municipios
+    const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
+    const [municipios, setMunicipios] = useState<Municipio[]>([]);
+    const [loadingGeo, setLoadingGeo] = useState(false);
 
     // Form Setup
     const { control, handleSubmit, setValue, watch, reset, getValues } = useForm({
@@ -59,8 +93,9 @@ export default function IncidenteScreen() {
             descripcionDaniosInfra: '',
             obstruye: '',
             observaciones: '',
-            jurisdiccion: '', // New field
-            direccion_detallada: '', // New field
+            departamento_id: null as number | null,
+            municipio_id: null as number | null,
+            direccion_detallada: '',
             coordenadas: null,
         }
     });
@@ -70,6 +105,45 @@ export default function IncidenteScreen() {
         // Note: rutaId se obtiene dinámicamente desde salidaActiva, no se necesita asignar en el form
         // La ruta se mostrará solo como información de solo lectura
     }, [salidaActiva]);
+
+    // Cargar departamentos al iniciar
+    useEffect(() => {
+        const loadDepartamentos = async () => {
+            try {
+                const data = await geografiaAPI.getDepartamentos();
+                setDepartamentos(data);
+            } catch (error) {
+                console.error('Error cargando departamentos:', error);
+            }
+        };
+        loadDepartamentos();
+    }, []);
+
+    // Watcher para departamento
+    const departamentoId = watch('departamento_id');
+
+    // Cargar municipios cuando cambie el departamento
+    useEffect(() => {
+        const loadMunicipios = async () => {
+            if (departamentoId) {
+                setLoadingGeo(true);
+                try {
+                    const data = await geografiaAPI.getMunicipiosPorDepartamento(departamentoId);
+                    setMunicipios(data);
+                } catch (error) {
+                    console.error('Error cargando municipios:', error);
+                    setMunicipios([]);
+                } finally {
+                    setLoadingGeo(false);
+                }
+            } else {
+                setMunicipios([]);
+            }
+            // Limpiar municipio si cambia el departamento
+            setValue('municipio_id', null);
+        };
+        loadMunicipios();
+    }, [departamentoId]);
 
     const { fields: vehiculoFields, append: appendVehiculo, remove: removeVehiculo } = useFieldArray({
         control,
@@ -103,24 +177,89 @@ export default function IncidenteScreen() {
     const { loadDraft, clearDraft } = useDraftSave(
         'draft_incidente_v2',
         draftData,
-        { enabled: !guardando }
+        { enabled: !guardando && !editMode }
     );
 
     useEffect(() => {
         // Auto-restaurar borrador sin diálogo de confirmación
         const loadPreviousDraft = async () => {
-            const draft = await loadDraft();
-            if (draft) {
-                console.log('[DRAFT] Auto-restaurando borrador de incidente');
-                reset(draft);
+            if (editMode && incidenteId) {
+                // Modo edición: Cargar datos del servidor
+                setLoadingData(true);
+                try {
+                    const response = await api.get(`/incidentes/${incidenteId}`);
+                    const incidente = response.data.incidente;
+
+                    // Mapear datos al formulario
+                    const TIPO_HECHO_NOMBRES: Record<number, string> = {
+                        1: 'Accidente Vial',
+                        2: 'Vehículo Avariado',
+                        3: 'Obstáculo',
+                        4: 'Regulación de Tránsito',
+                        5: 'Trabajos en la Vía',
+                        6: 'Manifestación',
+                        7: 'Evento',
+                        8: 'Otro',
+                    };
+
+                    const formData = {
+                        tipoIncidente: TIPO_HECHO_NOMBRES[incidente.tipo_hecho_id] || 'Otro',
+                        rutaId: incidente.ruta_id,
+                        km: incidente.km?.toString() || '',
+                        sentido: incidente.sentido,
+                        vehiculos: incidente.vehiculos || [],
+                        gruas: incidente.recursos?.filter((r: any) => r.tipo_recurso === 'GRUA') || [],
+                        ajustadores: incidente.recursos?.filter((r: any) => r.tipo_recurso === 'AJUSTADOR') || [],
+                        autoridadesSeleccionadas: [], // TODO: Mapear si backend devuelve esto estructurado
+                        detallesAutoridades: {},
+                        socorroSeleccionado: [],
+                        detallesSocorro: {},
+                        daniosMateriales: incidente.danios_materiales || false,
+                        daniosInfraestructura: incidente.danios_infraestructura || false,
+                        descripcionDaniosInfra: incidente.danios_infraestructura_desc || '',
+                        obstruye: incidente.obstruccion ? 'SI' : 'NO', // Simplificado
+                        observaciones: incidente.observaciones_iniciales || '',
+                        departamento_id: null, // Se necesita lógica para obtener esto de geoviews o incidente
+                        municipio_id: null,
+                        direccion_detallada: incidente.direccion_detallada || '',
+                        coordenadas: {
+                            latitud: parseFloat(incidente.latitud),
+                            longitud: parseFloat(incidente.longitud)
+                        },
+                    };
+
+                    reset(formData);
+
+                    // Set GPS manually
+                    setCoordenadas({
+                        latitud: parseFloat(incidente.latitud),
+                        longitud: parseFloat(incidente.longitud)
+                    });
+                    setLatitudManual(incidente.latitud.toString());
+                    setLongitudManual(incidente.longitud.toString());
+
+                } catch (error) {
+                    console.error('Error cargando incidente:', error);
+                    Alert.alert('Error', 'No se pudieron cargar los datos del incidente');
+                } finally {
+                    setLoadingData(false);
+                }
+            } else {
+                // Modo creación: Cargar borrador
+                const draft = await loadDraft();
+                if (draft) {
+                    console.log('[DRAFT] Auto-restaurando borrador de incidente');
+                    reset(draft);
+                }
             }
         };
         loadPreviousDraft();
-        // Solo obtener GPS automatico si NO esta en modo pruebas
-        if (!testModeEnabled) {
+
+        // Solo obtener GPS automatico si NO esta en modo pruebas y NO es edicion
+        if (!testModeEnabled && !editMode) {
             obtenerUbicacion();
         }
-    }, [testModeEnabled]);
+    }, [testModeEnabled, editMode, incidenteId]);
 
     const obtenerUbicacion = async () => {
         try {
@@ -143,15 +282,13 @@ export default function IncidenteScreen() {
     };
 
     const onSubmit = async (data: any) => {
-        // Validar que haya salida activa y ruta
-        if (!salidaActiva) {
+        // Validaciones...
+        if (!editMode && !salidaActiva) {
             Alert.alert('Error', 'No hay salida activa. Debes iniciar una salida primero.');
             return;
         }
-        if (!salidaActiva.ruta_codigo) {
-            Alert.alert('Error', 'No tienes ruta asignada. Ve a "Cambio de Ruta" para asignar una ruta primero.');
-            return;
-        }
+        // En edit mode, ruta puede venir de los datos cargados, no estrictamente salida activa
+
         if (!data.tipoIncidente || !data.km) {
             Alert.alert('Error', 'Complete los campos obligatorios (Tipo, Km)');
             return;
@@ -160,9 +297,18 @@ export default function IncidenteScreen() {
             Alert.alert('Error', 'Debe agregar al menos un vehículo');
             return;
         }
-        // Determinar coordenadas segun modo
-        const latFinal = testModeEnabled ? parseFloat(latitudManual) : coordenadas?.latitud;
-        const lonFinal = testModeEnabled ? parseFloat(longitudManual) : coordenadas?.longitud;
+
+        // Determinar coordenadas
+        let latFinal, lonFinal;
+        if (editMode) {
+            // En edicion mantenemos las coordenadas originales a menos que se cambien explicitamente (TODO: UI para cambiar)
+            // Por ahora usamos las cargadas o manuales
+            latFinal = coordenadas?.latitud;
+            lonFinal = coordenadas?.longitud;
+        } else {
+            latFinal = testModeEnabled ? parseFloat(latitudManual) : coordenadas?.latitud;
+            lonFinal = testModeEnabled ? parseFloat(longitudManual) : coordenadas?.longitud;
+        }
 
         if (!latFinal || !lonFinal || isNaN(latFinal) || isNaN(lonFinal)) {
             Alert.alert('Error', 'Se requieren coordenadas GPS válidas');
@@ -189,21 +335,28 @@ export default function IncidenteScreen() {
                 latitud: latFinal,
                 longitud: lonFinal,
                 ubicacion_manual: testModeEnabled,
-                unidad_id: salidaActiva.unidad_id,
-                salida_unidad_id: salidaActiva.salida_id,
+                // Si es edicion, no necesitamos estos IDs si ya existen, pero el backend los puede ignorar
+                unidad_id: salidaActiva?.unidad_id,
+                salida_unidad_id: salidaActiva?.salida_id,
                 tipo_hecho_id: TIPO_HECHO_IDS[data.tipoIncidente] || 8,
-                ruta_id: salidaActiva.ruta_id,
+                ruta_id: salidaActiva?.ruta_id || data.rutaId,
                 km: parseFloat(data.km),
+                observaciones_iniciales: data.observaciones, // Map observaciones
             };
 
-            console.log('Enviando incidente:', incidenteData);
+            console.log(editMode ? 'Actualizando incidente:' : 'Enviando incidente:', incidenteData);
 
-            await api.post('/incidentes', incidenteData);
-
-            await clearDraft();
-            Alert.alert('Éxito', 'Incidente registrado', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+            if (editMode && incidenteId) {
+                await api.patch(`/incidentes/${incidenteId}`, incidenteData);
+                Alert.alert('Éxito', 'Incidente actualizado', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+            } else {
+                await api.post('/incidentes', incidenteData);
+                await clearDraft();
+                Alert.alert('Éxito', 'Incidente registrado', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+            }
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'No se pudo guardar');
+            console.error(error);
+            Alert.alert('Error', error.response?.data?.error || error.message || 'No se pudo guardar');
         } finally {
             setGuardando(false);
         }
@@ -221,6 +374,7 @@ export default function IncidenteScreen() {
                             { value: 'vehiculos', label: 'Vehículos' },
                             { value: 'recursos', label: 'Recursos' },
                             { value: 'otros', label: 'Otros' },
+                            { value: 'evidencia', label: 'Evidencia', disabled: !situacionId },
                         ]}
                     />
                 </View>
@@ -298,7 +452,7 @@ export default function IncidenteScreen() {
                                     control={control}
                                     name="km"
                                     render={({ field: { onChange, value } }) => (
-                                        <PaperInput label="Kilómetro *" value={value} onChangeText={onChange} keyboardType="numeric" style={[styles.input, styles.half]} />
+                                        <PaperInput label="Kilómetro *" value={value || ''} onChangeText={onChange} keyboardType="numeric" style={[styles.input, styles.half]} />
                                     )}
                                 />
                                 <Controller
@@ -307,7 +461,7 @@ export default function IncidenteScreen() {
                                     render={({ field: { onChange, value } }) => (
                                         <View style={[styles.pickerContainer, styles.half]}>
                                             <Text>Sentido</Text>
-                                            <Picker selectedValue={value} onValueChange={onChange}>
+                                            <Picker selectedValue={value || ''} onValueChange={onChange}>
                                                 <Picker.Item label="Seleccionar..." value="" />
                                                 {SENTIDOS.map(s => <Picker.Item key={s.value} label={s.label} value={s.value} />)}
                                             </Picker>
@@ -316,11 +470,64 @@ export default function IncidenteScreen() {
                                 />
                             </View>
 
+                            {/* Departamento */}
+                            <Text style={styles.label}>Departamento</Text>
                             <Controller
                                 control={control}
-                                name="jurisdiccion"
+                                name="departamento_id"
                                 render={({ field: { onChange, value } }) => (
-                                    <PaperInput label="Jurisdicción (Muni/Depto)" value={value} onChangeText={onChange} style={styles.input} />
+                                    <View style={styles.pickerContainer}>
+                                        <Picker
+                                            selectedValue={value}
+                                            onValueChange={onChange}
+                                            style={styles.picker}
+                                        >
+                                            <Picker.Item label="Seleccione departamento" value={null} />
+                                            {departamentos.map((dep) => (
+                                                <Picker.Item key={dep.id} label={dep.nombre} value={dep.id} />
+                                            ))}
+                                        </Picker>
+                                    </View>
+                                )}
+                            />
+
+                            {/* Municipio */}
+                            <Text style={styles.label}>Municipio</Text>
+                            <Controller
+                                control={control}
+                                name="municipio_id"
+                                render={({ field: { onChange, value } }) => (
+                                    <View style={styles.pickerContainer}>
+                                        <Picker
+                                            selectedValue={value}
+                                            onValueChange={onChange}
+                                            style={styles.picker}
+                                            enabled={municipios.length > 0 && !loadingGeo}
+                                        >
+                                            <Picker.Item
+                                                label={loadingGeo ? "Cargando..." : (municipios.length === 0 ? "Seleccione departamento primero" : "Seleccione municipio")}
+                                                value={null}
+                                            />
+                                            {municipios.map((mun) => (
+                                                <Picker.Item key={mun.id} label={mun.nombre} value={mun.id} />
+                                            ))}
+                                        </Picker>
+                                    </View>
+                                )}
+                            />
+
+                            {/* Dirección detallada */}
+                            <Controller
+                                control={control}
+                                name="direccion_detallada"
+                                render={({ field: { onChange, value } }) => (
+                                    <PaperInput
+                                        label="Dirección o Referencia (opcional)"
+                                        value={value || ''}
+                                        onChangeText={onChange}
+                                        style={styles.input}
+                                        placeholder="Ej: Km 45.5, frente a gasolinera..."
+                                    />
                                 )}
                             />
 
@@ -343,7 +550,19 @@ export default function IncidenteScreen() {
                                     onRemove={() => removeVehiculo(index)}
                                 />
                             ))}
-                            <Button mode="contained" onPress={() => appendVehiculo({})} icon="plus" style={styles.addButton}>
+                            <Button mode="contained" onPress={() => appendVehiculo({
+                                tipo_vehiculo: '',
+                                color: '',
+                                marca: '',
+                                placa: '',
+                                placa_extranjera: false,
+                                estado_piloto: 'ILESO',
+                                personas_asistidas: 0,
+                                cargado: false,
+                                tiene_contenedor: false,
+                                es_bus: false,
+                                tiene_sancion: false,
+                            })} icon="plus" style={styles.addButton}>
                                 Agregar Vehículo
                             </Button>
                         </View>
@@ -401,7 +620,7 @@ export default function IncidenteScreen() {
                                     control={control}
                                     name="daniosMateriales"
                                     render={({ field: { onChange, value } }) => (
-                                        <Switch value={value} onValueChange={onChange} />
+                                        <Switch value={value || false} onValueChange={onChange} />
                                     )}
                                 />
                             </View>
@@ -412,7 +631,7 @@ export default function IncidenteScreen() {
                                     control={control}
                                     name="daniosInfraestructura"
                                     render={({ field: { onChange, value } }) => (
-                                        <Switch value={value} onValueChange={onChange} />
+                                        <Switch value={value || false} onValueChange={onChange} />
                                     )}
                                 />
                             </View>
@@ -422,7 +641,7 @@ export default function IncidenteScreen() {
                                     control={control}
                                     name="descripcionDaniosInfra"
                                     render={({ field: { onChange, value } }) => (
-                                        <PaperInput label="Descripción Daños" value={value} onChangeText={onChange} multiline style={styles.input} />
+                                        <PaperInput label="Descripción Daños" value={value || ''} onChangeText={onChange} multiline style={styles.input} />
                                     )}
                                 />
                             )}
@@ -432,18 +651,45 @@ export default function IncidenteScreen() {
                                 control={control}
                                 name="observaciones"
                                 render={({ field: { onChange, value } }) => (
-                                    <PaperInput label="Observaciones" value={value} onChangeText={onChange} multiline numberOfLines={4} style={styles.textArea} />
+                                    <PaperInput label="Observaciones" value={value || ''} onChangeText={onChange} multiline numberOfLines={4} style={styles.textArea} />
                                 )}
                             />
+                        </View>
+                    )}
+
+                    {activeTab === 'evidencia' && situacionId && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Evidencia Fotográfica y Video</Text>
+                            <Text style={{ color: COLORS.gray[500], marginBottom: 12, fontSize: 13 }}>
+                                Se requieren 3 fotos y 1 video para completar la documentación del incidente.
+                            </Text>
+                            <MultimediaCapture
+                                situacionId={situacionId}
+                                tipoSituacion="INCIDENTE"
+                                onComplete={setMultimediaComplete}
+                                location={coordenadas ? { latitude: coordenadas.latitud, longitude: coordenadas.longitud } : undefined}
+                            />
+                        </View>
+                    )}
+
+                    {activeTab === 'evidencia' && !situacionId && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Evidencia Fotográfica y Video</Text>
+                            <View style={{ padding: 20, backgroundColor: COLORS.gray[100], borderRadius: 8, alignItems: 'center' }}>
+                                <Text style={{ color: COLORS.gray[600], textAlign: 'center' }}>
+                                    Primero guarda el incidente para poder agregar fotos y video.
+                                </Text>
+                            </View>
                         </View>
                     )}
 
                     <View style={styles.buttonContainer}>
                         <Button mode="outlined" onPress={() => navigation.goBack()} style={styles.button}>Cancelar</Button>
                         <Button mode="contained" onPress={handleSubmit(onSubmit)} loading={guardando} disabled={guardando} style={styles.button}>
-                            Guardar Incidente
+                            {editMode ? 'Actualizar Incidente' : 'Guardar Incidente'}
                         </Button>
                     </View>
+                    <View style={{ height: 80 }} />
                 </ScrollView>
             </View>
         </PaperProvider>
@@ -456,7 +702,9 @@ const styles = StyleSheet.create({
     content: { padding: 16 },
     section: { marginBottom: 24 },
     sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12, color: COLORS.text.primary },
+    label: { fontSize: 14, fontWeight: '500', color: COLORS.text.primary, marginBottom: 6, marginTop: 8 },
     input: { marginBottom: 10, backgroundColor: '#fff' },
+    picker: { color: COLORS.text.primary },
     pickerContainer: { borderWidth: 1, borderColor: '#ddd', borderRadius: 5, marginBottom: 10, padding: 5, backgroundColor: '#fff' },
     row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
     half: { width: '48%' },

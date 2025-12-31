@@ -160,7 +160,7 @@ export async function crearSolicitudSalida(req: Request, res: Response) {
         // TODO: Enviar notificaciones push a todos los tripulantes
         // excepto al solicitante
         const tripulantesANotificar = tripulacion.rows.filter(
-            t => t.usuario_id !== usuario.id
+            (t: any) => t.usuario_id !== usuario.id
         );
 
         res.status(201).json({
@@ -361,7 +361,7 @@ export async function autorizarSolicitud(req: Request, res: Response) {
 
         if (aprobacionAutomatica.rows[0].puede_aprobar) {
             // ¡Todos autorizaron! Crear la salida real
-            await aprobarSalidaAutomaticamente(client, id, solicitud, req);
+            await aprobarSalidaAutomaticamente(client, parseInt(id), solicitud, req);
         }
 
         await client.query('COMMIT');
@@ -431,7 +431,7 @@ export async function aprobarSalidaManualmente(req: Request, res: Response) {
         }
 
         // Aprobar manualmente
-        await aprobarSalidaAutomaticamente(client, id, solicitud, req, true, usuario.id, tipo_aprobacion || usuario.rol);
+        await aprobarSalidaAutomaticamente(client, parseInt(id), solicitud, req, true, usuario.id, tipo_aprobacion || usuario.rol);
 
         await client.query('COMMIT');
 

@@ -6,8 +6,11 @@ import {
   getTripulacion,
   // Salidas
   getMiSalidaActiva,
+  getMiSalidaHoy,
   iniciarSalida,
   finalizarSalida,
+  finalizarMiSalida,
+  finalizarJornadaCompleta,
   cambiarRuta,
   getSalida,
   getUnidadesEnSalida,
@@ -41,6 +44,9 @@ router.get('/tripulacion/:unidadId', authenticate, getTripulacion);
 // Mi salida activa (Brigada)
 router.get('/mi-salida-activa', authenticate, authorize('BRIGADA'), getMiSalidaActiva);
 
+// Mi salida de hoy (activa o finalizada) con resumen de situaciones (Brigada)
+router.get('/mi-salida-hoy', authenticate, authorize('BRIGADA'), getMiSalidaHoy);
+
 // Iniciar salida (Brigada)
 router.post('/iniciar', authenticate, authorize('BRIGADA'), iniciarSalida);
 
@@ -50,7 +56,13 @@ router.post('/cambiar-ruta', authenticate, authorize('BRIGADA'), cambiarRuta);
 // Editar datos de salida (km y combustible iniciales) (Brigada)
 router.patch('/editar-datos-salida', authenticate, authorize('BRIGADA'), editarDatosSalida);
 
-// Finalizar salida (Brigada, COP, Operaciones, Admin)
+// Finalizar mi salida activa (Brigada) - sin ID
+router.post('/finalizar', authenticate, authorize('BRIGADA'), finalizarMiSalida);
+
+// Finalizar jornada completa (Brigada) - limpia tablas operacionales
+router.post('/finalizar-jornada', authenticate, authorize('BRIGADA'), finalizarJornadaCompleta);
+
+// Finalizar salida por ID (Brigada, COP, Operaciones, Admin)
 router.post('/:id/finalizar', authenticate, authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN'), finalizarSalida);
 
 // Obtener info de una salida

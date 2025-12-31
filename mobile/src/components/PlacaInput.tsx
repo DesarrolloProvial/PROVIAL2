@@ -49,8 +49,9 @@ export const PlacaInput: React.FC<PlacaInputProps> = ({
   // Consultar endpoint de inteligencia cuando placa es válida
   useEffect(() => {
     const checkVehiculoReincidente = async () => {
+      const safeVal = value || '';
       // Solo consultar si la placa es válida y no es extranjera
-      if (!localExtranjero && PLACA_REGEX.test(value)) {
+      if (!localExtranjero && PLACA_REGEX.test(safeVal)) {
         setIsChecking(true);
         try {
           // Usar el nuevo endpoint /intelligence/vehiculo/:placa
@@ -109,9 +110,10 @@ export const PlacaInput: React.FC<PlacaInputProps> = ({
     }
   };
 
-  // Validación
-  const isValid = localExtranjero || PLACA_REGEX.test(value) || value === '';
-  const showError = value.length > 0 && !isValid;
+  // Validación - asegurar que value nunca sea undefined
+  const safeValue = value || '';
+  const isValid = localExtranjero || PLACA_REGEX.test(safeValue) || safeValue === '';
+  const showError = safeValue.length > 0 && !isValid;
 
   // Color del nivel de riesgo
   const getRiskColor = (nivel: number) => {
@@ -134,7 +136,7 @@ export const PlacaInput: React.FC<PlacaInputProps> = ({
     <View style={styles.container}>
       <TextInput
         label={label}
-        value={value}
+        value={safeValue}
         onChangeText={onChange}
         autoCapitalize="characters"
         maxLength={7}
@@ -142,14 +144,14 @@ export const PlacaInput: React.FC<PlacaInputProps> = ({
         mode="outlined"
         error={showError || !!error}
         right={
-          isValid && value.length > 0 && !localExtranjero ? (
+          isValid && safeValue.length > 0 && !localExtranjero ? (
             <TextInput.Icon icon="check-circle" color="#4caf50" />
           ) : undefined
         }
         style={[
           styles.input,
           showError && styles.inputError,
-          isValid && value.length > 0 && styles.inputValid
+          isValid && safeValue.length > 0 && styles.inputValid
         ]}
       />
 

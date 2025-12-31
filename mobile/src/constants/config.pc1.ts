@@ -2,7 +2,7 @@
 // Red: 172.20.10.4
 
 // API Configuration
-export const API_URL = 'http://172.20.10.4:3001/api';
+export const API_URL = 'http://172.20.10.4:3000/api';
 
 // Configuración de timeouts
 export const REQUEST_TIMEOUT = 10000; // 10 segundos

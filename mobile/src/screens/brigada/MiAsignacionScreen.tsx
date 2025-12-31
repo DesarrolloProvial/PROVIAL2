@@ -172,7 +172,7 @@ export default function MiAsignacionScreen() {
     }
   };
 
-  const miTripulacion = asignacion?.tripulacion.find(t => t.usuario_id === miUsuarioId);
+  const miTripulacion = asignacion?.tripulacion?.find(t => t.usuario_id === miUsuarioId);
   const esComandante = asignacion?.comandante_usuario_id === miUsuarioId;
 
   if (loading) {
@@ -260,9 +260,9 @@ export default function MiAsignacionScreen() {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardIcon}>👥</Text>
-          <Text style={styles.cardTitle}>Tripulación ({asignacion.tripulacion.length})</Text>
+          <Text style={styles.cardTitle}>Tripulación ({asignacion.tripulacion?.length || 0})</Text>
         </View>
-        {asignacion.tripulacion.map((tripulante) => (
+        {(asignacion.tripulacion || []).map((tripulante) => (
           <View key={tripulante.usuario_id} style={styles.tripulanteRow}>
             <View style={styles.tripulanteInfo}>
               <Text style={styles.tripulanteIcon}>
@@ -373,7 +373,7 @@ export default function MiAsignacionScreen() {
         </View>
       )}
 
-      <View style={{ height: 40 }} />
+      <View style={{ height: 80 }} />
     </ScrollView>
   );
 }

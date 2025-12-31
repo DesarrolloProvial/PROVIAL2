@@ -14,9 +14,9 @@ import {
   CheckCircle,
   MapPin,
   Clock,
-  Sparkles,
   Edit2,
   Trash2,
+  LogOut,
 } from 'lucide-react';
 
 export default function OperacionesPage() {
@@ -24,15 +24,20 @@ export default function OperacionesPage() {
   const navigate = useNavigate();
   const [vistaActual, setVistaActual] = useState<'dashboard' | 'brigadas' | 'unidades'>('dashboard');
 
+  // Solo ENCARGADO_NOMINAS Central o ADMIN puede ver el panel de admin
+  const esAdminCentral = (user?.rol === 'ENCARGADO_NOMINAS' && user?.puede_ver_todas_sedes) || user?.rol === 'ADMIN';
+
   // Obtener datos del dashboard
   const {
     data: dashboardData,
     isLoading: loadingDashboard,
+    isError: errorDashboard,
     refetch: refetchDashboard
   } = useQuery({
     queryKey: ['operaciones-dashboard'],
     queryFn: () => operacionesService.getDashboard(),
-    refetchInterval: 60000, // Refrescar cada minuto
+    refetchInterval: 60000,
+    retry: 2,
   });
 
   // Obtener estadísticas de brigadas
@@ -84,105 +89,146 @@ export default function OperacionesPage() {
     navigate('/operaciones/crear-asignacion');
   };
 
-  const handleGeneradorAutomatico = () => {
-    navigate('/operaciones/generador');
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Header limpio */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Módulo de Operaciones
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Gestión de turnos, brigadas y unidades - {user?.sede_nombre || (user?.sede_id ? `Sede ${user.sede_id}` : 'Todas las sedes')}
-              </p>
+          <div className="flex justify-between items-center py-3">
+            {/* Título + Usuario */}
+            <div className="flex items-center gap-4">
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">
+                  Operaciones
+                </h1>
+                <p className="text-xs text-gray-500">
+                  {user?.nombre || user?.username} - {user?.sede_nombre || 'Todas las sedes'}
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
+
+            {/* Acciones - Solo 2 botones */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleRefresh}
                 disabled={isLoading}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
                 title="Actualizar"
               >
                 <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
               </button>
               <button
-                onClick={handleGeneradorAutomatico}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium flex items-center gap-2"
+                onClick={() => { logout(); }}
+                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Cerrar sesion"
               >
-                <Sparkles className="w-5 h-5" />
-                <span className="hidden sm:inline">Generador Automático</span>
-              </button>
-              <button
-                onClick={handleCrearAsignacion}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
-              >
-                <Calendar className="w-5 h-5" />
-                Crear Asignacion
-              </button>
-              <button
-                onClick={() => navigate('/operaciones/brigadas')}
-                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium flex items-center gap-2"
-              >
-                <Users className="w-5 h-5" />
-                <span className="hidden sm:inline">Brigadas</span>
-              </button>
-              <button
-                onClick={() => navigate('/operaciones/unidades')}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium flex items-center gap-2"
-              >
-                <Truck className="w-5 h-5" />
-                <span className="hidden sm:inline">Unidades</span>
-              </button>
-              <button
-                onClick={logout}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                Cerrar Sesion
+                <LogOut className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-4 border-b border-gray-200 -mb-px">
+          {/* Navegacion horizontal con scroll */}
+          <div className="flex gap-1 pb-2 overflow-x-auto">
             <button
               onClick={() => setVistaActual('dashboard')}
-              className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${vistaActual === 'dashboard'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+                vistaActual === 'dashboard'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
             >
               Dashboard
             </button>
             <button
               onClick={() => setVistaActual('brigadas')}
-              className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${vistaActual === 'brigadas'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+                vistaActual === 'brigadas'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
             >
               Brigadas
             </button>
             <button
               onClick={() => setVistaActual('unidades')}
-              className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${vistaActual === 'unidades'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+                vistaActual === 'unidades'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
             >
               Unidades
             </button>
+            <div className="w-px bg-gray-300 mx-1" />
+            <button
+              onClick={handleCrearAsignacion}
+              className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap bg-green-600 text-white hover:bg-green-700"
+            >
+              + Asignacion
+            </button>
+            <button
+              onClick={() => navigate('/operaciones/generador')}
+              className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap text-gray-600 hover:bg-gray-100"
+            >
+              Generador
+            </button>
+            <button
+              onClick={() => navigate('/operaciones/brigadas')}
+              className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap text-gray-600 hover:bg-gray-100"
+            >
+              Gest. Brigadas
+            </button>
+            <button
+              onClick={() => navigate('/operaciones/unidades')}
+              className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap text-gray-600 hover:bg-gray-100"
+            >
+              Gest. Unidades
+            </button>
+            {/* Sedes - Solo visible para usuarios con puede_ver_todas_sedes o ADMIN */}
+            {esAdminCentral && (
+              <button
+                onClick={() => navigate('/operaciones/dashboard-sedes')}
+                className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap text-gray-600 hover:bg-gray-100"
+              >
+                Sedes
+              </button>
+            )}
+            {/* Panel Admin - Solo ENCARGADO_NOMINAS Central */}
+            {esAdminCentral && (
+              <button
+                onClick={() => navigate('/operaciones/admin')}
+                className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap bg-red-600 text-white hover:bg-red-700"
+              >
+                Admin
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Error Banner */}
+        {errorDashboard && vistaActual === 'dashboard' && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-red-800">Error al cargar datos</h3>
+                <p className="text-sm text-red-600 mt-1">
+                  No se pudieron obtener los datos del dashboard. Verifica tu conexión.
+                </p>
+                <button
+                  onClick={() => refetchDashboard()}
+                  className="mt-2 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition"
+                >
+                  Reintentar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {vistaActual === 'dashboard' && dashboardData && (
           <DashboardView data={dashboardData} turnoHoy={turnoHoy} />
         )}
@@ -208,19 +254,30 @@ function DashboardView({ data, turnoHoy }: { data: any; turnoHoy?: any }) {
 
   // Mutation para eliminar asignación
   const deleteMutation = useMutation({
-    mutationFn: (asignacionId: number) => turnosService.deleteAsignacion(asignacionId),
-    onSuccess: () => {
+    mutationFn: ({ asignacionId, forzar }: { asignacionId: number; forzar: boolean }) =>
+      turnosService.deleteAsignacion(asignacionId, forzar),
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['turno-hoy'] });
-      alert('Asignación eliminada correctamente');
+      alert(data.salida_cerrada
+        ? 'Asignación eliminada y salida cerrada correctamente'
+        : 'Asignación eliminada correctamente');
     },
-    onError: (error: any) => {
-      alert(error.response?.data?.error || 'Error al eliminar asignación');
+    onError: (error: any, variables) => {
+      const errorData = error.response?.data;
+      // Si hay salida activa, ofrecer forzar eliminación
+      if (errorData?.salida_id && !variables.forzar) {
+        if (confirm(`${errorData.message}\n\n¿Desea cerrar la salida y eliminar la asignación de todas formas?`)) {
+          deleteMutation.mutate({ asignacionId: variables.asignacionId, forzar: true });
+        }
+      } else {
+        alert(errorData?.error || errorData?.message || 'Error al eliminar asignación');
+      }
     },
   });
 
   const handleDelete = (asignacion: any) => {
-    if (asignacion.hora_salida_real) {
-      alert('No se puede eliminar una asignacion que ya salio');
+    if (asignacion.en_ruta) {
+      alert('No se puede eliminar una asignacion que está en ruta');
       return;
     }
     // La vista usa asignacion_id, no id
@@ -230,13 +287,13 @@ function DashboardView({ data, turnoHoy }: { data: any; turnoHoy?: any }) {
       return;
     }
     if (confirm(`¿Eliminar asignacion de unidad ${asignacion.unidad_codigo}?`)) {
-      deleteMutation.mutate(asignacionId);
+      deleteMutation.mutate({ asignacionId, forzar: false });
     }
   };
 
   const handleEdit = (asignacion: any) => {
-    if (asignacion.hora_salida_real) {
-      alert('No se puede editar una asignacion que ya salio');
+    if (asignacion.en_ruta) {
+      alert('No se puede editar una asignacion que está en ruta');
       return;
     }
     // La vista usa asignacion_id, no id - normalizar
@@ -412,9 +469,14 @@ function DashboardView({ data, turnoHoy }: { data: any; turnoHoy?: any }) {
                     <div className="flex items-center gap-2">
                       <Truck className="w-5 h-5 text-blue-600" />
                       <span className="font-semibold text-gray-900">{asignacion.unidad_codigo}</span>
-                      {asignacion.hora_salida_real && (
+                      {asignacion.en_ruta && (
                         <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded">
                           EN RUTA
+                        </span>
+                      )}
+                      {asignacion.salida_estado === 'FINALIZADA' && (
+                        <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded">
+                          FINALIZADO
                         </span>
                       )}
                     </div>
@@ -425,7 +487,7 @@ function DashboardView({ data, turnoHoy }: { data: any; turnoHoy?: any }) {
                           {asignacion.hora_salida}
                         </div>
                       )}
-                      {/* Botones de editar/eliminar solo si no ha salido */}
+                      {/* Botones de editar/eliminar solo si NO ha salido */}
                       {!asignacion.hora_salida_real && (
                         <>
                           <button
@@ -444,6 +506,12 @@ function DashboardView({ data, turnoHoy }: { data: any; turnoHoy?: any }) {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </>
+                      )}
+                      {/* Indicador de que ya salió */}
+                      {asignacion.hora_salida_real && (
+                        <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                          En ruta
+                        </span>
                       )}
                     </div>
                   </div>

@@ -69,6 +69,33 @@ export interface MiSede {
   unidad_sede_nombre: string;
 }
 
+export interface SalidaHoy {
+  salida_id: number;
+  unidad_id: number;
+  unidad_codigo: string;
+  tipo_unidad: string;
+  estado: 'EN_SALIDA' | 'FINALIZADA' | 'CANCELADA';
+  fecha_hora_salida: string;
+  fecha_hora_regreso: string | null;
+  ruta_codigo: string | null;
+  ruta_nombre: string | null;
+  km_inicial: number | null;
+  km_final: number | null;
+  combustible_inicial: number | null;
+  combustible_final: number | null;
+  km_recorridos: number | null;
+  horas_salida: number;
+  mi_rol: string;
+  jornada_finalizada: boolean;
+  puede_iniciar_nueva: boolean;
+  resumen: {
+    total_situaciones: number;
+    situaciones: any[];
+    horas_trabajadas: number;
+    km_recorridos: number;
+  };
+}
+
 interface AuthState {
   // State
   token: string | null;
@@ -76,6 +103,7 @@ interface AuthState {
   usuario: Usuario | null;
   asignacion: AsignacionActual | null;
   salidaActiva: SalidaActiva | null;
+  salidaHoy: SalidaHoy | null;
   ingresoActivo: IngresoActivo | null;
   miSede: MiSede | null;
   isLoading: boolean;
@@ -88,6 +116,7 @@ interface AuthState {
   loadStoredAuth: () => Promise<void>;
   refreshAsignacion: () => Promise<void>;
   refreshSalidaActiva: () => Promise<void>;
+  refreshSalidaHoy: () => Promise<void>;
   refreshIngresoActivo: () => Promise<void>;
   refreshMiSede: () => Promise<void>;
   refreshEstadoBrigada: () => Promise<void>;
@@ -106,6 +135,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   usuario: null,
   asignacion: null,
   salidaActiva: null,
+  salidaHoy: null,
   ingresoActivo: null,
   miSede: null,
   isLoading: false,
@@ -200,6 +230,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         usuario: null,
         asignacion: null,
         salidaActiva: null,
+        salidaHoy: null,
         ingresoActivo: null,
         miSede: null,
         isAuthenticated: false,
@@ -303,12 +334,46 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   // ========================================
-  // REFRESH INGRESO ACTIVO
+  // REFRESH SALIDA HOY (activa o finalizada)
   // ========================================
-  refreshIngresoActivo: async () => {
+  refreshSalidaHoy: async () => {
     const { token, usuario } = get();
 
     if (!token || !usuario || usuario.rol !== 'BRIGADA') {
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${API_URL}/salidas/mi-salida-hoy`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const salidaHoy = response.data || null;
+
+      set({ salidaHoy });
+    } catch (error: any) {
+      // Si no tiene salida hoy, es normal
+      if (error.response?.status === 404) {
+        set({ salidaHoy: null });
+      } else {
+        console.error('Error al obtener salida de hoy:', error);
+      }
+    }
+  },
+
+  // ========================================
+  // REFRESH INGRESO ACTIVO
+  // ========================================
+  refreshIngresoActivo: async () => {
+    const { token, usuario, salidaActiva } = get();
+
+    if (!token || !usuario || usuario.rol !== 'BRIGADA') {
+      return;
+    }
+
+    // Si no hay salida activa, no puede haber ingreso activo
+    if (!salidaActiva) {
+      set({ ingresoActivo: null });
       return;
     }
 
@@ -326,6 +391,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ ingresoActivo: null });
       } else {
         console.error('Error al obtener ingreso activo:', error);
+        set({ ingresoActivo: null });
       }
     }
   },
@@ -368,13 +434,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    // Ejecutar todas las consultas en paralelo
+    // Primero refrescar asignacion y salida activa (el ingreso depende de la salida)
     await Promise.all([
       get().refreshAsignacion(),
       get().refreshSalidaActiva(),
-      get().refreshIngresoActivo(),
+      get().refreshSalidaHoy(),
       get().refreshMiSede(),
     ]);
+
+    // Luego refrescar ingreso activo (depende de salidaActiva)
+    await get().refreshIngresoActivo();
   },
 
   // ========================================

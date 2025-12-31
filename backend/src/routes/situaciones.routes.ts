@@ -14,6 +14,7 @@ import {
   updateDetalle,
   deleteDetalle,
   getResumenUnidades,
+  cambiarTipoSituacion,
 } from '../controllers/situacion.controller';
 import { authenticate, authorize, canEditSituacion } from '../middlewares/auth';
 
@@ -57,6 +58,9 @@ router.patch('/:id', authenticate, canEditSituacion, updateSituacion);
 
 // Cerrar situación (tripulación asignada, COP y admin)
 router.patch('/:id/cerrar', authenticate, canEditSituacion, cerrarSituacion);
+
+// Cambiar tipo de situación (INCIDENTE <-> ASISTENCIA_VEHICULAR)
+router.patch('/:id/cambiar-tipo', authenticate, canEditSituacion, cambiarTipoSituacion);
 
 // ========================================
 // GESTIÓN DE DETALLES

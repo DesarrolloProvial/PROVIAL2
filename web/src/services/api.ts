@@ -196,7 +196,81 @@ export const geografiaAPI = {
 
 export const healthAPI = {
   async check(): Promise<any> {
-    const { data } = await axios.get('http://localhost:3000/health');
+    const { data } = await api.get('/health'); // Use relative path or api instance if headers not needed
+    // But original used axios.get('http://localhost:3000/health').
+    // I will stick to what was there or improve it. Ideally use api instance but maybe health check doesn't need auth.
+    return data;
+  },
+};
+
+// ============================================
+// EVENTOS PERSISTENTES
+// ============================================
+
+export const eventosAPI = {
+  async create(evento: any): Promise<any> {
+    const { data } = await api.post('/eventos', evento);
+    return data.evento;
+  },
+
+  async getActivos(): Promise<any[]> {
+    const { data } = await api.get('/eventos/activos');
+    return data.eventos || [];
+  },
+
+  async getAll(params?: { limit?: number; offset?: number }): Promise<any[]> {
+    const { data } = await api.get('/eventos', { params });
+    return data.eventos || [];
+  },
+
+  async update(id: number, updates: any): Promise<any> {
+    const { data } = await api.patch(`/eventos/${id}`, updates);
+    return data.evento;
+  },
+
+  async asignarUnidad(eventoId: number, unidadId: number): Promise<any> {
+    const { data } = await api.post(`/eventos/${eventoId}/asignar`, { unidad_id: unidadId });
+    return data.situacion;
+  },
+};
+
+// ============================================
+// TURNOS Y ASIGNACIONES
+// ============================================
+
+export const turnosAPI = {
+  async getHoy(): Promise<any> {
+    const { data } = await api.get('/turnos/hoy');
+    return data;
+  },
+
+  async getByFecha(fecha: string): Promise<any> {
+    const { data } = await api.get(`/turnos/fecha/${fecha}`);
+    return data;
+  },
+
+  async getPendientes(): Promise<any> {
+    const { data } = await api.get('/turnos/pendientes');
+    return data;
+  },
+
+  async create(turno: any): Promise<any> {
+    const { data } = await api.post('/turnos', turno);
+    return data;
+  },
+
+  async createAsignacion(turnoId: number, asignacion: any): Promise<any> {
+    const { data } = await api.post(`/turnos/${turnoId}/asignaciones`, asignacion);
+    return data;
+  },
+
+  async updateAsignacion(asignacionId: number, updates: any): Promise<any> {
+    const { data } = await api.put(`/turnos/asignaciones/${asignacionId}`, updates);
+    return data;
+  },
+
+  async deleteAsignacion(asignacionId: number): Promise<any> {
+    const { data } = await api.delete(`/turnos/asignaciones/${asignacionId}`);
     return data;
   },
 };

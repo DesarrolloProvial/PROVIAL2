@@ -17,10 +17,10 @@ import { useAuthStore } from '../../store/authStore';
 import { COLORS } from '../../constants/colors';
 import { SITUACIONES_CONFIG, TipoSituacion } from '../../constants/situacionTypes';
 import { useNavigation } from '@react-navigation/native';
-import api from '../../services/api';
+import api, { ingresosAPI } from '../../services/api';
 
 type RegistroBitacora = {
-  tipo: 'SALIDA' | 'SITUACION';
+  tipo: 'SALIDA' | 'SITUACION' | 'INGRESO';
   id: number;
   created_at: string;
   data?: any;
@@ -28,10 +28,11 @@ type RegistroBitacora = {
 
 export default function BitacoraScreen() {
   const navigation = useNavigation();
-  const { situacionesHoy, fetchMisSituacionesHoy, isLoading } = useSituacionesStore();
-  const { salidaActiva, fetchSalidaActiva } = useAuthStore();
+  const { situacionesHoy, fetchMisSituacionesHoy, cambiarTipoSituacion, isLoading } = useSituacionesStore();
+  const { salidaActiva, refreshSalidaActiva } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
-  const [filtroTipo, setFiltroTipo] = useState<TipoSituacion | 'SALIDA' | null>(null);
+  const [filtroTipo, setFiltroTipo] = useState<TipoSituacion | 'SALIDA' | 'INGRESO' | null>(null);
+  const [ingresosHoy, setIngresosHoy] = useState<any[]>([]);
 
   // Modal de edición de salida
   const [modalEdicionSalidaVisible, setModalEdicionSalidaVisible] = useState(false);
@@ -47,44 +48,60 @@ export default function BitacoraScreen() {
   const [kmEdicionSituacion, setKmEdicionSituacion] = useState('');
   const [guardandoEdicionSituacion, setGuardandoEdicionSituacion] = useState(false);
 
+  // Modal de edición de ingreso
+  const [modalEdicionIngresoVisible, setModalEdicionIngresoVisible] = useState(false);
+  const [ingresoEditando, setIngresoEditando] = useState<any>(null);
+  const [kmEdicionIngreso, setKmEdicionIngreso] = useState('');
+  const [combustibleEdicionIngreso, setCombustibleEdicionIngreso] = useState<string>('');
+  const [observacionesEdicionIngreso, setObservacionesEdicionIngreso] = useState('');
+  const [guardandoEdicionIngreso, setGuardandoEdicionIngreso] = useState(false);
+
+  // Modal de cambio de tipo situación
+  const [modalCambioTipoVisible, setModalCambioTipoVisible] = useState(false);
+  const [situacionCambiandoTipo, setSituacionCambiandoTipo] = useState<SituacionCompleta | null>(null);
+  const [motivoCambioTipo, setMotivoCambioTipo] = useState('');
+  const [guardandoCambioTipo, setGuardandoCambioTipo] = useState(false);
+
   useEffect(() => {
-    loadSituaciones();
+    loadData();
   }, []);
 
-  const loadSituaciones = async () => {
+  const loadData = async () => {
     try {
-      await fetchMisSituacionesHoy();
+      await Promise.all([
+        fetchMisSituacionesHoy(),
+        loadIngresos(),
+      ]);
     } catch (error) {
-      console.error('Error al cargar situaciones:', error);
+      console.error('Error al cargar datos:', error);
+    }
+  };
+
+  const loadIngresos = async () => {
+    try {
+      const response = await ingresosAPI.getMisIngresosHoy();
+      setIngresosHoy(response.ingresos || []);
+    } catch (error) {
+      console.error('Error al cargar ingresos:', error);
+      setIngresosHoy([]);
     }
   };
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadSituaciones();
-    await fetchSalidaActiva();
+    await loadData();
+    await refreshSalidaActiva();
     setRefreshing(false);
   };
 
-  const abrirModalEdicionSalida = () => {
-    if (!salidaActiva) return;
+  const abrirEdicionSalida = (salida: any) => {
+    if (!salida) return;
 
-    // Los campos de la vista v_mi_salida_activa son km_inicial y combustible_inicial
-    const kmValue = salidaActiva.km_inicial || salidaActiva.km_salida;
-    setKmEdicionSalida(kmValue?.toString() || '');
-
-    // Convertir el valor decimal de combustible a fraccion
-    const combustibleDecimal = salidaActiva.combustible_inicial || salidaActiva.combustible_salida;
-    let combustibleFraccion = 'VACIO';
-    if (combustibleDecimal !== null && combustibleDecimal !== undefined) {
-      if (combustibleDecimal >= 1) combustibleFraccion = 'LLENO';
-      else if (combustibleDecimal >= 0.75) combustibleFraccion = '3/4';
-      else if (combustibleDecimal >= 0.5) combustibleFraccion = '1/2';
-      else if (combustibleDecimal >= 0.25) combustibleFraccion = '1/4';
-      else combustibleFraccion = 'VACIO';
-    }
-    setCombustibleEdicionSalida(salidaActiva.combustible_salida_fraccion || combustibleFraccion);
-    setModalEdicionSalidaVisible(true);
+    // Navegar a pantalla IniciarSalida en modo edición con los datos
+    navigation.navigate('IniciarSalida' as never, {
+      editMode: true,
+      salidaData: salida,
+    } as never);
   };
 
   const guardarEdicionSalida = async () => {
@@ -104,7 +121,7 @@ export default function BitacoraScreen() {
         combustible_inicial_fraccion,
       });
 
-      await fetchSalidaActiva();
+      await refreshSalidaActiva();
       setModalEdicionSalidaVisible(false);
       Alert.alert('Éxito', 'Datos de salida actualizados correctamente');
     } catch (error: any) {
@@ -120,11 +137,56 @@ export default function BitacoraScreen() {
 
   const abrirModalEdicionSituacion = (situacion: SituacionCompleta) => {
     console.log('[BITACORA] Abriendo edición de situación:', situacion);
-    setSituacionEditando(situacion);
-    setDescripcionEdicion(situacion.descripcion || '');
-    setObservacionesEdicion(situacion.observaciones || '');
-    setKmEdicionSituacion(situacion.km?.toString() || '');
-    setModalEdicionSituacionVisible(true);
+
+    // Navegar a la pantalla correspondiente según el tipo de situación
+    switch (situacion.tipo_situacion) {
+      case 'INCIDENTE':
+        navigation.navigate('Incidente' as never, {
+          editMode: true,
+          situacionId: situacion.id,
+          incidenteId: situacion.incidente_id,
+          situacionData: situacion
+        } as never);
+        return;
+
+      case 'ASISTENCIA_VEHICULAR':
+        navigation.navigate('Asistencia' as never, {
+          editMode: true,
+          situacionId: situacion.id,
+          situacionData: situacion
+        } as never);
+        return;
+
+      case 'EMERGENCIA':
+        navigation.navigate('Emergencia' as never, {
+          editMode: true,
+          situacionId: situacion.id,
+          situacionData: situacion
+        } as never);
+        return;
+
+      case 'PATRULLAJE':
+      case 'PARADA_ESTRATEGICA':
+      case 'COMIDA':
+      case 'DESCANSO':
+      case 'REGULACION_TRAFICO':
+      case 'OTROS':
+        // Para estos tipos, navegar a NuevaSituacionScreen en modo edición
+        navigation.navigate('NuevaSituacion' as never, {
+          editMode: true,
+          situacionId: situacion.id,
+          situacionData: situacion
+        } as never);
+        return;
+
+      default:
+        // Para otros tipos (SALIDA_SEDE, CAMBIO_RUTA), usar el modal simple
+        setSituacionEditando(situacion);
+        setDescripcionEdicion(situacion.descripcion || '');
+        setObservacionesEdicion(situacion.observaciones || '');
+        setKmEdicionSituacion(situacion.km?.toString() || '');
+        setModalEdicionSituacionVisible(true);
+    }
   };
 
   const guardarEdicionSituacion = async () => {
@@ -139,7 +201,7 @@ export default function BitacoraScreen() {
         km: kmEdicionSituacion ? parseFloat(kmEdicionSituacion) : undefined,
       });
 
-      await loadSituaciones();
+      await fetchMisSituacionesHoy();
       setModalEdicionSituacionVisible(false);
       Alert.alert('Éxito', 'Situación actualizada correctamente');
     } catch (error: any) {
@@ -150,6 +212,89 @@ export default function BitacoraScreen() {
       );
     } finally {
       setGuardandoEdicionSituacion(false);
+    }
+  };
+
+  // Funciones para edición de ingreso
+  const abrirEdicionIngreso = (ingreso: any) => {
+    if (!ingreso) return;
+
+    // Navegar a pantalla IngresoSede en modo edición con los datos
+    navigation.navigate('IngresoSede' as never, {
+      editMode: true,
+      ingresoData: ingreso,
+    } as never);
+  };
+
+  const guardarEdicionIngreso = async () => {
+    if (!ingresoEditando) return;
+
+    try {
+      setGuardandoEdicionIngreso(true);
+
+      const data: any = {};
+      if (kmEdicionIngreso) data.km_ingreso = parseFloat(kmEdicionIngreso);
+      if (combustibleEdicionIngreso) data.combustible_fraccion = combustibleEdicionIngreso;
+      if (observacionesEdicionIngreso !== undefined) data.observaciones_ingreso = observacionesEdicionIngreso;
+
+      if (Object.keys(data).length === 0) {
+        Alert.alert('Error', 'Debes modificar al menos un campo');
+        return;
+      }
+
+      await api.patch(`/ingresos/${ingresoEditando.id}`, data);
+
+      await loadIngresos();
+      setModalEdicionIngresoVisible(false);
+      Alert.alert('Éxito', 'Ingreso actualizado correctamente');
+    } catch (error: any) {
+      console.error('Error al editar ingreso:', error);
+      Alert.alert(
+        'Error',
+        error.response?.data?.error || 'No se pudo actualizar el ingreso'
+      );
+    } finally {
+      setGuardandoEdicionIngreso(false);
+    }
+  };
+
+  // Funciones para cambio de tipo de situación
+  const abrirModalCambioTipo = (situacion: SituacionCompleta) => {
+    // Solo permitir cambio entre INCIDENTE y ASISTENCIA_VEHICULAR
+    if (situacion.tipo_situacion !== 'INCIDENTE' && situacion.tipo_situacion !== 'ASISTENCIA_VEHICULAR') {
+      Alert.alert(
+        'No permitido',
+        'Solo se puede cambiar el tipo entre Incidente y Asistencia Vehicular'
+      );
+      return;
+    }
+    setSituacionCambiandoTipo(situacion);
+    setMotivoCambioTipo('');
+    setModalCambioTipoVisible(true);
+  };
+
+  const ejecutarCambioTipo = async () => {
+    if (!situacionCambiandoTipo) return;
+
+    const nuevoTipo: 'INCIDENTE' | 'ASISTENCIA_VEHICULAR' =
+      situacionCambiandoTipo.tipo_situacion === 'INCIDENTE' ? 'ASISTENCIA_VEHICULAR' : 'INCIDENTE';
+
+    try {
+      setGuardandoCambioTipo(true);
+      await cambiarTipoSituacion(situacionCambiandoTipo.id, nuevoTipo, motivoCambioTipo || undefined);
+      setModalCambioTipoVisible(false);
+      Alert.alert(
+        'Tipo Cambiado',
+        `La situación ahora es de tipo ${nuevoTipo === 'INCIDENTE' ? 'Incidente' : 'Asistencia Vehicular'}`
+      );
+    } catch (error: any) {
+      console.error('Error al cambiar tipo:', error);
+      Alert.alert(
+        'Error',
+        error.message || 'No se pudo cambiar el tipo de situación'
+      );
+    } finally {
+      setGuardandoCambioTipo(false);
     }
   };
 
@@ -178,7 +323,7 @@ export default function BitacoraScreen() {
     return `${minutes}m`;
   };
 
-  // Combinar salida y situaciones en un solo array
+  // Combinar salida, situaciones e ingresos en un solo array
   const registrosBitacora: RegistroBitacora[] = React.useMemo(() => {
     const registros: RegistroBitacora[] = [];
 
@@ -202,15 +347,26 @@ export default function BitacoraScreen() {
       });
     });
 
+    // Agregar ingresos a sede
+    ingresosHoy.forEach((ingreso) => {
+      registros.push({
+        tipo: 'INGRESO',
+        id: ingreso.id,
+        created_at: ingreso.fecha_hora_ingreso,
+        data: ingreso,
+      });
+    });
+
     // Ordenar por fecha (más reciente primero)
     return registros.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [salidaActiva, situacionesHoy]);
+  }, [salidaActiva, situacionesHoy, ingresosHoy]);
 
   const registrosFiltrados = filtroTipo
     ? registrosBitacora.filter((r) => {
-        if (filtroTipo === 'SALIDA') return r.tipo === 'SALIDA';
-        return r.tipo === 'SITUACION' && r.data.tipo_situacion === filtroTipo;
-      })
+      if (filtroTipo === 'SALIDA') return r.tipo === 'SALIDA';
+      if (filtroTipo === 'INGRESO') return r.tipo === 'INGRESO';
+      return r.tipo === 'SITUACION' && r.data.tipo_situacion === filtroTipo;
+    })
     : registrosBitacora;
 
   const renderSalidaCard = (salida: any) => {
@@ -235,7 +391,7 @@ export default function BitacoraScreen() {
     return (
       <TouchableOpacity
         style={[styles.card, { borderLeftWidth: 4, borderLeftColor: COLORS.primary }]}
-        onPress={abrirModalEdicionSalida}
+        onPress={() => abrirEdicionSalida(salida)}
       >
         <View style={styles.cardHeader}>
           <View style={styles.cardHeaderLeft}>
@@ -341,13 +497,155 @@ export default function BitacoraScreen() {
             </View>
           )}
 
-          {item.descripcion && (
+          {!!item.descripcion && (
             <View style={styles.descriptionContainer}>
               <Text style={styles.descripcionText} numberOfLines={2}>
                 {item.descripcion}
               </Text>
             </View>
           )}
+
+          {/* Botón para cambiar tipo (solo INCIDENTE <-> ASISTENCIA_VEHICULAR) */}
+          {(item.tipo_situacion === 'INCIDENTE' || item.tipo_situacion === 'ASISTENCIA_VEHICULAR') && (
+            <TouchableOpacity
+              style={styles.cambiarTipoButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                abrirModalCambioTipo(item);
+              }}
+            >
+              <Text style={styles.cambiarTipoButtonText}>
+                Cambiar a {item.tipo_situacion === 'INCIDENTE' ? 'Asistencia' : 'Incidente'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderIngresoCard = (ingreso: any) => {
+    const tieneHoraSalida = !!ingreso.fecha_hora_salida;
+    const esFinal = ingreso.es_ingreso_final;
+
+    // Determinar color según tipo
+    const getColorIngreso = (tipo: string) => {
+      switch (tipo) {
+        case 'COMBUSTIBLE': return '#f59e0b';
+        case 'ALMUERZO': return '#10b981';
+        case 'MANTENIMIENTO': return '#6b7280';
+        case 'COMISION': return '#3b82f6';
+        case 'APOYO': return '#8b5cf6';
+        case 'FINALIZACION_JORNADA':
+        case 'FINALIZAR_JORNADA':
+        case 'FINALIZACION': return '#dc2626';
+        default: return COLORS.primary;
+      }
+    };
+
+    const getIconIngreso = (tipo: string) => {
+      switch (tipo) {
+        case 'COMBUSTIBLE': return '⛽';
+        case 'ALMUERZO': return '🍽️';
+        case 'MANTENIMIENTO': return '🔧';
+        case 'COMISION': return '📋';
+        case 'APOYO': return '🤝';
+        case 'FINALIZACION_JORNADA':
+        case 'FINALIZAR_JORNADA':
+        case 'FINALIZACION': return '🏁';
+        default: return '🏢';
+      }
+    };
+
+    const colorIngreso = getColorIngreso(ingreso.tipo_ingreso);
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.card,
+          { borderLeftWidth: 4, borderLeftColor: colorIngreso }
+        ]}
+        onPress={() => abrirEdicionIngreso(ingreso)}
+      >
+        <View style={styles.cardHeader}>
+          <View style={styles.cardHeaderLeft}>
+            <View style={[styles.tipoBadge, { backgroundColor: colorIngreso }]}>
+              <Text style={styles.tipoBadgeText}>
+                {getIconIngreso(ingreso.tipo_ingreso)} INGRESO A SEDE
+              </Text>
+            </View>
+            {esFinal && (
+              <View style={[styles.estadoBadge, { backgroundColor: '#dc2626' }]}>
+                <Text style={styles.estadoBadgeText}>FINAL</Text>
+              </View>
+            )}
+            {!esFinal && !tieneHoraSalida && (
+              <View style={[styles.estadoBadge, { backgroundColor: COLORS.warning }]}>
+                <Text style={styles.estadoBadgeText}>EN SEDE</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.numeroSituacion}>
+            {ingreso.sede_nombre || ingreso.sede_codigo || 'Sede'}
+          </Text>
+        </View>
+
+        <View style={styles.cardContent}>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Motivo:</Text>
+            <Text style={[styles.infoValue, { color: colorIngreso }]}>
+              {ingreso.tipo_ingreso?.replace(/_/g, ' ')}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Hora Ingreso:</Text>
+            <Text style={styles.infoValue}>{formatFecha(ingreso.fecha_hora_ingreso)}</Text>
+          </View>
+
+          {tieneHoraSalida && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Hora Salida:</Text>
+              <Text style={styles.infoValue}>{formatFecha(ingreso.fecha_hora_salida)}</Text>
+            </View>
+          )}
+
+          {tieneHoraSalida && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Duración:</Text>
+              <Text style={styles.infoValue}>
+                {formatDuracion(ingreso.fecha_hora_ingreso, ingreso.fecha_hora_salida)}
+              </Text>
+            </View>
+          )}
+
+          {ingreso.km_ingreso && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Km Ingreso:</Text>
+              <Text style={styles.infoValue}>{ingreso.km_ingreso} km</Text>
+            </View>
+          )}
+
+          {ingreso.combustible_ingreso !== null && ingreso.combustible_ingreso !== undefined && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Combustible:</Text>
+              <Text style={styles.infoValue}>
+                {Math.round(ingreso.combustible_ingreso * 100)}%
+              </Text>
+            </View>
+          )}
+
+          {ingreso.observaciones_ingreso && (
+            <View style={styles.descriptionContainer}>
+              <Text style={styles.descripcionText} numberOfLines={2}>
+                {ingreso.observaciones_ingreso}
+              </Text>
+            </View>
+          )}
+
+          <Text style={{ textAlign: 'center', color: COLORS.info, marginTop: 8, fontSize: 11 }}>
+            Toca para editar
+          </Text>
         </View>
       </TouchableOpacity>
     );
@@ -356,6 +654,9 @@ export default function BitacoraScreen() {
   const renderRegistroCard = ({ item }: { item: RegistroBitacora }) => {
     if (item.tipo === 'SALIDA') {
       return renderSalidaCard(item.data);
+    }
+    if (item.tipo === 'INGRESO') {
+      return renderIngresoCard(item.data);
     }
     return renderSituacionCard({ item: item.data });
   };
@@ -404,6 +705,29 @@ export default function BitacoraScreen() {
               ]}
             >
               Salida (1)
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Filtro para ingresos a sede */}
+        {ingresosHoy.length > 0 && (
+          <TouchableOpacity
+            style={[
+              styles.filtroButton,
+              filtroTipo === 'INGRESO' && {
+                backgroundColor: '#f59e0b',
+                borderColor: '#f59e0b',
+              },
+            ]}
+            onPress={() => setFiltroTipo('INGRESO')}
+          >
+            <Text
+              style={[
+                styles.filtroButtonText,
+                filtroTipo === 'INGRESO' && styles.filtroButtonTextSelected,
+              ]}
+            >
+              Ingresos ({ingresosHoy.length})
             </Text>
           </TouchableOpacity>
         )}
@@ -644,6 +968,197 @@ export default function BitacoraScreen() {
                   <ActivityIndicator color={COLORS.white} size="small" />
                 ) : (
                   <Text style={styles.modalButtonTextSave}>Guardar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal de edición de ingreso */}
+      <Modal
+        visible={modalEdicionIngresoVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalEdicionIngresoVisible(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setModalEdicionIngresoVisible(false)}
+        >
+          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>Editar Ingreso a Sede</Text>
+
+            {/* Tipo de ingreso (solo informativo) */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Tipo de Ingreso</Text>
+              <Text style={[styles.input, { paddingVertical: 14, color: COLORS.text.secondary }]}>
+                {ingresoEditando?.tipo_ingreso?.replace(/_/g, ' ') || '-'}
+              </Text>
+            </View>
+
+            {/* Kilometraje */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Kilometraje</Text>
+              <TextInput
+                style={styles.input}
+                value={kmEdicionIngreso}
+                onChangeText={setKmEdicionIngreso}
+                keyboardType="number-pad"
+                placeholder="Ingresa el kilometraje"
+                placeholderTextColor={COLORS.text.disabled}
+              />
+            </View>
+
+            {/* Combustible */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Combustible</Text>
+              <View style={styles.combustibleButtons}>
+                {['VACIO', '1/4', '1/2', '3/4', 'LLENO'].map((nivel) => (
+                  <TouchableOpacity
+                    key={nivel}
+                    style={[
+                      styles.combustibleButton,
+                      combustibleEdicionIngreso === nivel && styles.combustibleButtonSelected,
+                    ]}
+                    onPress={() => setCombustibleEdicionIngreso(nivel)}
+                  >
+                    <Text
+                      style={[
+                        styles.combustibleButtonText,
+                        combustibleEdicionIngreso === nivel && styles.combustibleButtonTextSelected,
+                      ]}
+                    >
+                      {nivel}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Observaciones */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Observaciones</Text>
+              <TextInput
+                style={[styles.input, styles.inputMultiline]}
+                value={observacionesEdicionIngreso}
+                onChangeText={setObservacionesEdicionIngreso}
+                multiline
+                numberOfLines={3}
+                placeholder="Observaciones..."
+                placeholderTextColor={COLORS.text.disabled}
+              />
+            </View>
+
+            {/* Botones */}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => setModalEdicionIngresoVisible(false)}
+                disabled={guardandoEdicionIngreso}
+              >
+                <Text style={styles.modalButtonTextCancel}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonSave]}
+                onPress={guardarEdicionIngreso}
+                disabled={guardandoEdicionIngreso}
+              >
+                {guardandoEdicionIngreso ? (
+                  <ActivityIndicator color={COLORS.white} size="small" />
+                ) : (
+                  <Text style={styles.modalButtonTextSave}>Guardar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal de cambio de tipo de situación */}
+      <Modal
+        visible={modalCambioTipoVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalCambioTipoVisible(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setModalCambioTipoVisible(false)}
+        >
+          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>Cambiar Tipo de Situación</Text>
+
+            {situacionCambiandoTipo && (
+              <>
+                {/* Información actual */}
+                <View style={[styles.inputContainer, { marginBottom: 16 }]}>
+                  <Text style={styles.inputLabel}>Tipo actual:</Text>
+                  <View style={[
+                    styles.tipoBadge,
+                    { backgroundColor: getTipoColor(situacionCambiandoTipo.tipo_situacion), alignSelf: 'flex-start', marginTop: 8 }
+                  ]}>
+                    <Text style={styles.tipoBadgeText}>
+                      {SITUACIONES_CONFIG[situacionCambiandoTipo.tipo_situacion]?.label || situacionCambiandoTipo.tipo_situacion}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Nuevo tipo */}
+                <View style={[styles.inputContainer, { marginBottom: 16 }]}>
+                  <Text style={styles.inputLabel}>Se cambiará a:</Text>
+                  <View style={[
+                    styles.tipoBadge,
+                    {
+                      backgroundColor: getTipoColor(
+                        situacionCambiandoTipo.tipo_situacion === 'INCIDENTE' ? 'ASISTENCIA_VEHICULAR' : 'INCIDENTE'
+                      ),
+                      alignSelf: 'flex-start',
+                      marginTop: 8
+                    }
+                  ]}>
+                    <Text style={styles.tipoBadgeText}>
+                      {situacionCambiandoTipo.tipo_situacion === 'INCIDENTE' ? 'Asistencia Vehicular' : 'Incidente'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Motivo (opcional) */}
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Motivo del cambio (opcional)</Text>
+                  <TextInput
+                    style={[styles.input, styles.inputMultiline]}
+                    value={motivoCambioTipo}
+                    onChangeText={setMotivoCambioTipo}
+                    multiline
+                    numberOfLines={3}
+                    placeholder="Explica por qué cambias el tipo..."
+                    placeholderTextColor={COLORS.text.disabled}
+                  />
+                </View>
+              </>
+            )}
+
+            {/* Botones */}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => setModalCambioTipoVisible(false)}
+                disabled={guardandoCambioTipo}
+              >
+                <Text style={styles.modalButtonTextCancel}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonSave, { backgroundColor: COLORS.warning }]}
+                onPress={ejecutarCambioTipo}
+                disabled={guardandoCambioTipo}
+              >
+                {guardandoCambioTipo ? (
+                  <ActivityIndicator color={COLORS.white} size="small" />
+                ) : (
+                  <Text style={styles.modalButtonTextSave}>Cambiar Tipo</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -914,5 +1429,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.white,
+  },
+  cambiarTipoButton: {
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.warning + '20',
+    borderWidth: 1,
+    borderColor: COLORS.warning,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cambiarTipoButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.warning,
   },
 });

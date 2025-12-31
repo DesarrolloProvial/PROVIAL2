@@ -91,20 +91,34 @@ export const TurnoModel = {
     );
   },
 
-  // Obtener turno de hoy
-  async findHoy(): Promise<Turno | null> {
+  // Obtener turno de hoy (filtrado por sede si se proporciona)
+  async findHoy(sedeId?: number): Promise<Turno | null> {
+    if (sedeId) {
+      return db.oneOrNone(
+        "SELECT * FROM turno WHERE fecha = CURRENT_DATE AND sede_id = $1",
+        [sedeId]
+      );
+    }
+    // Si no hay sede, devolver el primer turno activo de hoy
     return db.oneOrNone(
-      "SELECT * FROM turno WHERE fecha = CURRENT_DATE"
+      "SELECT * FROM turno WHERE fecha = CURRENT_DATE ORDER BY estado = 'ACTIVO' DESC, id LIMIT 1"
+    );
+  },
+
+  // Obtener todos los turnos de hoy
+  async findAllHoy(): Promise<Turno[]> {
+    return db.any(
+      "SELECT * FROM turno WHERE fecha = CURRENT_DATE ORDER BY sede_id"
     );
   },
 
   // Crear turno
-  async create(data: { fecha: string; fecha_fin?: string | null; observaciones?: string; creado_por: number }): Promise<Turno> {
+  async create(data: { fecha: string; fecha_fin?: string | null; observaciones?: string; creado_por: number; sede_id?: number }): Promise<Turno> {
     return db.one(
-      `INSERT INTO turno (fecha, fecha_fin, estado, observaciones, creado_por)
-       VALUES ($1, $2, 'PLANIFICADO', $3, $4)
+      `INSERT INTO turno (fecha, fecha_fin, estado, observaciones, creado_por, sede_id)
+       VALUES ($1, $2, 'PLANIFICADO', $3, $4, $5)
        RETURNING *`,
-      [data.fecha, data.fecha_fin || null, data.observaciones, data.creado_por]
+      [data.fecha, data.fecha_fin || null, data.observaciones, data.creado_por, data.sede_id || null]
     );
   },
 

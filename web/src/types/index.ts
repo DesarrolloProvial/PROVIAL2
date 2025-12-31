@@ -2,14 +2,28 @@
 // TIPOS DE AUTENTICACIÓN
 // ============================================
 
+// Sub-rol para usuarios COP
+export interface SubRolCop {
+  id: number;
+  codigo: string;
+  nombre: string;
+  puede_crear_persistentes: boolean;
+  puede_cerrar_persistentes: boolean;
+  puede_promover_situaciones: boolean;
+  puede_asignar_unidades: boolean;
+  solo_lectura: boolean;
+}
+
 export interface Usuario {
   id: number;
   username: string;
   nombre: string;
-  apellido: string;
   rol: string;
   sede_id: number | null;
-  sede_nombre?: string;
+  sede_nombre: string | null;
+  puede_ver_todas_sedes: boolean;
+  // Sub-rol COP (solo para usuarios COP)
+  subRolCop?: SubRolCop | null;
 }
 
 export interface LoginRequest {

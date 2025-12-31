@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { turnosService, geografiaService } from '../services/turnos.service';
 import { operacionesService } from '../services/operaciones.service';
 import type { TripulacionMiembro, CreateAsignacionDTO } from '../services/turnos.service';
 import type { BrigadaDisponible } from '../services/operaciones.service';
-import { AlertCircle, CheckCircle, Users, Truck, ArrowLeft, Plus, X } from 'lucide-react';
+import { AlertCircle, CheckCircle, Users, Truck, ArrowLeft, Plus, X, Search } from 'lucide-react';
 
 export default function CrearAsignacionPage() {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ export default function CrearAsignacionPage() {
   const editState = location.state as { editMode?: boolean; asignacion?: any; turnoId?: number } | null;
   const isEditMode = editState?.editMode || false;
   const asignacionEdit = editState?.asignacion;
-  const turnoIdEdit = editState?.turnoId;
+  // turnoIdEdit disponible si se necesita: editState?.turnoId
 
   // Estado del formulario
   const [fecha, setFecha] = useState(() => {
@@ -35,9 +35,10 @@ export default function CrearAsignacionPage() {
   const [kmFinal, setKmFinal] = useState(asignacionEdit?.km_final?.toString() || '');
   const [sentido, setSentido] = useState<string>(asignacionEdit?.sentido || '');
   const [acciones, setAcciones] = useState(asignacionEdit?.acciones || '');
-  const [horaSalida, setHoraSalida] = useState(asignacionEdit?.hora_salida || '');
-  const [horaEntrada, setHoraEntrada] = useState(asignacionEdit?.hora_entrada_estimada || '');
+  const [horaSalida, setHoraSalida] = useState(asignacionEdit?.hora_salida || '04:30');
+  const [horaEntrada, setHoraEntrada] = useState(asignacionEdit?.hora_entrada_estimada || '21:00');
   const [observaciones, setObservaciones] = useState('');
+  const [esReaccion, setEsReaccion] = useState(asignacionEdit?.es_reaccion || false);
 
   // Tripulacion - inicializar con tripulacion existente si es modo edicion
   const [tripulacion, setTripulacion] = useState<TripulacionMiembro[]>(() => {
@@ -52,6 +53,7 @@ export default function CrearAsignacionPage() {
   });
   const [showBrigadaModal, setShowBrigadaModal] = useState(false);
   const [rolSeleccionado, setRolSeleccionado] = useState<'PILOTO' | 'COPILOTO' | 'ACOMPAÑANTE' | null>(null);
+  const [busquedaBrigada, setBusquedaBrigada] = useState('');
 
   // Queries
   const { data: brigadas = [], isLoading: loadingBrigadas } = useQuery({
@@ -114,6 +116,17 @@ export default function CrearAsignacionPage() {
   });
 
   // Handlers
+  // Filtrar brigadas por búsqueda
+  const brigadasFiltradas = brigadas.filter((brigada) => {
+    if (!busquedaBrigada.trim()) return true;
+    const termino = busquedaBrigada.toLowerCase().trim();
+    return (
+      brigada.nombre_completo.toLowerCase().includes(termino) ||
+      brigada.chapa.toLowerCase().includes(termino) ||
+      (brigada.telefono && brigada.telefono.includes(termino))
+    );
+  });
+
   const agregarTripulante = (brigada: BrigadaDisponible, rol: 'PILOTO' | 'COPILOTO' | 'ACOMPAÑANTE') => {
     if (tripulacion.some(t => t.usuario_id === brigada.id)) {
       alert('Esta brigada ya esta asignada a este turno');
@@ -136,6 +149,13 @@ export default function CrearAsignacionPage() {
     ]);
     setShowBrigadaModal(false);
     setRolSeleccionado(null);
+    setBusquedaBrigada('');
+  };
+
+  const cerrarModalBrigada = () => {
+    setShowBrigadaModal(false);
+    setRolSeleccionado(null);
+    setBusquedaBrigada('');
   };
 
   const removerTripulante = (usuarioId: number) => {
@@ -150,7 +170,8 @@ export default function CrearAsignacionPage() {
       return;
     }
 
-    if (!rutaId) {
+    // Validacion de ruta solo si no es reaccion
+    if (!esReaccion && !rutaId) {
       alert('Debe seleccionar una ruta');
       return;
     }
@@ -162,7 +183,7 @@ export default function CrearAsignacionPage() {
 
     const asignacionData: CreateAsignacionDTO = {
       unidad_id: unidadId,
-      ruta_id: rutaId,
+      ruta_id: esReaccion ? null : rutaId,
       km_inicio: kmInicio ? parseFloat(kmInicio) : undefined,
       km_final: kmFinal ? parseFloat(kmFinal) : undefined,
       sentido: (sentido as any) || undefined,
@@ -170,6 +191,7 @@ export default function CrearAsignacionPage() {
       hora_salida: horaSalida || undefined,
       hora_entrada_estimada: horaEntrada || undefined,
       tripulacion,
+      es_reaccion: esReaccion // Flag para backend
     };
 
     if (isEditMode && asignacionEdit?.id) {
@@ -198,7 +220,7 @@ export default function CrearAsignacionPage() {
     return `${ruta.codigo} - ${ruta.nombre}`;
   };
 
-  const getUnidadSeleccionada = () => unidades.find(u => u.id === unidadId);
+  // getUnidadSeleccionada disponible si se necesita: unidades.find(u => u.id === unidadId)
 
   return (
     <div className="page-container">
@@ -287,11 +309,10 @@ export default function CrearAsignacionPage() {
                   {unidades.map((unidad) => (
                     <label
                       key={unidad.id}
-                      className={`selection-card flex items-start gap-3 ${
-                        unidadId === unidad.id
-                          ? 'selection-card-selected'
-                          : 'selection-card-default'
-                      }`}
+                      className={`selection-card flex items-start gap-3 ${unidadId === unidad.id
+                        ? 'selection-card-selected'
+                        : 'selection-card-default'
+                        }`}
                     >
                       <input
                         type="radio"
@@ -331,61 +352,84 @@ export default function CrearAsignacionPage() {
             <div className="card-body">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Detalles de Ruta</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Ruta *</label>
-                  <select
-                    value={rutaId || ''}
-                    onChange={(e) => setRutaId(e.target.value ? parseInt(e.target.value) : null)}
-                    className="select-field"
-                    required
-                  >
-                    <option value="">Seleccionar ruta</option>
-                    {rutas.map((ruta) => (
-                      <option key={ruta.id} value={ruta.id}>
-                        {formatRutaNombre(ruta)}
-                      </option>
-                    ))}
-                  </select>
+                {/* Checkbox de Reaccion */}
+                <div className="md:col-span-2 mb-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={esReaccion}
+                      onChange={(e) => setEsReaccion(e.target.checked)}
+                      className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    <span className="font-bold text-gray-900 border-b-2 border-red-500 pb-0.5">
+                      ¿Es Unidad de Reacción?
+                    </span>
+                  </label>
+                  <p className="text-sm text-gray-500 mt-1 ml-7">
+                    Si se marca, la unidad no tendrá ruta asignada y deberá seleccionarla al momento de salir.
+                    Reemplazará a cualquier otra unidad de reacción activa del turno.
+                  </p>
                 </div>
 
-                <div>
-                  <label className="label">Sentido</label>
-                  <select
-                    value={sentido}
-                    onChange={(e) => setSentido(e.target.value)}
-                    className="select-field"
-                  >
-                    <option value="">Seleccionar sentido</option>
-                    <option value="NORTE">Norte</option>
-                    <option value="SUR">Sur</option>
-                    <option value="ORIENTE">Oriente</option>
-                    <option value="OCCIDENTE">Occidente</option>
-                  </select>
-                </div>
+                {!esReaccion && (
+                  <>
+                    <div>
+                      <label className="label">Ruta *</label>
+                      <select
+                        value={rutaId || ''}
+                        onChange={(e) => setRutaId(e.target.value ? parseInt(e.target.value) : null)}
+                        className="select-field"
+                        required={!esReaccion}
+                      >
+                        <option value="">Seleccionar ruta</option>
+                        {rutas.map((ruta) => (
+                          <option key={ruta.id} value={ruta.id}>
+                            {formatRutaNombre(ruta)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                <div>
-                  <label className="label">KM Inicio</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={kmInicio}
-                    onChange={(e) => setKmInicio(e.target.value)}
-                    placeholder="0.0"
-                    className="input-field"
-                  />
-                </div>
+                    <div>
+                      <label className="label">Sentido</label>
+                      <select
+                        value={sentido}
+                        onChange={(e) => setSentido(e.target.value)}
+                        className="select-field"
+                      >
+                        <option value="">Seleccionar sentido</option>
+                        <option value="NORTE">Norte</option>
+                        <option value="SUR">Sur</option>
+                        <option value="ORIENTE">Oriente</option>
+                        <option value="OCCIDENTE">Occidente</option>
+                      </select>
+                    </div>
 
-                <div>
-                  <label className="label">KM Final</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={kmFinal}
-                    onChange={(e) => setKmFinal(e.target.value)}
-                    placeholder="0.0"
-                    className="input-field"
-                  />
-                </div>
+                    <div>
+                      <label className="label">KM Inicio</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={kmInicio}
+                        onChange={(e) => setKmInicio(e.target.value)}
+                        placeholder="0.0"
+                        className="input-field"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="label">KM Final</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={kmFinal}
+                        onChange={(e) => setKmFinal(e.target.value)}
+                        placeholder="0.0"
+                        className="input-field"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div className="md:col-span-2">
                   <label className="label">Acciones a realizar</label>
@@ -444,7 +488,10 @@ export default function CrearAsignacionPage() {
                     setShowBrigadaModal(true);
                   }}
                   className="btn-primary flex items-center gap-2"
-                  disabled={tripulacion.length >= 3}
+                  disabled={
+                    // Solo motos tienen restricción de 2 tripulantes (piloto + acompañante)
+                    unidades.find(u => u.id === unidadId)?.tipo_unidad === 'MOTO' && tripulacion.length >= 2
+                  }
                 >
                   <Plus className="h-4 w-4" />
                   Agregar Tripulante
@@ -459,44 +506,40 @@ export default function CrearAsignacionPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {tripulacion.map((miembro) => {
-                    const brigada = brigadas.find(b => b.id === miembro.usuario_id);
-                    return (
-                      <div
-                        key={miembro.usuario_id}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className={`badge ${
-                              miembro.rol_tripulacion === 'PILOTO' ? 'badge-blue' :
-                              miembro.rol_tripulacion === 'COPILOTO' ? 'badge-teal' : 'badge-yellow'
+                  {tripulacion.map((miembro) => (
+                    <div
+                      key={miembro.usuario_id}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className={`badge ${miembro.rol_tripulacion === 'PILOTO' ? 'badge-blue' :
+                            miembro.rol_tripulacion === 'COPILOTO' ? 'badge-teal' : 'badge-yellow'
                             }`}>
-                              {miembro.rol_tripulacion}
-                            </span>
-                            <span className="font-bold text-gray-900">
-                              {getBrigadaNombre(miembro.usuario_id)}
-                            </span>
-                            <span className="text-sm text-gray-500">
-                              ({getBrigadaChapa(miembro.usuario_id)})
-                            </span>
-                          </div>
-                          {miembro.telefono_contacto && (
-                            <p className="text-sm text-gray-600 mt-1">
-                              Tel: {miembro.telefono_contacto}
-                            </p>
-                          )}
+                            {miembro.rol_tripulacion}
+                          </span>
+                          <span className="font-bold text-gray-900">
+                            {getBrigadaNombre(miembro.usuario_id)}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            ({getBrigadaChapa(miembro.usuario_id)})
+                          </span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removerTripulante(miembro.usuario_id)}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
+                        {miembro.telefono_contacto && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            Tel: {miembro.telefono_contacto}
+                          </p>
+                        )}
                       </div>
-                    );
-                  })}
+                      <button
+                        type="button"
+                        onClick={() => removerTripulante(miembro.usuario_id)}
+                        className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -547,27 +590,45 @@ export default function CrearAsignacionPage() {
                 Seleccionar {rolSeleccionado}
               </h3>
               <button
-                onClick={() => {
-                  setShowBrigadaModal(false);
-                  setRolSeleccionado(null);
-                }}
+                onClick={cerrarModalBrigada}
                 className="p-2 hover:bg-gray-100 rounded-lg"
               >
                 <X className="h-5 w-5 text-gray-700" />
               </button>
             </div>
 
-            <div className="px-6 py-3 border-b border-gray-200 bg-gray-50">
+            <div className="px-6 py-3 border-b border-gray-200 bg-gray-50 space-y-3">
+              {/* Buscador */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={busquedaBrigada}
+                  onChange={(e) => setBusquedaBrigada(e.target.value)}
+                  placeholder="Buscar por nombre, chapa o telefono..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  autoFocus
+                />
+                {busquedaBrigada && (
+                  <button
+                    onClick={() => setBusquedaBrigada('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Selector de rol */}
               <div className="flex gap-2">
                 {(['PILOTO', 'COPILOTO', 'ACOMPAÑANTE'] as const).map((rol) => (
                   <button
                     key={rol}
                     onClick={() => setRolSeleccionado(rol)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      rolSeleccionado === rol
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                    }`}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${rolSeleccionado === rol
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }`}
                     disabled={rol !== 'ACOMPAÑANTE' && tripulacion.some(t => t.rol_tripulacion === rol)}
                   >
                     {rol}
@@ -576,14 +637,26 @@ export default function CrearAsignacionPage() {
               </div>
             </div>
 
-            <div className="modal-body flex-1">
+            <div className="modal-body flex-1 overflow-y-auto">
               {loadingBrigadas ? (
                 <p className="text-center text-gray-600 py-8">Cargando brigadas...</p>
-              ) : brigadas.length === 0 ? (
-                <p className="text-center text-gray-600 py-8">No hay brigadas disponibles</p>
+              ) : brigadasFiltradas.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">
+                    {busquedaBrigada ? 'No se encontraron brigadas con ese criterio' : 'No hay brigadas disponibles'}
+                  </p>
+                  {busquedaBrigada && (
+                    <button
+                      onClick={() => setBusquedaBrigada('')}
+                      className="mt-2 text-blue-600 hover:underline text-sm"
+                    >
+                      Limpiar busqueda
+                    </button>
+                  )}
+                </div>
               ) : (
                 <div className="space-y-2">
-                  {brigadas.map((brigada) => {
+                  {brigadasFiltradas.map((brigada) => {
                     const yaAsignado = tripulacion.some(t => t.usuario_id === brigada.id);
                     return (
                       <button
@@ -591,13 +664,12 @@ export default function CrearAsignacionPage() {
                         type="button"
                         onClick={() => rolSeleccionado && agregarTripulante(brigada, rolSeleccionado)}
                         disabled={yaAsignado}
-                        className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-                          yaAsignado
-                            ? 'opacity-50 cursor-not-allowed bg-gray-100 border-gray-200'
-                            : brigada.disponible
+                        className={`w-full text-left p-4 rounded-lg border-2 transition-all ${yaAsignado
+                          ? 'opacity-50 cursor-not-allowed bg-gray-100 border-gray-200'
+                          : brigada.disponible
                             ? 'hover:border-blue-500 hover:bg-blue-50 border-gray-200 bg-white'
                             : 'hover:border-amber-500 hover:bg-amber-50 border-gray-200 bg-white'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-gray-900">{brigada.nombre_completo}</span>

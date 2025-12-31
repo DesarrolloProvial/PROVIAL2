@@ -41,6 +41,10 @@ export interface SituacionCompleta {
   incidente_numero: string | null;
   creado_por_nombre: string;
   actualizado_por_nombre: string | null;
+  // Eventos Persistentes
+  evento_persistente_id: number | null;
+  evento_titulo: string | null;
+  evento_tipo: string | null;
 }
 
 interface SituacionesState {
@@ -56,6 +60,7 @@ interface SituacionesState {
   createSituacion: (data: CreateSituacionData) => Promise<SituacionCompleta>;
   updateSituacion: (id: number, data: UpdateSituacionData) => Promise<void>;
   cerrarSituacion: (id: number, observaciones_finales?: string) => Promise<void>;
+  cambiarTipoSituacion: (id: number, nuevoTipo: 'INCIDENTE' | 'ASISTENCIA_VEHICULAR', motivo?: string) => Promise<void>;
   refreshSituaciones: () => Promise<void>;
   clearError: () => void;
 }
@@ -238,6 +243,45 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.error || error.message || 'Error al cerrar situación';
+
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+
+      throw new Error(errorMessage);
+    }
+  },
+
+  // ========================================
+  // CAMBIAR TIPO SITUACIÓN
+  // ========================================
+  cambiarTipoSituacion: async (id: number, nuevoTipo: 'INCIDENTE' | 'ASISTENCIA_VEHICULAR', motivo?: string) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await axios.patch(`${API_URL}/situaciones/${id}/cambiar-tipo`, {
+        nuevo_tipo: nuevoTipo,
+        motivo,
+      });
+
+      const situacionActualizada = response.data.situacion;
+
+      // Actualizar en la lista local
+      const situacionesActualizadas = get().situacionesHoy.map((s) =>
+        s.id === id ? situacionActualizada : s
+      );
+
+      set({
+        situacionesHoy: situacionesActualizadas,
+        situacionActiva:
+          get().situacionActiva?.id === id ? situacionActualizada : get().situacionActiva,
+        isLoading: false,
+        lastUpdate: new Date(),
+      });
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.error || error.message || 'Error al cambiar tipo de situación';
 
       set({
         error: errorMessage,

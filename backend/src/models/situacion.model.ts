@@ -25,9 +25,13 @@ export type TipoDetalle =
   | 'VICTIMA'
   | 'GRUA'
   | 'ASEGURADORA'
+  | 'AJUSTADOR'
   | 'TESTIGO'
   | 'EVIDENCIA'
   | 'OBSTRUCCION'
+  | 'AUTORIDADES_SOCORRO'
+  | 'DANIOS'
+  | 'SUBTIPO'
   | 'OTROS';
 
 export interface Situacion {
@@ -112,6 +116,7 @@ export const SituacionModel = {
   async create(data: {
     tipo_situacion: TipoSituacion;
     unidad_id: number;
+    salida_unidad_id?: number;
     turno_id?: number;
     asignacion_id?: number;
     ruta_id?: number;
@@ -131,18 +136,19 @@ export const SituacionModel = {
   }): Promise<Situacion> {
     const query = `
       INSERT INTO situacion (
-        tipo_situacion, unidad_id, turno_id, asignacion_id,
+        tipo_situacion, unidad_id, salida_unidad_id, turno_id, asignacion_id,
         ruta_id, km, sentido, latitud, longitud, ubicacion_manual,
         combustible, combustible_fraccion, kilometraje_unidad, tripulacion_confirmada,
         descripcion, observaciones, incidente_id, creado_por
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
       ) RETURNING *
     `;
 
     return db.one(query, [
       data.tipo_situacion,
       data.unidad_id,
+      data.salida_unidad_id || null,
       data.turno_id || null,
       data.asignacion_id || null,
       data.ruta_id || null,
@@ -246,17 +252,55 @@ export const SituacionModel = {
     unidad_id?: number;
     turno_id?: number;
   }): Promise<SituacionCompleta[]> {
-    return this.list({ ...filters, estado: 'ACTIVA' });
+    let whereConditions: string[] = ["s.estado = 'ACTIVA'", "sal.estado = 'EN_SALIDA'"];
+    let params: any[] = [];
+    let paramIndex = 1;
+
+    if (filters?.unidad_id) {
+      whereConditions.push(`s.unidad_id = $${paramIndex++}`);
+      params.push(filters.unidad_id);
+    }
+
+    if (filters?.turno_id) {
+      whereConditions.push(`s.turno_id = $${paramIndex++}`);
+      params.push(filters.turno_id);
+    }
+
+    // Filtros de fecha (opcional, por si acaso)
+    // ...
+
+    const query = `
+      SELECT s.*
+      FROM v_situaciones_completas s
+      JOIN salida_unidad sal ON s.salida_unidad_id = sal.id
+      WHERE ${whereConditions.join(' AND ')}
+      ORDER BY s.created_at DESC
+    `;
+
+    return db.manyOrNone(query, params);
   },
 
   /**
    * Obtener situaciones de mi unidad hoy (para app móvil)
+   * Filtra por salida activa si existe, sino por fecha
    */
-  async getMiUnidadHoy(unidad_id: number): Promise<SituacionCompleta[]> {
+  async getMiUnidadHoy(unidad_id: number, salida_id?: number): Promise<SituacionCompleta[]> {
+    // Si hay salida activa, filtrar por ella
+    if (salida_id) {
+      const query = `
+        SELECT * FROM v_situaciones_completas
+        WHERE salida_unidad_id = $1
+        ORDER BY created_at DESC
+      `;
+      return db.manyOrNone(query, [salida_id]);
+    }
+
+    // Si no hay salida activa, mostrar situaciones de hoy de la unidad
     const query = `
       SELECT * FROM v_situaciones_completas
       WHERE unidad_id = $1
         AND DATE(created_at) = CURRENT_DATE
+        AND salida_unidad_id IS NOT NULL
       ORDER BY created_at DESC
     `;
 
@@ -264,39 +308,56 @@ export const SituacionModel = {
   },
 
   /**
-   * Obtener bitácora completa de una unidad
+   * Obtener bitácora completa de una unidad con tripulación y datos de salida
    */
   async getBitacoraUnidad(unidad_id: number, filters?: {
     fecha_desde?: Date;
     fecha_hasta?: Date;
     limit?: number;
-  }): Promise<SituacionCompleta[]> {
-    let whereConditions: string[] = [`unidad_id = $1`];
-    let params: any[] = [unidad_id];
-    let paramIndex = 2;
-
-    if (filters?.fecha_desde) {
-      whereConditions.push(`created_at >= $${paramIndex++}`);
-      params.push(filters.fecha_desde);
-    }
-
-    if (filters?.fecha_hasta) {
-      whereConditions.push(`created_at <= $${paramIndex++}`);
-      params.push(filters.fecha_hasta);
-    }
-
+  }): Promise<any[]> {
     const limit = filters?.limit || 100;
 
+    // Query con tripulación y datos de salida
     const query = `
-      SELECT * FROM v_situaciones_completas
-      WHERE ${whereConditions.join(' AND ')}
-      ORDER BY created_at DESC
-      LIMIT $${paramIndex}
+      WITH situaciones_base AS (
+        SELECT
+          vsc.*,
+          sal.id as salida_id,
+          sal.fecha_hora_salida,
+          sal.km_inicial as salida_km_inicial,
+          sal.combustible_inicial as salida_combustible_inicial,
+          sal_ruta.codigo as salida_ruta_codigo
+        FROM v_situaciones_completas vsc
+        LEFT JOIN salida_unidad sal ON vsc.salida_unidad_id = sal.id
+        LEFT JOIN ruta sal_ruta ON sal.ruta_inicial_id = sal_ruta.id
+        WHERE vsc.unidad_id = $1
+        ORDER BY vsc.created_at DESC
+        LIMIT $2
+      ),
+      tripulacion_data AS (
+        SELECT
+          tt.asignacion_id,
+          json_agg(
+            json_build_object(
+              'usuario_id', u.id,
+              'nombre_completo', u.nombre_completo,
+              'rol_tripulacion', tt.rol_tripulacion
+            ) ORDER BY tt.rol_tripulacion
+          ) as tripulacion
+        FROM tripulacion_turno tt
+        JOIN usuario u ON tt.usuario_id = u.id
+        WHERE tt.asignacion_id IN (SELECT DISTINCT asignacion_id FROM situaciones_base WHERE asignacion_id IS NOT NULL)
+        GROUP BY tt.asignacion_id
+      )
+      SELECT
+        sb.*,
+        COALESCE(td.tripulacion, '[]'::json) as tripulacion
+      FROM situaciones_base sb
+      LEFT JOIN tripulacion_data td ON sb.asignacion_id = td.asignacion_id
+      ORDER BY sb.created_at DESC
     `;
 
-    params.push(limit);
-
-    return db.manyOrNone(query, params);
+    return db.manyOrNone(query, [unidad_id, limit]);
   },
 
   /**

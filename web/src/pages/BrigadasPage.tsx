@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { Search, Plus, Edit2, Power, Repeat, Trash2, X, RefreshCw } from 'lucide-react';
+import { Search, Plus, Edit2, Power, Repeat, Trash2, X, RefreshCw, Shield } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import { useDebounce } from '../hooks/useDebounce';
+import { useAuthStore } from '../store/authStore';
 
 interface Brigada {
   id: number;
@@ -21,6 +22,19 @@ interface Brigada {
 interface Sede {
   id: number;
   nombre: string;
+}
+
+interface MotivoInactividad {
+  codigo: string;
+  nombre: string;
+  descripcion: string;
+  requiere_fecha_fin: boolean;
+}
+
+interface RolDisponible {
+  id: number;
+  nombre: string;
+  descripcion: string;
 }
 
 const ROLES_BRIGADA = ['PILOTO', 'COPILOTO', 'ACOMPAÑANTE'];
@@ -42,12 +56,24 @@ const brigadasAPI = {
     const { data } = await api.put(`/brigadas/${id}`, brigada);
     return data;
   },
-  desactivar: async (id: number) => {
-    const { data } = await api.put(`/brigadas/${id}/desactivar`);
+  desactivar: async (id: number, motivo_codigo: string, fecha_fin_estimada?: string, observaciones?: string) => {
+    const { data } = await api.put(`/brigadas/${id}/desactivar`, { motivo_codigo, fecha_fin_estimada, observaciones });
     return data;
   },
   activar: async (id: number) => {
     const { data } = await api.put(`/brigadas/${id}/activar`);
+    return data;
+  },
+  getMotivos: async () => {
+    const { data } = await api.get('/brigadas/catalogo/motivos-inactividad');
+    return data;
+  },
+  getRolesDisponibles: async () => {
+    const { data } = await api.get('/brigadas/catalogo/roles');
+    return data;
+  },
+  asignarRol: async (usuarioId: number, rol_id: number, sede_id?: number, es_rol_principal?: boolean) => {
+    const { data } = await api.post(`/brigadas/${usuarioId}/roles`, { rol_id, sede_id, es_rol_principal });
     return data;
   },
   transferir: async (id: number, nueva_sede_id: number, motivo?: string) => {
@@ -69,6 +95,10 @@ const sedesAPI = {
 
 export default function BrigadasPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+
+  // Solo ENCARGADO_NOMINAS con puede_ver_todas_sedes puede asignar roles
+  const puedeAsignarRoles = user?.rol === 'ADMIN' || (user?.rol === 'ENCARGADO_NOMINAS' && user?.puede_ver_todas_sedes);
 
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
@@ -77,6 +107,18 @@ export default function BrigadasPage() {
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState<Brigada | null>(null);
   const [modalTransferir, setModalTransferir] = useState<Brigada | null>(null);
+  const [modalDesactivar, setModalDesactivar] = useState<Brigada | null>(null);
+  const [modalAsignarRol, setModalAsignarRol] = useState<Brigada | null>(null);
+
+  // Desactivar form state
+  const [motivoCodigo, setMotivoCodigo] = useState('');
+  const [fechaFinEstimada, setFechaFinEstimada] = useState('');
+  const [observacionesDesactivar, setObservacionesDesactivar] = useState('');
+
+  // Asignar rol form state
+  const [rolSeleccionado, setRolSeleccionado] = useState('');
+  const [sedeRol, setSedeRol] = useState('');
+  const [esRolPrincipal, setEsRolPrincipal] = useState(true);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -104,8 +146,21 @@ export default function BrigadasPage() {
     queryFn: sedesAPI.listar,
   });
 
+  const { data: motivosData } = useQuery({
+    queryKey: ['motivosInactividad'],
+    queryFn: brigadasAPI.getMotivos,
+  });
+
+  const { data: rolesData } = useQuery({
+    queryKey: ['rolesDisponibles'],
+    queryFn: brigadasAPI.getRolesDisponibles,
+    enabled: puedeAsignarRoles,
+  });
+
   const brigadas: Brigada[] = brigadasData?.brigadas || [];
   const sedes: Sede[] = sedesData?.sedes || [];
+  const motivos: MotivoInactividad[] = motivosData?.motivos || [];
+  const rolesDisponibles: RolDisponible[] = rolesData?.roles || [];
 
   // Mutations
   const crearMutation = useMutation({
@@ -126,9 +181,20 @@ export default function BrigadasPage() {
     },
   });
 
-  const toggleActivaMutation = useMutation({
-    mutationFn: ({ id, activa }: { id: number; activa: boolean }) =>
-      activa ? brigadasAPI.desactivar(id) : brigadasAPI.activar(id),
+  const desactivarMutation = useMutation({
+    mutationFn: ({ id, motivo_codigo, fecha_fin_estimada, observaciones }: { id: number; motivo_codigo: string; fecha_fin_estimada?: string; observaciones?: string }) =>
+      brigadasAPI.desactivar(id, motivo_codigo, fecha_fin_estimada, observaciones),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brigadas'] });
+      setModalDesactivar(null);
+      setMotivoCodigo('');
+      setFechaFinEstimada('');
+      setObservacionesDesactivar('');
+    },
+  });
+
+  const activarMutation = useMutation({
+    mutationFn: brigadasAPI.activar,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brigadas'] });
     },
@@ -149,6 +215,18 @@ export default function BrigadasPage() {
     mutationFn: brigadasAPI.eliminar,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brigadas'] });
+    },
+  });
+
+  const asignarRolMutation = useMutation({
+    mutationFn: ({ usuarioId, rol_id, sede_id, es_rol_principal }: { usuarioId: number; rol_id: number; sede_id?: number; es_rol_principal?: boolean }) =>
+      brigadasAPI.asignarRol(usuarioId, rol_id, sede_id, es_rol_principal),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brigadas'] });
+      setModalAsignarRol(null);
+      setRolSeleccionado('');
+      setSedeRol('');
+      setEsRolPrincipal(true);
     },
   });
 
@@ -323,7 +401,7 @@ export default function BrigadasPage() {
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => toggleActivaMutation.mutate({ id: brigada.id, activa: brigada.activa })}
+                          onClick={() => brigada.activa ? setModalDesactivar(brigada) : activarMutation.mutate(brigada.id)}
                           className={`p-1.5 rounded ${
                             brigada.activa
                               ? 'text-orange-600 hover:bg-orange-100'
@@ -340,6 +418,15 @@ export default function BrigadasPage() {
                         >
                           <Repeat className="w-4 h-4" />
                         </button>
+                        {puedeAsignarRoles && (
+                          <button
+                            onClick={() => setModalAsignarRol(brigada)}
+                            className="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded"
+                            title="Asignar Rol"
+                          >
+                            <Shield className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             if (confirm('¿Esta seguro de eliminar esta brigada?')) {
@@ -662,6 +749,182 @@ export default function BrigadasPage() {
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium"
               >
                 {transferirMutation.isPending ? 'Transfiriendo...' : 'Transferir'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Desactivar */}
+      {modalDesactivar && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Desactivar Brigada</h2>
+              <button onClick={() => setModalDesactivar(null)} className="p-1 hover:bg-gray-100 rounded">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <p className="text-sm text-orange-800">
+                <span className="font-semibold">Brigada:</span> {modalDesactivar.nombre}
+              </p>
+              <p className="text-sm text-orange-800">
+                <span className="font-semibold">Chapa:</span> {modalDesactivar.chapa}
+              </p>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Motivo de Inactividad *</label>
+                <select
+                  value={motivoCodigo}
+                  onChange={(e) => setMotivoCodigo(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                >
+                  <option value="">Seleccionar motivo</option>
+                  {motivos.map((motivo) => (
+                    <option key={motivo.codigo} value={motivo.codigo}>{motivo.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              {motivoCodigo && motivos.find(m => m.codigo === motivoCodigo)?.requiere_fecha_fin && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Fecha Estimada de Regreso *</label>
+                  <input
+                    type="date"
+                    value={fechaFinEstimada}
+                    onChange={(e) => setFechaFinEstimada(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Observaciones</label>
+                <textarea
+                  value={observacionesDesactivar}
+                  onChange={(e) => setObservacionesDesactivar(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                  rows={3}
+                  placeholder="Observaciones adicionales..."
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setModalDesactivar(null)}
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  const motivoSeleccionado = motivos.find(m => m.codigo === motivoCodigo);
+                  if (motivoSeleccionado?.requiere_fecha_fin && !fechaFinEstimada) {
+                    alert('Este motivo requiere fecha estimada de regreso');
+                    return;
+                  }
+                  desactivarMutation.mutate({
+                    id: modalDesactivar.id,
+                    motivo_codigo: motivoCodigo,
+                    fecha_fin_estimada: fechaFinEstimada || undefined,
+                    observaciones: observacionesDesactivar || undefined,
+                  });
+                }}
+                disabled={!motivoCodigo || desactivarMutation.isPending}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 font-medium"
+              >
+                {desactivarMutation.isPending ? 'Desactivando...' : 'Desactivar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Asignar Rol */}
+      {modalAsignarRol && puedeAsignarRoles && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Asignar Rol</h2>
+              <button onClick={() => setModalAsignarRol(null)} className="p-1 hover:bg-gray-100 rounded">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+              <p className="text-sm text-indigo-800">
+                <span className="font-semibold">Usuario:</span> {modalAsignarRol.nombre}
+              </p>
+              <p className="text-sm text-indigo-800">
+                <span className="font-semibold">Chapa:</span> {modalAsignarRol.chapa}
+              </p>
+              <p className="text-sm text-indigo-800">
+                <span className="font-semibold">Sede actual:</span> {modalAsignarRol.sede_nombre}
+              </p>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Rol a Asignar *</label>
+                <select
+                  value={rolSeleccionado}
+                  onChange={(e) => setRolSeleccionado(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Seleccionar rol</option>
+                  {rolesDisponibles.map((rol) => (
+                    <option key={rol.id} value={rol.id}>{rol.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Sede del Rol</label>
+                <select
+                  value={sedeRol}
+                  onChange={(e) => setSedeRol(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Misma sede del usuario</option>
+                  {sedes.map((sede) => (
+                    <option key={sede.id} value={sede.id}>{sede.nombre}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Ej: OPERACIONES de San Cristóbal
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="esRolPrincipal"
+                  checked={esRolPrincipal}
+                  onChange={(e) => setEsRolPrincipal(e.target.checked)}
+                  className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                />
+                <label htmlFor="esRolPrincipal" className="text-sm text-gray-700">
+                  Establecer como rol principal (cambia el login del usuario)
+                </label>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setModalAsignarRol(null)}
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  asignarRolMutation.mutate({
+                    usuarioId: modalAsignarRol.id,
+                    rol_id: parseInt(rolSeleccionado),
+                    sede_id: sedeRol ? parseInt(sedeRol) : undefined,
+                    es_rol_principal: esRolPrincipal,
+                  });
+                }}
+                disabled={!rolSeleccionado || asignarRolMutation.isPending}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium"
+              >
+                {asignarRolMutation.isPending ? 'Asignando...' : 'Asignar Rol'}
               </button>
             </div>
           </div>

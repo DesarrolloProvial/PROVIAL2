@@ -183,6 +183,130 @@ export const SalidaModel = {
   },
 
   /**
+   * Obtener mi salida de hoy (activa o finalizada)
+   * Incluye resumen de situaciones del día
+   */
+  async getMiSalidaHoy(brigadaId: number): Promise<any | null> {
+    // Primero buscar en asignaciones permanentes
+    const salidaPermanente = await db.oneOrNone(`
+      SELECT
+        s.id AS salida_id,
+        s.unidad_id,
+        un.codigo AS unidad_codigo,
+        un.tipo_unidad,
+        s.estado,
+        s.fecha_hora_salida,
+        s.fecha_hora_regreso,
+        EXTRACT(EPOCH FROM COALESCE(s.fecha_hora_regreso, NOW()) - s.fecha_hora_salida) / 3600 AS horas_salida,
+        s.ruta_inicial_id,
+        r.codigo AS ruta_codigo,
+        r.nombre AS ruta_nombre,
+        s.km_inicial,
+        s.km_final,
+        s.combustible_inicial,
+        s.combustible_final,
+        s.km_recorridos,
+        s.tripulacion,
+        bu.rol_tripulacion AS mi_rol,
+        'PERMANENTE' AS tipo_asignacion,
+        (
+          SELECT COUNT(*)
+          FROM situacion sit
+          WHERE sit.salida_unidad_id = s.id
+        ) AS total_situaciones,
+        (
+          SELECT json_agg(json_build_object(
+            'id', sit.id,
+            'tipo', sit.tipo_situacion,
+            'estado', sit.estado,
+            'ruta_codigo', r2.codigo,
+            'km', sit.km,
+            'created_at', sit.created_at
+          ) ORDER BY sit.created_at)
+          FROM situacion sit
+          LEFT JOIN ruta r2 ON sit.ruta_id = r2.id
+          WHERE sit.salida_unidad_id = s.id
+        ) AS situaciones
+      FROM usuario u
+      JOIN brigada_unidad bu ON u.id = bu.brigada_id AND bu.activo = true
+      JOIN unidad un ON bu.unidad_id = un.id
+      JOIN salida_unidad s ON un.id = s.unidad_id
+        AND DATE(s.fecha_hora_salida) = CURRENT_DATE
+      LEFT JOIN ruta r ON s.ruta_inicial_id = r.id
+      WHERE u.id = $1
+      ORDER BY s.fecha_hora_salida DESC
+      LIMIT 1
+    `, [brigadaId]);
+
+    if (salidaPermanente) {
+      return salidaPermanente;
+    }
+
+    // Si no hay permanente, buscar por turno (hoy, mañana, o rango que incluya hoy)
+    return db.oneOrNone(`
+      SELECT
+        s.id AS salida_id,
+        s.unidad_id,
+        un.codigo AS unidad_codigo,
+        un.tipo_unidad,
+        s.estado,
+        s.fecha_hora_salida,
+        s.fecha_hora_regreso,
+        EXTRACT(EPOCH FROM COALESCE(s.fecha_hora_regreso, NOW()) - s.fecha_hora_salida) / 3600 AS horas_salida,
+        s.ruta_inicial_id,
+        r.codigo AS ruta_codigo,
+        r.nombre AS ruta_nombre,
+        s.km_inicial,
+        s.km_final,
+        s.combustible_inicial,
+        s.combustible_final,
+        s.km_recorridos,
+        s.tripulacion,
+        tt.rol_tripulacion AS mi_rol,
+        'TURNO' AS tipo_asignacion,
+        (
+          SELECT COUNT(*)
+          FROM situacion sit
+          WHERE sit.salida_unidad_id = s.id
+        ) AS total_situaciones,
+        (
+          SELECT json_agg(json_build_object(
+            'id', sit.id,
+            'tipo', sit.tipo_situacion,
+            'estado', sit.estado,
+            'ruta_codigo', r2.codigo,
+            'km', sit.km,
+            'created_at', sit.created_at
+          ) ORDER BY sit.created_at)
+          FROM situacion sit
+          LEFT JOIN ruta r2 ON sit.ruta_id = r2.id
+          WHERE sit.salida_unidad_id = s.id
+        ) AS situaciones
+      FROM usuario u
+      JOIN tripulacion_turno tt ON u.id = tt.usuario_id
+      JOIN asignacion_unidad au ON tt.asignacion_id = au.id
+      JOIN turno t ON au.turno_id = t.id
+      JOIN unidad un ON au.unidad_id = un.id
+      JOIN salida_unidad s ON un.id = s.unidad_id
+        AND DATE(s.fecha_hora_salida) = CURRENT_DATE
+      LEFT JOIN ruta r ON s.ruta_inicial_id = r.id
+      WHERE u.id = $1
+        AND (
+          -- Turno de hoy
+          t.fecha = CURRENT_DATE
+          -- Turno de mañana (permite trabajo adelantado)
+          OR t.fecha = CURRENT_DATE + INTERVAL '1 day'
+          -- Turno con rango que incluye hoy
+          OR (t.fecha <= CURRENT_DATE AND COALESCE(t.fecha_fin, t.fecha) >= CURRENT_DATE)
+          -- Turno activo o planificado reciente
+          OR (t.estado IN ('ACTIVO', 'PLANIFICADO') AND t.fecha >= CURRENT_DATE - INTERVAL '1 day')
+        )
+      ORDER BY s.fecha_hora_salida DESC
+      LIMIT 1
+    `, [brigadaId]);
+  },
+
+  /**
    * Iniciar salida de unidad
    */
   async iniciarSalida(data: {
@@ -192,6 +316,7 @@ export const SalidaModel = {
     combustible_inicial?: number;
     observaciones_salida?: string;
   }): Promise<number> {
+    // La función PostgreSQL acepta NUMERIC para km y combustible
     const result = await db.one(
       `SELECT iniciar_salida_unidad($1, $2, $3, $4, $5) AS salida_id`,
       [
@@ -228,6 +353,35 @@ export const SalidaModel = {
     );
 
     return result.success;
+  },
+
+  /**
+   * Finalizar jornada completa: marca salida como FINALIZADA,
+   * crea snapshot en bitacora_historica, y limpia las tablas operacionales
+   */
+  async finalizarJornadaCompleta(data: {
+    salida_id: number;
+    km_final?: number;
+    combustible_final?: number;
+    observaciones?: string;
+    finalizada_por: number;
+  }): Promise<{ success: boolean; bitacora_id: number | null; mensaje: string }> {
+    const result = await db.one(
+      `SELECT * FROM finalizar_jornada_completa($1, $2, $3, $4, $5)`,
+      [
+        data.salida_id,
+        data.km_final || null,
+        data.combustible_final || null,
+        data.observaciones || null,
+        data.finalizada_por
+      ]
+    );
+
+    return {
+      success: result.success,
+      bitacora_id: result.bitacora_id,
+      mensaje: result.mensaje
+    };
   },
 
   /**
@@ -424,7 +578,18 @@ export const SalidaModel = {
    */
   async getIngresoActivo(salidaId: number): Promise<any | null> {
     return db.oneOrNone(
-      `SELECT i.*, s.codigo AS sede_codigo, s.nombre AS sede_nombre
+      `SELECT
+         i.id AS ingreso_id,
+         i.salida_unidad_id,
+         i.sede_id,
+         i.tipo_ingreso,
+         i.fecha_hora_ingreso,
+         i.km_ingreso,
+         i.combustible_ingreso,
+         i.es_ingreso_final,
+         i.observaciones_ingreso,
+         s.codigo AS sede_codigo,
+         s.nombre AS sede_nombre
        FROM ingreso_sede i
        JOIN sede s ON i.sede_id = s.id
        WHERE i.salida_unidad_id = $1
@@ -494,6 +659,19 @@ export const SalidaModel = {
        LEFT JOIN municipio m ON s.municipio_id = m.id
        WHERE s.id = $1`,
       [sedeId]
+    );
+  },
+
+  /**
+   * Obtener sede de una unidad
+   */
+  async getSedeDeUnidad(unidadId: number): Promise<{ sede_id: number; sede_codigo: string; sede_nombre: string } | null> {
+    return db.oneOrNone(
+      `SELECT s.id as sede_id, s.codigo as sede_codigo, s.nombre as sede_nombre
+       FROM unidad u
+       JOIN sede s ON u.sede_id = s.id
+       WHERE u.id = $1`,
+      [unidadId]
     );
   },
 

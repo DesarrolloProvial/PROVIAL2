@@ -1,4 +1,6 @@
 import pgPromise from 'pg-promise';
+// @ts-ignore
+import { Pool } from 'pg';
 import { config } from './env';
 
 // Inicializar pg-promise
@@ -19,8 +21,22 @@ const connectionConfig = {
   connectionTimeoutMillis: 10000,
 };
 
-// Crear instancia de base de datos
+// Crear instancia de base de datos (pg-promise)
 export const db = pgp(connectionConfig);
+
+// Pool de pg nativo para controladores que usan pool.connect()
+const pool = new Pool({
+  host: config.db.host,
+  port: config.db.port,
+  database: config.db.name,
+  user: config.db.user,
+  password: config.db.password,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+});
+
+export default pool;
 
 // Test de conexión
 export async function testConnection(): Promise<boolean> {

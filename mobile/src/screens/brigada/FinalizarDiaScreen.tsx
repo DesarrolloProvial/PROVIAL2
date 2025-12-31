@@ -64,7 +64,7 @@ export default function FinalizarDiaScreen() {
       return;
     }
 
-    const kmNum = parseFloat(kmIngreso);
+    const kmNum = parseInt(kmIngreso, 10);
 
     if (isNaN(kmNum) || kmNum < 0) {
       Alert.alert('Error', 'El kilometraje debe ser un número válido');
@@ -245,9 +245,9 @@ export default function FinalizarDiaScreen() {
           <TextInput
             style={styles.input}
             value={kmIngreso}
-            onChangeText={setKmIngreso}
-            placeholder="Ej: 12456.8"
-            keyboardType="decimal-pad"
+            onChangeText={(text) => setKmIngreso(text.replace(/[^0-9]/g, ''))}
+            placeholder="Ej: 125000"
+            keyboardType="number-pad"
             editable={!loading}
           />
           <Text style={styles.hint}>Kilometraje al finalizar el día</Text>
@@ -313,7 +313,7 @@ export default function FinalizarDiaScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={{ height: 40 }} />
+      <View style={{ height: 80 }} />
     </ScrollView>
   );
 }

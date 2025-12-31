@@ -49,7 +49,7 @@ export interface CreateTurnoDTO {
 
 export interface CreateAsignacionDTO {
   unidad_id: number;
-  ruta_id?: number;
+  ruta_id?: number | null;
   km_inicio?: number;
   km_final?: number;
   sentido?: 'NORTE' | 'SUR' | 'ORIENTE' | 'OCCIDENTE';
@@ -59,6 +59,7 @@ export interface CreateAsignacionDTO {
   hora_salida?: string; // HH:MM
   hora_entrada_estimada?: string; // HH:MM
   tripulacion: TripulacionMiembro[];
+  es_reaccion?: boolean;
 }
 
 export interface Ruta {
@@ -124,8 +125,10 @@ export const turnosService = {
   },
 
   // Eliminar asignación
-  async deleteAsignacion(asignacionId: number): Promise<void> {
-    await api.delete(`/turnos/asignaciones/${asignacionId}`);
+  // forzar: true para cerrar salida activa y eliminar
+  async deleteAsignacion(asignacionId: number, forzar: boolean = false): Promise<{ message: string; salida_cerrada?: number }> {
+    const response = await api.delete(`/turnos/asignaciones/${asignacionId}${forzar ? '?forzar=true' : ''}`);
+    return response.data;
   },
 };
 

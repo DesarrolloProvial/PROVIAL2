@@ -597,6 +597,30 @@ services:
 
 ---
 
-**Versión**: 1.0
-**Última actualización**: 2025-01-26
+### Flujo 4: Inicio de Salida y Unidades de Reacción
+
+```
+1. Brigada inicia sesión y selecciona su asignación.
+2. Si es "Unidad de Reacción" (sin ruta fija):
+   a. App obliga a seleccionar ruta inicial (Pick-up list).
+   b. Usuario selecciona ruta y confirma.
+3. App hace POST /api/salidas/iniciar
+   Body: { 
+     unidad_id: 1, 
+     ruta_inicial_id: 5, // Requerido si es reacción
+     km_inicial: 10000 
+   }
+4. Backend:
+   a. Crea registro en salida_unidad.
+   b. Si es reacción: actualiza asignacion_unidad con la ruta seleccionada.
+   c. Marca unidad como "EN_SALIDA".
+5. COP:
+   a. Filtro de mapa se actualiza (unidad aparece visible).
+   b. Bitacora disponible.
+```
+
+---
+
+**Versión**: 1.1
+**Última actualización**: 2025-12-12
 **Autor**: Equipo Provial

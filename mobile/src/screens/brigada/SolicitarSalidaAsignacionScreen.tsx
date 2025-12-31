@@ -49,7 +49,7 @@ export default function SolicitarSalidaAsignacionScreen() {
       return false;
     }
 
-    const kmNum = parseFloat(kmSalida);
+    const kmNum = parseInt(kmSalida, 10);
     if (isNaN(kmNum) || kmNum < 0) {
       Alert.alert('Error', 'El kilometraje debe ser un número válido mayor o igual a 0');
       return false;
@@ -91,7 +91,7 @@ export default function SolicitarSalidaAsignacionScreen() {
 
       const payload = {
         asignacion_programada_id: asignacion_id,
-        km_salida: parseFloat(kmSalida),
+        km_salida: parseInt(kmSalida, 10),
         combustible_salida: combustibleDecimal,
         combustible_fraccion: combustibleFraccion,
         observaciones: observaciones.trim() || undefined,
@@ -170,9 +170,9 @@ export default function SolicitarSalidaAsignacionScreen() {
           <TextInput
             style={styles.input}
             value={kmSalida}
-            onChangeText={setKmSalida}
-            placeholder="Ej: 50234.6"
-            keyboardType="decimal-pad"
+            onChangeText={(text) => setKmSalida(text.replace(/[^0-9]/g, ''))}
+            placeholder="Ej: 125000"
+            keyboardType="number-pad"
             editable={!loading}
           />
           <Text style={styles.hint}>Kilometraje actual del odómetro de la unidad</Text>

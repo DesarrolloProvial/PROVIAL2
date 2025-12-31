@@ -8,8 +8,10 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useAuthStore } from '../../store/authStore';
 import { useSituacionesStore } from '../../store/situacionesStore';
 import { useTestMode } from '../../context/TestModeContext';
@@ -22,12 +24,27 @@ import {
 import FuelSelector from '../../components/FuelSelector';
 import RutaSelector from '../../components/RutaSelector';
 import * as Location from 'expo-location';
+import api from '../../services/api';
+
+type NuevaSituacionRouteProp = RouteProp<{
+  NuevaSituacion: {
+    editMode?: boolean;
+    situacionId?: number;
+    situacionData?: any;
+  };
+}, 'NuevaSituacion'>;
 
 export default function NuevaSituacionScreen() {
   const navigation = useNavigation();
+  const route = useRoute<NuevaSituacionRouteProp>();
   const { salidaActiva } = useAuthStore();
-  const { createSituacion, isLoading } = useSituacionesStore();
+  const { createSituacion, fetchMisSituacionesHoy, isLoading } = useSituacionesStore();
   const { testModeEnabled } = useTestMode();
+
+  // Parámetros de edición
+  const editMode = route.params?.editMode || false;
+  const situacionId = route.params?.situacionId;
+  const situacionData = route.params?.situacionData;
 
   // Estado del formulario
   const [tipoSeleccionado, setTipoSeleccionado] = useState<TipoSituacion | null>(null);
@@ -36,7 +53,6 @@ export default function NuevaSituacionScreen() {
   const [combustibleFraccion, setCombustibleFraccion] = useState<string | null>(null);
   const [combustibleDecimal, setCombustibleDecimal] = useState<number>(0);
   const [kilometraje, setKilometraje] = useState('');
-  const [descripcion, setDescripcion] = useState('');
   const [observaciones, setObservaciones] = useState('');
 
   // Coordenadas GPS
@@ -47,10 +63,72 @@ export default function NuevaSituacionScreen() {
 
   // Obtener ubicacion GPS automaticamente si NO esta en modo pruebas
   useEffect(() => {
-    if (!testModeEnabled) {
+    if (!testModeEnabled && !editMode) {
       obtenerUbicacionGPS();
     }
-  }, [testModeEnabled]);
+  }, [testModeEnabled, editMode]);
+
+  // Pre-llenar formulario en modo edición
+  useEffect(() => {
+    if (editMode && situacionData) {
+      console.log('[NuevaSituacion] Modo edición, cargando datos:', situacionData);
+
+      // Tipo de situación
+      if (situacionData.tipo_situacion) {
+        setTipoSeleccionado(situacionData.tipo_situacion as TipoSituacion);
+      }
+
+      // Kilómetro
+      if (situacionData.km !== null && situacionData.km !== undefined) {
+        setKm(situacionData.km.toString());
+      }
+
+      // Sentido
+      if (situacionData.sentido) {
+        setSentido(situacionData.sentido);
+      }
+
+      // Coordenadas
+      if (situacionData.latitud) {
+        setLatitud(situacionData.latitud.toString());
+      }
+      if (situacionData.longitud) {
+        setLongitud(situacionData.longitud.toString());
+      }
+
+      // Combustible
+      if (situacionData.combustible !== null && situacionData.combustible !== undefined) {
+        setCombustibleDecimal(situacionData.combustible);
+        // Convertir decimal a fracción
+        if (situacionData.combustible >= 1) {
+          setCombustibleFraccion('LLENO');
+        } else if (situacionData.combustible >= 0.75) {
+          setCombustibleFraccion('3/4');
+        } else if (situacionData.combustible >= 0.5) {
+          setCombustibleFraccion('1/2');
+        } else if (situacionData.combustible >= 0.25) {
+          setCombustibleFraccion('1/4');
+        } else {
+          setCombustibleFraccion('VACIO');
+        }
+      }
+
+      // Kilometraje de unidad
+      if (situacionData.kilometraje_unidad) {
+        setKilometraje(situacionData.kilometraje_unidad.toString());
+      }
+
+      // Observaciones
+      if (situacionData.observaciones) {
+        setObservaciones(situacionData.observaciones);
+      }
+
+      // Ruta
+      if (situacionData.ruta_id) {
+        setRutaSeleccionada(situacionData.ruta_id);
+      }
+    }
+  }, [editMode, situacionData]);
 
   const obtenerUbicacionGPS = async () => {
     try {
@@ -92,83 +170,121 @@ export default function NuevaSituacionScreen() {
       return;
     }
 
-    if (!salidaActiva) {
+    // En modo edición no necesitamos salidaActiva
+    if (!editMode && !salidaActiva) {
       Alert.alert('Error', 'No tienes una salida activa. Debes iniciar salida primero.');
       return;
     }
 
     const config = SITUACIONES_CONFIG[tipoSeleccionado];
 
-    // Validaciones según el tipo
-    if (tipoSeleccionado === 'SALIDA_SEDE' && !rutaSeleccionada) {
-      Alert.alert('Error', 'Debes seleccionar una ruta para salir de sede');
-      return;
-    }
-
-    if (config.requiereCombustible && !combustibleFraccion) {
-      Alert.alert('Error', 'El nivel de combustible es requerido');
-      return;
-    }
-
-    if (config.requiereKilometraje && !kilometraje) {
-      Alert.alert('Error', 'El kilometraje de la unidad es requerido');
-      return;
-    }
-
-    if (config.requiereRuta && !km) {
-      Alert.alert('Error', 'El kilómetro de ubicación es requerido');
-      return;
-    }
-
-    // Determinar qué ruta usar
-    let rutaFinal = rutaSeleccionada; // Para SALIDA_SEDE o CAMBIO_RUTA
-
-    // Si requiere ruta y no es SALIDA_SEDE/CAMBIO_RUTA, validar que existe ruta en salida activa
-    if (config.requiereRuta && !['SALIDA_SEDE', 'CAMBIO_RUTA'].includes(tipoSeleccionado)) {
-      if (!salidaActiva.ruta_codigo) {
-        Alert.alert(
-          'Error',
-          'No tienes una ruta asignada en tu salida. Realiza un "Cambio de Ruta" desde el menú principal primero.'
-        );
+    // Validaciones según el tipo (solo para creación)
+    if (!editMode) {
+      if (tipoSeleccionado === 'SALIDA_SEDE' && !rutaSeleccionada) {
+        Alert.alert('Error', 'Debes seleccionar una ruta para salir de sede');
         return;
       }
-      // Para situaciones que requieren ruta, usar la ruta de la salida
-      // Nota: salidaActiva solo tiene ruta_codigo, no ruta_id
-      // El backend deberá resolver el ruta_id basado en el código o usar el de la salida
+
+      if (config.requiereCombustible && !combustibleFraccion) {
+        Alert.alert('Error', 'El nivel de combustible es requerido');
+        return;
+      }
+
+      if (config.requiereKilometraje && !kilometraje) {
+        Alert.alert('Error', 'El kilometraje de la unidad es requerido');
+        return;
+      }
+
+      if (config.requiereRuta && !km) {
+        Alert.alert('Error', 'El kilómetro de ubicación es requerido');
+        return;
+      }
+
+      // Determinar qué ruta usar
+      let rutaFinal = rutaSeleccionada; // Para SALIDA_SEDE o CAMBIO_RUTA
+
+      // Si requiere ruta y no es SALIDA_SEDE/CAMBIO_RUTA, validar que existe ruta en salida activa
+      if (config.requiereRuta && !['SALIDA_SEDE', 'CAMBIO_RUTA'].includes(tipoSeleccionado)) {
+        if (!salidaActiva?.ruta_codigo) {
+          Alert.alert(
+            'Error',
+            'No tienes una ruta asignada en tu salida. Realiza un "Cambio de Ruta" desde el menú principal primero.'
+          );
+          return;
+        }
+      }
     }
 
     try {
-      const data = {
-        tipo_situacion: tipoSeleccionado,
-        unidad_id: salidaActiva.unidad_id,
-        salida_unidad_id: salidaActiva.salida_id,
-        ruta_id: rutaFinal || undefined,
-        km: km ? parseFloat(km) : undefined,
-        sentido: sentido || undefined,
-        latitud: latitud ? parseFloat(latitud) : undefined,
-        longitud: longitud ? parseFloat(longitud) : undefined,
-        combustible: combustibleDecimal || undefined,
-        combustible_fraccion: combustibleFraccion || undefined,
-        kilometraje_unidad: kilometraje ? parseInt(kilometraje, 10) : undefined,
-        descripcion: descripcion || undefined,
-        observaciones: observaciones || undefined,
-        ubicacion_manual: testModeEnabled, // true solo en modo pruebas
-      };
+      if (editMode && situacionId) {
+        // Modo edición - PATCH
+        const data = {
+          km: km ? parseFloat(km) : undefined,
+          sentido: sentido || undefined,
+          latitud: latitud ? parseFloat(latitud) : undefined,
+          longitud: longitud ? parseFloat(longitud) : undefined,
+          combustible: combustibleDecimal || undefined,
+          kilometraje_unidad: kilometraje ? parseInt(kilometraje, 10) : undefined,
+          observaciones: observaciones || undefined,
+        };
 
-      await createSituacion(data);
+        await api.patch(`/situaciones/${situacionId}`, data);
+        await fetchMisSituacionesHoy();
 
-      Alert.alert('Éxito', 'Situación creada correctamente', [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+        Alert.alert('Éxito', 'Situación actualizada correctamente', [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack(),
+          },
+        ]);
+      } else {
+        // Modo creación - POST
+        const data = {
+          tipo_situacion: tipoSeleccionado,
+          unidad_id: salidaActiva!.unidad_id,
+          salida_unidad_id: salidaActiva!.salida_id,
+          ruta_id: rutaSeleccionada || undefined,
+          km: km ? parseFloat(km) : undefined,
+          sentido: sentido || undefined,
+          latitud: latitud ? parseFloat(latitud) : undefined,
+          longitud: longitud ? parseFloat(longitud) : undefined,
+          combustible: combustibleDecimal || undefined,
+          combustible_fraccion: combustibleFraccion || undefined,
+          kilometraje_unidad: kilometraje ? parseInt(kilometraje, 10) : undefined,
+          observaciones: observaciones || undefined,
+          ubicacion_manual: testModeEnabled,
+        };
+
+        await createSituacion(data);
+
+        Alert.alert('Éxito', 'Situación creada correctamente', [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack(),
+          },
+        ]);
+      }
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'No se pudo crear la situación');
+      const mensaje = editMode ? 'No se pudo actualizar la situación' : 'No se pudo crear la situación';
+      Alert.alert('Error', error.response?.data?.error || error.message || mensaje);
     }
   };
 
   const renderTipoSelector = () => {
+    // En modo edición, no permitir cambiar el tipo
+    if (editMode && tipoSeleccionado) {
+      const config = SITUACIONES_CONFIG[tipoSeleccionado];
+      return (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Tipo de Situación</Text>
+          <View style={[styles.tipoButton, { backgroundColor: config.color, borderColor: config.color }]}>
+            <Text style={styles.tipoButtonTextSelected}>{config.label}</Text>
+          </View>
+          <Text style={styles.helperText}>El tipo de situación no se puede cambiar en modo edición</Text>
+        </View>
+      );
+    }
+
     // Filtrar los tipos que ya tienen su propia pantalla en el home
     const tipos = (Object.keys(SITUACIONES_CONFIG) as TipoSituacion[]).filter(
       (t) => !['SALIDA_SEDE', 'CAMBIO_RUTA', 'ASISTENCIA_VEHICULAR', 'INCIDENTE'].includes(t)
@@ -374,25 +490,14 @@ export default function NuevaSituacionScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Detalles</Text>
 
-        <Text style={styles.label}>Descripción</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={descripcion}
-          onChangeText={setDescripcion}
-          placeholder="Descripción breve de la situación"
-          multiline
-          numberOfLines={3}
-          placeholderTextColor={COLORS.text.disabled}
-        />
-
         <Text style={styles.label}>Observaciones</Text>
         <TextInput
           style={[styles.input, styles.textArea]}
           value={observaciones}
           onChangeText={setObservaciones}
-          placeholder="Observaciones adicionales"
+          placeholder="Observaciones de la situación"
           multiline
-          numberOfLines={3}
+          numberOfLines={4}
           placeholderTextColor={COLORS.text.disabled}
         />
       </View>
@@ -400,10 +505,25 @@ export default function NuevaSituacionScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Información de salida activa */}
-        {salidaActiva && (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Información de salida activa o modo edición */}
+        {editMode ? (
+          <View style={[styles.headerCard, { backgroundColor: COLORS.warning }]}>
+            <Text style={styles.headerTitle}>✏️ Modo Edición</Text>
+            <Text style={styles.headerSubtitle}>
+              Editando situación {situacionData?.numero_situacion || `#${situacionId}`}
+            </Text>
+          </View>
+        ) : salidaActiva ? (
           <View style={styles.headerCard}>
             <Text style={styles.headerTitle}>Unidad: {salidaActiva.unidad_codigo}</Text>
             {salidaActiva.ruta_codigo && (
@@ -412,7 +532,7 @@ export default function NuevaSituacionScreen() {
               </Text>
             )}
           </View>
-        )}
+        ) : null}
 
         {/* Tipo de situación */}
         {renderTipoSelector()}
@@ -427,21 +547,27 @@ export default function NuevaSituacionScreen() {
         )}
       </ScrollView>
 
-      {/* Botón de crear */}
+      {/* Botón de crear/actualizar */}
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.createButton, (!tipoSeleccionado || isLoading) && styles.buttonDisabled]}
+          style={[
+            styles.createButton,
+            (!tipoSeleccionado || isLoading) && styles.buttonDisabled,
+            editMode && { backgroundColor: COLORS.warning }
+          ]}
           onPress={handleCrearSituacion}
           disabled={!tipoSeleccionado || isLoading}
         >
           {isLoading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.createButtonText}>Crear Situación</Text>
+            <Text style={styles.createButtonText}>
+              {editMode ? 'Actualizar Situación' : 'Crear Situación'}
+            </Text>
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -583,12 +709,9 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: COLORS.white,
     padding: 16,
+    paddingBottom: 32,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
   },

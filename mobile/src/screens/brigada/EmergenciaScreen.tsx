@@ -12,8 +12,9 @@ import {
     TextInput,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { COLORS } from '../../constants/colors';
+import api from '../../services/api';
 import {
     TIPOS_EMERGENCIA,
     SENTIDOS,
@@ -26,11 +27,28 @@ import ObstruccionManager from '../../components/ObstruccionManager';
 // New Imports
 import { useForm, Controller } from 'react-hook-form';
 import { Provider as PaperProvider, SegmentedButtons, TextInput as PaperInput, Button, Switch } from 'react-native-paper';
+import MultimediaCapture from '../../components/MultimediaCapture';
+
+// Route params type for edit mode
+type EmergenciaScreenRouteProp = RouteProp<{
+    EmergenciaScreen: {
+        editMode?: boolean;
+        situacionId?: number;
+        situacionData?: any;
+    };
+}, 'EmergenciaScreen'>;
 
 export default function EmergenciaScreen() {
     const navigation = useNavigation();
+    const route = useRoute<EmergenciaScreenRouteProp>();
+    const { editMode, situacionId: situacionIdParam, situacionData } = route.params || {};
+
     const { salidaActiva } = useAuthStore();
     const { testModeEnabled } = useTestMode();
+
+    // Estado para situacionId (se obtiene después de crear o desde params en editMode)
+    const [situacionId, setSituacionId] = useState<number | null>(editMode && situacionIdParam ? situacionIdParam : null);
+    const [multimediaComplete, setMultimediaComplete] = useState(false);
 
     // Coordenadas manuales para modo pruebas
     const [latitudManual, setLatitudManual] = useState('14.6349');
@@ -81,7 +99,37 @@ export default function EmergenciaScreen() {
     );
 
     useEffect(() => {
-        // Auto-restaurar borrador sin diálogo de confirmación
+        // Si estamos en modo edición, cargar los datos de la situación
+        if (editMode && situacionData) {
+            console.log('[EDIT MODE] Cargando datos de emergencia:', situacionData);
+            reset({
+                tipoEmergencia: situacionData.tipo_emergencia || situacionData.tipo_situacion || '',
+                rutaId: situacionData.ruta_id,
+                kmInicio: situacionData.km?.toString() || '',
+                kmFin: situacionData.km_fin?.toString() || '',
+                esRango: !!situacionData.km_fin,
+                sentido: situacionData.sentido || '',
+                autoridadesSeleccionadas: situacionData.autoridades_seleccionadas || [],
+                detallesAutoridades: situacionData.detalles_autoridades || {},
+                socorroSeleccionado: situacionData.socorro_seleccionado || [],
+                detallesSocorro: situacionData.detalles_socorro || {},
+                obstruye: situacionData.obstruye || '',
+                observaciones: situacionData.observaciones || '',
+                jurisdiccion: situacionData.jurisdiccion || '',
+            });
+            // Cargar coordenadas si existen
+            if (situacionData.latitud && situacionData.longitud) {
+                setCoordenadas({
+                    latitud: parseFloat(situacionData.latitud),
+                    longitud: parseFloat(situacionData.longitud),
+                });
+                setLatitudManual(situacionData.latitud.toString());
+                setLongitudManual(situacionData.longitud.toString());
+            }
+            return; // No cargar borrador ni GPS en modo edición
+        }
+
+        // Auto-restaurar borrador sin diálogo de confirmación (solo en modo creación)
         const loadPreviousDraft = async () => {
             const draft = await loadDraft();
             if (draft) {
@@ -94,7 +142,7 @@ export default function EmergenciaScreen() {
         if (!testModeEnabled) {
             obtenerUbicacion();
         }
-    }, [testModeEnabled]);
+    }, [testModeEnabled, editMode, situacionData]);
 
     const obtenerUbicacion = async () => {
         try {
@@ -117,14 +165,17 @@ export default function EmergenciaScreen() {
     };
 
     const onSubmit = async (data: any) => {
-        // Validar que haya salida activa y ruta
-        if (!salidaActiva) {
-            Alert.alert('Error', 'No hay salida activa. Debes iniciar una salida primero.');
-            return;
-        }
-        if (!salidaActiva.ruta_codigo) {
-            Alert.alert('Error', 'No tienes ruta asignada. Ve a "Cambio de Ruta" para asignar una ruta primero.');
-            return;
+        // En modo edición, no requerimos salida activa
+        if (!editMode) {
+            // Validar que haya salida activa y ruta (solo en creación)
+            if (!salidaActiva) {
+                Alert.alert('Error', 'No hay salida activa. Debes iniciar una salida primero.');
+                return;
+            }
+            if (!salidaActiva.ruta_codigo) {
+                Alert.alert('Error', 'No tienes ruta asignada. Ve a "Cambio de Ruta" para asignar una ruta primero.');
+                return;
+            }
         }
         if (!data.tipoEmergencia || !data.kmInicio) {
             Alert.alert('Error', 'Complete los campos obligatorios (Tipo, Km)');
@@ -145,28 +196,55 @@ export default function EmergenciaScreen() {
 
         try {
             setGuardando(true);
-            const emergenciaData = {
-                ...data,
-                latitud: latFinal,
-                longitud: lonFinal,
-                ubicacion_manual: testModeEnabled,
-                unidad_id: salidaActiva.unidad_id,
-                salida_unidad_id: salidaActiva.salida_id,
-                tipo_situacion: 'OTROS',
-                tipo_emergencia: data.tipoEmergencia,
-                ruta_id: salidaActiva.ruta_codigo, // Usar ruta de la salida activa
-                km: parseFloat(data.kmInicio),
-                km_fin: data.esRango ? parseFloat(data.kmFin) : null,
-            };
 
-            console.log('Enviando emergencia:', emergenciaData);
-            // TODO: Call API
-            // await api.post('/emergencias', emergenciaData);
+            if (editMode && situacionId) {
+                // Modo edición: actualizar situación existente
+                const updateData = {
+                    tipo_emergencia: data.tipoEmergencia,
+                    km: parseFloat(data.kmInicio),
+                    km_fin: data.esRango ? parseFloat(data.kmFin) : null,
+                    sentido: data.sentido || null,
+                    obstruye: data.obstruye || null,
+                    observaciones: data.observaciones || null,
+                    jurisdiccion: data.jurisdiccion || null,
+                    autoridades_seleccionadas: data.autoridadesSeleccionadas,
+                    detalles_autoridades: data.detallesAutoridades,
+                    socorro_seleccionado: data.socorroSeleccionado,
+                    detalles_socorro: data.detallesSocorro,
+                    latitud: latFinal,
+                    longitud: lonFinal,
+                };
 
-            await clearDraft();
-            Alert.alert('Éxito', 'Emergencia registrada', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+                console.log('Actualizando emergencia:', situacionId, updateData);
+                await api.patch(`/situaciones/${situacionId}`, updateData);
+                Alert.alert('Éxito', 'Emergencia actualizada', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+            } else {
+                // Modo creación
+                const emergenciaData = {
+                    ...data,
+                    latitud: latFinal,
+                    longitud: lonFinal,
+                    ubicacion_manual: testModeEnabled,
+                    unidad_id: salidaActiva!.unidad_id,
+                    salida_unidad_id: salidaActiva!.salida_id,
+                    tipo_situacion: 'OTROS',
+                    tipo_emergencia: data.tipoEmergencia,
+                    ruta_id: salidaActiva!.ruta_codigo,
+                    km: parseFloat(data.kmInicio),
+                    km_fin: data.esRango ? parseFloat(data.kmFin) : null,
+                };
+
+                console.log('Creando emergencia:', emergenciaData);
+                // TODO: Implement API call for creating emergencia
+                // const response = await api.post('/emergencias', emergenciaData);
+                // setSituacionId(response.data.id);
+
+                await clearDraft();
+                Alert.alert('Éxito', 'Emergencia registrada', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+            }
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'No se pudo guardar');
+            console.error('Error guardando emergencia:', error);
+            Alert.alert('Error', error.response?.data?.message || error.message || 'No se pudo guardar');
         } finally {
             setGuardando(false);
         }
@@ -183,6 +261,7 @@ export default function EmergenciaScreen() {
                             { value: 'general', label: 'General' },
                             { value: 'recursos', label: 'Recursos' },
                             { value: 'otros', label: 'Otros' },
+                            { value: 'evidencia', label: 'Evidencia', disabled: !situacionId },
                         ]}
                     />
                 </View>
@@ -280,7 +359,7 @@ export default function EmergenciaScreen() {
                                     render={({ field: { onChange, value } }) => (
                                         <PaperInput
                                             label={esRango ? "Km Inicial *" : "Kilómetro *"}
-                                            value={value}
+                                            value={value || ''}
                                             onChangeText={onChange}
                                             keyboardType="numeric"
                                             style={[styles.input, esRango ? styles.half : { width: '100%' }]}
@@ -294,7 +373,7 @@ export default function EmergenciaScreen() {
                                         render={({ field: { onChange, value } }) => (
                                             <PaperInput
                                                 label="Km Final *"
-                                                value={value}
+                                                value={value || ''}
                                                 onChangeText={onChange}
                                                 keyboardType="numeric"
                                                 style={[styles.input, styles.half]}
@@ -310,7 +389,7 @@ export default function EmergenciaScreen() {
                                 render={({ field: { onChange, value } }) => (
                                     <View style={styles.pickerContainer}>
                                         <Text>Sentido</Text>
-                                        <Picker selectedValue={value} onValueChange={onChange}>
+                                        <Picker selectedValue={value || ''} onValueChange={onChange}>
                                             <Picker.Item label="Seleccionar..." value="" />
                                             {SENTIDOS.map(s => <Picker.Item key={s.value} label={s.label} value={s.value} />)}
                                         </Picker>
@@ -322,7 +401,7 @@ export default function EmergenciaScreen() {
                                 control={control}
                                 name="jurisdiccion"
                                 render={({ field: { onChange, value } }) => (
-                                    <PaperInput label="Jurisdicción (Muni/Depto)" value={value} onChangeText={onChange} style={styles.input} />
+                                    <PaperInput label="Jurisdicción (Muni/Depto)" value={value || ''} onChangeText={onChange} style={styles.input} />
                                 )}
                             />
 
@@ -361,18 +440,45 @@ export default function EmergenciaScreen() {
                                 control={control}
                                 name="observaciones"
                                 render={({ field: { onChange, value } }) => (
-                                    <PaperInput label="Observaciones" value={value} onChangeText={onChange} multiline numberOfLines={4} style={styles.textArea} />
+                                    <PaperInput label="Observaciones" value={value || ''} onChangeText={onChange} multiline numberOfLines={4} style={styles.textArea} />
                                 )}
                             />
+                        </View>
+                    )}
+
+                    {activeTab === 'evidencia' && situacionId && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Evidencia Fotográfica y Video</Text>
+                            <Text style={{ color: COLORS.gray[500], marginBottom: 12, fontSize: 13 }}>
+                                Se requieren 3 fotos y 1 video para completar la documentación.
+                            </Text>
+                            <MultimediaCapture
+                                situacionId={situacionId}
+                                tipoSituacion="EMERGENCIA"
+                                onComplete={setMultimediaComplete}
+                                location={coordenadas ? { latitude: coordenadas.latitud, longitude: coordenadas.longitud } : undefined}
+                            />
+                        </View>
+                    )}
+
+                    {activeTab === 'evidencia' && !situacionId && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Evidencia Fotográfica y Video</Text>
+                            <View style={{ padding: 20, backgroundColor: COLORS.gray[100], borderRadius: 8, alignItems: 'center' }}>
+                                <Text style={{ color: COLORS.gray[600], textAlign: 'center' }}>
+                                    Primero guarda la emergencia para poder agregar fotos y video.
+                                </Text>
+                            </View>
                         </View>
                     )}
 
                     <View style={styles.buttonContainer}>
                         <Button mode="outlined" onPress={() => navigation.goBack()} style={styles.button}>Cancelar</Button>
                         <Button mode="contained" onPress={handleSubmit(onSubmit)} loading={guardando} disabled={guardando} style={styles.button}>
-                            Guardar Emergencia
+                            {editMode ? 'Actualizar Emergencia' : 'Guardar Emergencia'}
                         </Button>
                     </View>
+                    <View style={{ height: 80 }} />
                 </ScrollView>
             </View>
         </PaperProvider>

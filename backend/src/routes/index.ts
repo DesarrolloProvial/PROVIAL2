@@ -19,6 +19,11 @@ import solicitudesSalidaRoutes from './solicitudesSalida';
 import testModeRoutes from './testMode.routes';
 import brigadasRoutes from './brigadas.routes';
 import unidadesRoutes from './unidades.routes';
+import eventoRoutes from './evento.routes';
+import multimediaRoutes from './multimedia.routes';
+import asignacionAvanzadaRoutes from './asignacionAvanzada.routes';
+import ubicacionBrigadaRoutes from './ubicacionBrigada.routes';
+import situacionPersistenteRoutes from './situacionPersistente.routes';
 
 const router = Router();
 
@@ -82,7 +87,19 @@ router.use('/brigadas', brigadasRoutes);
 // Rutas de gestión de unidades
 router.use('/unidades', unidadesRoutes);
 
-// TODO: Agregar más rutas aquí
-// router.use('/catalogos', catalogosRoutes);
+// Rutas de eventos persistentes/situaciones de larga duración
+router.use('/eventos', eventoRoutes);
+
+// Rutas de multimedia (fotos y videos de situaciones)
+router.use('/multimedia', multimediaRoutes);
+
+// Rutas de asignaciones avanzadas (por sede, borradores, situaciones fijas)
+router.use('/asignaciones-avanzadas', asignacionAvanzadaRoutes);
+
+// Rutas de ubicación de brigadas (préstamos, divisiones, cambios)
+router.use('/ubicacion-brigadas', ubicacionBrigadaRoutes);
+
+// Rutas de situaciones persistentes (derrumbes, obras, etc.)
+router.use('/situaciones-persistentes', situacionPersistenteRoutes);
 
 export default router;

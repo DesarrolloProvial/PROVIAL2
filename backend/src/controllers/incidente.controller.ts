@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import { IncidenteModel } from '../models/incidente.model';
 import { TurnoModel } from '../models/turno.model';
+import { SituacionModel } from '../models/situacion.model';
+import { SalidaModel } from '../models/salida.model';
+import { db } from '../config/database';
 
 // ========================================
 // CREAR INCIDENTE
@@ -35,6 +38,10 @@ export async function createIncidente(req: Request, res: Response) {
       gruas, // Array opcional de grúas
       ajustadores, // Array opcional de ajustadores
       personas, // Array opcional de personas involucradas
+      // Campos para la Situación
+      salida_unidad_id,
+      turno_id,
+      asignacion_id,
     } = req.body;
 
     const userId = req.user!.userId;
@@ -54,12 +61,35 @@ export async function createIncidente(req: Request, res: Response) {
     let unidad_id: number | undefined;
     let brigada_id: number | undefined;
 
+    // Variables para la situación
+    let situacion_unidad_id: number | undefined;
+    let situacion_salida_id: number | undefined = salida_unidad_id;
+    let situacion_turno_id: number | undefined = turno_id;
+    let situacion_asignacion_id: number | undefined = asignacion_id;
+
     if (userRole === 'BRIGADA') {
       const miAsignacion = await TurnoModel.getMiAsignacionHoy(userId);
       if (miAsignacion) {
         unidad_id = miAsignacion.unidad_id;
         brigada_id = userId; // El brigada es el usuario autenticado
+
+        // Para la situacion
+        situacion_unidad_id = miAsignacion.unidad_id;
+        if (!situacion_turno_id) situacion_turno_id = miAsignacion.turno_id;
+        if (!situacion_asignacion_id) situacion_asignacion_id = miAsignacion.asignacion_id;
       }
+
+      // Intentar obtener salida activa si no viene en el body
+      if (!situacion_salida_id) {
+        const miSalida = await SalidaModel.getMiSalidaActiva(userId);
+        if (miSalida) {
+          situacion_salida_id = miSalida.salida_id;
+        }
+      }
+    } else if (req.body.unidad_id) {
+      // Si lo crea COP, usar unidad_id del body
+      unidad_id = req.body.unidad_id;
+      situacion_unidad_id = req.body.unidad_id;
     }
 
     // Generar número de reporte
@@ -94,6 +124,26 @@ export async function createIncidente(req: Request, res: Response) {
       danios_infraestructura,
       creado_por: userId,
     });
+
+    // Crear la Situación correspondiente (para que aparezca en Bitácora)
+    if (situacion_unidad_id) {
+      await SituacionModel.create({
+        tipo_situacion: 'INCIDENTE',
+        unidad_id: situacion_unidad_id,
+        salida_unidad_id: situacion_salida_id,
+        turno_id: situacion_turno_id,
+        asignacion_id: situacion_asignacion_id,
+        incidente_id: incidente.id,
+        ruta_id,
+        km,
+        sentido,
+        latitud,
+        longitud,
+        descripcion: `Incidente ${numero_reporte}: ${observaciones_iniciales || ''}`.substring(0, 255),
+        creado_por: userId,
+        ubicacion_manual: req.body.ubicacion_manual || false
+      });
+    }
 
     // Actualizar el número de reporte
     await IncidenteModel.update(incidente.id, { numero_reporte }, userId);
@@ -292,8 +342,19 @@ export async function updateIncidente(req: Request, res: Response) {
       return res.status(404).json({ error: 'Incidente no encontrado' });
     }
 
-    // Actualizar campos permitidos
+    // Actualizar campos permitidos (Expanded list for full editing)
     const camposPermitidos = [
+      'tipo_hecho_id',
+      'subtipo_hecho_id',
+      'ruta_id',
+      'km',
+      'sentido',
+      'latitud',
+      'longitud',
+      'direccion_detallada',
+      'danios_infraestructura_desc',
+      'danios_materiales',
+      'danios_infraestructura',
       'observaciones_iniciales',
       'observaciones_finales',
       'referencia_ubicacion',
@@ -329,8 +390,32 @@ export async function updateIncidente(req: Request, res: Response) {
       userId
     );
 
-    // TODO: Emitir evento WebSocket
-    // io.to('cop').emit('incidente:actualizado', incidenteActualizado);
+    // Sincronizar con Situacion (Descripción y ubicación)
+    try {
+      const situacion = await db.oneOrNone('SELECT id, descripcion FROM situacion WHERE incidente_id = $1', [incidenteId]);
+
+      if (situacion) {
+        const numeroReporte = incidenteActualizado.numero_reporte;
+        const nuevaDescripcion = `Incidente ${numeroReporte}: ${incidenteActualizado.observaciones_iniciales || ''}`.substring(0, 255);
+
+        const datosSituacion: any = {
+          descripcion: nuevaDescripcion,
+          observaciones: incidenteActualizado.observaciones_iniciales
+        };
+
+        // Sync location if changed
+        if (datosActualizar.km) datosSituacion.km = datosActualizar.km;
+        if (datosActualizar.ruta_id) datosSituacion.ruta_id = datosActualizar.ruta_id;
+        if (datosActualizar.latitud) datosSituacion.latitud = datosActualizar.latitud;
+        if (datosActualizar.longitud) datosSituacion.longitud = datosActualizar.longitud;
+        if (datosActualizar.sentido) datosSituacion.sentido = datosActualizar.sentido;
+
+        await SituacionModel.update(situacion.id, datosSituacion);
+      }
+    } catch (syncError) {
+      console.error('Error syncing Situacion:', syncError);
+      // No fallar el request principal
+    }
 
     return res.json({
       message: 'Incidente actualizado exitosamente',

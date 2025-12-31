@@ -7,7 +7,6 @@
 
 import { Request, Response } from 'express';
 import pool from '../config/database';
-import { registrarAuditoria } from '../utils/auditoria';
 
 /**
  * Crear una nueva asignación programada
@@ -275,7 +274,7 @@ export async function crearAsignacionProgramada(req: Request, res: Response) {
  */
 export async function listarAsignaciones(req: Request, res: Response) {
     try {
-        const { estado, unidad_id, desde, hasta, sede_id } = req.query;
+        const { estado, unidad_id, desde, hasta } = req.query;
 
         let query = `SELECT * FROM v_asignaciones_completas WHERE 1=1`;
         const params: any[] = [];

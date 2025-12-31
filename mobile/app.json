@@ -40,7 +40,8 @@
         {
           "cameraPermission": "Permitir a Provial usar la cámara para reportar incidentes."
         }
-      ]
+      ],
+      "expo-video"
     ]
   }
 }

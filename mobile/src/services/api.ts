@@ -132,4 +132,32 @@ export const turnosAPI = {
   },
 };
 
+export const salidasAPI = {
+  async finalizarSalida(params: {
+    km_final?: number;
+    combustible_final?: number;
+    observaciones?: string;
+  }): Promise<any> {
+    const { data } = await api.post('/salidas/finalizar', params);
+    return data;
+  },
+
+  async finalizarJornadaCompleta(): Promise<any> {
+    const { data } = await api.post('/salidas/finalizar-jornada');
+    return data;
+  },
+};
+
+export const ingresosAPI = {
+  async getMisIngresosHoy(): Promise<{ ingresos: any[]; total: number }> {
+    const { data } = await api.get('/ingresos/mis-ingresos-hoy');
+    return data;
+  },
+
+  async getIngreso(id: number): Promise<any> {
+    const { data } = await api.get(`/ingresos/${id}`);
+    return data;
+  },
+};
+
 export default api;

@@ -3,17 +3,29 @@ import { TurnoModel } from '../models/turno.model';
 import { db } from '../config/database';
 
 // GET /api/turnos/hoy - Obtener turno de hoy con asignaciones de hoy y futuras
-export async function getTurnoHoy(_req: Request, res: Response) {
+// SIEMPRE filtra por sede del usuario (puede_ver_todas_sedes solo aplica en página de Sedes)
+export async function getTurnoHoy(req: Request, res: Response) {
   try {
-    const turno = await TurnoModel.findHoy();
+    const userSedeId = req.user?.sede;
+    const turno = await TurnoModel.findHoy(userSedeId);
 
-    // Obtener TODAS las asignaciones pendientes (hoy y futuras)
-    const asignaciones = await db.any('SELECT * FROM v_asignaciones_pendientes ORDER BY fecha, hora_salida');
+    // SIEMPRE filtrar por sede del usuario en el dashboard general
+    let asignaciones;
+    if (userSedeId) {
+      asignaciones = await db.any(
+        'SELECT * FROM v_asignaciones_pendientes WHERE sede_id = $1 ORDER BY fecha, hora_salida',
+        [userSedeId]
+      );
+    } else {
+      // Usuarios sin sede no ven ninguna asignación
+      asignaciones = [];
+    }
 
     return res.json({
       turno,
       asignaciones,
-      total_asignaciones: asignaciones.length
+      total_asignaciones: asignaciones.length,
+      sede_usuario: userSedeId
     });
   } catch (error) {
     console.error('Error en getTurnoHoy:', error);
@@ -21,14 +33,26 @@ export async function getTurnoHoy(_req: Request, res: Response) {
   }
 }
 
-// GET /api/turnos/pendientes - Obtener todas las asignaciones pendientes
-export async function getAsignacionesPendientes(_req: Request, res: Response) {
+// GET /api/turnos/pendientes - Obtener asignaciones pendientes (filtradas por sede)
+// SIEMPRE filtra por sede del usuario
+export async function getAsignacionesPendientes(req: Request, res: Response) {
   try {
-    const asignaciones = await db.any('SELECT * FROM v_asignaciones_pendientes ORDER BY fecha, hora_salida');
+    const userSedeId = req.user?.sede;
+
+    let asignaciones;
+    if (userSedeId) {
+      asignaciones = await db.any(
+        'SELECT * FROM v_asignaciones_pendientes WHERE sede_id = $1 ORDER BY fecha, hora_salida',
+        [userSedeId]
+      );
+    } else {
+      asignaciones = [];
+    }
 
     return res.json({
       asignaciones,
-      total: asignaciones.length
+      total: asignaciones.length,
+      sede_usuario: userSedeId
     });
   } catch (error) {
     console.error('Error en getAsignacionesPendientes:', error);
@@ -61,17 +85,49 @@ export async function getMiAsignacionHoy(req: Request, res: Response) {
   }
 }
 
-// POST /api/turnos - Crear turno (solo Operaciones)
-export async function createTurno(req: Request, res: Response) {
+// GET /api/turnos/fecha/:fecha - Obtener turno por fecha
+export async function getTurnoByFecha(req: Request, res: Response) {
   try {
-    const { fecha, fecha_fin, observaciones } = req.body;
+    const { fecha } = req.params;
 
     if (!fecha) {
       return res.status(400).json({ error: 'La fecha es requerida' });
     }
 
-    // Verificar que no exista ya un turno para esa fecha
-    const existente = await TurnoModel.findByFecha(fecha);
+    const turno = await TurnoModel.findByFecha(fecha);
+
+    if (!turno) {
+      return res.status(404).json({
+        error: 'No existe turno para esta fecha',
+        fecha
+      });
+    }
+
+    return res.json({ turno });
+  } catch (error) {
+    console.error('Error en getTurnoByFecha:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+// POST /api/turnos - Crear turno (solo Operaciones)
+export async function createTurno(req: Request, res: Response) {
+  try {
+    const { fecha, fecha_fin, observaciones, sede_id } = req.body;
+
+    if (!fecha) {
+      return res.status(400).json({ error: 'La fecha es requerida' });
+    }
+
+    // Determinar sede_id: del body, o del usuario que crea
+    const sedeIdFinal = sede_id || req.user?.sede || null;
+
+    // Verificar que no exista ya un turno para esa fecha y sede
+    const existente = await db.oneOrNone(
+      'SELECT * FROM turno WHERE fecha = $1 AND (sede_id = $2 OR ($2 IS NULL AND sede_id IS NULL))',
+      [fecha, sedeIdFinal]
+    );
+
     if (existente) {
       // Si existe, lo usamos (las asignaciones se agregarán a este turno)
       return res.status(200).json({
@@ -84,7 +140,8 @@ export async function createTurno(req: Request, res: Response) {
       fecha,
       fecha_fin: fecha_fin || null,
       observaciones,
-      creado_por: req.user!.userId
+      creado_por: req.user!.userId,
+      sede_id: sedeIdFinal
     });
 
     return res.status(201).json({
@@ -119,38 +176,68 @@ export async function createAsignacion(req: Request, res: Response) {
       return res.status(400).json({ error: 'unidad_id es requerido' });
     }
 
-    // Crear asignación
-    const asignacion = await TurnoModel.createAsignacion({
-      turno_id: parseInt(turnoId),
-      unidad_id,
-      ruta_id,
-      km_inicio,
-      km_final,
-      sentido,
-      acciones,
-      combustible_inicial,
-      combustible_asignado,
-      hora_salida,
-      hora_entrada_estimada
-    });
-
-    // Agregar tripulación si se proporcionó
-    const tripulacionCreada = [];
+    // Verificar conflictos de tripulación ANTES de la transacción
     if (tripulacion && Array.isArray(tripulacion)) {
       for (const miembro of tripulacion) {
-        const t = await TurnoModel.addTripulacion({
-          asignacion_id: asignacion.id,
-          usuario_id: miembro.usuario_id,
-          rol_tripulacion: miembro.rol_tripulacion
-        });
-        tripulacionCreada.push(t);
+        const conflicto = await db.oneOrNone(`
+          SELECT u.codigo, t.fecha
+          FROM tripulacion_turno tt
+          JOIN asignacion_unidad au ON tt.asignacion_id = au.id
+          JOIN turno t ON au.turno_id = t.id
+          JOIN unidad u ON au.unidad_id = u.id
+          WHERE tt.usuario_id = $1
+            AND t.fecha = (SELECT fecha FROM turno WHERE id = $2)
+            AND au.unidad_id != $3
+        `, [miembro.usuario_id, parseInt(turnoId), unidad_id]);
+
+        if (conflicto) {
+          const usuarioConflictivo = await db.oneOrNone('SELECT nombre_completo, chapa FROM usuario WHERE id = $1', [miembro.usuario_id]);
+          const nombre = usuarioConflictivo ? `${usuarioConflictivo.nombre_completo} (${usuarioConflictivo.chapa})` : `Usuario ID ${miembro.usuario_id}`;
+
+          return res.status(400).json({
+            error: `El usuario ${nombre} ya está asignado a la unidad ${conflicto.codigo} en la fecha ${conflicto.fecha}`
+          });
+        }
       }
     }
 
+    // TRANSACCIÓN ATÓMICA: Si falla algo, se deshace todo
+    const resultado = await db.tx(async (t) => {
+      // Crear asignación
+      const asignacion = await t.one(
+        `INSERT INTO asignacion_unidad
+         (turno_id, unidad_id, ruta_id, km_inicio, km_final, sentido, acciones,
+          combustible_inicial, combustible_asignado, hora_salida, hora_entrada_estimada)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         RETURNING *`,
+        [
+          parseInt(turnoId), unidad_id, ruta_id, km_inicio, km_final,
+          sentido, acciones, combustible_inicial, combustible_asignado,
+          hora_salida, hora_entrada_estimada
+        ]
+      );
+
+      // Agregar tripulación si se proporcionó
+      const tripulacionCreada = [];
+      if (tripulacion && Array.isArray(tripulacion)) {
+        for (const miembro of tripulacion) {
+          const tripulante = await t.one(
+            `INSERT INTO tripulacion_turno (asignacion_id, usuario_id, rol_tripulacion)
+             VALUES ($1, $2, $3)
+             RETURNING *`,
+            [asignacion.id, miembro.usuario_id, miembro.rol_tripulacion]
+          );
+          tripulacionCreada.push(tripulante);
+        }
+      }
+
+      return { asignacion, tripulacionCreada };
+    });
+
     return res.status(201).json({
       message: 'Asignación creada exitosamente',
-      asignacion,
-      tripulacion: tripulacionCreada
+      asignacion: resultado.asignacion,
+      tripulacion: resultado.tripulacionCreada
     });
   } catch (error: any) {
     console.error('Error en createAsignacion:', error);
@@ -159,6 +246,20 @@ export async function createAsignacion(req: Request, res: Response) {
     if (error.code === '23505') { // Unique violation
       return res.status(409).json({
         error: 'La unidad ya tiene una asignación para este turno'
+      });
+    }
+
+    // Manejar errores de check constraint (como rol_tripulacion inválido)
+    if (error.code === '23514') {
+      return res.status(400).json({
+        error: `Valor inválido: ${error.message}`
+      });
+    }
+
+    // Manejar errores personalizados del trigger
+    if (error.code === 'P0001') {
+      return res.status(400).json({
+        error: error.message
       });
     }
 
@@ -393,11 +494,27 @@ export async function updateAsignacion(req: Request, res: Response) {
       tripulacion
     } = req.body;
 
-    // Verificar que la asignación existe y no ha salido
-    const asignacion = await TurnoModel.getAsignacionById(parseInt(asignacionId));
+    // Obtener asignación con info de sede
+    const asignacion = await db.oneOrNone(`
+      SELECT au.*, t.sede_id, u.codigo as unidad_codigo
+      FROM asignacion_unidad au
+      JOIN turno t ON au.turno_id = t.id
+      JOIN unidad u ON au.unidad_id = u.id
+      WHERE au.id = $1
+    `, [parseInt(asignacionId)]);
 
     if (!asignacion) {
       return res.status(404).json({ error: 'Asignación no encontrada' });
+    }
+
+    // Validar que el usuario puede editar (misma sede o puede ver todas)
+    const userSedeId = req.user?.sede;
+    const puedeVerTodas = req.user?.puede_ver_todas_sedes;
+
+    if (!puedeVerTodas && userSedeId && asignacion.sede_id && asignacion.sede_id !== userSedeId) {
+      return res.status(403).json({
+        error: 'No tienes permiso para editar asignaciones de otra sede'
+      });
     }
 
     if (asignacion.hora_salida_real) {
@@ -405,6 +522,45 @@ export async function updateAsignacion(req: Request, res: Response) {
         error: 'No se puede modificar una asignación que ya ha salido',
         message: 'La unidad ya registró su salida. Solo se pueden editar asignaciones pendientes.'
       });
+    }
+
+    // Verificar si hay salida_unidad activa para esta unidad
+    const salidaActiva = await db.oneOrNone(`
+      SELECT id FROM salida_unidad
+      WHERE unidad_id = $1 AND estado = 'EN_SALIDA'
+    `, [asignacion.unidad_id]);
+
+    if (salidaActiva) {
+      return res.status(400).json({
+        error: 'No se puede modificar una asignación con salida activa',
+        message: `La unidad ${asignacion.unidad_codigo} tiene una salida en curso. Debe finalizar la jornada primero.`
+      });
+    }
+
+    // Verificar conflictos de tripulación en update
+    if (tripulacion && Array.isArray(tripulacion)) {
+      for (const miembro of tripulacion) {
+        // Verificar conflicto en OTRAS asignaciones del MISMO turno (fecha)
+        const conflicto = await db.oneOrNone(`
+          SELECT u.codigo, t.fecha
+          FROM tripulacion_turno tt
+          JOIN asignacion_unidad au ON tt.asignacion_id = au.id
+          JOIN turno t ON au.turno_id = t.id
+          JOIN unidad u ON au.unidad_id = u.id
+          WHERE tt.usuario_id = $1
+            AND t.fecha = (SELECT t2.fecha FROM turno t2 JOIN asignacion_unidad au2 ON au2.turno_id = t2.id WHERE au2.id = $2)
+            AND au.id != $2 -- Excluir esta misma asignación
+        `, [miembro.usuario_id, parseInt(asignacionId)]);
+
+        if (conflicto) {
+          const usuarioConflictivo = await db.oneOrNone('SELECT nombre_completo, chapa FROM usuario WHERE id = $1', [miembro.usuario_id]);
+          const nombre = usuarioConflictivo ? `${usuarioConflictivo.nombre_completo} (${usuarioConflictivo.chapa})` : `Usuario ID ${miembro.usuario_id}`;
+
+          return res.status(400).json({
+            error: `El usuario ${nombre} ya está asignado a la unidad ${conflicto.codigo} en esta fecha`
+          });
+        }
+      }
     }
 
     // Actualizar asignación
@@ -447,30 +603,84 @@ export async function updateAsignacion(req: Request, res: Response) {
 }
 
 // DELETE /api/turnos/asignaciones/:id - Eliminar asignación (solo si no ha salido)
+// Query param: ?forzar=true para cerrar salida activa y eliminar
 export async function deleteAsignacion(req: Request, res: Response) {
   try {
     const { id: asignacionId } = req.params;
+    const forzar = req.query.forzar === 'true';
 
-    // Verificar que la asignación existe y no ha salido
-    const asignacion = await TurnoModel.getAsignacionById(parseInt(asignacionId));
+    // Obtener asignación con info de sede
+    const asignacion = await db.oneOrNone(`
+      SELECT au.*, t.sede_id, u.codigo as unidad_codigo
+      FROM asignacion_unidad au
+      JOIN turno t ON au.turno_id = t.id
+      JOIN unidad u ON au.unidad_id = u.id
+      WHERE au.id = $1
+    `, [parseInt(asignacionId)]);
 
     if (!asignacion) {
       return res.status(404).json({ error: 'Asignación no encontrada' });
     }
 
-    if (asignacion.hora_salida_real) {
+    // Validar que el usuario puede eliminar (misma sede o puede ver todas)
+    const userSedeId = req.user?.sede;
+    const puedeVerTodas = req.user?.puede_ver_todas_sedes;
+
+    if (!puedeVerTodas && userSedeId && asignacion.sede_id && asignacion.sede_id !== userSedeId) {
+      return res.status(403).json({
+        error: 'No tienes permiso para eliminar asignaciones de otra sede'
+      });
+    }
+
+    if (asignacion.hora_salida_real && !forzar) {
       return res.status(400).json({
         error: 'No se puede eliminar una asignación que ya ha salido',
-        message: 'La unidad ya registró su salida. Solo se pueden eliminar asignaciones pendientes.'
+        message: 'La unidad ya registró su salida. Use ?forzar=true para eliminar de todas formas.'
       });
+    }
+
+    // Verificar si hay salida_unidad activa para esta unidad
+    const salidaActiva = await db.oneOrNone(`
+      SELECT id, fecha_hora_salida FROM salida_unidad
+      WHERE unidad_id = $1 AND estado = 'EN_SALIDA'
+    `, [asignacion.unidad_id]);
+
+    if (salidaActiva && !forzar) {
+      return res.status(400).json({
+        error: 'No se puede eliminar una asignación con salida activa',
+        message: `La unidad ${asignacion.unidad_codigo} tiene una salida en curso desde ${salidaActiva.fecha_hora_salida}. Use ?forzar=true para cerrar la salida y eliminar la asignación.`,
+        salida_id: salidaActiva.id
+      });
+    }
+
+    // Si forzar=true y hay salida activa, cerrarla primero
+    if (salidaActiva && forzar) {
+      await db.none(`
+        UPDATE salida_unidad
+        SET estado = 'CANCELADA',
+            fecha_hora_regreso = NOW(),
+            observaciones_regreso = 'Cerrada forzosamente al eliminar asignación'
+        WHERE id = $1
+      `, [salidaActiva.id]);
+      console.log(`Salida ${salidaActiva.id} cerrada forzosamente`);
     }
 
     // Eliminar asignación (la tripulación se elimina por cascade)
     await TurnoModel.deleteAsignacion(parseInt(asignacionId));
 
+    // Limpiar turno si quedó vacío
+    await db.none(`
+      DELETE FROM turno t
+      WHERE NOT EXISTS (SELECT 1 FROM asignacion_unidad au WHERE au.turno_id = t.id)
+      AND t.id = $1
+    `, [asignacion.turno_id]);
+
     return res.json({
-      message: 'Asignación eliminada exitosamente',
-      asignacion_id: parseInt(asignacionId)
+      message: salidaActiva && forzar
+        ? 'Asignación eliminada y salida cerrada exitosamente'
+        : 'Asignación eliminada exitosamente',
+      asignacion_id: parseInt(asignacionId),
+      salida_cerrada: salidaActiva && forzar ? salidaActiva.id : null
     });
   } catch (error) {
     console.error('Error en deleteAsignacion:', error);

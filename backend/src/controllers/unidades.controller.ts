@@ -5,6 +5,7 @@ import { db } from '../config/database';
 export async function listarUnidades(req: Request, res: Response) {
   try {
     const { sede_id, activa, tipo_unidad, search } = req.query;
+    const user = req.user!;
 
     let query = `
       SELECT u.*, s.nombre as sede_nombre
@@ -15,7 +16,14 @@ export async function listarUnidades(req: Request, res: Response) {
     const params: any[] = [];
     let paramCount = 0;
 
-    if (sede_id) {
+    // ENCARGADO_NOMINAS sin puede_ver_todas_sedes solo ve su sede
+    // (Si tiene puede_ver_todas_sedes=true, puede ver todas pero en modo lectura)
+    const filtrarPorSedeDelUsuario = user.rol === 'ENCARGADO_NOMINAS' && !user.puede_ver_todas_sedes;
+
+    if (filtrarPorSedeDelUsuario && user.sede) {
+      params.push(user.sede);
+      query += ` AND u.sede_id = $${++paramCount}`;
+    } else if (sede_id) {
       params.push(sede_id);
       query += ` AND u.sede_id = $${++paramCount}`;
     }

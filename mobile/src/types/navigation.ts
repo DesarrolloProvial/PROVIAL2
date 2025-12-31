@@ -34,15 +34,15 @@ export type MainDrawerParamList = {
 
 export type BrigadaStackParamList = {
   BrigadaHome: undefined;
-  NuevaSituacion: undefined;
+  NuevaSituacion: { editMode?: boolean; situacionId?: number; situacionData?: any } | undefined;
   DetalleSituacion: { situacionId: number };
   Bitacora: undefined;
-  Incidente: undefined;
-  Asistencia: undefined;
-  Emergencia: undefined;
+  Incidente: { editMode?: boolean; situacionId?: number; incidenteId?: number; situacionData?: any } | undefined;
+  Asistencia: { editMode?: boolean; situacionId?: number; situacionData?: any } | undefined;
+  Emergencia: { editMode?: boolean; situacionId?: number; situacionData?: any } | undefined;
   SalidaSede: undefined;
-  IniciarSalida: undefined;
-  IngresoSede: undefined;
+  IniciarSalida: { editMode?: boolean; salidaData?: any } | undefined;
+  IngresoSede: { editMode?: boolean; ingresoData?: any } | undefined;
   SalidaDeSede: undefined;
   FinalizarDia: undefined;
   RegistroCombustible: undefined;

@@ -2,6 +2,44 @@ import { Request, Response } from 'express';
 import { SalidaModel } from '../models/salida.model';
 import { GrupoModel } from '../models/grupo.model';
 import { TurnoModel } from '../models/turno.model';
+import { emitUnidadCambioEstado, UnidadEvent } from '../services/socket.service';
+
+// Helper para convertir fracciones de combustible a decimal
+function convertirCombustibleADecimal(valor: any): number | null {
+  if (valor === null || valor === undefined) return null;
+
+  // Si ya es un número, devolverlo
+  if (typeof valor === 'number') return valor;
+
+  // Si es string, intentar convertir
+  const str = String(valor).trim().toUpperCase();
+
+  // Mapeo de fracciones comunes
+  const fracciones: Record<string, number> = {
+    'LLENO': 1,
+    'FULL': 1,
+    '1': 1,
+    '3/4': 0.75,
+    '1/2': 0.5,
+    '1/4': 0.25,
+    '1/8': 0.125,
+    'VACIO': 0,
+    'EMPTY': 0,
+    '0': 0
+  };
+
+  if (str in fracciones) {
+    return fracciones[str];
+  }
+
+  // Intentar parsear como número
+  const num = parseFloat(str);
+  if (!isNaN(num)) {
+    return num;
+  }
+
+  return null;
+}
 
 // ========================================
 // ASIGNACIONES PERMANENTES
@@ -148,6 +186,51 @@ export async function getMiSalidaActiva(req: Request, res: Response) {
 }
 
 /**
+ * GET /api/salidas/mi-salida-hoy
+ * Obtener mi salida de hoy (activa o finalizada)
+ * Incluye resumen de situaciones del día
+ */
+export async function getMiSalidaHoy(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
+
+    const miSalidaHoy = await SalidaModel.getMiSalidaHoy(req.user.userId);
+
+    if (!miSalidaHoy) {
+      return res.status(404).json({
+        error: 'No tienes salida hoy',
+        message: 'No has registrado salida el día de hoy.'
+      });
+    }
+
+    // Determinar si la jornada ya finalizó
+    const jornadaFinalizada = miSalidaHoy.estado === 'FINALIZADA';
+
+    // Convertir horas_salida de forma segura (viene como string de PostgreSQL)
+    const horasTrabajadas = miSalidaHoy.horas_salida
+      ? parseFloat(String(miSalidaHoy.horas_salida)).toFixed(2)
+      : '0.00';
+
+    return res.json({
+      ...miSalidaHoy,
+      jornada_finalizada: jornadaFinalizada,
+      puede_iniciar_nueva: false, // Solo se puede iniciar una salida por día con asignación permanente
+      resumen: {
+        total_situaciones: parseInt(miSalidaHoy.total_situaciones) || 0,
+        situaciones: miSalidaHoy.situaciones || [],
+        horas_trabajadas: parseFloat(horasTrabajadas),
+        km_recorridos: miSalidaHoy.km_recorridos || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error en getMiSalidaHoy:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+/**
  * POST /api/salidas/iniciar
  * Iniciar salida de mi unidad
  * Busca primero en asignaciones de turno, luego en asignaciones permanentes
@@ -202,26 +285,52 @@ export async function iniciarSalida(req: Request, res: Response) {
       observaciones_salida
     } = req.body;
 
+    // Convertir combustible de fracción a decimal si es necesario
+    const combustibleDecimal = convertirCombustibleADecimal(combustible_inicial);
+
     // Iniciar salida (usar ruta del body si se especifica, sino la del turno)
     const salidaId = await SalidaModel.iniciarSalida({
       unidad_id: unidadId,
       ruta_inicial_id: ruta_inicial_id || rutaInicialId,
       km_inicial,
-      combustible_inicial,
+      combustible_inicial: combustibleDecimal ?? undefined,
       observaciones_salida
     });
 
-    // Si hay asignación de turno, marcar la salida real
+    // Si es una asignación de turno (nuevo sistema)
     if (asignacionTurno) {
       try {
+        // [NUEVO] Si se proporcionó una ruta inicial (ej: unidad reacción) y la asignación no tenía o es diferente
+        // Actualizamos la ruta de la asignación para que quede constancia
+        if (ruta_inicial_id && asignacionTurno.ruta_id !== ruta_inicial_id) {
+          await TurnoModel.updateAsignacion(asignacionTurno.asignacion_id, {
+            ruta_id: parseInt(ruta_inicial_id)
+          });
+          console.log(`[SALIDA] Ruta actualizada en asignación ${asignacionTurno.asignacion_id} a ${ruta_inicial_id}`);
+        }
+
         await TurnoModel.marcarSalida(asignacionTurno.asignacion_id);
       } catch (e) {
-        console.log('No se pudo marcar salida en turno:', e);
+        console.log('No se pudo marcar salida/actualizar ruta en turno:', e);
       }
     }
 
     // Obtener info de la salida creada
     const salida = await SalidaModel.getSalidaById(salidaId);
+
+    // Emitir evento WebSocket de cambio de estado de unidad
+    if (salida) {
+      const s = salida as any;
+      const evento: UnidadEvent = {
+        unidad_id: unidadId,
+        unidad_codigo: s.unidad_codigo || `U-${unidadId}`,
+        estado: 'EN_SALIDA',
+        sede_id: s.sede_id,
+        ruta_id: ruta_inicial_id || rutaInicialId || undefined,
+        ultima_situacion: 'SALIDA_INICIADA',
+      };
+      emitUnidadCambioEstado(evento);
+    }
 
     return res.status(201).json({
       message: 'Salida iniciada exitosamente',
@@ -249,7 +358,7 @@ export async function iniciarSalida(req: Request, res: Response) {
 
 /**
  * POST /api/salidas/:id/finalizar
- * Finalizar salida
+ * Finalizar salida por ID
  */
 export async function finalizarSalida(req: Request, res: Response) {
   try {
@@ -276,6 +385,19 @@ export async function finalizarSalida(req: Request, res: Response) {
 
     const salida = await SalidaModel.getSalidaById(parseInt(id));
 
+    // Emitir evento WebSocket de cambio de estado
+    if (salida) {
+      const s = salida as any;
+      const evento: UnidadEvent = {
+        unidad_id: s.unidad_id,
+        unidad_codigo: s.unidad_codigo || `U-${s.unidad_id}`,
+        estado: 'FINALIZADO',
+        sede_id: s.sede_id,
+        ultima_situacion: 'SALIDA_FINALIZADA',
+      };
+      emitUnidadCambioEstado(evento);
+    }
+
     return res.json({
       message: 'Salida finalizada exitosamente',
       salida
@@ -283,6 +405,128 @@ export async function finalizarSalida(req: Request, res: Response) {
   } catch (error) {
     console.error('Error en finalizarSalida:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+/**
+ * POST /api/salidas/finalizar
+ * Finalizar mi salida activa (sin ID, usa la salida activa del usuario)
+ */
+export async function finalizarMiSalida(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
+
+    const { km_final, combustible_final, observaciones } = req.body;
+
+    // Obtener mi salida activa
+    const miSalida = await SalidaModel.getMiSalidaActiva(req.user.userId);
+
+    if (!miSalida) {
+      return res.status(404).json({
+        error: 'No tienes salida activa',
+        message: 'No se encontró una salida activa para finalizar'
+      });
+    }
+
+    const success = await SalidaModel.finalizarSalida({
+      salida_id: miSalida.salida_id,
+      km_final,
+      combustible_final,
+      observaciones_regreso: observaciones,
+      finalizada_por: req.user.userId
+    });
+
+    if (!success) {
+      return res.status(400).json({
+        error: 'No se pudo finalizar la salida'
+      });
+    }
+
+    const salida = await SalidaModel.getSalidaById(miSalida.salida_id);
+
+    // Emitir evento WebSocket de cambio de estado
+    if (salida) {
+      const s = salida as any;
+      const evento: UnidadEvent = {
+        unidad_id: s.unidad_id,
+        unidad_codigo: s.unidad_codigo || `U-${s.unidad_id}`,
+        estado: 'FINALIZADO',
+        sede_id: s.sede_id,
+        ultima_situacion: 'JORNADA_FINALIZADA',
+      };
+      emitUnidadCambioEstado(evento);
+    }
+
+    return res.json({
+      message: 'Jornada finalizada exitosamente',
+      salida
+    });
+  } catch (error) {
+    console.error('Error en finalizarMiSalida:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+/**
+ * POST /api/salidas/finalizar-jornada
+ * Finalizar jornada completa: marca salida como finalizada, crea snapshot en bitácora,
+ * y limpia las tablas operacionales (turno, asignacion_unidad, tripulacion_turno)
+ */
+export async function finalizarJornadaCompleta(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
+
+    // Obtener mi salida activa
+    const miSalida = await SalidaModel.getMiSalidaActiva(req.user.userId);
+
+    if (!miSalida) {
+      return res.status(404).json({
+        error: 'No tienes salida activa',
+        message: 'No se encontró una salida activa para finalizar'
+      });
+    }
+
+    // Verificar que hay un ingreso activo con tipo FINALIZACION_JORNADA
+    const ingresoActivo = await SalidaModel.getIngresoActivo(miSalida.salida_id);
+
+    if (!ingresoActivo) {
+      return res.status(400).json({
+        error: 'Debes estar en sede para finalizar',
+        message: 'Primero debes ingresar a sede con motivo "Finalización Jornada"'
+      });
+    }
+
+    if (ingresoActivo.tipo_ingreso !== 'FINALIZACION_JORNADA') {
+      return res.status(400).json({
+        error: 'Motivo de ingreso incorrecto',
+        message: 'Para finalizar la jornada, debes haber ingresado con motivo "Finalización Jornada"'
+      });
+    }
+
+    // Llamar a la función de PostgreSQL que hace todo el trabajo
+    const resultado = await SalidaModel.finalizarJornadaCompleta({
+      salida_id: miSalida.salida_id,
+      km_final: ingresoActivo.km_ingreso,
+      combustible_final: ingresoActivo.combustible_ingreso,
+      observaciones: ingresoActivo.observaciones_ingreso || 'Jornada finalizada',
+      finalizada_por: req.user.userId
+    });
+
+    return res.json({
+      message: 'Jornada finalizada exitosamente',
+      bitacora_id: resultado.bitacora_id,
+      detalle: resultado.mensaje
+    });
+  } catch (error: any) {
+    console.error('Error en finalizarJornadaCompleta:', error);
+    return res.status(500).json({
+      error: 'Error al finalizar jornada',
+      message: error.message || 'Error interno del servidor'
+    });
   }
 }
 
@@ -540,34 +784,42 @@ export async function editarDatosSalida(req: Request, res: Response) {
     let paramCount = 1;
 
     if (km_inicial !== undefined) {
-      updates.push(`km_salida = $${paramCount}`);
+      updates.push(`km_inicial = $${paramCount}`);
       values.push(km_inicial);
       paramCount++;
     }
 
-    if (combustible_inicial !== undefined) {
-      updates.push(`combustible_salida = $${paramCount}`);
+    // Convertir fracción a decimal
+    if (combustible_inicial_fraccion !== undefined) {
+      let combustibleDecimal = 0;
+      switch (combustible_inicial_fraccion) {
+        case 'LLENO': combustibleDecimal = 1.0; break;
+        case '3/4': combustibleDecimal = 0.75; break;
+        case '1/2': combustibleDecimal = 0.5; break;
+        case '1/4': combustibleDecimal = 0.25; break;
+        case 'VACIO': combustibleDecimal = 0; break;
+      }
+      updates.push(`combustible_inicial = $${paramCount}`);
+      values.push(combustibleDecimal);
+      paramCount++;
+    } else if (combustible_inicial !== undefined) {
+      updates.push(`combustible_inicial = $${paramCount}`);
       values.push(combustible_inicial);
       paramCount++;
     }
 
-    if (combustible_inicial_fraccion !== undefined) {
-      updates.push(`combustible_salida_fraccion = $${paramCount}`);
-      values.push(combustible_inicial_fraccion);
-      paramCount++;
-    }
-
+    updates.push(`updated_at = NOW()`);
     values.push(miSalida.salida_id);
 
     const query = `
-      UPDATE salidas
+      UPDATE salida_unidad
       SET ${updates.join(', ')}
       WHERE id = $${paramCount}
       RETURNING *
     `;
 
-    const pool = require('../config/database').default;
-    await pool.query(query, values);
+    const { db } = require('../config/database');
+    await db.query(query, values);
 
     console.log(`✏️ [SALIDA] Datos editados por usuario ${req.user.userId}: km=${km_inicial}, combustible=${combustible_inicial}`);
 

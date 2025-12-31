@@ -41,7 +41,7 @@ export const AjustadorForm: React.FC<AjustadorFormProps> = ({ control, index, on
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Aseguradora"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 mode="outlined"
                                 placeholder="Ej: El Roble, Seguros G&T"
@@ -55,7 +55,7 @@ export const AjustadorForm: React.FC<AjustadorFormProps> = ({ control, index, on
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Nombre del Ajustador"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 mode="outlined"
                                 style={styles.input}
@@ -68,7 +68,7 @@ export const AjustadorForm: React.FC<AjustadorFormProps> = ({ control, index, on
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Teléfono"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 mode="outlined"
                                 keyboardType="phone-pad"
@@ -95,7 +95,7 @@ export const AjustadorForm: React.FC<AjustadorFormProps> = ({ control, index, on
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Placa"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 mode="outlined"
                                 autoCapitalize="characters"
@@ -110,7 +110,7 @@ export const AjustadorForm: React.FC<AjustadorFormProps> = ({ control, index, on
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Marca"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 mode="outlined"
                                 placeholder="Ej: Toyota, Honda"
@@ -124,7 +124,7 @@ export const AjustadorForm: React.FC<AjustadorFormProps> = ({ control, index, on
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Color"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 mode="outlined"
                                 placeholder="Ej: Blanco, Negro"

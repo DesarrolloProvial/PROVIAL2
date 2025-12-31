@@ -43,7 +43,7 @@ export const GruaForm: React.FC<GruaFormProps> = ({ control, index, onRemove }) 
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Empresa"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 mode="outlined"
                                 style={styles.input}
@@ -56,7 +56,7 @@ export const GruaForm: React.FC<GruaFormProps> = ({ control, index, onRemove }) 
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Placa Grúa"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 mode="outlined"
                                 autoCapitalize="characters"
@@ -70,7 +70,7 @@ export const GruaForm: React.FC<GruaFormProps> = ({ control, index, onRemove }) 
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Tipo de Grúa"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 mode="outlined"
                                 placeholder="Ej: Plataforma, Gancho"
@@ -84,7 +84,7 @@ export const GruaForm: React.FC<GruaFormProps> = ({ control, index, onRemove }) 
                         render={({ field: { onChange, value } }) => (
                             <TextInput
                                 label="Nombre del Operador"
-                                value={value}
+                                value={value || ''}
                                 onChangeText={onChange}
                                 mode="outlined"
                                 style={styles.input}
@@ -101,7 +101,7 @@ export const GruaForm: React.FC<GruaFormProps> = ({ control, index, onRemove }) 
                     control={control}
                     name={`gruas.${index}.traslado`}
                     render={({ field: { onChange, value } }) => (
-                        <Switch value={value} onValueChange={onChange} />
+                        <Switch value={value || false} onValueChange={onChange} />
                     )}
                 />
             </View>
@@ -121,7 +121,7 @@ export const GruaForm: React.FC<GruaFormProps> = ({ control, index, onRemove }) 
                             render={({ field: { onChange, value } }) => (
                                 <TextInput
                                     label="Lugar de Traslado"
-                                    value={value}
+                                    value={value || ''}
                                     onChangeText={onChange}
                                     mode="outlined"
                                     placeholder="Ej: Parqueo municipal, Taller XYZ"
@@ -137,7 +137,7 @@ export const GruaForm: React.FC<GruaFormProps> = ({ control, index, onRemove }) 
                             render={({ field: { onChange, value } }) => (
                                 <TextInput
                                     label="Costo de Traslado (Q)"
-                                    value={value?.toString()}
+                                    value={value?.toString() || ''}
                                     onChangeText={(text) => onChange(parseFloat(text) || 0)}
                                     mode="outlined"
                                     keyboardType="decimal-pad"

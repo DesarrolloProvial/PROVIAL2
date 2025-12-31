@@ -12,7 +12,7 @@ import {
     TextInput,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { COLORS } from '../../constants/colors';
 import {
     TIPOS_ASISTENCIA,
@@ -22,6 +22,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useTestMode } from '../../context/TestModeContext';
 import AutoridadSocorroManager, { DetalleAutoridad, DetallesSocorro } from '../../components/AutoridadSocorroManager';
 import ObstruccionManager from '../../components/ObstruccionManager';
+import api from '../../services/api';
 
 // New Imports
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
@@ -29,10 +30,26 @@ import { Provider as PaperProvider, SegmentedButtons, TextInput as PaperInput, B
 import { VehiculoForm } from '../../components/VehiculoForm';
 import { GruaForm } from '../../components/GruaForm';
 import { AjustadorForm } from '../../components/AjustadorForm';
+import MultimediaCapture from '../../components/MultimediaCapture';
+
+type AsistenciaScreenRouteProp = RouteProp<{
+    AsistenciaScreen: {
+        editMode?: boolean;
+        situacionId?: number;
+        situacionData?: any;
+    };
+}, 'AsistenciaScreen'>;
 
 export default function AsistenciaScreen() {
     const navigation = useNavigation();
+    const route = useRoute<AsistenciaScreenRouteProp>();
+    const { editMode, situacionId: situacionIdParam, situacionData } = route.params || {};
     const { salidaActiva } = useAuthStore();
+
+    // Estado para situacionId (se obtiene del param o después de crear)
+    const [situacionId, setSituacionId] = useState<number | null>(situacionIdParam || null);
+    const [multimediaComplete, setMultimediaComplete] = useState(false);
+    const [loadingData, setLoadingData] = useState(false);
     const { testModeEnabled } = useTestMode();
 
     // Coordenadas manuales para modo pruebas
@@ -98,24 +115,67 @@ export default function AsistenciaScreen() {
     const { loadDraft, clearDraft } = useDraftSave(
         'draft_asistencia_v2',
         draftData,
-        { enabled: !guardando }
+        { enabled: !guardando && !editMode }
     );
 
     useEffect(() => {
-        // Auto-restaurar borrador sin diálogo de confirmación
-        const loadPreviousDraft = async () => {
-            const draft = await loadDraft();
-            if (draft) {
-                console.log('[DRAFT] Auto-restaurando borrador de asistencia');
-                reset(draft);
+        const loadData = async () => {
+            if (editMode && situacionData) {
+                // Modo edición: Cargar datos de la situación
+                setLoadingData(true);
+                try {
+                    console.log('[ASISTENCIA] Cargando datos para edición:', situacionData);
+
+                    // Cargar datos básicos desde situacionData
+                    reset({
+                        tipoAsistencia: situacionData.subtipo_situacion || '',
+                        km: situacionData.km?.toString() || '',
+                        sentido: situacionData.sentido || '',
+                        servicioProporcionado: situacionData.descripcion || '',
+                        observaciones: situacionData.observaciones || '',
+                        jurisdiccion: situacionData.jurisdiccion || '',
+                        direccion_detallada: situacionData.direccion_detallada || '',
+                        // Los arrays se cargarían de detalles adicionales si existieran
+                        vehiculos: [],
+                        gruas: [],
+                        ajustadores: [],
+                        autoridadesSeleccionadas: [],
+                        detallesAutoridades: {},
+                        socorroSeleccionado: [],
+                        detallesSocorro: {},
+                        obstruye: '',
+                    });
+
+                    // Cargar coordenadas si existen
+                    if (situacionData.latitud && situacionData.longitud) {
+                        setCoordenadas({
+                            latitud: situacionData.latitud,
+                            longitud: situacionData.longitud,
+                        });
+                    }
+                } catch (error) {
+                    console.error('[ASISTENCIA] Error al cargar datos:', error);
+                    Alert.alert('Error', 'No se pudieron cargar los datos de la asistencia');
+                } finally {
+                    setLoadingData(false);
+                }
+            } else {
+                // Auto-restaurar borrador sin diálogo de confirmación
+                const draft = await loadDraft();
+                if (draft) {
+                    console.log('[DRAFT] Auto-restaurando borrador de asistencia');
+                    reset(draft);
+                }
             }
         };
-        loadPreviousDraft();
-        // Solo obtener GPS automatico si NO esta en modo pruebas
-        if (!testModeEnabled) {
+
+        loadData();
+
+        // Solo obtener GPS automatico si NO esta en modo pruebas y NO es edición
+        if (!testModeEnabled && !editMode) {
             obtenerUbicacion();
         }
-    }, [testModeEnabled]);
+    }, [testModeEnabled, editMode, situacionData]);
 
     const obtenerUbicacion = async () => {
         try {
@@ -138,26 +198,38 @@ export default function AsistenciaScreen() {
     };
 
     const onSubmit = async (data: any) => {
-        // Validar que haya salida activa y ruta
-        if (!salidaActiva) {
-            Alert.alert('Error', 'No hay salida activa. Debes iniciar una salida primero.');
-            return;
+        // Validaciones solo en modo creación
+        if (!editMode) {
+            if (!salidaActiva) {
+                Alert.alert('Error', 'No hay salida activa. Debes iniciar una salida primero.');
+                return;
+            }
+            if (!salidaActiva.ruta_codigo) {
+                Alert.alert('Error', 'No tienes ruta asignada. Ve a "Cambio de Ruta" para asignar una ruta primero.');
+                return;
+            }
         }
-        if (!salidaActiva.ruta_codigo) {
-            Alert.alert('Error', 'No tienes ruta asignada. Ve a "Cambio de Ruta" para asignar una ruta primero.');
-            return;
-        }
+
         if (!data.tipoAsistencia || !data.km) {
             Alert.alert('Error', 'Complete los campos obligatorios (Tipo, Km)');
             return;
         }
-        if (vehiculoFields.length === 0) {
+
+        // En edición, no requerir vehículos si no se modificaron
+        if (!editMode && vehiculoFields.length === 0) {
             Alert.alert('Error', 'Debe agregar al menos un vehículo');
             return;
         }
-        // Determinar coordenadas segun modo
-        const latFinal = testModeEnabled ? parseFloat(latitudManual) : coordenadas?.latitud;
-        const lonFinal = testModeEnabled ? parseFloat(longitudManual) : coordenadas?.longitud;
+
+        // Determinar coordenadas según modo
+        let latFinal, lonFinal;
+        if (editMode) {
+            latFinal = testModeEnabled ? parseFloat(latitudManual) : (coordenadas?.latitud || situacionData?.latitud);
+            lonFinal = testModeEnabled ? parseFloat(longitudManual) : (coordenadas?.longitud || situacionData?.longitud);
+        } else {
+            latFinal = testModeEnabled ? parseFloat(latitudManual) : coordenadas?.latitud;
+            lonFinal = testModeEnabled ? parseFloat(longitudManual) : coordenadas?.longitud;
+        }
 
         if (!latFinal || !lonFinal || isNaN(latFinal) || isNaN(lonFinal)) {
             Alert.alert('Error', 'Se requieren coordenadas GPS válidas');
@@ -166,27 +238,46 @@ export default function AsistenciaScreen() {
 
         try {
             setGuardando(true);
-            const asistenciaData = {
-                ...data,
-                latitud: latFinal,
-                longitud: lonFinal,
-                ubicacion_manual: testModeEnabled,
-                unidad_id: salidaActiva.unidad_id,
-                salida_unidad_id: salidaActiva.salida_id,
-                tipo_situacion: 'ASISTENCIA_VEHICULAR',
-                tipo_asistencia: data.tipoAsistencia,
-                ruta_id: salidaActiva.ruta_codigo, // Usar ruta de la salida activa
-                km: parseFloat(data.km),
-            };
 
-            console.log('Enviando asistencia:', asistenciaData);
-            // TODO: Call API
-            // await api.post('/asistencias', asistenciaData);
+            if (editMode && situacionId) {
+                // Modo edición: actualizar situación existente
+                const updateData = {
+                    descripcion: data.servicioProporcionado,
+                    observaciones: data.observaciones,
+                    km: parseFloat(data.km),
+                    sentido: data.sentido,
+                    subtipo_situacion: data.tipoAsistencia,
+                    latitud: latFinal,
+                    longitud: lonFinal,
+                };
 
-            await clearDraft();
-            Alert.alert('Éxito', 'Asistencia registrada', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+                console.log('Actualizando asistencia:', updateData);
+                await api.patch(`/situaciones/${situacionId}`, updateData);
+                Alert.alert('Éxito', 'Asistencia actualizada', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+            } else {
+                // Modo creación
+                const asistenciaData = {
+                    ...data,
+                    latitud: latFinal,
+                    longitud: lonFinal,
+                    ubicacion_manual: testModeEnabled,
+                    unidad_id: salidaActiva!.unidad_id,
+                    salida_unidad_id: salidaActiva!.salida_id,
+                    tipo_situacion: 'ASISTENCIA_VEHICULAR',
+                    tipo_asistencia: data.tipoAsistencia,
+                    ruta_id: salidaActiva!.ruta_codigo,
+                    km: parseFloat(data.km),
+                };
+
+                console.log('Enviando asistencia:', asistenciaData);
+                // TODO: Call API
+                // await api.post('/asistencias', asistenciaData);
+
+                await clearDraft();
+                Alert.alert('Éxito', 'Asistencia registrada', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+            }
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'No se pudo guardar');
+            Alert.alert('Error', error.response?.data?.error || error.message || 'No se pudo guardar');
         } finally {
             setGuardando(false);
         }
@@ -204,6 +295,7 @@ export default function AsistenciaScreen() {
                             { value: 'vehiculos', label: 'Vehículos' },
                             { value: 'recursos', label: 'Recursos' },
                             { value: 'otros', label: 'Otros' },
+                            { value: 'evidencia', label: 'Evidencia', disabled: !situacionId },
                         ]}
                     />
                 </View>
@@ -281,7 +373,7 @@ export default function AsistenciaScreen() {
                                     control={control}
                                     name="km"
                                     render={({ field: { onChange, value } }) => (
-                                        <PaperInput label="Kilómetro *" value={value} onChangeText={onChange} keyboardType="numeric" style={[styles.input, styles.half]} />
+                                        <PaperInput label="Kilómetro *" value={value || ''} onChangeText={onChange} keyboardType="numeric" style={[styles.input, styles.half]} />
                                     )}
                                 />
                                 <Controller
@@ -290,7 +382,7 @@ export default function AsistenciaScreen() {
                                     render={({ field: { onChange, value } }) => (
                                         <View style={[styles.pickerContainer, styles.half]}>
                                             <Text>Sentido</Text>
-                                            <Picker selectedValue={value} onValueChange={onChange}>
+                                            <Picker selectedValue={value || ''} onValueChange={onChange}>
                                                 <Picker.Item label="Seleccionar..." value="" />
                                                 {SENTIDOS.map(s => <Picker.Item key={s.value} label={s.label} value={s.value} />)}
                                             </Picker>
@@ -303,7 +395,7 @@ export default function AsistenciaScreen() {
                                 control={control}
                                 name="jurisdiccion"
                                 render={({ field: { onChange, value } }) => (
-                                    <PaperInput label="Jurisdicción (Muni/Depto)" value={value} onChangeText={onChange} style={styles.input} />
+                                    <PaperInput label="Jurisdicción (Muni/Depto)" value={value || ''} onChangeText={onChange} style={styles.input} />
                                 )}
                             />
 
@@ -326,7 +418,19 @@ export default function AsistenciaScreen() {
                                     onRemove={() => removeVehiculo(index)}
                                 />
                             ))}
-                            <Button mode="contained" onPress={() => appendVehiculo({})} icon="plus" style={styles.addButton}>
+                            <Button mode="contained" onPress={() => appendVehiculo({
+                                tipo_vehiculo: '',
+                                color: '',
+                                marca: '',
+                                placa: '',
+                                placa_extranjera: false,
+                                estado_piloto: 'ILESO',
+                                personas_asistidas: 0,
+                                cargado: false,
+                                tiene_contenedor: false,
+                                es_bus: false,
+                                tiene_sancion: false,
+                            })} icon="plus" style={styles.addButton}>
                                 Agregar Vehículo
                             </Button>
                         </View>
@@ -375,7 +479,7 @@ export default function AsistenciaScreen() {
                                 control={control}
                                 name="servicioProporcionado"
                                 render={({ field: { onChange, value } }) => (
-                                    <PaperInput label="Servicio Proporcionado" value={value} onChangeText={onChange} multiline numberOfLines={3} style={styles.textArea} />
+                                    <PaperInput label="Servicio Proporcionado" value={value || ''} onChangeText={onChange} multiline numberOfLines={3} style={styles.textArea} />
                                 )}
                             />
 
@@ -384,9 +488,35 @@ export default function AsistenciaScreen() {
                                 control={control}
                                 name="observaciones"
                                 render={({ field: { onChange, value } }) => (
-                                    <PaperInput label="Observaciones" value={value} onChangeText={onChange} multiline numberOfLines={4} style={styles.textArea} />
+                                    <PaperInput label="Observaciones" value={value || ''} onChangeText={onChange} multiline numberOfLines={4} style={styles.textArea} />
                                 )}
                             />
+                        </View>
+                    )}
+
+                    {activeTab === 'evidencia' && situacionId && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Evidencia Fotográfica y Video</Text>
+                            <Text style={{ color: COLORS.gray[500], marginBottom: 12, fontSize: 13 }}>
+                                Se requieren 3 fotos y 1 video para completar la documentación.
+                            </Text>
+                            <MultimediaCapture
+                                situacionId={situacionId}
+                                tipoSituacion="ASISTENCIA_VEHICULAR"
+                                onComplete={setMultimediaComplete}
+                                location={coordenadas ? { latitude: coordenadas.latitud, longitude: coordenadas.longitud } : undefined}
+                            />
+                        </View>
+                    )}
+
+                    {activeTab === 'evidencia' && !situacionId && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Evidencia Fotográfica y Video</Text>
+                            <View style={{ padding: 20, backgroundColor: COLORS.gray[100], borderRadius: 8, alignItems: 'center' }}>
+                                <Text style={{ color: COLORS.gray[600], textAlign: 'center' }}>
+                                    Primero guarda la asistencia para poder agregar fotos y video.
+                                </Text>
+                            </View>
                         </View>
                     )}
 
@@ -396,6 +526,7 @@ export default function AsistenciaScreen() {
                             Guardar Asistencia
                         </Button>
                     </View>
+                    <View style={{ height: 80 }} />
                 </ScrollView>
             </View>
         </PaperProvider>

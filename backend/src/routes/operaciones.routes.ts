@@ -23,7 +23,7 @@ const router = Router();
 router.get(
   '/dashboard',
   authenticate,
-  authorize('OPERACIONES', 'ADMIN'),
+  authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'),
   getDashboardOperaciones
 );
 
@@ -34,14 +34,14 @@ router.get(
 router.get(
   '/brigadas/estadisticas',
   authenticate,
-  authorize('OPERACIONES', 'ADMIN'),
+  authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'),
   getEstadisticasBrigadas
 );
 
 router.get(
   '/brigadas/estadisticas/:id',
   authenticate,
-  authorize('OPERACIONES', 'ADMIN'),
+  authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'),
   getEstadisticasBrigada
 );
 
@@ -52,14 +52,14 @@ router.get(
 router.get(
   '/unidades/estadisticas',
   authenticate,
-  authorize('OPERACIONES', 'ADMIN'),
+  authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'),
   getEstadisticasUnidades
 );
 
 router.get(
   '/unidades/estadisticas/:id',
   authenticate,
-  authorize('OPERACIONES', 'ADMIN'),
+  authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'),
   getEstadisticasUnidad
 );
 
@@ -70,14 +70,14 @@ router.get(
 router.get(
   '/brigadas/disponibles',
   authenticate,
-  authorize('OPERACIONES', 'ADMIN'),
+  authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'),
   getBrigadasDisponibles
 );
 
 router.get(
   '/unidades/disponibles',
   authenticate,
-  authorize('OPERACIONES', 'ADMIN'),
+  authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'),
   getUnidadesDisponibles
 );
 

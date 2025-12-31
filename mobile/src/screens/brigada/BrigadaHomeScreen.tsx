@@ -13,12 +13,12 @@ import { useAuthStore } from '../../store/authStore';
 import { useSituacionesStore } from '../../store/situacionesStore';
 import { COLORS } from '../../constants/colors';
 import { useNavigation } from '@react-navigation/native';
-import { turnosAPI } from '../../services/api';
+import { turnosAPI, salidasAPI } from '../../services/api';
 import RutaSelector from '../../components/RutaSelector';
 
 export default function BrigadaHomeScreen() {
   const navigation = useNavigation();
-  const { usuario, asignacion, salidaActiva, ingresoActivo, verificarAcceso, refreshEstadoBrigada } = useAuthStore();
+  const { usuario, asignacion, salidaActiva, salidaHoy, ingresoActivo, verificarAcceso, refreshEstadoBrigada } = useAuthStore();
   const { situacionActiva, fetchMisSituacionesHoy, cerrarSituacion, isLoading } = useSituacionesStore();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -28,6 +28,7 @@ export default function BrigadaHomeScreen() {
   const [cambiandoRuta, setCambiandoRuta] = useState(false);
   const [asignacionDia, setAsignacionDia] = useState<any>(null);
   const [loadingAsignacionDia, setLoadingAsignacionDia] = useState(false);
+  const [finalizandoJornada, setFinalizandoJornada] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -126,6 +127,62 @@ export default function BrigadaHomeScreen() {
     }
   };
 
+
+  const handleFinalizarJornada = async () => {
+    if (situacionActiva) {
+      Alert.alert(
+        'Situación Activa',
+        'Debes cerrar la situación activa antes de finalizar la jornada.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    // Verificar que hay ingreso activo con FINALIZACION_JORNADA
+    if (!ingresoActivo || ingresoActivo.tipo_ingreso !== 'FINALIZACION_JORNADA') {
+      Alert.alert(
+        'Ingreso Requerido',
+        'Para finalizar la jornada, primero debes ingresar a sede con motivo "Finalización Jornada".',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Finalizar Jornada',
+      '¿Estás seguro de que deseas finalizar tu jornada laboral?\n\nEsta acción cerrará tu salida y liberará la unidad.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Finalizar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setFinalizandoJornada(true);
+              await salidasAPI.finalizarJornadaCompleta();
+
+              // Limpiar TODOS los estados relacionados con la jornada
+              await refreshEstadoBrigada();
+              setAsignacionDia(null); // Limpiar asignación del día (estado local)
+
+              Alert.alert(
+                'Jornada Finalizada',
+                'Tu jornada ha sido finalizada exitosamente. ¡Buen trabajo!',
+                [{ text: 'OK' }]
+              );
+            } catch (error: any) {
+              console.error('[FINALIZAR JORNADA] Error:', error);
+              const mensaje = error.response?.data?.message || error.response?.data?.error || error.message || 'No se pudo finalizar la jornada';
+              Alert.alert('Error', mensaje);
+            } finally {
+              setFinalizandoJornada(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const getTipoSituacionColor = (tipo: string) => {
     const tipoLower = tipo.toLowerCase();
     if (tipoLower.includes('incidente')) return COLORS.tipoSituacion.incidente;
@@ -217,19 +274,19 @@ export default function BrigadaHomeScreen() {
         )}
       </View>
 
-      {/* Card de Asignación Unificada */}
-      {loadingAsignacionDia ? (
+      {/* Card de Asignación Unificada - Solo mostrar si NO hay salida activa */}
+      {!salidaActiva && loadingAsignacionDia ? (
         <View style={styles.card}>
           <ActivityIndicator size="small" color={COLORS.primary} />
           <Text style={{ textAlign: 'center', color: COLORS.text.secondary, marginTop: 8 }}>
             Cargando información de asignación...
           </Text>
         </View>
-      ) : (asignacion || asignacionDia) ? (
+      ) : !salidaActiva && (asignacion?.unidad_codigo || asignacionDia?.unidad_codigo) ? (
         <View style={[styles.card, styles.asignacionCard]}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Mi Asignación</Text>
-            {asignacionDia && (
+            {asignacionDia && typeof asignacionDia.dias_para_salida === 'number' && (
               <View style={[styles.tipoBadge, {
                 backgroundColor: asignacionDia.dias_para_salida === 0 ? COLORS.success : COLORS.info
               }]}>
@@ -237,8 +294,8 @@ export default function BrigadaHomeScreen() {
                   {asignacionDia.dias_para_salida === 0
                     ? 'HOY'
                     : asignacionDia.dias_para_salida === 1
-                    ? 'MAÑANA'
-                    : `EN ${asignacionDia.dias_para_salida} DÍAS`}
+                      ? 'MAÑANA'
+                      : `EN ${asignacionDia.dias_para_salida} DÍAS`}
                 </Text>
               </View>
             )}
@@ -259,7 +316,7 @@ export default function BrigadaHomeScreen() {
               <View style={styles.asignacionItem}>
                 <Text style={styles.asignacionItemLabel}>Unidad</Text>
                 <Text style={styles.asignacionItemValue}>
-                  {asignacionDia?.unidad_codigo || asignacion?.unidad_codigo}
+                  {asignacionDia?.unidad_codigo || asignacion?.unidad_codigo || 'Sin asignar'}
                 </Text>
                 {(asignacionDia?.tipo_unidad || asignacion?.tipo_unidad) && (
                   <Text style={styles.asignacionItemSubtext}>{asignacionDia?.tipo_unidad || asignacion?.tipo_unidad}</Text>
@@ -268,7 +325,7 @@ export default function BrigadaHomeScreen() {
               <View style={styles.asignacionItem}>
                 <Text style={styles.asignacionItemLabel}>Mi Rol</Text>
                 <Text style={styles.asignacionItemValue}>
-                  {asignacionDia?.mi_rol || asignacion?.rol_tripulacion}
+                  {asignacionDia?.mi_rol || asignacion?.rol_tripulacion || 'Sin asignar'}
                 </Text>
               </View>
             </View>
@@ -326,6 +383,14 @@ export default function BrigadaHomeScreen() {
             )}
           </View>
         </View>
+      ) : !salidaActiva && !salidaHoy?.jornada_finalizada ? (
+        <View style={[styles.card, styles.noAsignacionCard]}>
+          <Text style={styles.noAsignacionIcon}>📋</Text>
+          <Text style={styles.noAsignacionTitle}>Sin Asignación</Text>
+          <Text style={styles.noAsignacionText}>
+            No tienes una unidad asignada actualmente. Contacta a Operaciones para que te asignen a un turno o unidad.
+          </Text>
+        </View>
       ) : null}
 
       {/* Card de Salida Activa */}
@@ -362,7 +427,61 @@ export default function BrigadaHomeScreen() {
             </Text>
           </View>
         </TouchableOpacity>
-      ) : (asignacion || asignacionDia) ? (
+      ) : salidaHoy?.jornada_finalizada ? (
+        /* Card de Jornada Finalizada */
+        <TouchableOpacity
+          style={[styles.card, { borderLeftWidth: 4, borderLeftColor: COLORS.info }]}
+          onPress={() => navigation.navigate('Bitacora' as never)}
+        >
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Jornada Finalizada ✅</Text>
+            <View style={[styles.tipoBadge, { backgroundColor: COLORS.info }]}>
+              <Text style={styles.tipoBadgeText}>COMPLETA</Text>
+            </View>
+          </View>
+          <View style={styles.cardContent}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Unidad:</Text>
+              <Text style={styles.infoValue}>{salidaHoy.unidad_codigo}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Inicio:</Text>
+              <Text style={styles.infoValue}>
+                {formatFecha(salidaHoy.fecha_hora_salida)}
+              </Text>
+            </View>
+            {salidaHoy.fecha_hora_regreso && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Fin:</Text>
+                <Text style={styles.infoValue}>
+                  {formatFecha(salidaHoy.fecha_hora_regreso)}
+                </Text>
+              </View>
+            )}
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Horas Trabajadas:</Text>
+              <Text style={styles.infoValue}>
+                {salidaHoy.resumen?.horas_trabajadas?.toFixed(1) || '0'} hrs
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Situaciones:</Text>
+              <Text style={styles.infoValue}>
+                {salidaHoy.resumen?.total_situaciones || 0}
+              </Text>
+            </View>
+            {salidaHoy.resumen?.km_recorridos > 0 && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Km Recorridos:</Text>
+                <Text style={styles.infoValue}>{salidaHoy.resumen.km_recorridos} km</Text>
+              </View>
+            )}
+            <Text style={{ textAlign: 'center', color: COLORS.info, marginTop: 12, fontSize: 12 }}>
+              Toca para ver el resumen completo en Bitácora
+            </Text>
+          </View>
+        </TouchableOpacity>
+      ) : (asignacion?.unidad_codigo || asignacionDia?.unidad_codigo) ? (
         <View style={[styles.card, styles.warningCard]}>
           <Text style={styles.warningText}>
             No has iniciado salida hoy
@@ -378,11 +497,20 @@ export default function BrigadaHomeScreen() {
 
       {/* Card de Ingreso Activo */}
       {ingresoActivo && !ingresoActivo.es_ingreso_final && (
-        <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: COLORS.warning }]}>
+        <View style={[styles.card, {
+          borderLeftWidth: 4,
+          borderLeftColor: ingresoActivo.tipo_ingreso === 'FINALIZACION_JORNADA' ? COLORS.danger : COLORS.warning
+        }]}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>En Sede</Text>
-            <View style={[styles.tipoBadge, { backgroundColor: COLORS.warning }]}>
-              <Text style={styles.tipoBadgeText}>{ingresoActivo.tipo_ingreso}</Text>
+            <Text style={styles.cardTitle}>
+              {ingresoActivo.tipo_ingreso === 'FINALIZACION_JORNADA' ? 'Finalizando Jornada' : 'En Sede'}
+            </Text>
+            <View style={[styles.tipoBadge, {
+              backgroundColor: ingresoActivo.tipo_ingreso === 'FINALIZACION_JORNADA' ? COLORS.danger : COLORS.warning
+            }]}>
+              <Text style={styles.tipoBadgeText}>
+                {ingresoActivo.tipo_ingreso?.replace(/_/g, ' ')}
+              </Text>
             </View>
           </View>
           <View style={styles.cardContent}>
@@ -396,21 +524,39 @@ export default function BrigadaHomeScreen() {
                 {formatFecha(ingresoActivo.fecha_hora_ingreso)}
               </Text>
             </View>
+            {ingresoActivo.km_ingreso && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Km Final:</Text>
+                <Text style={styles.infoValue}>{ingresoActivo.km_ingreso} km</Text>
+              </View>
+            )}
           </View>
 
-          {ingresoActivo.tipo_ingreso === 'FINALIZAR_JORNADA' ? (
-            <View>
+          {/* Botones según tipo de ingreso */}
+          {ingresoActivo.tipo_ingreso === 'FINALIZACION_JORNADA' ? (
+            <View style={{ gap: 8 }}>
               <TouchableOpacity
-                style={[styles.cerrarButton, { backgroundColor: COLORS.danger, marginBottom: 12 }]}
-                onPress={() => navigation.navigate('FinalizarDia' as never)}
+                style={[styles.cerrarButton, { backgroundColor: COLORS.danger }]}
+                onPress={handleFinalizarJornada}
+                disabled={finalizandoJornada}
               >
-                <Text style={styles.cerrarButtonText}>🏁 Finalizar Jornada</Text>
+                {finalizandoJornada ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.cerrarButtonText}>🏁 Finalizar Jornada</Text>
+                )}
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.cerrarButton, { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border }]}
+                style={[styles.cerrarButton, { backgroundColor: COLORS.primary }]}
+                onPress={() => navigation.navigate('Bitacora' as never)}
+              >
+                <Text style={styles.cerrarButtonText}>📋 Ver Bitácora</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.cerrarButton, { backgroundColor: COLORS.gray[500] }]}
                 onPress={() => navigation.navigate('SalidaDeSede' as never)}
               >
-                <Text style={[styles.cerrarButtonText, { color: COLORS.text.primary }]}>Cancelar (Salir de Sede)</Text>
+                <Text style={styles.cerrarButtonText}>↩️ Salir de Sede (Cancelar)</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -425,7 +571,54 @@ export default function BrigadaHomeScreen() {
       )}
 
       {/* Card de Situación Activa */}
-      {situacionActiva ? (
+      {situacionActiva && situacionActiva.evento_persistente_id ? (
+        // Card de Evento Persistente
+        <View style={[styles.card, styles.situacionActivaCard, { borderLeftColor: COLORS.purple, backgroundColor: '#faf5ff' }]}>
+          <View style={styles.cardHeader}>
+            <View>
+              <Text style={[styles.cardTitle, { color: COLORS.purple }]}>Asignado a Evento</Text>
+              <Text style={{ fontSize: 12, color: COLORS.text.secondary }}>{situacionActiva.evento_tipo}</Text>
+            </View>
+            <View style={[styles.tipoBadge, { backgroundColor: COLORS.purple }]}>
+              <Text style={styles.tipoBadgeText}>{situacionActiva.estado}</Text>
+            </View>
+          </View>
+
+          <View style={styles.cardContent}>
+            <Text style={[styles.infoValue, { fontSize: 16, marginBottom: 8 }]}>
+              {situacionActiva.evento_titulo}
+            </Text>
+            {situacionActiva.descripcion && (
+              <Text style={[styles.descripcionText, { marginBottom: 12 }]}>
+                {situacionActiva.descripcion}
+              </Text>
+            )}
+
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Ubicación:</Text>
+              <Text style={styles.infoValue}>
+                {situacionActiva.ruta_codigo} Km {situacionActiva.km}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.primaryButton, { marginTop: 12, backgroundColor: COLORS.purple }]}
+              onPress={() => {
+                Alert.alert('Reportar', 'Funcionalidad de reporte rápido en desarrollo');
+                // navigation.navigate('ReportarEvento', { eventoId: situacionActiva.evento_persistente_id });
+              }}
+            >
+              <Text style={styles.actionButtonText}>📝 Reportar Novedad</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ marginTop: 12, padding: 8, alignItems: 'center' }}
+              onPress={handleCerrarSituacion}
+            >
+              <Text style={{ color: COLORS.danger }}>Finalizar Participación</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : situacionActiva ? (
         <View style={[styles.card, styles.situacionActivaCard]}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Situación Activa</Text>
@@ -538,8 +731,6 @@ export default function BrigadaHomeScreen() {
             <Text style={styles.secondaryButtonText}>🏢 Ingresar a Sede</Text>
           </TouchableOpacity>
 
-          <View style={styles.separator} />
-
           <TouchableOpacity
             style={[styles.actionButton, styles.secondaryButton]}
             onPress={() => setMostrarCambioRuta(true)}
@@ -554,14 +745,14 @@ export default function BrigadaHomeScreen() {
             <Text style={styles.secondaryButtonText}>⚡ Registrar Relevo</Text>
           </TouchableOpacity>
 
-          <View style={styles.separator} />
-
           <TouchableOpacity
             style={[styles.actionButton, styles.secondaryButton]}
             onPress={() => navigation.navigate('Bitacora' as never)}
           >
             <Text style={styles.secondaryButtonText}>📋 Ver Bitácora</Text>
           </TouchableOpacity>
+
+          <View style={styles.separator} />
 
           <TouchableOpacity
             style={[styles.actionButton, styles.secondaryButton, { borderColor: '#f97316' }]}
@@ -571,6 +762,7 @@ export default function BrigadaHomeScreen() {
           </TouchableOpacity>
         </View>
       )}
+
 
       {/* Modal de cambio de ruta */}
       {mostrarCambioRuta && (
@@ -586,6 +778,7 @@ export default function BrigadaHomeScreen() {
               onChange={(rutaId) => setNuevaRutaId(rutaId)}
               label="Nueva Ruta"
               required
+              showSearch
             />
 
             <View style={styles.modalButtons}>
@@ -617,17 +810,17 @@ export default function BrigadaHomeScreen() {
       )}
 
       {/* Mensaje de ayuda */}
-      {!asignacion && !asignacionDia && (
-        <View style={styles.helpBox}>
-          <Text style={styles.helpText}>
-            No tienes una unidad asignada. Contacta a Operaciones para que te asignen a un turno.
-          </Text>
-        </View>
-      )}
-      {(asignacion || asignacionDia) && !salidaActiva && (
+      {(asignacion?.unidad_codigo || asignacionDia?.unidad_codigo) && !salidaActiva && !salidaHoy?.jornada_finalizada && (
         <View style={styles.helpBox}>
           <Text style={styles.helpText}>
             Debes iniciar una salida para poder reportar situaciones y comenzar tu jornada laboral.
+          </Text>
+        </View>
+      )}
+      {salidaHoy?.jornada_finalizada && (
+        <View style={[styles.helpBox, { borderLeftColor: COLORS.success }]}>
+          <Text style={styles.helpText}>
+            Tu jornada de hoy ha sido completada. Revisa el resumen de tus actividades tocando el card de arriba.
           </Text>
         </View>
       )}
@@ -989,5 +1182,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
+  },
+  // Estilos para el card de Sin Asignación
+  noAsignacionCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.text.secondary,
+    alignItems: 'center',
+    padding: 24,
+  },
+  noAsignacionIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  noAsignacionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+    marginBottom: 8,
+  },
+  noAsignacionText: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

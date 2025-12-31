@@ -19,11 +19,11 @@ router.use(authenticate);
 
 /**
  * POST /api/asignaciones
- * Crear nueva asignación programada (solo Operaciones/Admin)
+ * Crear nueva asignación programada (Operaciones, Admin, Encargado Nóminas)
  */
 router.post(
     '/',
-    authorize('OPERACIONES', 'ADMIN'),
+    authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'),
     crearAsignacionProgramada
 );
 
@@ -33,7 +33,7 @@ router.post(
  */
 router.get(
     '/',
-    authorize('OPERACIONES', 'ADMIN', 'COP', 'ENCARGADO_SEDE'),
+    authorize('OPERACIONES', 'ADMIN', 'COP', 'ENCARGADO_SEDE', 'ENCARGADO_NOMINAS'),
     listarAsignaciones
 );
 
@@ -51,11 +51,11 @@ router.get('/:id', obtenerAsignacion);
 
 /**
  * PUT /api/asignaciones/:id/cancelar
- * Cancelar una asignación programada
+ * Cancelar una asignación programada (Operaciones, Admin, Encargado Nóminas)
  */
 router.put(
     '/:id/cancelar',
-    authorize('OPERACIONES', 'ADMIN'),
+    authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'),
     cancelarAsignacion
 );
 
