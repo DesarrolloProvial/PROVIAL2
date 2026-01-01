@@ -1,4 +1,4 @@
-import { useState } from 'react';
+// Componente de formulario para autoridades y socorro
 
 // Tipos de autoridades
 export const AUTORIDADES = [
@@ -84,10 +84,6 @@ export default function AutoridadesSocorroForm({
         v.tipo_autoridad === nombre ? { ...v, [campo]: valor } : v
       )
     );
-  };
-
-  const getDetalle = (nombre: string): DetalleAutoridadSocorro | undefined => {
-    return value.find((v) => v.tipo_autoridad === nombre);
   };
 
   return (

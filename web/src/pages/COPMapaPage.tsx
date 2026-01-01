@@ -1,0 +1,554 @@
+import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { Icon, LatLngExpression } from 'leaflet';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { incidentesAPI, situacionesAPI, eventosAPI } from '../services/api';
+import { situacionesPersistentesAPI } from '../services/movimientos.service';
+import { useNavigate } from 'react-router-dom';
+import { RefreshCw, ArrowLeft, Wifi, WifiOff, AlertTriangle, Layers, Filter, X } from 'lucide-react';
+import { useDashboardSocket } from '../hooks/useSocket';
+
+// Fix para iconos de Leaflet
+const createCustomIcon = (color: string) => {
+  const svgIcon = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="41" viewBox="0 0 25 41">
+      <path fill="${color}" d="M12.5 0C5.6 0 0 5.6 0 12.5c0 8.3 12.5 28.5 12.5 28.5S25 20.8 25 12.5C25 5.6 19.4 0 12.5 0zm0 18c-3 0-5.5-2.5-5.5-5.5S9.5 7 12.5 7s5.5 2.5 5.5 5.5S15.5 18 12.5 18z"/>
+    </svg>
+  `;
+
+  return new Icon({
+    iconUrl: `data:image/svg+xml;base64,${btoa(svgIcon)}`,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+  });
+};
+
+// Iconos para Incidentes
+const iconReportado = createCustomIcon('#EF4444');
+const iconEnAtencion = createCustomIcon('#F59E0B');
+const iconRegulacion = createCustomIcon('#3B82F6');
+const iconCerrado = createCustomIcon('#10B981');
+
+// Colores por sede
+const COLORES_SEDE: Record<number, string> = {
+  1: '#3B82F6',
+  2: '#10B981',
+  3: '#F59E0B',
+  4: '#8B5CF6',
+  5: '#EC4899',
+  6: '#14B8A6',
+  7: '#EF4444',
+  8: '#6366F1',
+  9: '#F97316',
+};
+
+const SEDES_NOMBRES: Record<number, string> = {
+  1: 'Central',
+  2: 'Mazatenango',
+  3: 'Poptún',
+  4: 'San Cristóbal',
+  5: 'Quetzaltenango',
+  6: 'Coatepeque',
+  7: 'Palín',
+  8: 'Morales',
+  9: 'Río Dulce',
+};
+
+const getIconBySede = (sedeId: number | null) => {
+  const color = sedeId ? (COLORES_SEDE[sedeId] || '#6B7280') : '#6B7280';
+  return createCustomIcon(color);
+};
+
+const eventoIcon = new Icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/564/564619.png',
+  iconSize: [36, 36],
+  iconAnchor: [18, 36],
+  popupAnchor: [0, -36],
+});
+
+const createPersistenteIcon = () => {
+  const svgIcon = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="11" fill="#DC2626" stroke="#fff" stroke-width="2"/>
+      <text x="12" y="17" text-anchor="middle" fill="white" font-size="18" font-weight="bold">!</text>
+    </svg>
+  `;
+  return new Icon({
+    iconUrl: `data:image/svg+xml;base64,${btoa(svgIcon)}`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [0, -40],
+  });
+};
+
+const persistenteIcon = createPersistenteIcon();
+
+function MapController({ center, zoom }: { center: LatLngExpression; zoom?: number }) {
+  const map = useMap();
+  useEffect(() => {
+    if (zoom) {
+      map.setView(center, zoom);
+    } else {
+      map.setView(center, map.getZoom());
+    }
+  }, [center, zoom, map]);
+  return null;
+}
+
+export default function COPMapaPage() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showLegend, setShowLegend] = useState(true);
+  const [filters, setFilters] = useState({
+    incidentes: true,
+    situaciones: true,
+    eventos: true,
+    persistentes: true,
+    sedes: [] as number[],
+  });
+
+  const { isConnected: socketConnected, lastUpdate } = useDashboardSocket(queryClient);
+  const defaultCenter: LatLngExpression = [14.6407, -90.5133];
+
+  // Queries
+  const { data: incidentes = [], refetch: refetchIncidentes } = useQuery({
+    queryKey: ['incidentes-activos'],
+    queryFn: incidentesAPI.getActivos,
+    refetchInterval: socketConnected ? false : 30000,
+  });
+
+  const { data: situaciones = [], refetch: refetchSituaciones } = useQuery({
+    queryKey: ['situaciones-activas'],
+    queryFn: situacionesAPI.getActivas,
+    refetchInterval: socketConnected ? false : 30000,
+  });
+
+  const { data: eventos = [] } = useQuery({
+    queryKey: ['eventos-activos-mapa'],
+    queryFn: eventosAPI.getActivos,
+    refetchInterval: 60000,
+  });
+
+  const { data: situacionesPersistentes = [] } = useQuery({
+    queryKey: ['situaciones-persistentes-mapa'],
+    queryFn: situacionesPersistentesAPI.getActivas,
+    refetchInterval: 60000,
+  });
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([refetchIncidentes(), refetchSituaciones()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const formatLastUpdate = () => {
+    return lastUpdate.toLocaleTimeString('es-GT', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+
+  const getIncidenteIcon = (estado: string) => {
+    switch (estado) {
+      case 'REPORTADO': return iconReportado;
+      case 'EN_ATENCION': return iconEnAtencion;
+      case 'REGULACION': return iconRegulacion;
+      case 'CERRADO': return iconCerrado;
+      default: return iconReportado;
+    }
+  };
+
+  const getEstadoBadgeColor = (estado: string) => {
+    switch (estado) {
+      case 'REPORTADO': return 'bg-red-100 text-red-800';
+      case 'EN_ATENCION': return 'bg-yellow-100 text-yellow-800';
+      case 'REGULACION': return 'bg-blue-100 text-blue-800';
+      case 'CERRADO': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Filtrar datos
+  const filteredIncidentes = filters.incidentes ? incidentes : [];
+  const filteredSituaciones = filters.situaciones
+    ? situaciones.filter((s: any) =>
+        filters.sedes.length === 0 || filters.sedes.includes(s.sede_id)
+      )
+    : [];
+  const filteredEventos = filters.eventos ? eventos : [];
+  const filteredPersistentes = filters.persistentes ? situacionesPersistentes : [];
+
+  const toggleSede = (sedeId: number) => {
+    setFilters(prev => ({
+      ...prev,
+      sedes: prev.sedes.includes(sedeId)
+        ? prev.sedes.filter(id => id !== sedeId)
+        : [...prev.sedes, sedeId]
+    }));
+  };
+
+  return (
+    <div className="h-screen w-full relative">
+      {/* Mapa */}
+      <MapContainer
+        center={defaultCenter}
+        zoom={11}
+        style={{ height: '100%', width: '100%' }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <MapController center={defaultCenter} />
+
+        {/* Marcadores de Incidentes */}
+        {filteredIncidentes.map((incidente: any) => {
+          if (!incidente.latitud || !incidente.longitud) return null;
+          return (
+            <Marker
+              key={`incidente-${incidente.id}`}
+              position={[incidente.latitud, incidente.longitud]}
+              icon={getIncidenteIcon(incidente.estado)}
+            >
+              <Popup>
+                <div className="p-2 min-w-[200px]">
+                  <h3 className="font-bold text-lg mb-2">
+                    {incidente.numero_reporte || `#${incidente.id}`}
+                  </h3>
+                  <p className="font-semibold text-gray-700 mb-2">{incidente.tipo_hecho}</p>
+                  <div className="text-sm space-y-1">
+                    <p>📍 {incidente.ruta_codigo} Km {incidente.km}</p>
+                    <p>
+                      Estado:{' '}
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getEstadoBadgeColor(incidente.estado)}`}>
+                        {incidente.estado}
+                      </span>
+                    </p>
+                    {incidente.unidad_codigo && <p>🚓 {incidente.unidad_codigo}</p>}
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
+
+        {/* Marcadores de Situaciones */}
+        {filteredSituaciones.map((situacion: any) => {
+          if (!situacion.latitud || !situacion.longitud) return null;
+          return (
+            <Marker
+              key={`situacion-${situacion.id}`}
+              position={[situacion.latitud, situacion.longitud]}
+              icon={getIconBySede(situacion.sede_id)}
+            >
+              <Popup>
+                <div className="p-2 min-w-[220px]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: COLORES_SEDE[situacion.sede_id] || '#6B7280' }}
+                    />
+                    <h3 className="font-bold text-lg" style={{ color: COLORES_SEDE[situacion.sede_id] || '#6B7280' }}>
+                      🚓 {situacion.unidad_codigo || `Unidad #${situacion.unidad_id}`}
+                    </h3>
+                  </div>
+                  {situacion.sede_nombre && (
+                    <p className="text-xs text-gray-500 mb-2">📍 Sede: {situacion.sede_nombre}</p>
+                  )}
+                  <p className="font-semibold text-gray-700 mb-2">
+                    {situacion.tipo_situacion?.replace(/_/g, ' ')}
+                  </p>
+                  <div className="text-sm space-y-1">
+                    {situacion.ruta_codigo && (
+                      <p>🛣️ {situacion.ruta_codigo} Km {situacion.km} {situacion.sentido && `(${situacion.sentido})`}</p>
+                    )}
+                    {situacion.descripcion && <p className="mt-2 text-gray-700">{situacion.descripcion}</p>}
+                    <div className="mt-3 pt-2 border-t border-gray-100">
+                      <button
+                        onClick={() => navigate(`/bitacora/${situacion.unidad_id}`)}
+                        className="w-full flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold py-1.5 px-3 rounded text-sm transition"
+                      >
+                        📄 Ver Bitácora
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
+
+        {/* Marcadores de Eventos */}
+        {filteredEventos.map((evento: any) => {
+          if (!evento.latitud || !evento.longitud) return null;
+          return (
+            <Marker
+              key={`evento-${evento.id}`}
+              position={[evento.latitud, evento.longitud]}
+              icon={eventoIcon}
+            >
+              <Popup>
+                <div className="p-2 min-w-[200px]">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-bold text-lg text-blue-800">{evento.titulo}</h3>
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                      evento.importancia === 'CRITICA' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {evento.importancia}
+                    </span>
+                  </div>
+                  <p className="font-semibold text-gray-700 mb-1">{evento.tipo}</p>
+                  <div className="text-sm space-y-1">
+                    <p>📍 {evento.ruta_nombre} Km {evento.km}</p>
+                    <p className="italic text-gray-600 my-2">{evento.descripcion}</p>
+                    <p className="font-medium text-gray-800">
+                      {evento.total_unidades_asignadas || 0} Unidades asignadas
+                    </p>
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
+
+        {/* Marcadores de Situaciones Persistentes */}
+        {filteredPersistentes.map((sp: any) => {
+          if (!sp.latitud || !sp.longitud) return null;
+          return (
+            <Marker
+              key={`persistente-${sp.id}`}
+              position={[sp.latitud, sp.longitud]}
+              icon={persistenteIcon}
+            >
+              <Popup>
+                <div className="p-2 min-w-[220px]">
+                  <div className="flex items-start gap-2 mb-2">
+                    <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-bold text-lg text-red-800">{sp.titulo}</h3>
+                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                        sp.importancia === 'CRITICA' ? 'bg-red-100 text-red-800' :
+                        sp.importancia === 'ALTA' ? 'bg-orange-100 text-orange-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {sp.importancia}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-sm space-y-1">
+                    {sp.ruta_codigo && (
+                      <p>📍 {sp.ruta_codigo} Km {sp.km_inicio}{sp.km_fin && ` - ${sp.km_fin}`}</p>
+                    )}
+                    {sp.descripcion && <p className="italic text-gray-600">{sp.descripcion}</p>}
+                    <p className="font-medium text-gray-800">
+                      {sp.unidades_asignadas_count || 0} Unidades asignadas
+                    </p>
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
+      </MapContainer>
+
+      {/* Header flotante */}
+      <div className="absolute top-4 left-4 z-[1000] flex items-center gap-2">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-3 bg-white rounded-lg shadow-lg hover:bg-gray-50 transition"
+        >
+          <ArrowLeft className="w-5 h-5 text-gray-700" />
+        </button>
+        <div className="bg-white rounded-lg shadow-lg px-4 py-2">
+          <h1 className="text-lg font-bold text-gray-800">COP - Mapa en Tiempo Real</h1>
+          <p className="text-xs text-gray-500">
+            Actualizado: {formatLastUpdate()}
+            {socketConnected ? (
+              <span className="ml-2 text-green-600 inline-flex items-center gap-1">
+                <Wifi className="w-3 h-3" /> En vivo
+              </span>
+            ) : (
+              <span className="ml-2 text-orange-600 inline-flex items-center gap-1">
+                <WifiOff className="w-3 h-3" /> Polling
+              </span>
+            )}
+          </p>
+        </div>
+      </div>
+
+      {/* Controles flotantes */}
+      <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="p-3 bg-white rounded-lg shadow-lg hover:bg-gray-50 transition disabled:opacity-50"
+          title="Actualizar"
+        >
+          <RefreshCw className={`w-5 h-5 text-gray-700 ${isRefreshing ? 'animate-spin' : ''}`} />
+        </button>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={`p-3 rounded-lg shadow-lg transition ${showFilters ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+          title="Filtros"
+        >
+          <Filter className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => setShowLegend(!showLegend)}
+          className={`p-3 rounded-lg shadow-lg transition ${showLegend ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+          title="Leyenda"
+        >
+          <Layers className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Panel de Filtros */}
+      {showFilters && (
+        <div className="absolute top-20 right-4 z-[1000] bg-white rounded-lg shadow-lg p-4 w-64">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-gray-800">Filtros</h3>
+            <button onClick={() => setShowFilters(false)} className="p-1 hover:bg-gray-100 rounded">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filters.incidentes}
+                onChange={(e) => setFilters(prev => ({ ...prev, incidentes: e.target.checked }))}
+                className="rounded text-blue-600"
+              />
+              <span className="text-sm">Incidentes ({incidentes.length})</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filters.situaciones}
+                onChange={(e) => setFilters(prev => ({ ...prev, situaciones: e.target.checked }))}
+                className="rounded text-blue-600"
+              />
+              <span className="text-sm">Situaciones ({situaciones.length})</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filters.eventos}
+                onChange={(e) => setFilters(prev => ({ ...prev, eventos: e.target.checked }))}
+                className="rounded text-blue-600"
+              />
+              <span className="text-sm">Eventos ({eventos.length})</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filters.persistentes}
+                onChange={(e) => setFilters(prev => ({ ...prev, persistentes: e.target.checked }))}
+                className="rounded text-blue-600"
+              />
+              <span className="text-sm">Persistentes ({situacionesPersistentes.length})</span>
+            </label>
+
+            <div className="border-t pt-3 mt-3">
+              <p className="text-xs font-medium text-gray-500 mb-2">Filtrar por sede:</p>
+              <div className="space-y-1 max-h-40 overflow-y-auto">
+                {Object.entries(SEDES_NOMBRES).map(([id, nombre]) => (
+                  <label key={id} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <input
+                      type="checkbox"
+                      checked={filters.sedes.length === 0 || filters.sedes.includes(Number(id))}
+                      onChange={() => toggleSede(Number(id))}
+                      className="rounded"
+                      style={{ accentColor: COLORES_SEDE[Number(id)] }}
+                    />
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORES_SEDE[Number(id)] }} />
+                    <span>{nombre}</span>
+                  </label>
+                ))}
+              </div>
+              {filters.sedes.length > 0 && (
+                <button
+                  onClick={() => setFilters(prev => ({ ...prev, sedes: [] }))}
+                  className="text-xs text-blue-600 hover:underline mt-2"
+                >
+                  Mostrar todas las sedes
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leyenda */}
+      {showLegend && (
+        <div className="absolute bottom-4 left-4 z-[1000] bg-white rounded-lg shadow-lg p-3 max-h-64 overflow-y-auto">
+          <h4 className="text-xs font-bold text-gray-600 mb-2 uppercase">Leyenda</h4>
+
+          <div className="mb-3">
+            <p className="text-xs font-semibold text-gray-500 mb-1">Estados Incidente:</p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500" />
+                <span className="text-xs">Reportado</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                <span className="text-xs">En Atención</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500" />
+                <span className="text-xs">Regulación</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500" />
+                <span className="text-xs">Cerrado</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold text-gray-500 mb-1">Sedes:</p>
+            <div className="space-y-1">
+              {Object.entries(COLORES_SEDE).map(([sedeId, color]) => (
+                <div key={sedeId} className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                  <span className="text-xs text-gray-700">{SEDES_NOMBRES[parseInt(sedeId)]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stats flotantes */}
+      <div className="absolute bottom-4 right-4 z-[1000] bg-white/90 backdrop-blur rounded-lg shadow-lg p-3">
+        <div className="grid grid-cols-4 gap-3 text-center">
+          <div>
+            <p className="text-xs text-gray-500">Incidentes</p>
+            <p className="text-lg font-bold text-red-600">{filteredIncidentes.length}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Unidades</p>
+            <p className="text-lg font-bold text-purple-600">{filteredSituaciones.length}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Eventos</p>
+            <p className="text-lg font-bold text-blue-600">{filteredEventos.length}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Persistentes</p>
+            <p className="text-lg font-bold text-orange-600">{filteredPersistentes.length}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

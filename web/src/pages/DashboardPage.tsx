@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Icon, LatLngExpression } from 'leaflet';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { incidentesAPI, situacionesAPI, eventosAPI, turnosAPI } from '../services/api';
 import { situacionesPersistentesAPI } from '../services/movimientos.service';
 import type { Incidente } from '../types';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
 import ResumenUnidadesTable from '../components/ResumenUnidadesTable';
-import { RefreshCw, Settings, X, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Settings, X, Wifi, WifiOff, AlertTriangle, Crown } from 'lucide-react';
 import { useDashboardSocket } from '../hooks/useSocket';
 
 // Fix para iconos de Leaflet en Vite
@@ -916,7 +916,10 @@ export default function DashboardPage() {
                           <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${panelConfig.textColor}20` }}>
                             <p style={{ color: panelConfig.accentColor }} className="text-xs uppercase font-semibold mb-1">Tripulación:</p>
                             {asig.tripulacion.slice(0, 3).map((t: any, idx: number) => (
-                              <p key={idx} className="text-sm truncate">
+                              <p key={idx} className="text-sm truncate flex items-center gap-1">
+                                {t.es_comandante && (
+                                  <Crown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                                )}
                                 {t.nombre_completo || t.usuario_nombre || `Usuario ${t.usuario_id}`}
                                 {t.rol_tripulacion && <span className="opacity-70"> ({t.rol_tripulacion})</span>}
                               </p>

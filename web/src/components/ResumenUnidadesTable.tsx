@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Crown } from 'lucide-react';
 
 // Convertir decimal a fracción para mostrar combustible
 const decimalToFraccion = (decimal: number | null): string => {
@@ -41,6 +42,7 @@ interface ResumenUnidad {
   tripulacion: Array<{
     nombre_completo: string;
     rol_tripulacion: string;
+    es_comandante?: boolean;
   }>;
 }
 
@@ -288,7 +290,12 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
                   {unidad.tripulacion && unidad.tripulacion.length > 0 ? (
                     <div className="text-xs space-y-0.5">
                       {unidad.tripulacion.map((t, idx) => (
-                        <div key={idx} className="text-gray-700">
+                        <div key={idx} className="text-gray-700 flex items-center gap-1">
+                          {t.es_comandante && (
+                            <span title="Comandante">
+                              <Crown className="w-3 h-3 text-amber-500" />
+                            </span>
+                          )}
                           <span className="font-medium">
                             {t.rol_tripulacion}:
                           </span>{' '}

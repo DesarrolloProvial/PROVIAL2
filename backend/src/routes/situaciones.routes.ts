@@ -3,6 +3,8 @@ import {
   createSituacion,
   getSituacion,
   listSituaciones,
+  listSituacionesActivas,
+  getTiposSituacion,
   getMiUnidadHoy,
   getBitacoraUnidad,
   getMapaSituaciones,
@@ -35,6 +37,12 @@ router.get('/mapa/unidades', authenticate, getMapaSituaciones);
 
 // Resumen de unidades (dashboard)
 router.get('/resumen/unidades', authenticate, getResumenUnidades);
+
+// Tipos de situación
+router.get('/tipos', authenticate, getTiposSituacion);
+
+// Situaciones activas
+router.get('/activas', authenticate, listSituacionesActivas);
 
 // ========================================
 // RUTAS GENERALES CON PARAMETROS (DEBEN IR DESPUES DE LAS RUTAS ESPECIFICAS)

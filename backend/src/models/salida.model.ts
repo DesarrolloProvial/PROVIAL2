@@ -680,7 +680,8 @@ export const SalidaModel = {
    */
   async getUnidadesDeSede(sedeId: number): Promise<any[]> {
     return db.any(
-      `SELECT u.*,
+      `SELECT * FROM (
+        SELECT u.*,
               COALESCE(
                 (SELECT sede_destino_id
                  FROM reasignacion_sede
@@ -695,8 +696,8 @@ export const SalidaModel = {
               ) AS sede_efectiva
        FROM unidad u
        WHERE u.activa = TRUE
-       HAVING sede_efectiva = $1
-       ORDER BY u.codigo`,
+      ) sub WHERE sede_efectiva = $1
+       ORDER BY codigo`,
       [sedeId]
     );
   },
@@ -706,7 +707,8 @@ export const SalidaModel = {
    */
   async getPersonalDeSede(sedeId: number): Promise<any[]> {
     return db.any(
-      `SELECT u.*,
+      `SELECT * FROM (
+        SELECT u.*,
               r.nombre AS rol_nombre,
               COALESCE(
                 (SELECT sede_destino_id
@@ -723,8 +725,8 @@ export const SalidaModel = {
        FROM usuario u
        JOIN rol r ON u.rol_id = r.id
        WHERE r.nombre != 'COP'
-       HAVING sede_efectiva = $1
-       ORDER BY r.nombre, u.nombre_completo`,
+      ) sub WHERE sede_efectiva = $1
+       ORDER BY rol_nombre, nombre_completo`,
       [sedeId]
     );
   },

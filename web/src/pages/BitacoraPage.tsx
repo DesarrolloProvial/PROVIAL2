@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { situacionesAPI, api } from '../services/api';
 import { ArrowLeft, RefreshCw, MapPin, Edit2, Users, Truck, Clock, Fuel } from 'lucide-react';
 import SituacionFormSelector from '../components/SituacionFormSelector';
+import Inspeccion360Historial from '../components/Inspeccion360Historial';
 
 // Tipos de situación para colores
 const TIPOS_SITUACION = [
@@ -196,6 +197,9 @@ export default function BitacoraPage() {
                             </div>
                         </div>
                     )}
+
+                    {/* Inspecciones 360 */}
+                    <Inspeccion360Historial unidadId={Number(unidadId)} dias={30} />
                 </div>
 
                 {/* Timeline de Situaciones */}

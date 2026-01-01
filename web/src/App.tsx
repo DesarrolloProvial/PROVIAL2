@@ -19,6 +19,13 @@ import AdminPanelPage from './pages/AdminPanelPage';
 import MovimientosBrigadasPage from './pages/MovimientosBrigadasPage';
 import SituacionesPersistentesPage from './pages/SituacionesPersistentesPage';
 import SuperAdminPage from './pages/SuperAdminPage';
+import GestionBrigadasPage from './pages/GestionBrigadasPage';
+import GestionUnidadesPage from './pages/GestionUnidadesPage';
+import ControlAccesoPage from './pages/ControlAccesoPage';
+import COPMapaPage from './pages/COPMapaPage';
+import COPSituacionesPage from './pages/COPSituacionesPage';
+import AdminHubPage from './pages/AdminHubPage';
+import DashboardEjecutivoPage from './pages/DashboardEjecutivoPage';
 
 // Crear QueryClient
 const queryClient = new QueryClient({
@@ -236,8 +243,64 @@ function App() {
             path="/super-admin"
             element={
               <SuperAdminRoute>
+                <AdminHubPage />
+              </SuperAdminRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <SuperAdminRoute>
                 <SuperAdminPage />
               </SuperAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/brigadas"
+            element={
+              <SuperAdminRoute>
+                <GestionBrigadasPage />
+              </SuperAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/unidades"
+            element={
+              <SuperAdminRoute>
+                <GestionUnidadesPage />
+              </SuperAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/acceso"
+            element={
+              <SuperAdminRoute>
+                <ControlAccesoPage />
+              </SuperAdminRoute>
+            }
+          />
+          <Route
+            path="/cop/mapa"
+            element={
+              <ProtectedRoute>
+                <COPMapaPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cop/situaciones"
+            element={
+              <ProtectedRoute>
+                <COPSituacionesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard-ejecutivo"
+            element={
+              <ProtectedRoute>
+                <DashboardEjecutivoPage />
+              </ProtectedRoute>
             }
           />
           <Route path="/" element={<RoleBasedRedirect />} />

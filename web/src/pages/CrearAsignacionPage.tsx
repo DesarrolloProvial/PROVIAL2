@@ -5,7 +5,7 @@ import { turnosService, geografiaService } from '../services/turnos.service';
 import { operacionesService } from '../services/operaciones.service';
 import type { TripulacionMiembro, CreateAsignacionDTO } from '../services/turnos.service';
 import type { BrigadaDisponible } from '../services/operaciones.service';
-import { AlertCircle, CheckCircle, Users, Truck, ArrowLeft, Plus, X, Search } from 'lucide-react';
+import { AlertCircle, CheckCircle, Users, Truck, ArrowLeft, Plus, X, Search, Crown } from 'lucide-react';
 
 export default function CrearAsignacionPage() {
   const navigate = useNavigate();
@@ -162,6 +162,13 @@ export default function CrearAsignacionPage() {
     setTripulacion(tripulacion.filter(t => t.usuario_id !== usuarioId));
   };
 
+  const toggleComandante = (usuarioId: number) => {
+    setTripulacion(tripulacion.map(t => ({
+      ...t,
+      es_comandante: t.usuario_id === usuarioId ? !t.es_comandante : false
+    })));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -178,6 +185,11 @@ export default function CrearAsignacionPage() {
 
     if (tripulacion.length === 0) {
       alert('Debe asignar al menos un tripulante');
+      return;
+    }
+
+    if (!tripulacion.some(t => t.es_comandante)) {
+      alert('Debe designar un comandante para la unidad. El comandante es responsable de aprobar la inspeccion 360 del vehiculo.');
       return;
     }
 
@@ -509,7 +521,11 @@ export default function CrearAsignacionPage() {
                   {tripulacion.map((miembro) => (
                     <div
                       key={miembro.usuario_id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                      className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
+                        miembro.es_comandante
+                          ? 'bg-amber-50 border-amber-400'
+                          : 'bg-gray-50 border-gray-200'
+                      }`}
                     >
                       <div>
                         <div className="flex items-center gap-2">
@@ -518,6 +534,12 @@ export default function CrearAsignacionPage() {
                             }`}>
                             {miembro.rol_tripulacion}
                           </span>
+                          {miembro.es_comandante && (
+                            <span className="badge bg-amber-500 text-white flex items-center gap-1">
+                              <Crown className="h-3 w-3" />
+                              COMANDANTE
+                            </span>
+                          )}
                           <span className="font-bold text-gray-900">
                             {getBrigadaNombre(miembro.usuario_id)}
                           </span>
@@ -531,13 +553,27 @@ export default function CrearAsignacionPage() {
                           </p>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removerTripulante(miembro.usuario_id)}
-                        className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleComandante(miembro.usuario_id)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            miembro.es_comandante
+                              ? 'text-amber-600 bg-amber-100 hover:bg-amber-200'
+                              : 'text-gray-500 hover:bg-gray-200'
+                          }`}
+                          title={miembro.es_comandante ? 'Quitar comandante' : 'Designar como comandante'}
+                        >
+                          <Crown className="h-5 w-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removerTripulante(miembro.usuario_id)}
+                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -134,8 +134,8 @@ export const AuditoriaModel = {
     const query = `
       SELECT
         rc.*,
-        ua.nombre as usuario_afectado_nombre,
-        rp.nombre as realizado_por_nombre
+        ua.nombre_completo as usuario_afectado_nombre,
+        rp.nombre_completo as realizado_por_nombre
       FROM registro_cambio rc
       LEFT JOIN usuario ua ON rc.usuario_afectado_id = ua.id
       INNER JOIN usuario rp ON rc.realizado_por = rp.id
@@ -156,8 +156,8 @@ export const AuditoriaModel = {
     const query = `
       SELECT
         rc.*,
-        ua.nombre as usuario_afectado_nombre,
-        rp.nombre as realizado_por_nombre
+        ua.nombre_completo as usuario_afectado_nombre,
+        rp.nombre_completo as realizado_por_nombre
       FROM registro_cambio rc
       LEFT JOIN usuario ua ON rc.usuario_afectado_id = ua.id
       INNER JOIN usuario rp ON rc.realizado_por = rp.id
@@ -175,8 +175,8 @@ export const AuditoriaModel = {
     const query = `
       SELECT
         rc.*,
-        ua.nombre as usuario_afectado_nombre,
-        rp.nombre as realizado_por_nombre
+        ua.nombre_completo as usuario_afectado_nombre,
+        rp.nombre_completo as realizado_por_nombre
       FROM registro_cambio rc
       LEFT JOIN usuario ua ON rc.usuario_afectado_id = ua.id
       INNER JOIN usuario rp ON rc.realizado_por = rp.id
@@ -195,8 +195,8 @@ export const AuditoriaModel = {
     const query = `
       SELECT
         rc.*,
-        ua.nombre as usuario_afectado_nombre,
-        rp.nombre as realizado_por_nombre
+        ua.nombre_completo as usuario_afectado_nombre,
+        rp.nombre_completo as realizado_por_nombre
       FROM registro_cambio rc
       LEFT JOIN usuario ua ON rc.usuario_afectado_id = ua.id
       INNER JOIN usuario rp ON rc.realizado_por = rp.id
@@ -253,8 +253,8 @@ export const AuditoriaModel = {
     const query = `
       SELECT
         rc.*,
-        ua.nombre as usuario_afectado_nombre,
-        rp.nombre as realizado_por_nombre
+        ua.nombre_completo as usuario_afectado_nombre,
+        rp.nombre_completo as realizado_por_nombre
       FROM registro_cambio rc
       LEFT JOIN usuario ua ON rc.usuario_afectado_id = ua.id
       INNER JOIN usuario rp ON rc.realizado_por = rp.id

@@ -21,6 +21,9 @@ router.get('/departamentos', authenticate, authorizeAdminOrSuperAdmin(), control
 // ESTADO DE GRUPOS
 // =====================================================
 
+// Alias: listar grupos
+router.get('/grupos', authenticate, authorizeGestionGrupos(), controller.getEstadoGrupos);
+
 // Obtener estado de grupos por departamento/sede
 router.get('/grupos/estado', authenticate, authorizeGestionGrupos(), controller.getEstadoGrupos);
 
@@ -94,6 +97,9 @@ router.get('/sub-roles-cop', authenticate, authorizeAdminOrSuperAdmin(), control
 // =====================================================
 // LOG Y AUDITORIA (Solo SUPER_ADMIN)
 // =====================================================
+
+// Alias: log de auditoría
+router.get('/auditoria', authenticate, authorizeSuperAdmin(), controller.getLogAdministracion);
 
 // Obtener log de acciones administrativas
 router.get('/log', authenticate, authorizeSuperAdmin(), controller.getLogAdministracion);

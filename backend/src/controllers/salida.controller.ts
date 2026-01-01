@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { SalidaModel } from '../models/salida.model';
 import { GrupoModel } from '../models/grupo.model';
 import { TurnoModel } from '../models/turno.model';
+import { Inspeccion360Model } from '../models/inspeccion360.model';
 import { emitUnidadCambioEstado, UnidadEvent } from '../services/socket.service';
 
 // Helper para convertir fracciones de combustible a decimal
@@ -271,6 +272,48 @@ export async function iniciarSalida(req: Request, res: Response) {
     // Verificar que no haya salida activa
     const salidaActiva = await SalidaModel.getMiSalidaActiva(req.user.userId);
 
+    // ========================================
+    // VERIFICAR INSPECCIÓN 360 APROBADA
+    // ========================================
+    // Buscar una inspección 360 aprobada reciente para esta unidad
+    const inspeccion360 = await Inspeccion360Model.obtenerInspeccionPendienteUnidad(unidadId);
+
+    // Si hay inspección pendiente, informar que debe ser aprobada
+    if (inspeccion360 && inspeccion360.estado === 'PENDIENTE') {
+      return res.status(400).json({
+        error: 'Inspección 360 pendiente de aprobación',
+        message: 'Existe una inspección 360 que aún no ha sido aprobada por el comandante.',
+        requiere_inspeccion: true,
+        inspeccion_pendiente: {
+          id: inspeccion360.id,
+          estado: inspeccion360.estado,
+          fecha_realizacion: inspeccion360.fecha_realizacion
+        }
+      });
+    }
+
+    // Verificar si existe una inspección 360 aprobada reciente (últimas 24 horas sin salida asociada)
+    const { db } = require('../config/database');
+    const inspeccionAprobada = await db.oneOrNone(`
+      SELECT id, estado, fecha_aprobacion
+      FROM inspeccion_360
+      WHERE unidad_id = $1
+        AND estado = 'APROBADA'
+        AND salida_id IS NULL
+        AND fecha_aprobacion > NOW() - INTERVAL '24 hours'
+      ORDER BY fecha_aprobacion DESC
+      LIMIT 1
+    `, [unidadId]);
+
+    if (!inspeccionAprobada) {
+      return res.status(400).json({
+        error: 'Debe completar la inspección 360',
+        message: 'Para iniciar la salida, primero debe completar y obtener aprobación de la inspección 360 del vehículo.',
+        requiere_inspeccion: true,
+        inspeccion_pendiente: null
+      });
+    }
+
     if (salidaActiva) {
       return res.status(409).json({
         error: 'Ya tienes una salida activa',
@@ -296,6 +339,12 @@ export async function iniciarSalida(req: Request, res: Response) {
       combustible_inicial: combustibleDecimal ?? undefined,
       observaciones_salida
     });
+
+    // Asociar la inspección 360 aprobada con la nueva salida
+    if (inspeccionAprobada) {
+      await Inspeccion360Model.asociarASalida(inspeccionAprobada.id, salidaId);
+      console.log(`[SALIDA] Inspección 360 #${inspeccionAprobada.id} asociada a salida #${salidaId}`);
+    }
 
     // Si es una asignación de turno (nuevo sistema)
     if (asignacionTurno) {

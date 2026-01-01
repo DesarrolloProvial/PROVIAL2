@@ -6,7 +6,6 @@ import {
   SituacionPersistente,
   ActualizacionSituacion,
   TipoEmergenciaVial,
-  AutoridadSocorroPersistente
 } from '../services/movimientos.service';
 import { geografiaAPI, situacionesAPI } from '../services/api';
 import {
@@ -28,18 +27,18 @@ import {
   AlertTriangle,
   Shield,
   Heart,
-  Camera
 } from 'lucide-react';
-import { ObstruccionForm, ObstruccionData } from '../components/situaciones/ObstruccionForm';
+import ObstruccionForm, { ObstruccionData } from '../components/situaciones/ObstruccionForm';
 import AutoridadesSocorroForm, { DetalleAutoridadSocorro } from '../components/situaciones/AutoridadesSocorroForm';
 
 type TabType = 'activas' | 'pausadas' | 'finalizadas';
 type FormTabType = 'general' | 'obstruccion' | 'autoridades' | 'socorro';
 
 const initialObstruccion: ObstruccionData = {
-  obstruye_via: false,
-  tipo_obstruccion: null,
-  porcentaje_obstruccion: null,
+  hay_vehiculo_fuera_via: false,
+  tipo_obstruccion: 'ninguna',
+  sentido_principal: null,
+  sentido_contrario: null,
   descripcion_manual: '',
 };
 
@@ -82,10 +81,11 @@ export default function SituacionesPersistentesPage() {
   });
 
   // Queries
-  const { data: tipos = [] } = useQuery({
+  const { data: _tipos = [] } = useQuery({
     queryKey: ['tipos-situacion-persistente'],
     queryFn: situacionesPersistentesAPI.getTipos
   });
+  void _tipos; // Variable reservada para uso futuro
 
   const { data: tiposEmergencia = [] } = useQuery({
     queryKey: ['tipos-emergencia-vial'],
@@ -234,10 +234,10 @@ export default function SituacionesPersistentesPage() {
       sentido: formData.sentido,
       descripcion: formData.descripcion || undefined,
       jurisdiccion: formData.jurisdiccion || undefined,
-      obstruccion: obstruccionData.obstruye_via ? {
+      obstruccion: obstruccionData.tipo_obstruccion !== 'ninguna' ? {
         obstruye_via: true,
-        tipo_obstruccion: obstruccionData.tipo_obstruccion || undefined,
-        porcentaje_obstruccion: obstruccionData.porcentaje_obstruccion || undefined,
+        tipo_obstruccion: obstruccionData.tipo_obstruccion === 'total_ambos' ? 'total' : obstruccionData.tipo_obstruccion === 'total_sentido' ? 'parcial' : obstruccionData.tipo_obstruccion,
+        porcentaje_obstruccion: obstruccionData.tipo_obstruccion === 'total_ambos' ? 100 : obstruccionData.tipo_obstruccion === 'total_sentido' ? 50 : 25,
         descripcion_manual: obstruccionData.descripcion_manual || undefined,
       } : undefined,
       autoridades: autoridades.length > 0 ? autoridades : undefined,

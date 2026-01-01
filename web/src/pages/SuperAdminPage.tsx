@@ -29,7 +29,6 @@ import {
   ToggleLeft,
   ToggleRight,
   UserCheck,
-  Clock,
   Crown,
   Edit2,
   Trash2,
@@ -216,26 +215,26 @@ function DashboardTab({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           title="Total Usuarios"
-          value={estadisticas?.total_usuarios || 0}
+          value={estadisticas?.totalUsuarios || 0}
           icon={<Users className="w-5 h-5 text-blue-600" />}
           bgColor="bg-blue-100"
         />
         <StatCard
           title="Usuarios Activos"
-          value={estadisticas?.usuarios_activos || 0}
+          value={estadisticas?.usuariosActivos || 0}
           icon={<UserCheck className="w-5 h-5 text-green-600" />}
           bgColor="bg-green-100"
         />
         <StatCard
-          title="Con Acceso App"
-          value={estadisticas?.usuarios_con_acceso_app || 0}
-          icon={<Eye className="w-5 h-5 text-purple-600" />}
+          title="Grupo 1"
+          value={estadisticas?.gruposActivos?.g1 || 0}
+          icon={<Shield className="w-5 h-5 text-purple-600" />}
           bgColor="bg-purple-100"
         />
         <StatCard
-          title="Encargados Activos"
-          value={estadisticas?.encargados_actuales || 0}
-          icon={<Crown className="w-5 h-5 text-amber-600" />}
+          title="Grupo 2"
+          value={estadisticas?.gruposActivos?.g2 || 0}
+          icon={<Shield className="w-5 h-5 text-amber-600" />}
           bgColor="bg-amber-100"
         />
       </div>
@@ -295,23 +294,19 @@ function DashboardTab({
         </div>
       </div>
 
-      {/* Activity */}
+      {/* Usuarios por Rol */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Clock className="w-5 h-5 text-indigo-600" />
-          Actividad Reciente
+          <Users className="w-5 h-5 text-indigo-600" />
+          Usuarios por Rol
         </h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <p className="text-3xl font-bold text-blue-700">{estadisticas?.acciones_hoy || 0}</p>
-            <p className="text-sm text-blue-600">Acciones hoy</p>
-          </div>
-          <div className="p-4 bg-purple-50 rounded-lg">
-            <p className="text-3xl font-bold text-purple-700">
-              {estadisticas?.acciones_ultima_semana || 0}
-            </p>
-            <p className="text-sm text-purple-600">Acciones ultima semana</p>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {estadisticas?.usuariosPorRol?.map((item) => (
+            <div key={item.rol} className="p-4 bg-gray-50 rounded-lg">
+              <p className="text-2xl font-bold text-gray-700">{item.cantidad}</p>
+              <p className="text-sm text-gray-600">{item.rol}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

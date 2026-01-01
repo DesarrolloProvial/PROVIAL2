@@ -1026,3 +1026,55 @@ export async function getResumenUnidades(req: Request, res: Response) {
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
+
+// ========================================
+// OBTENER TIPOS DE SITUACIÓN
+// ========================================
+
+export async function getTiposSituacion(_req: Request, res: Response) {
+  try {
+    const tipos = [
+      { codigo: 'INCIDENTE', nombre: 'Incidente', color: '#ef4444', icono: 'alert-triangle' },
+      { codigo: 'ASISTENCIA', nombre: 'Asistencia Vehicular', color: '#3b82f6', icono: 'car' },
+      { codigo: 'EMERGENCIA', nombre: 'Emergencia', color: '#f59e0b', icono: 'alert-octagon' },
+      { codigo: 'PREVENTIVO', nombre: 'Preventivo', color: '#22c55e', icono: 'shield' },
+      { codigo: 'OTRO', nombre: 'Otro', color: '#6b7280', icono: 'help-circle' },
+    ];
+    return res.json({ tipos });
+  } catch (error) {
+    console.error('Error en getTiposSituacion:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+// ========================================
+// LISTAR SITUACIONES ACTIVAS
+// ========================================
+
+export async function listSituacionesActivas(req: Request, res: Response) {
+  try {
+    const { unidad_id, tipo_situacion, limit, offset } = req.query;
+
+    const filters: any = { activas_solo: true };
+
+    if (unidad_id) filters.unidad_id = parseInt(unidad_id as string, 10);
+    if (tipo_situacion) filters.tipo_situacion = tipo_situacion as string;
+    if (limit) filters.limit = parseInt(limit as string, 10);
+    if (offset) filters.offset = parseInt(offset as string, 10);
+
+    // Aplicar filtro de sede para usuarios que no sean COP/ADMIN
+    const unidadesPermitidas = await getUnidadesPermitidas(req.user!.userId, req.user!.rol);
+
+    let situaciones = await SituacionModel.getActivas(filters);
+
+    // Filtrar situaciones por unidades permitidas
+    if (unidadesPermitidas !== null) {
+      situaciones = situaciones.filter((s: any) => unidadesPermitidas.includes(s.unidad_id));
+    }
+
+    return res.json({ situaciones, count: situaciones.length });
+  } catch (error) {
+    console.error('Error en listSituacionesActivas:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}

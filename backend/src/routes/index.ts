@@ -25,6 +25,14 @@ import asignacionAvanzadaRoutes from './asignacionAvanzada.routes';
 import ubicacionBrigadaRoutes from './ubicacionBrigada.routes';
 import situacionPersistenteRoutes from './situacionPersistente.routes';
 import administracionRoutes from './administracion.routes';
+import inspeccion360Routes from './inspeccion360.routes';
+import notificacionesRoutes from './notificaciones.routes';
+import aprobacionesRoutes from './aprobaciones.routes';
+import reportesRoutes from './reportes.routes';
+import dashboardRoutes from './dashboard.routes';
+import alertasRoutes from './alertas.routes';
+import accidentologiaRoutes from './accidentologia.routes';
+import comunicacionSocialRoutes from './comunicacionSocial.routes';
 
 const router = Router();
 
@@ -105,5 +113,29 @@ router.use('/situaciones-persistentes', situacionPersistenteRoutes);
 
 // Rutas de administración del sistema (SUPER_ADMIN, ADMIN_COP)
 router.use('/admin', administracionRoutes);
+
+// Rutas de inspección 360 vehicular
+router.use('/inspeccion360', inspeccion360Routes);
+
+// Rutas de notificaciones push
+router.use('/notificaciones', notificacionesRoutes);
+
+// Rutas de aprobaciones de tripulacion
+router.use('/aprobaciones', aprobacionesRoutes);
+
+// Rutas de reportes (PDF/Excel)
+router.use('/reportes', reportesRoutes);
+
+// Dashboard ejecutivo
+router.use('/dashboard', dashboardRoutes);
+
+// Sistema de alertas
+router.use('/alertas', alertasRoutes);
+
+// Módulo de Accidentología (hojas de accidente)
+router.use('/accidentologia', accidentologiaRoutes);
+
+// Comunicación Social (plantillas y publicaciones)
+router.use('/comunicacion-social', comunicacionSocialRoutes);
 
 export default router;

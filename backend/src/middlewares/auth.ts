@@ -30,10 +30,16 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
 }
 
 // Middleware de autorización por roles
+// SUPER_ADMIN siempre tiene acceso a todo
 export function authorize(...allowedRoles: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ error: 'No autorizado' });
+    }
+
+    // SUPER_ADMIN siempre tiene acceso
+    if (req.user.rol === 'SUPER_ADMIN') {
+      return next();
     }
 
     if (!allowedRoles.includes(req.user.rol)) {

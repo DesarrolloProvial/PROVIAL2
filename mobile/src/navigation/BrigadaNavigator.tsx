@@ -16,6 +16,8 @@ import FinalizarDiaScreen from '../screens/brigada/FinalizarDiaScreen';
 import RegistroCombustibleScreen from '../screens/brigada/RegistroCombustibleScreen';
 import RelevoScreen from '../screens/brigada/RelevoScreen';
 import ConfiguracionPruebasScreen from '../screens/brigada/ConfiguracionPruebasScreen';
+import Inspeccion360Screen from '../screens/brigada/Inspeccion360Screen';
+import AprobarInspeccion360Screen from '../screens/brigada/AprobarInspeccion360Screen';
 
 // Placeholder screens - to be implemented
 import { View, Text, StyleSheet } from 'react-native';
@@ -111,6 +113,16 @@ export default function BrigadaNavigator() {
         name="ConfiguracionPruebas"
         component={ConfiguracionPruebasScreen}
         options={{ title: 'Modo de Pruebas', headerShown: true }}
+      />
+      <Stack.Screen
+        name="Inspeccion360"
+        component={Inspeccion360Screen}
+        options={{ title: 'Inspeccion 360', headerShown: true }}
+      />
+      <Stack.Screen
+        name="AprobarInspeccion360"
+        component={AprobarInspeccion360Screen}
+        options={{ title: 'Aprobar Inspeccion', headerShown: true }}
       />
     </Stack.Navigator>
   );

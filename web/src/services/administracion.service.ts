@@ -119,13 +119,11 @@ export interface LogAdministracion {
 }
 
 export interface EstadisticasAdmin {
-  total_usuarios: number;
-  usuarios_activos: number;
-  usuarios_con_acceso_app: number;
-  encargados_actuales: number;
-  grupos_activos: number;
-  acciones_hoy: number;
-  acciones_ultima_semana: number;
+  totalUsuarios: number;
+  usuariosActivos: number;
+  usuariosPorRol: Array<{ rol: string; cantidad: number }>;
+  usuariosPorSede: Array<{ sede: string; cantidad: number }>;
+  gruposActivos: { g1: number; g2: number; normal: number };
 }
 
 // =====================================================

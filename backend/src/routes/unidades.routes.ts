@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   listarUnidades,
   listarTiposUnidad,
+  listarUnidadesActivas,
   obtenerUnidad,
   crearUnidad,
   actualizarUnidad,
@@ -23,6 +24,9 @@ router.get('/', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMIN
 
 // Listar tipos de unidad
 router.get('/tipos', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), listarTiposUnidad);
+
+// Listar unidades activas
+router.get('/activas', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS', 'COP'), listarUnidadesActivas);
 
 // Obtener unidad específica
 router.get('/:id', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), obtenerUnidad);

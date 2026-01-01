@@ -39,6 +39,7 @@ export interface TripulacionMiembro {
   telefono_contacto?: string;
   presente?: boolean;
   observaciones?: string;
+  es_comandante?: boolean;
 }
 
 export interface CreateTurnoDTO {

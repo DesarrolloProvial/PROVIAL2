@@ -48,6 +48,8 @@ export type BrigadaStackParamList = {
   RegistroCombustible: undefined;
   Relevo: undefined;
   ConfiguracionPruebas: undefined;
+  Inspeccion360: { unidadId: number; tipoUnidad?: string; salidaId?: number } | undefined;
+  AprobarInspeccion360: { inspeccionId: number; salidaId?: number };
 };
 
 // ========================================

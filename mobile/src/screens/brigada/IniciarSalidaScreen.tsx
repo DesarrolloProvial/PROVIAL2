@@ -12,12 +12,25 @@ import {
 import { useAuthStore } from '../../store/authStore';
 import { COLORS } from '../../constants/colors';
 import { useNavigation, useRoute, CommonActions, RouteProp } from '@react-navigation/native';
+import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { API_URL } from '../../constants/config';
 import FuelSelector from '../../components/FuelSelector';
 import { Picker } from '@react-native-picker/picker';
 import { turnosAPI, geografiaAPI } from '../../services/api';
 import api from '../../services/api';
+
+// Interface para inspeccion 360
+interface Inspeccion360Estado {
+  tiene_inspeccion: boolean;
+  inspeccion?: {
+    id: number;
+    estado: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
+    fecha_realizacion: string;
+    motivo_rechazo?: string;
+  };
+  es_comandante: boolean;
+}
 
 type IniciarSalidaScreenRouteProp = RouteProp<{
   IniciarSalida: {
@@ -47,6 +60,18 @@ export default function IniciarSalidaScreen() {
   const [rutas, setRutas] = useState<any[]>([]);
   const [rutaSeleccionadaId, setRutaSeleccionadaId] = useState<number | null>(null);
   const [loadingRutas, setLoadingRutas] = useState(false);
+
+  // Query para verificar estado del 360 (solo en modo creacion)
+  const { data: inspeccion360Estado, isLoading: loadingInspeccion360, refetch: refetchInspeccion360 } = useQuery<Inspeccion360Estado>({
+    queryKey: ['inspeccion-360-estado', asignacionTurno?.unidad_id || asignacion?.unidad_id],
+    queryFn: async () => {
+      const unidadId = asignacionTurno?.unidad_id || asignacion?.unidad_id;
+      if (!unidadId) throw new Error('No hay unidad asignada');
+      const response = await api.get(`/inspeccion360/verificar-salida/${unidadId}`);
+      return response.data;
+    },
+    enabled: !editMode && !loadingAsignacion && !!(asignacionTurno?.unidad_id || asignacion?.unidad_id),
+  });
 
   const handleCombustibleChange = (fraccion: string, decimal: number) => {
     setCombustibleFraccion(fraccion);
@@ -331,6 +356,89 @@ export default function IniciarSalidaScreen() {
         </View>
       </View>
 
+      {/* Verificacion de Inspeccion 360 (solo en modo creacion) */}
+      {!editMode && !loadingInspeccion360 && inspeccion360Estado && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Inspeccion 360</Text>
+
+          {/* Caso 1: No tiene inspeccion - debe crearla */}
+          {!inspeccion360Estado.tiene_inspeccion && (
+            <View style={[styles.alertBox, { backgroundColor: COLORS.warning + '20', borderLeftColor: COLORS.warning }]}>
+              <Text style={styles.alertTitle}>Inspeccion 360 Requerida</Text>
+              <Text style={styles.alertText}>
+                Debes completar la inspeccion vehicular 360 antes de iniciar la salida.
+              </Text>
+              <TouchableOpacity
+                style={[styles.alertButton, { backgroundColor: COLORS.warning }]}
+                onPress={() => {
+                  const unidadId = asignacionTurno?.unidad_id || asignacion?.unidad_id;
+                  const tipoUnidad = asignacionTurno?.tipo_unidad || asignacion?.tipo_unidad;
+                  (navigation as any).navigate('Inspeccion360', { unidadId, tipoUnidad });
+                }}
+              >
+                <Text style={styles.alertButtonText}>Iniciar Inspeccion 360</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Caso 2: Tiene inspeccion PENDIENTE */}
+          {inspeccion360Estado.tiene_inspeccion && inspeccion360Estado.inspeccion?.estado === 'PENDIENTE' && (
+            <View style={[styles.alertBox, { backgroundColor: COLORS.info + '20', borderLeftColor: COLORS.info }]}>
+              <Text style={styles.alertTitle}>Inspeccion Pendiente de Aprobacion</Text>
+              <Text style={styles.alertText}>
+                La inspeccion 360 esta pendiente de aprobacion por el comandante.
+              </Text>
+              {inspeccion360Estado.es_comandante ? (
+                <TouchableOpacity
+                  style={[styles.alertButton, { backgroundColor: COLORS.info }]}
+                  onPress={() => {
+                    (navigation as any).navigate('AprobarInspeccion360', {
+                      inspeccionId: inspeccion360Estado.inspeccion?.id,
+                    });
+                  }}
+                >
+                  <Text style={styles.alertButtonText}>Revisar y Aprobar</Text>
+                </TouchableOpacity>
+              ) : (
+                <Text style={[styles.alertText, { fontStyle: 'italic', marginTop: 8 }]}>
+                  Esperando al comandante...
+                </Text>
+              )}
+            </View>
+          )}
+
+          {/* Caso 3: Tiene inspeccion RECHAZADA */}
+          {inspeccion360Estado.tiene_inspeccion && inspeccion360Estado.inspeccion?.estado === 'RECHAZADA' && (
+            <View style={[styles.alertBox, { backgroundColor: COLORS.danger + '20', borderLeftColor: COLORS.danger }]}>
+              <Text style={styles.alertTitle}>Inspeccion Rechazada</Text>
+              <Text style={styles.alertText}>
+                {inspeccion360Estado.inspeccion?.motivo_rechazo || 'Debes corregir y enviar una nueva inspeccion.'}
+              </Text>
+              <TouchableOpacity
+                style={[styles.alertButton, { backgroundColor: COLORS.danger }]}
+                onPress={() => {
+                  const unidadId = asignacionTurno?.unidad_id || asignacion?.unidad_id;
+                  const tipoUnidad = asignacionTurno?.tipo_unidad || asignacion?.tipo_unidad;
+                  (navigation as any).navigate('Inspeccion360', { unidadId, tipoUnidad });
+                }}
+              >
+                <Text style={styles.alertButtonText}>Nueva Inspeccion 360</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Caso 4: Tiene inspeccion APROBADA */}
+          {inspeccion360Estado.tiene_inspeccion && inspeccion360Estado.inspeccion?.estado === 'APROBADA' && (
+            <View style={[styles.alertBox, { backgroundColor: COLORS.success + '20', borderLeftColor: COLORS.success }]}>
+              <Text style={[styles.alertTitle, { color: COLORS.success }]}>Inspeccion Aprobada</Text>
+              <Text style={styles.alertText}>
+                La inspeccion 360 fue aprobada. Puedes iniciar la salida.
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
       {/* Formulario */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Datos de Salida</Text>
@@ -396,19 +504,32 @@ export default function IniciarSalidaScreen() {
           <Text style={styles.cancelButtonText}>Cancelar</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.button, styles.confirmButton, editMode && { backgroundColor: COLORS.warning }]}
-          onPress={handleIniciarSalida}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.confirmButtonText}>
-              {editMode ? 'Guardar Cambios' : 'Iniciar Salida'}
-            </Text>
-          )}
-        </TouchableOpacity>
+        {(() => {
+          // Verificar si el 360 esta aprobado (solo en modo creacion)
+          const inspeccion360Aprobada = editMode || (inspeccion360Estado?.tiene_inspeccion && inspeccion360Estado.inspeccion?.estado === 'APROBADA');
+          const botonDeshabilitado = loading || (!editMode && !inspeccion360Aprobada);
+
+          return (
+            <TouchableOpacity
+              style={[
+                styles.button,
+                styles.confirmButton,
+                editMode && { backgroundColor: COLORS.warning },
+                botonDeshabilitado && !loading && { backgroundColor: COLORS.text.secondary, opacity: 0.5 },
+              ]}
+              onPress={handleIniciarSalida}
+              disabled={botonDeshabilitado}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.confirmButtonText}>
+                  {editMode ? 'Guardar Cambios' : 'Iniciar Salida'}
+                </Text>
+              )}
+            </TouchableOpacity>
+          );
+        })()}
       </View>
 
       <View style={{ height: 80 }} />
@@ -601,6 +722,35 @@ const styles = StyleSheet.create({
   tipoBadgeText: {
     color: COLORS.white,
     fontSize: 12,
+    fontWeight: '600',
+  },
+  // Estilos para alert boxes del 360
+  alertBox: {
+    padding: 16,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+  },
+  alertTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+    marginBottom: 8,
+  },
+  alertText: {
+    fontSize: 14,
+    color: COLORS.text.primary,
+    lineHeight: 20,
+  },
+  alertButton: {
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  alertButtonText: {
+    color: COLORS.white,
+    fontSize: 14,
     fontWeight: '600',
   },
 });

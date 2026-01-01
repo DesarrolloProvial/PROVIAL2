@@ -66,6 +66,34 @@ export async function listarTiposUnidad(_req: Request, res: Response) {
   }
 }
 
+// GET /api/unidades/activas - Listar unidades activas
+export async function listarUnidadesActivas(req: Request, res: Response) {
+  try {
+    const user = req.user!;
+    let query = `
+      SELECT u.*, s.nombre as sede_nombre
+      FROM unidad u
+      JOIN sede s ON u.sede_id = s.id
+      WHERE u.activa = true
+    `;
+    const params: any[] = [];
+
+    // Filtrar por sede si aplica
+    if (user.rol === 'ENCARGADO_NOMINAS' && !user.puede_ver_todas_sedes && user.sede) {
+      params.push(user.sede);
+      query += ` AND u.sede_id = $1`;
+    }
+
+    query += ' ORDER BY u.codigo';
+
+    const unidades = await db.manyOrNone(query, params);
+    res.json({ unidades, total: unidades.length });
+  } catch (error) {
+    console.error('Error en listarUnidadesActivas:', error);
+    res.status(500).json({ error: 'Error al listar unidades activas' });
+  }
+}
+
 // GET /api/unidades/:id - Obtener una unidad
 export async function obtenerUnidad(req: Request, res: Response) {
   try {
@@ -300,10 +328,10 @@ export async function eliminarUnidad(req: Request, res: Response) {
 export async function asignarBrigadaUnidad(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { brigada_id, rol } = req.body;
+    const { usuario_id, rol } = req.body;
 
-    if (!brigada_id) {
-      return res.status(400).json({ error: 'brigada_id es requerido' });
+    if (!usuario_id) {
+      return res.status(400).json({ error: 'usuario_id es requerido' });
     }
 
     const unidad = await db.oneOrNone('SELECT * FROM unidad WHERE id = $1', [id]);
@@ -311,25 +339,26 @@ export async function asignarBrigadaUnidad(req: Request, res: Response) {
       return res.status(404).json({ error: 'Unidad no encontrada' });
     }
 
-    const brigada = await db.oneOrNone('SELECT * FROM brigada WHERE id = $1', [brigada_id]);
-    if (!brigada) {
-      return res.status(404).json({ error: 'Brigada no encontrada' });
+    // brigada_id en brigada_unidad referencia a usuario.id
+    const usuario = await db.oneOrNone('SELECT * FROM usuario WHERE id = $1 AND rol_id = 3', [usuario_id]);
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario brigada no encontrado' });
     }
 
-    // Verificar que la brigada no tenga otra asignación activa
+    // Verificar que el usuario no tenga otra asignación activa
     const tieneAsignacion = await db.oneOrNone(`
       SELECT 1 FROM brigada_unidad WHERE brigada_id = $1 AND activo = true
-    `, [brigada_id]);
+    `, [usuario_id]);
 
     if (tieneAsignacion) {
-      return res.status(409).json({ error: 'La brigada ya tiene una asignación permanente activa' });
+      return res.status(409).json({ error: 'El usuario ya tiene una asignación permanente activa' });
     }
 
     const asignacion = await db.one(`
-      INSERT INTO brigada_unidad (brigada_id, unidad_id, rol, fecha_inicio, activo)
-      VALUES ($1, $2, $3, NOW(), true)
+      INSERT INTO brigada_unidad (brigada_id, unidad_id, rol_tripulacion, fecha_asignacion, activo, asignado_por)
+      VALUES ($1, $2, $3, NOW(), true, $4)
       RETURNING *
-    `, [brigada_id, id, rol || 'PILOTO']);
+    `, [usuario_id, id, rol || 'PILOTO', req.user!.userId]);
 
     return res.status(201).json({ message: 'Brigada asignada exitosamente', asignacion });
   } catch (error: any) {
@@ -371,13 +400,15 @@ export async function getTripulacionUnidad(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
+    // brigada_unidad.brigada_id referencia a usuario.id
     const tripulacion = await db.manyOrNone(`
-      SELECT bu.*, b.nombre as brigada_nombre, b.codigo as brigada_codigo,
-             b.telefono, b.email
+      SELECT bu.id, bu.brigada_id as usuario_id, bu.unidad_id, bu.rol_tripulacion as rol,
+             bu.fecha_asignacion, bu.activo,
+             u.nombre_completo, u.chapa, u.telefono, u.email
       FROM brigada_unidad bu
-      JOIN brigada b ON bu.brigada_id = b.id
+      JOIN usuario u ON bu.brigada_id = u.id
       WHERE bu.unidad_id = $1 AND bu.activo = true
-      ORDER BY bu.rol
+      ORDER BY bu.rol_tripulacion
     `, [id]);
 
     res.json({ tripulacion, total: tripulacion.length });

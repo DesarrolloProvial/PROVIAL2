@@ -22,7 +22,9 @@ export default function LoginPage() {
       login(response.user, response.accessToken, response.refreshToken);
 
       // Redirigir según el rol del usuario
-      if (response.user.rol === 'OPERACIONES' || response.user.rol === 'ADMIN' || response.user.rol === 'ENCARGADO_NOMINAS') {
+      if (response.user.rol === 'SUPER_ADMIN') {
+        navigate('/super-admin');
+      } else if (response.user.rol === 'OPERACIONES' || response.user.rol === 'ADMIN' || response.user.rol === 'ENCARGADO_NOMINAS') {
         navigate('/operaciones');
       } else {
         navigate('/dashboard');
