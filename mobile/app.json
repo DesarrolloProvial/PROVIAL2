@@ -34,14 +34,41 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-location",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permitir a Provial acceder a tu ubicación para registrar la posición de los incidentes.",
+          "locationAlwaysPermission": "Permitir a Provial acceder a tu ubicación en segundo plano.",
+          "locationWhenInUsePermission": "Permitir a Provial acceder a tu ubicación mientras usas la app."
+        }
+      ],
       [
         "expo-camera",
         {
           "cameraPermission": "Permitir a Provial usar la cámara para reportar incidentes."
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permitir a Provial acceder a tus fotos para adjuntar evidencia.",
+          "cameraPermission": "Permitir a Provial usar la cámara para tomar fotos de incidentes."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Permitir a Provial guardar fotos de incidentes.",
+          "savePhotosPermission": "Permitir a Provial guardar fotos en tu galería.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ],
       "expo-video"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    }
   }
 }
