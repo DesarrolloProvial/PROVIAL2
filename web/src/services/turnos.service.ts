@@ -49,7 +49,8 @@ export interface CreateTurnoDTO {
 }
 
 export interface CreateAsignacionDTO {
-  unidad_id: number;
+  tipo_asignacion: 'PATRULLA' | 'GARITA' | 'PUESTO_CONTROL';
+  unidad_id?: number | null;
   ruta_id?: number | null;
   km_inicio?: number;
   km_final?: number;
@@ -130,6 +131,17 @@ export const turnosService = {
   async deleteAsignacion(asignacionId: number, forzar: boolean = false): Promise<{ message: string; salida_cerrada?: number }> {
     const response = await api.delete(`/turnos/asignaciones/${asignacionId}${forzar ? '?forzar=true' : ''}`);
     return response.data;
+  },
+
+  // Obtener última asignación de una unidad (para memoria de ruta)
+  async getUltimaAsignacion(unidadId: number): Promise<{ asignacion: AsignacionUnidad; tripulacion: TripulacionMiembro[] } | null> {
+    try {
+      const response = await api.get(`/unidades/${unidadId}/ultima-asignacion`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) return null;
+      throw error;
+    }
   },
 };
 

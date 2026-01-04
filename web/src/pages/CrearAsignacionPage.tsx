@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { turnosService, geografiaService } from '../services/turnos.service';
 import { operacionesService } from '../services/operaciones.service';
+import { administracionAPI } from '../services/administracion.service';
 import type { TripulacionMiembro, CreateAsignacionDTO } from '../services/turnos.service';
 import type { BrigadaDisponible } from '../services/operaciones.service';
 import { AlertCircle, CheckCircle, Users, Truck, ArrowLeft, Plus, X, Search, Crown } from 'lucide-react';
@@ -39,6 +40,9 @@ export default function CrearAsignacionPage() {
   const [horaEntrada, setHoraEntrada] = useState(asignacionEdit?.hora_entrada_estimada || '21:00');
   const [observaciones, setObservaciones] = useState('');
   const [esReaccion, setEsReaccion] = useState(asignacionEdit?.es_reaccion || false);
+  const [tipoAsignacion, setTipoAsignacion] = useState<'PATRULLA' | 'GARITA' | 'PUESTO_CONTROL'>(
+    asignacionEdit?.tipo_asignacion || 'PATRULLA'
+  );
 
   // Tripulacion - inicializar con tripulacion existente si es modo edicion
   const [tripulacion, setTripulacion] = useState<TripulacionMiembro[]>(() => {
@@ -72,6 +76,57 @@ export default function CrearAsignacionPage() {
     queryKey: ['rutas'],
     queryFn: () => geografiaService.getRutas(),
   });
+
+  // Configuración de Sede
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const sedeId = user?.sede_id || user?.sede;
+
+  const { data: sedeConfig } = useQuery({
+    queryKey: ['sede-config', sedeId],
+    queryFn: () => administracionAPI.getSedeConfig(sedeId),
+    enabled: !!sedeId,
+  });
+
+  // Efecto para Memoria de Ruta y Continuidad de Kilometraje + Tripulación
+  useEffect(() => {
+    async function checkLastAssignment() {
+      if (!unidadId || isEditMode || tipoAsignacion !== 'PATRULLA') return;
+
+      try {
+        const result = await turnosService.getUltimaAsignacion(unidadId);
+        if (result && result.asignacion) {
+          const { asignacion, tripulacion: lastTripulacion } = result;
+
+          // Memoria de Ruta
+          if (asignacion.ruta_id && !rutaId) {
+            setRutaId(asignacion.ruta_id);
+          }
+
+          // Continuidad de Kilometraje
+          if (asignacion.km_final) {
+            setKmInicio(asignacion.km_final.toString());
+          }
+
+          // Memoria de Tripulación (Si la config lo permite o por defecto)
+          // Solo si la tripulación actual está vacía
+          if (lastTripulacion && lastTripulacion.length > 0 && tripulacion.length === 0) {
+            const newTripulacion = lastTripulacion.map(m => ({
+              usuario_id: m.usuario_id,
+              rol_tripulacion: m.rol_tripulacion,
+              presente: true // Default to present
+            }));
+            setTripulacion(newTripulacion);
+          }
+        }
+      } catch (error) {
+        console.warn("Could not fetch last assignment for auto-fill", error);
+      }
+    }
+
+    checkLastAssignment();
+  }, [unidadId, isEditMode, tipoAsignacion]);
+
 
   // Mutation para crear asignacion
   const crearAsignacionMutation = useMutation({
@@ -172,38 +227,41 @@ export default function CrearAsignacionPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!unidadId) {
+    if (tipoAsignacion === 'PATRULLA' && !unidadId) {
       alert('Debe seleccionar una unidad');
       return;
     }
 
-    // Validacion de ruta solo si no es reaccion
-    if (!esReaccion && !rutaId) {
+    // Validacion de ruta solo si no es reaccion y es patrulla
+    if (tipoAsignacion === 'PATRULLA' && !esReaccion && !rutaId) {
       alert('Debe seleccionar una ruta');
       return;
     }
 
-    if (tripulacion.length === 0) {
-      alert('Debe asignar al menos un tripulante');
+    const requiresTripulacion = sedeConfig?.requiere_tripulacion !== false;
+
+    if (requiresTripulacion && tripulacion.length === 0) {
+      alert('Debe asignar al menos un tripulante. (Configurado por Sede)');
       return;
     }
 
-    if (!tripulacion.some(t => t.es_comandante)) {
+    if (requiresTripulacion && !tripulacion.some(t => t.es_comandante)) {
       alert('Debe designar un comandante para la unidad. El comandante es responsable de aprobar la inspeccion 360 del vehiculo.');
       return;
     }
 
     const asignacionData: CreateAsignacionDTO = {
-      unidad_id: unidadId,
-      ruta_id: esReaccion ? null : rutaId,
-      km_inicio: kmInicio ? parseFloat(kmInicio) : undefined,
-      km_final: kmFinal ? parseFloat(kmFinal) : undefined,
+      tipo_asignacion: tipoAsignacion,
+      unidad_id: tipoAsignacion === 'PATRULLA' ? unidadId : null,
+      ruta_id: (tipoAsignacion === 'PATRULLA' && !esReaccion) ? rutaId : null,
+      km_inicio: (tipoAsignacion === 'PATRULLA' && kmInicio) ? parseFloat(kmInicio) : undefined,
+      km_final: (tipoAsignacion === 'PATRULLA' && kmFinal) ? parseFloat(kmFinal) : undefined,
       sentido: (sentido as any) || undefined,
       acciones: acciones || undefined,
       hora_salida: horaSalida || undefined,
       hora_entrada_estimada: horaEntrada || undefined,
       tripulacion,
-      es_reaccion: esReaccion // Flag para backend
+      es_reaccion: esReaccion
     };
 
     if (isEditMode && asignacionEdit?.id) {
@@ -304,86 +362,125 @@ export default function CrearAsignacionPage() {
             </div>
           </div>
 
-          {/* Seleccion de Unidad */}
+          {/* Tipo de Asignacion - Solo mostrar si no se esta editando (aunque podria permitirse cambiar) */}
           <div className="card">
             <div className="card-body">
-              <div className="flex items-center gap-2 mb-4">
-                <Truck className="h-5 w-5 text-blue-600" />
-                <h2 className="text-lg font-bold text-gray-900">Unidad *</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Tipo de Asignación</h2>
+              <div className="flex flex-wrap gap-4">
+                {['PATRULLA', 'GARITA', 'PUESTO_CONTROL'].map((tipo) => (
+                  <label key={tipo} className={`cursor-pointer flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${tipoAsignacion === tipo
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:bg-gray-50'
+                    }`}>
+                    <input
+                      type="radio"
+                      name="tipoAsignacion"
+                      value={tipo}
+                      checked={tipoAsignacion === tipo}
+                      onChange={() => setTipoAsignacion(tipo as any)}
+                      className="text-blue-600 focus:ring-blue-500 w-4 h-4"
+                    />
+                    <span className="font-medium text-gray-900">
+                      {tipo === 'PATRULLA' && 'Patrulla (Unidad Móvil)'}
+                      {tipo === 'GARITA' && 'Garita (Sin Unidad)'}
+                      {tipo === 'PUESTO_CONTROL' && 'Puesto de Control'}
+                    </span>
+                  </label>
+                ))}
               </div>
-
-              {loadingUnidades ? (
-                <p className="text-gray-600">Cargando unidades...</p>
-              ) : unidades.length === 0 ? (
-                <p className="text-gray-600">No hay unidades disponibles para esta fecha</p>
-              ) : (
-                <div className="grid gap-3 md:grid-cols-2">
-                  {unidades.map((unidad) => (
-                    <label
-                      key={unidad.id}
-                      className={`selection-card flex items-start gap-3 ${unidadId === unidad.id
-                        ? 'selection-card-selected'
-                        : 'selection-card-default'
-                        }`}
-                    >
-                      <input
-                        type="radio"
-                        name="unidad"
-                        value={unidad.id}
-                        checked={unidadId === unidad.id}
-                        onChange={() => setUnidadId(unidad.id)}
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-gray-900">{unidad.codigo}</span>
-                          <span className="text-gray-700 text-sm">
-                            {unidad.marca} {unidad.modelo}
-                          </span>
-                          {unidad.disponible ? (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <AlertCircle className="h-4 w-4 text-amber-500" />
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">{unidad.mensaje}</p>
-                        <div className="flex gap-4 mt-2 text-xs text-gray-500">
-                          <span>Odometro: {unidad.odometro_actual?.toLocaleString()} km</span>
-                          <span>Turnos mes: {unidad.turnos_ultimo_mes}</span>
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Detalles de Ruta */}
-          <div className="card">
-            <div className="card-body">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Detalles de Ruta</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Checkbox de Reaccion */}
-                <div className="md:col-span-2 mb-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={esReaccion}
-                      onChange={(e) => setEsReaccion(e.target.checked)}
-                      className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                    />
-                    <span className="font-bold text-gray-900 border-b-2 border-red-500 pb-0.5">
-                      ¿Es Unidad de Reacción?
-                    </span>
-                  </label>
-                  <p className="text-sm text-gray-500 mt-1 ml-7">
-                    Si se marca, la unidad no tendrá ruta asignada y deberá seleccionarla al momento de salir.
-                    Reemplazará a cualquier otra unidad de reacción activa del turno.
-                  </p>
+          {/* Seleccion de Unidad (Solo si es Patrulla) */}
+          {tipoAsignacion === 'PATRULLA' && (
+            <div className="card">
+              <div className="card-body">
+                <div className="flex items-center gap-2 mb-4">
+                  <Truck className="h-5 w-5 text-blue-600" />
+                  <h2 className="text-lg font-bold text-gray-900">Unidad *</h2>
                 </div>
 
-                {!esReaccion && (
+                {loadingUnidades ? (
+                  <p className="text-gray-600">Cargando unidades...</p>
+                ) : unidades.length === 0 ? (
+                  <p className="text-gray-600">No hay unidades disponibles para esta fecha</p>
+                ) : (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {unidades.map((unidad) => (
+                      <label
+                        key={unidad.id}
+                        className={`selection-card flex items-start gap-3 ${unidadId === unidad.id
+                          ? 'selection-card-selected'
+                          : 'selection-card-default'
+                          }`}
+                      >
+                        <input
+                          type="radio"
+                          name="unidad"
+                          value={unidad.id}
+                          checked={unidadId === unidad.id}
+                          onChange={() => setUnidadId(unidad.id)}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-900">{unidad.codigo}</span>
+                            <span className="text-gray-700 text-sm">
+                              {unidad.marca} {unidad.modelo}
+                            </span>
+                            {unidad.disponible ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <AlertCircle className="h-4 w-4 text-amber-500" />
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">{unidad.mensaje}</p>
+                          <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                            <span>Odometro: {unidad.odometro_actual?.toLocaleString()} km</span>
+                            <span>Turnos mes: {unidad.turnos_ultimo_mes}</span>
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Detalles de Ruta / Ubicacion */}
+          <div className="card">
+            <div className="card-body">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-gray-900">
+                  {tipoAsignacion === 'PATRULLA' ? 'Detalles de Ruta' : 'Detalles de Ubicación'}
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Checkbox de Reaccion (Solo Patrulla) */}
+                {tipoAsignacion === 'PATRULLA' && (
+                  <div className="md:col-span-2 mb-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={esReaccion}
+                        onChange={(e) => setEsReaccion(e.target.checked)}
+                        className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="font-bold text-gray-900 border-b-2 border-red-500 pb-0.5">
+                        ¿Es Unidad de Reacción?
+                      </span>
+                    </label>
+                    <p className="text-sm text-gray-500 mt-1 ml-7">
+                      Si se marca, la unidad no tendrá ruta asignada y deberá seleccionarla al momento de salir.
+                      Reemplazará a cualquier otra unidad de reacción activa del turno.
+                    </p>
+                  </div>
+                )}
+
+                {/* Ruta y Sentido (Solo Patrulla && !Reaccion) */}
+                {tipoAsignacion === 'PATRULLA' && !esReaccion && (
                   <>
                     <div>
                       <label className="label">Ruta *</label>
@@ -444,11 +541,13 @@ export default function CrearAsignacionPage() {
                 )}
 
                 <div className="md:col-span-2">
-                  <label className="label">Acciones a realizar</label>
+                  <label className="label">
+                    {tipoAsignacion === 'PATRULLA' ? 'Acciones a realizar' : 'Ubicación / Novedades Iniciales'}
+                  </label>
                   <textarea
                     value={acciones}
                     onChange={(e) => setAcciones(e.target.value)}
-                    placeholder="Descripcion de las acciones..."
+                    placeholder={tipoAsignacion === 'PATRULLA' ? "Descripcion de las acciones..." : "Ubicación detallada o instrucciones..."}
                     rows={3}
                     className="textarea-field"
                   />
@@ -491,7 +590,9 @@ export default function CrearAsignacionPage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-blue-600" />
-                  <h2 className="text-lg font-bold text-gray-900">Tripulacion *</h2>
+                  <h2 className="text-lg font-bold text-gray-900">
+                    Tripulacion {sedeConfig?.requiere_tripulacion !== false ? '*' : <span className="text-sm font-normal text-gray-500 ml-2">(Opcional)</span>}
+                  </h2>
                 </div>
                 <button
                   type="button"
@@ -521,11 +622,10 @@ export default function CrearAsignacionPage() {
                   {tripulacion.map((miembro) => (
                     <div
                       key={miembro.usuario_id}
-                      className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
-                        miembro.es_comandante
-                          ? 'bg-amber-50 border-amber-400'
-                          : 'bg-gray-50 border-gray-200'
-                      }`}
+                      className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${miembro.es_comandante
+                        ? 'bg-amber-50 border-amber-400'
+                        : 'bg-gray-50 border-gray-200'
+                        }`}
                     >
                       <div>
                         <div className="flex items-center gap-2">
@@ -557,11 +657,10 @@ export default function CrearAsignacionPage() {
                         <button
                           type="button"
                           onClick={() => toggleComandante(miembro.usuario_id)}
-                          className={`p-2 rounded-lg transition-colors ${
-                            miembro.es_comandante
-                              ? 'text-amber-600 bg-amber-100 hover:bg-amber-200'
-                              : 'text-gray-500 hover:bg-gray-200'
-                          }`}
+                          className={`p-2 rounded-lg transition-colors ${miembro.es_comandante
+                            ? 'text-amber-600 bg-amber-100 hover:bg-amber-200'
+                            : 'text-gray-500 hover:bg-gray-200'
+                            }`}
                           title={miembro.es_comandante ? 'Quitar comandante' : 'Designar como comandante'}
                         >
                           <Crown className="h-5 w-5" />

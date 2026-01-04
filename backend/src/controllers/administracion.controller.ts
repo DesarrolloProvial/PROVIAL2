@@ -1000,3 +1000,55 @@ export async function getAllConfiguracionColumnas(req: Request, res: Response) {
     res.status(500).json({ error: 'Error al obtener configuraciones' });
   }
 }
+// =====================================================
+// CAMPOS PERSONALIZADOS
+// =====================================================
+
+export async function getCamposPersonalizados(req: Request, res: Response) {
+  try {
+    const { tabla } = req.params;
+    const campos = await AdministracionModel.getCamposPersonalizados(tabla);
+    res.json(campos);
+  } catch (error) {
+    console.error('Error al obtener campos personalizados:', error);
+    res.status(500).json({ error: 'Error al obtener campos personalizados' });
+  }
+}
+
+export async function createCampoPersonalizado(req: Request, res: Response) {
+  try {
+    const { tabla_destino, clave, etiqueta, tipo, opciones } = req.body;
+
+    if (!tabla_destino || !clave || !etiqueta) {
+      return res.status(400).json({ error: 'Tabla, clave y etiqueta son requeridos' });
+    }
+
+    const id = await AdministracionModel.createCampoPersonalizado({
+      tabla_destino,
+      clave,
+      etiqueta,
+      tipo: tipo || 'text',
+      opciones,
+      creado_por: req.user!.userId
+    });
+
+    res.status(201).json({ success: true, id, message: 'Campo personalizado creado' });
+  } catch (error) {
+    console.error('Error al crear campo personalizado:', error);
+    res.status(500).json({ error: 'Error al crear campo personalizado' });
+  }
+}
+
+export async function toggleCampoPersonalizado(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { activo } = req.body;
+
+    await AdministracionModel.toggleCampoPersonalizado(parseInt(id), activo);
+
+    res.json({ success: true, message: `Campo ${activo ? 'activado' : 'desactivado'} correctamente` });
+  } catch (error) {
+    console.error('Error al cambiar estado de campo personalizado:', error);
+    res.status(500).json({ error: 'Error al cambiar estado de campo personalizado' });
+  }
+}

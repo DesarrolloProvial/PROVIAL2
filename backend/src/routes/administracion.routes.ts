@@ -165,4 +165,17 @@ router.put('/columnas/:tabla', authenticate, authorizeAdminOrSuperAdmin(), contr
 // Obtener todas las configuraciones de columnas por sede
 router.get('/columnas/:tabla/all', authenticate, authorizeSuperAdmin(), controller.getAllConfiguracionColumnas);
 
+// =====================================================
+// CAMPOS PERSONALIZADOS
+// =====================================================
+
+// Obtener campos personalizados por tabla
+router.get('/campos-personalizados/:tabla', authenticate, authorizeAdminOrSuperAdmin(), controller.getCamposPersonalizados);
+
+// Crear campo personalizado
+router.post('/campos-personalizados', authenticate, authorizeAdminOrSuperAdmin(), controller.createCampoPersonalizado);
+
+// Toggle campo personalizado
+router.put('/campos-personalizados/:id/toggle', authenticate, authorizeAdminOrSuperAdmin(), controller.toggleCampoPersonalizado);
+
 export default router;

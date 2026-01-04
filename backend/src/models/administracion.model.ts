@@ -784,6 +784,46 @@ export const AdministracionModel = {
   },
 
   // =====================================================
+  // CAMPOS PERSONALIZADOS
+  // =====================================================
+
+  async getCamposPersonalizados(tablaDestino: string): Promise<Array<{
+    id: number;
+    clave: string;
+    etiqueta: string;
+    tipo: string;
+    opciones: any;
+    orden: number;
+    activo: boolean;
+  }>> {
+    return db.manyOrNone(`
+      SELECT * FROM campo_personalizado
+      WHERE tabla_destino = $1 AND activo = TRUE
+      ORDER BY orden, id
+    `, [tablaDestino]);
+  },
+
+  async createCampoPersonalizado(data: {
+    tabla_destino: string;
+    clave: string;
+    etiqueta: string;
+    tipo: string;
+    opciones?: any;
+    creado_por: number;
+  }): Promise<number> {
+    const result = await db.one<{ id: number }>(`
+      INSERT INTO campo_personalizado (tabla_destino, clave, etiqueta, tipo, opciones, creado_por, orden)
+      VALUES ($1, $2, $3, $4, $5, $6, (SELECT COALESCE(MAX(orden), 0) + 1 FROM campo_personalizado WHERE tabla_destino = $1))
+      RETURNING id
+    `, [data.tabla_destino, data.clave, data.etiqueta, data.tipo, data.opciones || null, data.creado_por]);
+    return result.id;
+  },
+
+  async toggleCampoPersonalizado(id: number, activo: boolean): Promise<void> {
+    await db.none(`UPDATE campo_personalizado SET activo = $2 WHERE id = $1`, [id, activo]);
+  },
+
+  // =====================================================
   // VERIFICACION DE ACCESO
   // =====================================================
 

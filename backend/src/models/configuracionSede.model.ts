@@ -16,6 +16,7 @@ export interface ConfiguracionVisualSede {
   tamano_fuente: 'small' | 'normal' | 'large';
   alerta_rotacion_rutas_activa: boolean;
   umbral_rotacion_rutas: number;
+  requiere_tripulacion: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -29,6 +30,7 @@ export interface UpdateConfiguracionParams {
   tamano_fuente?: 'small' | 'normal' | 'large';
   alerta_rotacion_rutas_activa?: boolean;
   umbral_rotacion_rutas?: number;
+  requiere_tripulacion?: boolean;
 }
 
 export const ConfiguracionSedeModel = {
@@ -94,6 +96,10 @@ export const ConfiguracionSedeModel = {
       fields.push(`umbral_rotacion_rutas = $${paramCount++}`);
       values.push(config.umbral_rotacion_rutas);
     }
+    if (config.requiere_tripulacion !== undefined) {
+      fields.push(`requiere_tripulacion = $${paramCount++}`);
+      values.push(config.requiere_tripulacion);
+    }
 
     if (fields.length === 0) {
       const existing = await this.getBySede(sedeId);
@@ -157,6 +163,10 @@ export const ConfiguracionSedeModel = {
     if (config.umbral_rotacion_rutas !== undefined) {
       updates.push(`umbral_rotacion_rutas = $${paramCount++}`);
       values.push(config.umbral_rotacion_rutas);
+    }
+    if (config.requiere_tripulacion !== undefined) {
+      updates.push(`requiere_tripulacion = $${paramCount++}`);
+      values.push(config.requiere_tripulacion);
     }
 
     if (updates.length === 0) return this.getBySede(sedeId);

@@ -4,7 +4,8 @@ import {
   getSede,
   getUnidadesDeSede,
   getPersonalDeSede,
-  getMiSede
+  getMiSede,
+  getConfiguracion
 } from '../controllers/sede.controller';
 import { authenticate } from '../middlewares/auth';
 
@@ -22,6 +23,9 @@ router.get('/mi-sede', authenticate, getMiSede);
 
 // Obtener información de una sede específica
 router.get('/:id', authenticate, getSede);
+
+// Obtener configuración de una sede
+router.get('/:id/configuracion', authenticate, getConfiguracion);
 
 // Obtener unidades de una sede
 router.get('/:id/unidades', authenticate, getUnidadesDeSede);

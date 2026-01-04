@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { db } from '../config/database';
+import { TurnoModel } from '../models/turno.model';
 
 // GET /api/unidades - Listar todas las unidades
 export async function listarUnidades(req: Request, res: Response) {
@@ -415,5 +416,26 @@ export async function getTripulacionUnidad(req: Request, res: Response) {
   } catch (error) {
     console.error('Error en getTripulacionUnidad:', error);
     res.status(500).json({ error: 'Error al obtener tripulación' });
+  }
+}
+
+// GET /api/unidades/:id/ultima-asignacion - Obtener la última asignación de la unidad
+export async function obtenerUltimaAsignacion(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+
+    const asignacion = await TurnoModel.getLastAsignacionByUnidad(parseInt(id));
+
+    if (!asignacion) {
+      return res.status(404).json({ error: 'No se encontraron asignaciones previas para esta unidad' });
+    }
+
+    // Obtener tripulacion de esa asignacion
+    const tripulacion = await TurnoModel.getTripulacion(asignacion.id);
+
+    return res.json({ asignacion, tripulacion });
+  } catch (error) {
+    console.error('Error en obtenerUltimaAsignacion:', error);
+    return res.status(500).json({ error: 'Error al obtener última asignación' });
   }
 }

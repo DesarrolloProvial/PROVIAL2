@@ -254,6 +254,9 @@ export const administracionAPI = {
   deleteSede: (id: number) =>
     api.delete<{ success: boolean; message: string }>(`/admin/sedes/${id}`),
 
+  getSedeConfig: (id: number) =>
+    api.get<any>(`/sedes/${id}/configuracion`).then(res => res.data),
+
   // ------------------------------------
   // CATALOGO GEOGRAFICO
   // ------------------------------------

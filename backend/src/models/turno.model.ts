@@ -146,11 +146,23 @@ export const TurnoModel = {
     );
   },
 
+  // Obtener última asignación de una unidad
+  async getLastAsignacionByUnidad(unidadId: number): Promise<AsignacionUnidad | null> {
+    return db.oneOrNone(
+      `SELECT * FROM asignacion_unidad
+       WHERE unidad_id = $1
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [unidadId]
+    );
+  },
+
   // Crear asignación de unidad
   async createAsignacion(data: {
     turno_id: number;
-    unidad_id: number;
-    ruta_id?: number;
+    tipo_asignacion?: string;
+    unidad_id?: number | null;
+    ruta_id?: number | null;
     km_inicio?: number;
     km_final?: number;
     sentido?: string;
@@ -162,12 +174,12 @@ export const TurnoModel = {
   }): Promise<AsignacionUnidad> {
     return db.one(
       `INSERT INTO asignacion_unidad
-       (turno_id, unidad_id, ruta_id, km_inicio, km_final, sentido, acciones,
+       (turno_id, tipo_asignacion, unidad_id, ruta_id, km_inicio, km_final, sentido, acciones,
         combustible_inicial, combustible_asignado, hora_salida, hora_entrada_estimada)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
       [
-        data.turno_id, data.unidad_id, data.ruta_id, data.km_inicio, data.km_final,
+        data.turno_id, data.tipo_asignacion || 'PATRULLA', data.unidad_id, data.ruta_id, data.km_inicio, data.km_final,
         data.sentido, data.acciones, data.combustible_inicial, data.combustible_asignado,
         data.hora_salida, data.hora_entrada_estimada
       ]
@@ -204,15 +216,23 @@ export const TurnoModel = {
     combustible_final?: number;
     observaciones_finales?: string;
   }): Promise<AsignacionUnidad> {
-    return db.one(
-      `UPDATE asignacion_unidad
-       SET hora_entrada_real = NOW(),
-           combustible_final = $2,
-           observaciones_finales = $3
-       WHERE id = $1
-       RETURNING *`,
-      [asignacionId, data.combustible_final, data.observaciones_finales]
-    );
+    return db.tx(async (t) => {
+      const result = await t.one(
+        `UPDATE asignacion_unidad
+        SET hora_entrada_real = NOW(),
+            combustible_final = $2,
+            observaciones_finales = $3
+        WHERE id = $1
+        RETURNING *`,
+        [asignacionId, data.combustible_final, data.observaciones_finales]
+      );
+
+      if (data.combustible_final !== undefined && data.combustible_final !== null) {
+        const asignacion = await t.one('SELECT unidad_id FROM asignacion_unidad WHERE id = $1', [asignacionId]);
+        await t.none('UPDATE unidad SET combustible_actual = $1 WHERE id = $2', [data.combustible_final, asignacion.unidad_id]);
+      }
+      return result;
+    });
   },
 
   // Crear reporte horario
@@ -225,16 +245,24 @@ export const TurnoModel = {
     novedad?: string;
     reportado_por: number;
   }): Promise<ReporteHorario> {
-    return db.one(
-      `INSERT INTO reporte_horario
-       (asignacion_id, km_actual, sentido_actual, latitud, longitud, novedad, reportado_por)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
-      [
-        data.asignacion_id, data.km_actual, data.sentido_actual,
-        data.latitud, data.longitud, data.novedad, data.reportado_por
-      ]
-    );
+    return db.tx(async (t) => {
+      const reporte = await t.one(
+        `INSERT INTO reporte_horario
+        (asignacion_id, km_actual, sentido_actual, latitud, longitud, novedad, reportado_por)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *`,
+        [
+          data.asignacion_id, data.km_actual, data.sentido_actual,
+          data.latitud, data.longitud, data.novedad, data.reportado_por
+        ]
+      );
+
+      // Actualizar odómetro de la unidad
+      const asignacion = await t.one('SELECT unidad_id FROM asignacion_unidad WHERE id = $1', [data.asignacion_id]);
+      await t.none('UPDATE unidad SET odometro_actual = $1, updated_at = NOW() WHERE id = $2', [data.km_actual, asignacion.unidad_id]);
+
+      return reporte;
+    });
   },
 
   // Obtener reportes horarios de una asignación
@@ -295,13 +323,21 @@ export const TurnoModel = {
     observaciones?: string;
     registrado_por: number;
   }): Promise<any> {
-    return db.one(
-      `INSERT INTO registro_combustible
-       (asignacion_id, combustible, tipo, observaciones, registrado_por)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [data.asignacion_id, data.combustible, data.tipo, data.observaciones, data.registrado_por]
-    );
+    return db.tx(async (t) => {
+      const registro = await t.one(
+        `INSERT INTO registro_combustible
+        (asignacion_id, combustible, tipo, observaciones, registrado_por)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING *`,
+        [data.asignacion_id, data.combustible, data.tipo, data.observaciones, data.registrado_por]
+      );
+
+      // Actualizar combustible de la unidad
+      const asignacion = await t.one('SELECT unidad_id FROM asignacion_unidad WHERE id = $1', [data.asignacion_id]);
+      await t.none('UPDATE unidad SET combustible_actual = $1, updated_at = NOW() WHERE id = $2', [data.combustible, asignacion.unidad_id]);
+
+      return registro;
+    });
   },
 
   // Obtener asignación por ID

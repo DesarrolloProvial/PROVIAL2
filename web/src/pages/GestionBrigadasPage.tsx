@@ -16,6 +16,8 @@ import {
   X,
   Filter,
   ArrowLeft,
+  Settings,
+  Plus
 } from 'lucide-react';
 
 interface Brigada {
@@ -28,6 +30,18 @@ interface Brigada {
   grupo: 0 | 1 | 2 | null;
   sede_id: number;
   sede_nombre: string;
+  rol_brigada?: string | null;
+  custom_fields?: Record<string, any>;
+}
+
+interface CampoPersonalizado {
+  id: number;
+  clave: string;
+  etiqueta: string;
+  tipo: 'text' | 'number' | 'date' | 'select';
+  opciones?: any;
+  orden: number;
+  activo: boolean;
 }
 
 interface Sede {
@@ -51,6 +65,10 @@ export default function GestionBrigadasPage() {
   const [editData, setEditData] = useState<Partial<Brigada>>({});
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
+  // Estado de campos personalizados
+  const [showColumnConfig, setShowColumnConfig] = useState(false);
+  const [newFieldData, setNewFieldData] = useState<Partial<CampoPersonalizado>>({ tipo: 'text' });
+
   // Queries
   const { data: brigadasData, isLoading, refetch } = useQuery({
     queryKey: ['brigadas', sedeFilter, grupoFilter, activoFilter, searchTerm],
@@ -73,6 +91,14 @@ export default function GestionBrigadasPage() {
     queryFn: async () => {
       const res = await api.get('/sedes');
       return res.data.sedes || res.data;
+    }
+  });
+
+  const { data: customFields = [], refetch: refetchFields } = useQuery({
+    queryKey: ['customFields', 'BRIGADA'],
+    queryFn: async () => {
+      const res = await api.get('/admin/campos-personalizados/BRIGADA');
+      return res.data;
     }
   });
 
@@ -114,6 +140,26 @@ export default function GestionBrigadasPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brigadas'] })
   });
 
+  const createFieldMutation = useMutation({
+    mutationFn: async (data: Partial<CampoPersonalizado>) => {
+      return api.post('/admin/campos-personalizados', {
+        ...data,
+        tabla_destino: 'BRIGADA'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customFields'] });
+      setNewFieldData({ tipo: 'text' });
+    }
+  });
+
+  const toggleFieldMutation = useMutation({
+    mutationFn: async ({ id, activo }: { id: number; activo: boolean }) => {
+      return api.put(`/admin/campos-personalizados/${id}/toggle`, { activo });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customFields'] })
+  });
+
   const brigadas: Brigada[] = brigadasData?.brigadas || [];
 
   const getGrupoColor = (grupo: number | null) => {
@@ -142,13 +188,22 @@ export default function GestionBrigadasPage() {
               <p className="text-sm text-gray-500">{brigadas.length} brigadas encontradas</p>
             </div>
           </div>
-          <button
-            onClick={() => refetch()}
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-            title="Actualizar"
-          >
-            <RefreshCw className="w-5 h-5" />
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowColumnConfig(true)}
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              title="Configurar Columnas"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => refetch()}
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              title="Actualizar"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -224,6 +279,12 @@ export default function GestionBrigadasPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Brigada</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sede</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grupo</th>
+
+                    {customFields.filter((f: CampoPersonalizado) => f.activo).map((field: CampoPersonalizado) => (
+                      <th key={field.id} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        {field.etiqueta}
+                      </th>
+                    ))}
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Estado</th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
                   </tr>
@@ -265,16 +326,21 @@ export default function GestionBrigadasPage() {
                             <option value="0">Normal</option>
                             <option value="1">Grupo 1</option>
                             <option value="2">Grupo 2</option>
+
                           </select>
                         </td>
+                        {customFields.filter((f: CampoPersonalizado) => f.activo).map((field: CampoPersonalizado) => (
+                          <td key={field.id} className="px-4 py-3 text-sm text-gray-700">
+                            {brigada.custom_fields?.[field.clave] || '-'}
+                          </td>
+                        ))}
                         <td className="px-4 py-3 text-center">
                           <button
                             onClick={() => toggleActivoMutation.mutate({ id: brigada.id, activa: !brigada.activa })}
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              brigada.activa
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                : 'bg-red-100 text-red-700 hover:bg-red-200'
-                            }`}
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${brigada.activa
+                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                              : 'bg-red-100 text-red-700 hover:bg-red-200'
+                              }`}
                           >
                             {brigada.activa ? 'Activo' : 'Inactivo'}
                           </button>
@@ -353,23 +419,99 @@ export default function GestionBrigadasPage() {
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Telefono</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
                 <input
                   type="text"
-                  value={editData.telefono || ''}
-                  onChange={(e) => setEditData({ ...editData, telefono: e.target.value })}
+                  value={editData.nombre || ''}
+                  onChange={(e) => setEditData({ ...editData, nombre: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={editData.email || ''}
-                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Chapa</label>
+                  <input
+                    type="text"
+                    value={editData.chapa || ''}
+                    onChange={(e) => setEditData({ ...editData, chapa: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Rol Brigada</label>
+                  <select
+                    value={editData.rol_brigada || ''}
+                    onChange={(e) => setEditData({ ...editData, rol_brigada: e.target.value || null })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">(Ninguno)</option>
+                    <option value="JEFE_BRIGADA">Jefe de Brigada</option>
+                    <option value="PILOTO">Piloto</option>
+                  </select>
+                </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Telefono</label>
+                  <input
+                    type="text"
+                    value={editData.telefono || ''}
+                    onChange={(e) => setEditData({ ...editData, telefono: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="email"
+                    value={editData.email || ''}
+                    onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Campos Personalizados en Edicion */}
+              {customFields.filter((f: CampoPersonalizado) => f.activo).length > 0 && (
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Información Adicional</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {customFields.filter((f: CampoPersonalizado) => f.activo).map((field: CampoPersonalizado) => (
+                      <div key={field.id} className={field.tipo === 'text' ? 'col-span-2' : ''}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{field.etiqueta}</label>
+                        {field.tipo === 'select' ? (
+                          <select
+                            value={editData.custom_fields?.[field.clave] || ''}
+                            onChange={(e) => setEditData({
+                              ...editData,
+                              custom_fields: {
+                                ...editData.custom_fields,
+                                [field.clave]: e.target.value
+                              }
+                            })}
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="">Seleccionar...</option>
+                            {/* Opciones deberian venir de field.opciones si existen */}
+                          </select>
+                        ) : (
+                          <input
+                            type={field.tipo === 'number' ? 'number' : field.tipo === 'date' ? 'date' : 'text'}
+                            value={editData.custom_fields?.[field.clave] || ''}
+                            onChange={(e) => setEditData({
+                              ...editData,
+                              custom_fields: {
+                                ...editData.custom_fields,
+                                [field.clave]: e.target.value
+                              }
+                            })}
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-2 p-4 border-t">
               <button
@@ -387,6 +529,96 @@ export default function GestionBrigadasPage() {
                 <Save className="w-4 h-4" />
                 Guardar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Configuracion de Columnas */}
+      {showColumnConfig && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold">Configurar Columnas</h3>
+              <button onClick={() => setShowColumnConfig(false)} className="p-1 hover:bg-gray-100 rounded">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 space-y-6">
+              {/* Lista de Campos Existentes */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Columnas Personalizadas</h4>
+                {customFields.length === 0 ? (
+                  <p className="text-sm text-gray-500 italic">No hay columnas personalizadas.</p>
+                ) : (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {customFields.map((field: CampoPersonalizado) => (
+                      <div key={field.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{field.etiqueta}</p>
+                          <p className="text-xs text-gray-500">Clave: {field.clave} ({field.tipo})</p>
+                        </div>
+                        <button
+                          onClick={() => toggleFieldMutation.mutate({ id: field.id, activo: !field.activo })}
+                          className={`px-2 py-1 text-xs font-medium rounded ${field.activo ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
+                            }`}
+                        >
+                          {field.activo ? 'Visible' : 'Oculto'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Agregar Nuevo Campo */}
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                  <Plus className="w-4 h-4" /> Agregar Nueva Columna
+                </h4>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div className="col-span-2">
+                    <input
+                      type="text"
+                      placeholder="Etiqueta (Nombre visible)"
+                      value={newFieldData.etiqueta || ''}
+                      onChange={(e) => setNewFieldData({ ...newFieldData, etiqueta: e.target.value })}
+                      className="w-full px-3 py-2 border rounded text-sm"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Clave (sin espacios)"
+                      value={newFieldData.clave || ''}
+                      onChange={(e) => setNewFieldData({ ...newFieldData, clave: e.target.value.toLowerCase().replace(/\s/g, '_') })}
+                      className="w-full px-3 py-2 border rounded text-sm"
+                    />
+                  </div>
+                  <div>
+                    <select
+                      value={newFieldData.tipo || 'text'}
+                      onChange={(e) => setNewFieldData({ ...newFieldData, tipo: e.target.value as any })}
+                      className="w-full px-3 py-2 border rounded text-sm"
+                    >
+                      <option value="text">Texto</option>
+                      <option value="number">Numero</option>
+                      <option value="date">Fecha</option>
+                    </select>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    if (newFieldData.clave && newFieldData.etiqueta) {
+                      createFieldMutation.mutate(newFieldData);
+                    }
+                  }}
+                  disabled={!newFieldData.clave || !newFieldData.etiqueta}
+                  className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
+                >
+                  Agregar Columna
+                </button>
+              </div>
             </div>
           </div>
         </div>

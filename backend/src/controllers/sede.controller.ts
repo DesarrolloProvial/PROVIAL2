@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { SalidaModel } from '../models/salida.model';
+import { ConfiguracionSedeModel } from '../models/configuracionSede.model';
 
 // ========================================
 // CONSULTAS DE SEDES
@@ -153,6 +154,33 @@ export async function getMiSede(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('Error en getMiSede:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+/**
+ * GET /api/sedes/:id/configuracion
+ * Obtener configuración operativa y visual de una sede
+ */
+export async function getConfiguracion(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+
+    const config = await ConfiguracionSedeModel.getBySede(parseInt(id));
+
+    if (!config) {
+      // Return default config if none exists
+      return res.json({
+        sede_id: parseInt(id),
+        requiere_tripulacion: true, // Default
+        alerta_rotacion_rutas_activa: true,
+        umbral_rotacion_rutas: 3
+      });
+    }
+
+    return res.json(config);
+  } catch (error) {
+    console.error('Error en getConfiguracion:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

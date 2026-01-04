@@ -12,7 +12,8 @@ import {
   eliminarUnidad,
   asignarBrigadaUnidad,
   desasignarBrigadaUnidad,
-  getTripulacionUnidad
+  getTripulacionUnidad,
+  obtenerUltimaAsignacion
 } from '../controllers/unidades.controller';
 import { authenticate, authorize } from '../middlewares/auth';
 
@@ -30,6 +31,9 @@ router.get('/activas', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGAD
 
 // Obtener unidad específica
 router.get('/:id', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), obtenerUnidad);
+
+// Obtener última asignación de unidad
+router.get('/:id/ultima-asignacion', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), obtenerUltimaAsignacion);
 
 // Crear unidad (Admin)
 router.post('/', authenticate, authorize('ADMIN'), crearUnidad);

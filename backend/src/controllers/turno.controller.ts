@@ -159,6 +159,7 @@ export async function createAsignacion(req: Request, res: Response) {
   try {
     const { id: turnoId } = req.params;
     const {
+      tipo_asignacion, // Nuevo campo
       unidad_id,
       ruta_id,
       km_inicio,
@@ -172,30 +173,59 @@ export async function createAsignacion(req: Request, res: Response) {
       tripulacion // Array de { usuario_id, rol_tripulacion }
     } = req.body;
 
-    if (!unidad_id) {
-      return res.status(400).json({ error: 'unidad_id es requerido' });
+    const tipo = tipo_asignacion || 'PATRULLA';
+
+    if (tipo === 'PATRULLA' && !unidad_id) {
+      return res.status(400).json({ error: 'unidad_id es requerido para asignaciones de patrulla' });
     }
 
     // Verificar conflictos de tripulación ANTES de la transacción
     if (tripulacion && Array.isArray(tripulacion)) {
       for (const miembro of tripulacion) {
-        const conflicto = await db.oneOrNone(`
+        // Solo verificamos conflicto de unidad si hay unidad asignada
+        const conflictQuery = unidad_id
+          ? `
           SELECT u.codigo, t.fecha
           FROM tripulacion_turno tt
           JOIN asignacion_unidad au ON tt.asignacion_id = au.id
           JOIN turno t ON au.turno_id = t.id
-          JOIN unidad u ON au.unidad_id = u.id
+          LEFT JOIN unidad u ON au.unidad_id = u.id
           WHERE tt.usuario_id = $1
             AND t.fecha = (SELECT fecha FROM turno WHERE id = $2)
-            AND au.unidad_id != $3
-        `, [miembro.usuario_id, parseInt(turnoId), unidad_id]);
+            AND au.unidad_id IS NOT DISTINCT FROM $3
+            AND au.id IS NOT NULL -- asegurar que existe
+          `
+          : `
+          SELECT 'SIN UNIDAD' as codigo, t.fecha
+          FROM tripulacion_turno tt
+          JOIN asignacion_unidad au ON tt.asignacion_id = au.id
+          JOIN turno t ON au.turno_id = t.id
+          WHERE tt.usuario_id = $1
+            AND t.fecha = (SELECT fecha FROM turno WHERE id = $2)
+            -- Si es garita, verificamos si ya tiene otra asignacion activa? 
+            -- Por ahora asumimos que un usuario solo puede estar en una asignacion por turno
+          `;
+
+        const conflicto = await db.oneOrNone(
+          `SELECT u.codigo, t.fecha, au.tipo_asignacion
+            FROM tripulacion_turno tt
+            JOIN asignacion_unidad au ON tt.asignacion_id = au.id
+            JOIN turno t ON au.turno_id = t.id
+            LEFT JOIN unidad u ON au.unidad_id = u.id
+            WHERE tt.usuario_id = $1
+              AND t.fecha = (SELECT fecha FROM turno WHERE id = $2)
+              AND (au.estado != 'CANCELADA' OR au.estado IS NULL)
+           `,
+          [miembro.usuario_id, parseInt(turnoId)]
+        );
 
         if (conflicto) {
           const usuarioConflictivo = await db.oneOrNone('SELECT nombre_completo, chapa FROM usuario WHERE id = $1', [miembro.usuario_id]);
           const nombre = usuarioConflictivo ? `${usuarioConflictivo.nombre_completo} (${usuarioConflictivo.chapa})` : `Usuario ID ${miembro.usuario_id}`;
+          const detalle = conflicto.codigo || conflicto.tipo_asignacion || 'Asignación';
 
           return res.status(400).json({
-            error: `El usuario ${nombre} ya está asignado a la unidad ${conflicto.codigo} en la fecha ${conflicto.fecha}`
+            error: `El usuario ${nombre} ya está asignado a ${detalle} en la fecha ${conflicto.fecha}`
           });
         }
       }
@@ -206,12 +236,12 @@ export async function createAsignacion(req: Request, res: Response) {
       // Crear asignación
       const asignacion = await t.one(
         `INSERT INTO asignacion_unidad
-         (turno_id, unidad_id, ruta_id, km_inicio, km_final, sentido, acciones,
+         (turno_id, tipo_asignacion, unidad_id, ruta_id, km_inicio, km_final, sentido, acciones,
           combustible_inicial, combustible_asignado, hora_salida, hora_entrada_estimada)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
          RETURNING *`,
         [
-          parseInt(turnoId), unidad_id, ruta_id, km_inicio, km_final,
+          parseInt(turnoId), tipo, unidad_id, ruta_id, km_inicio, km_final,
           sentido, acciones, combustible_inicial, combustible_asignado,
           hora_salida, hora_entrada_estimada
         ]
@@ -632,10 +662,21 @@ export async function deleteAsignacion(req: Request, res: Response) {
       });
     }
 
+    // Comprobación de rol para forzar
+    if (forzar) {
+      // El user mencionó "super_Admin" y user 19109.
+      const isSuperAdmin = req.user?.rol === 'SUPER_ADMIN' || req.user?.userId === 19109;
+      if (!isSuperAdmin) {
+        return res.status(403).json({
+          error: 'No tiene permisos para forzar la eliminación. Contacte al Super Administrador.'
+        });
+      }
+    }
+
     if (asignacion.hora_salida_real && !forzar) {
       return res.status(400).json({
         error: 'No se puede eliminar una asignación que ya ha salido',
-        message: 'La unidad ya registró su salida. Use ?forzar=true para eliminar de todas formas.'
+        message: 'La unidad ya registró su salida. Solo el Super Admin puede forzar esta acción.'
       });
     }
 
@@ -645,10 +686,13 @@ export async function deleteAsignacion(req: Request, res: Response) {
       WHERE unidad_id = $1 AND estado = 'EN_SALIDA'
     `, [asignacion.unidad_id]);
 
-    if (salidaActiva && !forzar) {
+    // SOLO bloquear si la asignación está ACTIVA (hora_salida_real)
+    // Si es pendiente, permitimos borrar aunque la unidad tenga estado sucio (zombie exit),
+    // para poder limpiar el plan.
+    if (salidaActiva && !forzar && asignacion.hora_salida_real) {
       return res.status(400).json({
         error: 'No se puede eliminar una asignación con salida activa',
-        message: `La unidad ${asignacion.unidad_codigo} tiene una salida en curso desde ${salidaActiva.fecha_hora_salida}. Use ?forzar=true para cerrar la salida y eliminar la asignación.`,
+        message: `La unidad ${asignacion.unidad_codigo} tiene una salida en curso desde ${salidaActiva.fecha_hora_salida}.`,
         salida_id: salidaActiva.id
       });
     }

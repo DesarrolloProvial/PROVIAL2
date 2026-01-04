@@ -19,6 +19,7 @@ export async function listarBrigadas(req: Request, res: Response) {
         u.grupo,
         u.activo as activa,
         u.rol_brigada,
+        u.custom_fields,
         u.created_at
       FROM usuario u
       JOIN sede s ON u.sede_id = s.id
@@ -77,6 +78,7 @@ export async function obtenerBrigada(req: Request, res: Response) {
         u.grupo,
         u.activo as activa,
         u.rol_brigada,
+        u.custom_fields,
         u.created_at
       FROM usuario u
       JOIN sede s ON u.sede_id = s.id
@@ -155,7 +157,7 @@ export async function actualizarBrigada(req: Request, res: Response) {
     } = req.body;
 
     const brigada = await db.oneOrNone(`
-      SELECT u.id, u.sede_id FROM usuario u
+      SELECT u.id, u.sede_id, u.chapa FROM usuario u
       JOIN rol r ON u.rol_id = r.id
       WHERE u.id = $1 AND r.nombre = 'BRIGADA'
     `, [id]);
@@ -169,9 +171,17 @@ export async function actualizarBrigada(req: Request, res: Response) {
       return res.status(403).json({ error: 'No tiene permiso para editar brigadas de otras sedes' });
     }
 
-    // Convertir strings vacíos a null para evitar problemas de unicidad
+    // Verificar si la chapa cambió y si está disponible
+    if (req.body.chapa && req.body.chapa.toUpperCase() !== brigada.chapa) {
+      const existe = await db.oneOrNone('SELECT id FROM usuario WHERE chapa = $1', [req.body.chapa.toUpperCase()]);
+      if (existe) {
+        return res.status(409).json({ error: 'Ya existe un usuario con esa chapa' });
+      }
+    }
+
     const emailValue = email && email.trim() !== '' ? email.trim() : null;
     const telefonoValue = telefono && telefono.trim() !== '' ? telefono.trim() : null;
+    const chapaValue = req.body.chapa ? req.body.chapa.toUpperCase() : undefined;
 
     const result = await db.one(`
       UPDATE usuario SET
@@ -179,11 +189,16 @@ export async function actualizarBrigada(req: Request, res: Response) {
         sede_id = COALESCE($2, sede_id),
         telefono = $3,
         email = $4,
+
         grupo = $5,
-        rol_brigada = $6
-      WHERE id = $7
-      RETURNING id, chapa, nombre_completo as nombre, telefono, email, sede_id, grupo, rol_brigada, activo as activa
-    `, [nombre, sede_id, telefonoValue, emailValue, grupo, rol_brigada, id]);
+        rol_brigada = $6,
+        chapa = COALESCE($7, chapa),
+        username = COALESCE($7, username),
+        custom_fields = COALESCE($9, custom_fields),
+        updated_at = NOW()
+      WHERE id = $8
+      RETURNING id, chapa, nombre_completo as nombre, telefono, email, sede_id, grupo, rol_brigada, custom_fields, activo as activa
+    `, [nombre, sede_id, telefonoValue, emailValue, grupo, rol_brigada, chapaValue, id, req.body.custom_fields || null]);
 
     return res.json({ message: 'Brigada actualizada exitosamente', brigada: result });
   } catch (error) {

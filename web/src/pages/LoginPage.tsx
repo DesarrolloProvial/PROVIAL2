@@ -26,6 +26,8 @@ export default function LoginPage() {
         navigate('/super-admin');
       } else if (response.user.rol === 'OPERACIONES' || response.user.rol === 'ADMIN' || response.user.rol === 'ENCARGADO_NOMINAS') {
         navigate('/operaciones');
+      } else if (['MANDOS', 'ACCIDENTOLOGIA', 'COMUNICACION_SOCIAL'].includes(response.user.rol)) {
+        navigate('/dashboard-ejecutivo');
       } else {
         navigate('/dashboard');
       }

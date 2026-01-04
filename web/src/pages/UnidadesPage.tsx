@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { Search, Plus, Edit2, Power, Repeat, Trash2, X, Users, RefreshCw } from 'lucide-react';
+import { Search, Plus, Edit2, Power, Repeat, Trash2, X, RefreshCw } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import { useDebounce } from '../hooks/useDebounce';
 import { useAuthStore } from '../store/authStore';
@@ -98,7 +98,6 @@ export default function UnidadesPage() {
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState<Unidad | null>(null);
   const [modalTransferir, setModalTransferir] = useState<Unidad | null>(null);
-  const [modalTripulacion, setModalTripulacion] = useState<Unidad | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -131,11 +130,7 @@ export default function UnidadesPage() {
     queryFn: unidadesAPI.tipos,
   });
 
-  const { data: tripulacionData } = useQuery({
-    queryKey: ['tripulacion', modalTripulacion?.id],
-    queryFn: () => modalTripulacion ? unidadesAPI.getTripulacion(modalTripulacion.id) : null,
-    enabled: !!modalTripulacion,
-  });
+
 
   const unidades: Unidad[] = unidadesData?.unidades || [];
   const sedes: Sede[] = sedesData?.sedes || [];
@@ -372,21 +367,14 @@ export default function UnidadesPage() {
                     <td className="px-4 py-3 text-sm font-mono">{unidad.placa || '-'}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{unidad.sede_nombre}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        unidad.activa ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${unidad.activa ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
                         {unidad.activa ? 'Activa' : 'Inactiva'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => setModalTripulacion(unidad)}
-                          className="p-1.5 text-teal-600 hover:bg-teal-50 rounded"
-                          title="Ver Tripulacion"
-                        >
-                          <Users className="w-4 h-4" />
-                        </button>
+
                         <button
                           onClick={() => openEditModal(unidad)}
                           className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
@@ -396,11 +384,10 @@ export default function UnidadesPage() {
                         </button>
                         <button
                           onClick={() => toggleActivaMutation.mutate({ id: unidad.id, activa: unidad.activa })}
-                          className={`p-1.5 rounded ${
-                            unidad.activa
-                              ? 'text-orange-600 hover:bg-orange-50'
-                              : 'text-green-600 hover:bg-green-50'
-                          }`}
+                          className={`p-1.5 rounded ${unidad.activa
+                            ? 'text-orange-600 hover:bg-orange-50'
+                            : 'text-green-600 hover:bg-green-50'
+                            }`}
                           title={unidad.activa ? 'Desactivar' : 'Activar'}
                         >
                           <Power className="w-4 h-4" />
@@ -725,45 +712,7 @@ export default function UnidadesPage() {
       )}
 
       {/* Modal Tripulacion */}
-      {modalTripulacion && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Tripulacion de {modalTripulacion.codigo}</h2>
-              <button onClick={() => setModalTripulacion(null)} className="p-1 hover:bg-gray-100 rounded">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            {tripulacionData?.tripulacion?.length > 0 ? (
-              <div className="space-y-3">
-                {tripulacionData.tripulacion.map((miembro: any) => (
-                  <div key={miembro.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Users className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{miembro.brigada_nombre}</p>
-                      <p className="text-sm text-gray-500">{miembro.brigada_codigo} - {miembro.rol}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-8">
-                Esta unidad no tiene tripulacion asignada
-              </p>
-            )}
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => setModalTripulacion(null)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
