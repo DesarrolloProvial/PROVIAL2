@@ -4,6 +4,8 @@ import api from '../services/api';
 import { Search, Plus, Edit2, Power, Repeat, Trash2, X, Users, RefreshCw } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import { useDebounce } from '../hooks/useDebounce';
+import { useAuthStore } from '../store/authStore';
+import ConfiguracionColumnas, { useConfiguracionColumnas } from '../components/ConfiguracionColumnas';
 
 interface Unidad {
   id: number;
@@ -86,6 +88,7 @@ const TIPOS_UNIDAD = [
 
 export default function UnidadesPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
 
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
@@ -137,6 +140,10 @@ export default function UnidadesPage() {
   const unidades: Unidad[] = unidadesData?.unidades || [];
   const sedes: Sede[] = sedesData?.sedes || [];
   const tipos: string[] = tiposData?.tipos || TIPOS_UNIDAD;
+
+  // Configuracion de columnas dinamicas
+  const { columnasVisibles } = useConfiguracionColumnas('unidades', user?.sede_id ?? undefined);
+  const isColumnVisible = (col: string) => columnasVisibles.length === 0 || columnasVisibles.includes(col);
 
   // Mutations
   const crearMutation = useMutation({
@@ -309,6 +316,7 @@ export default function UnidadesPage() {
               <option value="true">Activas</option>
               <option value="false">Inactivas</option>
             </select>
+            <ConfiguracionColumnas tabla="unidades" sedeId={user?.sede_id ?? undefined} />
             <button
               onClick={() => { resetForm(); setModalCrear(true); }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -324,12 +332,14 @@ export default function UnidadesPage() {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Codigo</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Tipo</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Marca/Modelo</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Placa</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Sede</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-600">Estado</th>
+                {isColumnVisible('codigo') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Codigo</th>}
+                {isColumnVisible('tipo_unidad') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Tipo</th>}
+                {isColumnVisible('marca') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Marca</th>}
+                {isColumnVisible('modelo') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Modelo</th>}
+                {isColumnVisible('anio') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Ano</th>}
+                {isColumnVisible('placa') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Placa</th>}
+                {isColumnVisible('sede') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Sede</th>}
+                {isColumnVisible('estado') && <th className="px-4 py-3 text-center text-sm font-semibold text-gray-600">Estado</th>}
                 <th className="px-4 py-3 text-center text-sm font-semibold text-gray-600">Acciones</th>
               </tr>
             </thead>

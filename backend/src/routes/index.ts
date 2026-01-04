@@ -33,6 +33,7 @@ import dashboardRoutes from './dashboard.routes';
 import alertasRoutes from './alertas.routes';
 import accidentologiaRoutes from './accidentologia.routes';
 import comunicacionSocialRoutes from './comunicacionSocial.routes';
+import passwordResetRoutes from './passwordReset.routes';
 
 const router = Router();
 
@@ -137,5 +138,8 @@ router.use('/accidentologia', accidentologiaRoutes);
 
 // Comunicación Social (plantillas y publicaciones)
 router.use('/comunicacion-social', comunicacionSocialRoutes);
+
+// Sistema de reset de contraseña (rutas públicas y admin)
+router.use('/', passwordResetRoutes);
 
 export default router;

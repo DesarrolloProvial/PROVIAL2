@@ -6,13 +6,282 @@ import { esSuperAdmin, puedeVerTodosDepartamentos } from '../middlewares/superAd
 // DEPARTAMENTOS
 // =====================================================
 
-export async function getDepartamentos(_req: Request, res: Response) {
+export async function getDepartamentos(req: Request, res: Response) {
   try {
-    const departamentos = await AdministracionModel.getDepartamentos();
+    const incluirInactivos = req.query.incluir_inactivos === 'true';
+    const departamentos = await AdministracionModel.getDepartamentos(incluirInactivos);
     res.json(departamentos);
   } catch (error) {
     console.error('Error al obtener departamentos:', error);
     res.status(500).json({ error: 'Error al obtener departamentos' });
+  }
+}
+
+export async function createDepartamento(req: Request, res: Response) {
+  try {
+    if (!esSuperAdmin(req)) {
+      return res.status(403).json({ error: 'Solo SUPER_ADMIN puede crear departamentos' });
+    }
+
+    const { codigo, nombre, descripcion, usa_sistema_grupos, orden } = req.body;
+
+    if (!codigo || !nombre) {
+      return res.status(400).json({ error: 'Codigo y nombre son requeridos' });
+    }
+
+    const id = await AdministracionModel.createDepartamento({
+      codigo: codigo.toUpperCase(),
+      nombre,
+      descripcion,
+      usa_sistema_grupos,
+      orden,
+    });
+
+    await AdministracionModel.registrarAccion('CREAR_DEPARTAMENTO', req.user!.userId, {
+      tablaAfectada: 'departamento_sistema',
+      registroId: id,
+      datosNuevos: { codigo, nombre, descripcion, usa_sistema_grupos },
+      ipAddress: req.ip,
+    });
+
+    res.status(201).json({ success: true, id, message: 'Departamento creado correctamente' });
+  } catch (error: any) {
+    console.error('Error al crear departamento:', error);
+    if (error.code === '23505') {
+      return res.status(400).json({ error: 'Ya existe un departamento con ese codigo' });
+    }
+    res.status(500).json({ error: 'Error al crear departamento' });
+  }
+}
+
+export async function updateDepartamento(req: Request, res: Response) {
+  try {
+    if (!esSuperAdmin(req)) {
+      return res.status(403).json({ error: 'Solo SUPER_ADMIN puede editar departamentos' });
+    }
+
+    const { id } = req.params;
+    const { codigo, nombre, descripcion, usa_sistema_grupos, orden, activo } = req.body;
+
+    const deptoAnterior = await AdministracionModel.getDepartamento(parseInt(id));
+    if (!deptoAnterior) {
+      return res.status(404).json({ error: 'Departamento no encontrado' });
+    }
+
+    await AdministracionModel.updateDepartamento(parseInt(id), {
+      codigo: codigo?.toUpperCase(),
+      nombre,
+      descripcion,
+      usa_sistema_grupos,
+      orden,
+      activo,
+    });
+
+    await AdministracionModel.registrarAccion('EDITAR_DEPARTAMENTO', req.user!.userId, {
+      tablaAfectada: 'departamento_sistema',
+      registroId: parseInt(id),
+      datosAnteriores: deptoAnterior as unknown as Record<string, unknown>,
+      datosNuevos: { codigo, nombre, descripcion, usa_sistema_grupos, orden, activo },
+      ipAddress: req.ip,
+    });
+
+    res.json({ success: true, message: 'Departamento actualizado correctamente' });
+  } catch (error: any) {
+    console.error('Error al actualizar departamento:', error);
+    if (error.code === '23505') {
+      return res.status(400).json({ error: 'Ya existe un departamento con ese codigo' });
+    }
+    res.status(500).json({ error: 'Error al actualizar departamento' });
+  }
+}
+
+export async function deleteDepartamento(req: Request, res: Response) {
+  try {
+    if (!esSuperAdmin(req)) {
+      return res.status(403).json({ error: 'Solo SUPER_ADMIN puede eliminar departamentos' });
+    }
+
+    const { id } = req.params;
+
+    const depto = await AdministracionModel.getDepartamento(parseInt(id));
+    if (!depto) {
+      return res.status(404).json({ error: 'Departamento no encontrado' });
+    }
+
+    await AdministracionModel.deleteDepartamento(parseInt(id));
+
+    await AdministracionModel.registrarAccion('ELIMINAR_DEPARTAMENTO', req.user!.userId, {
+      tablaAfectada: 'departamento_sistema',
+      registroId: parseInt(id),
+      datosAnteriores: depto as unknown as Record<string, unknown>,
+      ipAddress: req.ip,
+    });
+
+    res.json({ success: true, message: 'Departamento desactivado correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar departamento:', error);
+    res.status(500).json({ error: 'Error al eliminar departamento' });
+  }
+}
+
+// =====================================================
+// SEDES
+// =====================================================
+
+export async function getSedes(req: Request, res: Response) {
+  try {
+    const incluirInactivas = req.query.incluir_inactivas === 'true';
+    const sedes = await AdministracionModel.getSedes(incluirInactivas);
+    res.json(sedes);
+  } catch (error) {
+    console.error('Error al obtener sedes:', error);
+    res.status(500).json({ error: 'Error al obtener sedes' });
+  }
+}
+
+export async function getSede(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const sede = await AdministracionModel.getSede(parseInt(id));
+    if (!sede) {
+      return res.status(404).json({ error: 'Sede no encontrada' });
+    }
+    res.json(sede);
+  } catch (error) {
+    console.error('Error al obtener sede:', error);
+    res.status(500).json({ error: 'Error al obtener sede' });
+  }
+}
+
+export async function createSede(req: Request, res: Response) {
+  try {
+    if (!esSuperAdmin(req)) {
+      return res.status(403).json({ error: 'Solo SUPER_ADMIN puede crear sedes' });
+    }
+
+    const { codigo, nombre, departamento_id, es_sede_central } = req.body;
+
+    if (!codigo || !nombre) {
+      return res.status(400).json({ error: 'Codigo y nombre son requeridos' });
+    }
+
+    const id = await AdministracionModel.createSede({
+      codigo: codigo.toUpperCase(),
+      nombre,
+      departamento_id,
+      es_sede_central,
+    });
+
+    await AdministracionModel.registrarAccion('CREAR_SEDE', req.user!.userId, {
+      tablaAfectada: 'sede',
+      registroId: id,
+      datosNuevos: { codigo, nombre, departamento_id, es_sede_central },
+      ipAddress: req.ip,
+    });
+
+    res.status(201).json({ success: true, id, message: 'Sede creada correctamente' });
+  } catch (error: any) {
+    console.error('Error al crear sede:', error);
+    if (error.code === '23505') {
+      if (error.constraint === 'idx_una_sede_central') {
+        return res.status(400).json({ error: 'Ya existe una sede central definida' });
+      }
+      return res.status(400).json({ error: 'Ya existe una sede con ese codigo' });
+    }
+    res.status(500).json({ error: 'Error al crear sede' });
+  }
+}
+
+export async function updateSede(req: Request, res: Response) {
+  try {
+    if (!esSuperAdmin(req)) {
+      return res.status(403).json({ error: 'Solo SUPER_ADMIN puede editar sedes' });
+    }
+
+    const { id } = req.params;
+    const { codigo, nombre, departamento_id, activa, es_sede_central } = req.body;
+
+    const sedeAnterior = await AdministracionModel.getSede(parseInt(id));
+    if (!sedeAnterior) {
+      return res.status(404).json({ error: 'Sede no encontrada' });
+    }
+
+    await AdministracionModel.updateSede(parseInt(id), {
+      codigo: codigo?.toUpperCase(),
+      nombre,
+      departamento_id,
+      activa,
+      es_sede_central,
+    });
+
+    await AdministracionModel.registrarAccion('EDITAR_SEDE', req.user!.userId, {
+      tablaAfectada: 'sede',
+      registroId: parseInt(id),
+      datosAnteriores: sedeAnterior as unknown as Record<string, unknown>,
+      datosNuevos: { codigo, nombre, departamento_id, es_sede_central, activa },
+      ipAddress: req.ip,
+    });
+
+    res.json({ success: true, message: 'Sede actualizada correctamente' });
+  } catch (error: any) {
+    console.error('Error al actualizar sede:', error);
+    if (error.code === '23505') {
+      if (error.constraint === 'idx_una_sede_central') {
+        return res.status(400).json({ error: 'Ya existe una sede central definida' });
+      }
+      return res.status(400).json({ error: 'Ya existe una sede con ese codigo' });
+    }
+    res.status(500).json({ error: 'Error al actualizar sede' });
+  }
+}
+
+export async function deleteSede(req: Request, res: Response) {
+  try {
+    if (!esSuperAdmin(req)) {
+      return res.status(403).json({ error: 'Solo SUPER_ADMIN puede eliminar sedes' });
+    }
+
+    const { id } = req.params;
+
+    const sede = await AdministracionModel.getSede(parseInt(id));
+    if (!sede) {
+      return res.status(404).json({ error: 'Sede no encontrada' });
+    }
+
+    await AdministracionModel.deleteSede(parseInt(id));
+
+    await AdministracionModel.registrarAccion('ELIMINAR_SEDE', req.user!.userId, {
+      tablaAfectada: 'sede',
+      registroId: parseInt(id),
+      datosAnteriores: sede,
+      ipAddress: req.ip,
+    });
+
+    res.json({ success: true, message: 'Sede desactivada correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar sede:', error);
+    res.status(500).json({ error: 'Error al eliminar sede' });
+  }
+}
+
+export async function getDepartamentosGeograficos(_req: Request, res: Response) {
+  try {
+    const departamentos = await AdministracionModel.getDepartamentosGeograficos();
+    res.json(departamentos);
+  } catch (error) {
+    console.error('Error al obtener departamentos geograficos:', error);
+    res.status(500).json({ error: 'Error al obtener departamentos' });
+  }
+}
+
+export async function getMunicipiosPorDepartamento(req: Request, res: Response) {
+  try {
+    const { departamento_id } = req.params;
+    const municipios = await AdministracionModel.getMunicipiosPorDepartamento(parseInt(departamento_id));
+    res.json(municipios);
+  } catch (error) {
+    console.error('Error al obtener municipios:', error);
+    res.status(500).json({ error: 'Error al obtener municipios' });
   }
 }
 
@@ -581,5 +850,153 @@ export async function getEstadisticas(_req: Request, res: Response) {
   } catch (error) {
     console.error('Error al obtener estadisticas:', error);
     res.status(500).json({ error: 'Error al obtener estadisticas' });
+  }
+}
+
+// =====================================================
+// CONFIGURACION DE COLUMNAS DINAMICAS
+// =====================================================
+
+// Columnas disponibles por tabla
+const COLUMNAS_DISPONIBLES = {
+  brigadas: [
+    { key: 'chapa', label: 'Chapa', descripcion: 'Numero de identificacion' },
+    { key: 'nombre', label: 'Nombre', descripcion: 'Nombre completo del brigadista' },
+    { key: 'rol_brigada', label: 'Rol', descripcion: 'Rol en brigada (Piloto, Copiloto, Acompanante)' },
+    { key: 'grupo', label: 'Grupo', descripcion: 'Grupo de trabajo (G1, G2, Normal)' },
+    { key: 'sede', label: 'Sede', descripcion: 'Sede asignada' },
+    { key: 'telefono', label: 'Telefono', descripcion: 'Numero de telefono' },
+    { key: 'email', label: 'Email', descripcion: 'Correo electronico' },
+    { key: 'estado', label: 'Estado', descripcion: 'Activo/Inactivo' },
+    { key: 'ultimo_acceso', label: 'Ultimo Acceso', descripcion: 'Fecha del ultimo acceso' },
+  ],
+  unidades: [
+    { key: 'codigo', label: 'Codigo', descripcion: 'Codigo de la unidad' },
+    { key: 'tipo_unidad', label: 'Tipo', descripcion: 'Tipo de unidad (Motorizada, Pickup, etc.)' },
+    { key: 'marca', label: 'Marca', descripcion: 'Marca del vehiculo' },
+    { key: 'modelo', label: 'Modelo', descripcion: 'Modelo del vehiculo' },
+    { key: 'anio', label: 'Ano', descripcion: 'Ano del vehiculo' },
+    { key: 'placa', label: 'Placa', descripcion: 'Numero de placa' },
+    { key: 'sede', label: 'Sede', descripcion: 'Sede asignada' },
+    { key: 'estado', label: 'Estado', descripcion: 'Activo/Inactivo' },
+  ],
+};
+
+export async function getColumnasDisponibles(req: Request, res: Response) {
+  try {
+    const { tabla } = req.params;
+
+    if (!COLUMNAS_DISPONIBLES[tabla as keyof typeof COLUMNAS_DISPONIBLES]) {
+      return res.status(400).json({ error: 'Tabla no valida. Use: brigadas o unidades' });
+    }
+
+    res.json({
+      tabla,
+      columnas: COLUMNAS_DISPONIBLES[tabla as keyof typeof COLUMNAS_DISPONIBLES]
+    });
+  } catch (error) {
+    console.error('Error al obtener columnas disponibles:', error);
+    res.status(500).json({ error: 'Error al obtener columnas disponibles' });
+  }
+}
+
+export async function getConfiguracionColumnas(req: Request, res: Response) {
+  try {
+    const { tabla } = req.params;
+    const sedeId = req.query.sede_id ? parseInt(req.query.sede_id as string) : null;
+
+    if (!['brigadas', 'unidades'].includes(tabla)) {
+      return res.status(400).json({ error: 'Tabla no valida. Use: brigadas o unidades' });
+    }
+
+    const config = await AdministracionModel.getConfiguracionColumnas(sedeId, tabla);
+
+    if (!config) {
+      // Retornar configuracion por defecto
+      const defaultColumns = COLUMNAS_DISPONIBLES[tabla as keyof typeof COLUMNAS_DISPONIBLES]
+        .map(c => c.key);
+      return res.json({
+        columnas_visibles: defaultColumns,
+        orden_columnas: defaultColumns,
+        es_default: true
+      });
+    }
+
+    res.json({
+      ...config,
+      es_default: false
+    });
+  } catch (error) {
+    console.error('Error al obtener configuracion de columnas:', error);
+    res.status(500).json({ error: 'Error al obtener configuracion de columnas' });
+  }
+}
+
+export async function setConfiguracionColumnas(req: Request, res: Response) {
+  try {
+    const { tabla } = req.params;
+    const { sede_id, columnas_visibles, orden_columnas } = req.body;
+
+    if (!['brigadas', 'unidades'].includes(tabla)) {
+      return res.status(400).json({ error: 'Tabla no valida. Use: brigadas o unidades' });
+    }
+
+    if (!columnas_visibles || !Array.isArray(columnas_visibles) || columnas_visibles.length === 0) {
+      return res.status(400).json({ error: 'Debe especificar al menos una columna visible' });
+    }
+
+    // Validar que todas las columnas sean validas
+    const columnasValidas = COLUMNAS_DISPONIBLES[tabla as keyof typeof COLUMNAS_DISPONIBLES]
+      .map(c => c.key);
+    const invalidColumns = columnas_visibles.filter(c => !columnasValidas.includes(c));
+    if (invalidColumns.length > 0) {
+      return res.status(400).json({
+        error: `Columnas invalidas: ${invalidColumns.join(', ')}`,
+        columnas_validas: columnasValidas
+      });
+    }
+
+    const sedeIdParsed = sede_id !== undefined && sede_id !== null ? parseInt(sede_id) : null;
+    const ordenFinal = orden_columnas || columnas_visibles;
+
+    await AdministracionModel.setConfiguracionColumnas(
+      sedeIdParsed,
+      tabla,
+      columnas_visibles,
+      ordenFinal,
+      req.user!.userId
+    );
+
+    await AdministracionModel.registrarAccion('CONFIGURAR_COLUMNAS', req.user!.userId, {
+      tablaAfectada: 'configuracion_columnas_tabla',
+      datosNuevos: { tabla, sede_id: sedeIdParsed, columnas_visibles, orden_columnas: ordenFinal },
+      ipAddress: req.ip,
+    });
+
+    res.json({ success: true, message: 'Configuracion de columnas guardada correctamente' });
+  } catch (error) {
+    console.error('Error al guardar configuracion de columnas:', error);
+    res.status(500).json({ error: 'Error al guardar configuracion de columnas' });
+  }
+}
+
+export async function getAllConfiguracionColumnas(req: Request, res: Response) {
+  try {
+    const { tabla } = req.params;
+
+    if (!['brigadas', 'unidades'].includes(tabla)) {
+      return res.status(400).json({ error: 'Tabla no valida. Use: brigadas o unidades' });
+    }
+
+    const configuraciones = await AdministracionModel.getAllConfiguracionColumnas(tabla);
+
+    res.json({
+      tabla,
+      columnas_disponibles: COLUMNAS_DISPONIBLES[tabla as keyof typeof COLUMNAS_DISPONIBLES],
+      configuraciones
+    });
+  } catch (error) {
+    console.error('Error al obtener todas las configuraciones:', error);
+    res.status(500).json({ error: 'Error al obtener configuraciones' });
   }
 }

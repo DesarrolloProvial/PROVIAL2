@@ -102,6 +102,26 @@ function RoleBasedRedirect() {
     return <Navigate to="/dashboard" replace />;
   }
 
+  // Mandos van al Dashboard Ejecutivo
+  if (user?.rol === 'MANDOS') {
+    return <Navigate to="/dashboard-ejecutivo" replace />;
+  }
+
+  // Accidentología y Comunicación Social van al dashboard ejecutivo por ahora
+  if (user?.rol === 'ACCIDENTOLOGIA' || user?.rol === 'COMUNICACION_SOCIAL') {
+    return <Navigate to="/dashboard-ejecutivo" replace />;
+  }
+
+  // COP va al dashboard de monitoreo
+  if (user?.rol === 'COP') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Brigadas no deberían acceder al panel web normalmente
+  if (user?.rol === 'BRIGADA') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   // Todos los demás van al Dashboard COP
   return <Navigate to="/dashboard" replace />;
 }

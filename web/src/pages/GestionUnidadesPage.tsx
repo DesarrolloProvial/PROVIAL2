@@ -240,7 +240,11 @@ export default function GestionUnidadesPage() {
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2 text-gray-600">
                       <Truck className="w-4 h-4" />
-                      <span>{unidad.tipo_unidad} - {unidad.marca} {unidad.modelo} ({unidad.anio})</span>
+                      <span>
+                        {unidad.tipo_unidad}
+                        {(unidad.marca || unidad.modelo) && ` - ${unidad.marca || ''} ${unidad.modelo || ''}`.trim()}
+                        {unidad.anio && ` (${unidad.anio})`}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 text-gray-600">
                       <Building2 className="w-4 h-4" />

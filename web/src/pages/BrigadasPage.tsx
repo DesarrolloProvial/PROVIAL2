@@ -5,6 +5,7 @@ import { Search, Plus, Edit2, Power, Repeat, Trash2, X, RefreshCw, Shield } from
 import PageHeader from '../components/PageHeader';
 import { useDebounce } from '../hooks/useDebounce';
 import { useAuthStore } from '../store/authStore';
+import ConfiguracionColumnas, { useConfiguracionColumnas } from '../components/ConfiguracionColumnas';
 
 interface Brigada {
   id: number;
@@ -161,6 +162,10 @@ export default function BrigadasPage() {
   const sedes: Sede[] = sedesData?.sedes || [];
   const motivos: MotivoInactividad[] = motivosData?.motivos || [];
   const rolesDisponibles: RolDisponible[] = rolesData?.roles || [];
+
+  // Configuracion de columnas dinamicas
+  const { columnasVisibles } = useConfiguracionColumnas('brigadas', user?.sede_id ?? undefined);
+  const isColumnVisible = (col: string) => columnasVisibles.length === 0 || columnasVisibles.includes(col);
 
   // Mutations
   const crearMutation = useMutation({
@@ -319,6 +324,7 @@ export default function BrigadasPage() {
               <option value="true">Activas</option>
               <option value="false">Inactivas</option>
             </select>
+            <ConfiguracionColumnas tabla="brigadas" sedeId={user?.sede_id ?? undefined} />
             <button
               onClick={() => setModalCrear(true)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -334,63 +340,71 @@ export default function BrigadasPage() {
           <table className="w-full">
             <thead className="bg-gray-700 text-white">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Chapa</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Nombre</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold">Rol</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold">Grupo</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Sede</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Telefono</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold">Estado</th>
+                {isColumnVisible('chapa') && <th className="px-4 py-3 text-left text-sm font-semibold">Chapa</th>}
+                {isColumnVisible('nombre') && <th className="px-4 py-3 text-left text-sm font-semibold">Nombre</th>}
+                {isColumnVisible('rol_brigada') && <th className="px-4 py-3 text-center text-sm font-semibold">Rol</th>}
+                {isColumnVisible('grupo') && <th className="px-4 py-3 text-center text-sm font-semibold">Grupo</th>}
+                {isColumnVisible('sede') && <th className="px-4 py-3 text-left text-sm font-semibold">Sede</th>}
+                {isColumnVisible('telefono') && <th className="px-4 py-3 text-left text-sm font-semibold">Telefono</th>}
+                {isColumnVisible('email') && <th className="px-4 py-3 text-left text-sm font-semibold">Email</th>}
+                {isColumnVisible('estado') && <th className="px-4 py-3 text-center text-sm font-semibold">Estado</th>}
                 <th className="px-4 py-3 text-center text-sm font-semibold">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={99} className="px-4 py-8 text-center text-gray-500">
                     Cargando brigadas...
                   </td>
                 </tr>
               ) : brigadas.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={99} className="px-4 py-8 text-center text-gray-500">
                     No se encontraron brigadas
                   </td>
                 </tr>
               ) : (
                 brigadas.map((brigada) => (
                   <tr key={brigada.id} className={!brigada.activa ? 'bg-gray-100' : 'hover:bg-gray-50'}>
-                    <td className="px-4 py-3 font-mono text-sm font-bold text-gray-900">{brigada.chapa || '-'}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{brigada.nombre || '-'}</td>
-                    <td className="px-4 py-3 text-center">
-                      {brigada.rol_brigada ? (
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${getRolColor(brigada.rol_brigada)}`}>
-                          {brigada.rol_brigada}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400 text-sm">Sin asignar</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {brigada.grupo ? (
+                    {isColumnVisible('chapa') && <td className="px-4 py-3 font-mono text-sm font-bold text-gray-900">{brigada.chapa || '-'}</td>}
+                    {isColumnVisible('nombre') && <td className="px-4 py-3 font-medium text-gray-900">{brigada.nombre || '-'}</td>}
+                    {isColumnVisible('rol_brigada') && (
+                      <td className="px-4 py-3 text-center">
+                        {brigada.rol_brigada ? (
+                          <span className={`px-2 py-1 rounded text-xs font-semibold ${getRolColor(brigada.rol_brigada)}`}>
+                            {brigada.rol_brigada}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-sm">Sin asignar</span>
+                        )}
+                      </td>
+                    )}
+                    {isColumnVisible('grupo') && (
+                      <td className="px-4 py-3 text-center">
+                        {brigada.grupo ? (
+                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                            brigada.grupo === 1 ? 'bg-indigo-600 text-white' : 'bg-purple-600 text-white'
+                          }`}>
+                            Grupo {brigada.grupo}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
+                      </td>
+                    )}
+                    {isColumnVisible('sede') && <td className="px-4 py-3 text-sm text-gray-700">{brigada.sede_nombre}</td>}
+                    {isColumnVisible('telefono') && <td className="px-4 py-3 text-sm text-gray-700">{brigada.telefono || '-'}</td>}
+                    {isColumnVisible('email') && <td className="px-4 py-3 text-sm text-gray-700">{brigada.email || '-'}</td>}
+                    {isColumnVisible('estado') && (
+                      <td className="px-4 py-3 text-center">
                         <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                          brigada.grupo === 1 ? 'bg-indigo-600 text-white' : 'bg-purple-600 text-white'
+                          brigada.activa ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
                         }`}>
-                          Grupo {brigada.grupo}
+                          {brigada.activa ? 'Activa' : 'Inactiva'}
                         </span>
-                      ) : (
-                        <span className="text-gray-400 text-sm">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{brigada.sede_nombre}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{brigada.telefono || '-'}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                        brigada.activa ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-                      }`}>
-                        {brigada.activa ? 'Activa' : 'Inactiva'}
-                      </span>
-                    </td>
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
                         <button

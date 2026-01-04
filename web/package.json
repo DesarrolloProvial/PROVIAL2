@@ -24,7 +24,7 @@
     "react-hot-toast": "^2.4.1",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.9.6",
-    "recharts": "^3.5.1",
+    "recharts": "^3.6.0",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^2.6.0",
     "xlsx": "^0.18.5",

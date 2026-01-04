@@ -1,0 +1,7746 @@
+{
+  "grupo1": [
+    {
+      "chapa": "3018",
+      "nombre": "HERRARTE SILVA, GUSTAVO ADOLFO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BV",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "4046",
+      "nombre": "SALAZAR PORTILLO, PEDRO ANTONIO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BV",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11040",
+      "nombre": "TORRES GALVAN LUIS FERNANDO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BV",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "4015",
+      "nombre": "Fajardo Rodas, Elmer Antonio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER II",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11002",
+      "nombre": "Albisures García, Juan Carlos",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11004",
+      "nombre": "Arana Franco, Wagner Danuvy",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11017",
+      "nombre": "Garcia Lima, Edy Reginaldo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11006",
+      "nombre": "Atz Argueta, Jose Vicente",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12003",
+      "nombre": "Carias Zuñiga, Walfre Oswaldo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12018",
+      "nombre": "Mendoza Zelada, Marvín Emanuel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12024",
+      "nombre": "Obregón Chinchilla, Jorge Luis",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15096",
+      "nombre": "Orellana González, Leonel Enrique",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "7010",
+      "nombre": "De Leon Roldan, Marcos Roberto",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "13008",
+      "nombre": "DUARTE ALAY ROBERTO CARLOS",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15012",
+      "nombre": "Barrera Rodríguez, Félix Daniel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "14015",
+      "nombre": "Martinez Anavisca, William Estuardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15017",
+      "nombre": "Cabrera Suchite, Kleiver Josué",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15027",
+      "nombre": "Colop Xec, Abelardo Abigaíl",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15103",
+      "nombre": "Pérez Pérez, José Emedardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16040",
+      "nombre": "Cortéz Menéndez, Oscar Anibal",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "13037",
+      "nombre": "Vasquez Rivera, Luis Miguel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15021",
+      "nombre": "Cermeño Barahona, Wilsson Israel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15022",
+      "nombre": "Cermeño Barrios, Edgar Alfonso",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15024",
+      "nombre": "Chinchilla Valenzuela, Kevin Estuardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15036",
+      "nombre": "Donis Ortíz, Marco Tulio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15051",
+      "nombre": "Gómez Aceytuno, Manuel Estuardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15062",
+      "nombre": "Hernández Fajardo, Rufino David",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16036",
+      "nombre": "Corado Corado, Jerzon Anibal",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16048",
+      "nombre": "Escobar Beltrán, Marlon Geobany",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16095",
+      "nombre": "Marroquin Argueta, Esleyder Antonio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16107",
+      "nombre": "Morán Cazún, Mynor Armando",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16157",
+      "nombre": "Zepeda Chavez, Axel Ariel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17010",
+      "nombre": "Peñate Moran, Ana Mary",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17039",
+      "nombre": "Ortiz Catalán, Geovanni José Maria",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17048",
+      "nombre": "Santiago Sánchez, Joel Antonio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18010",
+      "nombre": "Campos González, Rony Emilio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18012",
+      "nombre": "Castillo Herrera, Dony Isidro",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18024",
+      "nombre": "Figueroa Moran, Edwin Alexander",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18030",
+      "nombre": "Hernández Castillo, Ahiderson André",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18042",
+      "nombre": "Pérez Osorio, Rudy Osmín",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19008",
+      "nombre": "Arana Martínez, Pedro Alberto",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19015",
+      "nombre": "Batres Hernández, Denilson Ottoniel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19016",
+      "nombre": "Cabrera Alfaro, Carlos Alfonso",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19022",
+      "nombre": "Carías Castro, Mario Llivinson",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19024",
+      "nombre": "Castillo Godoy, Mario Alejandro",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19026",
+      "nombre": "Cazún Zepeda, María Concepción",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19028",
+      "nombre": "Chinchilla Corado, Darwin Omar",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19039",
+      "nombre": "Dominguez Gaitán, Amalio Rodrigo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19041",
+      "nombre": "Donis Alfaro, María Celeste",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19047",
+      "nombre": "Florián Vásquez, José Rolando",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19049",
+      "nombre": "Fuentes Cruz, Luis Diego",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19050",
+      "nombre": "Galicia Gomez, Nelson Geovanny",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19052",
+      "nombre": "Galindo Hernández, Osmin Manolo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19056",
+      "nombre": "García Granados, Edilson Esaul",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19058",
+      "nombre": "Garcia Peréz, Lucas Fernando",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19059",
+      "nombre": "García Pineda, Amner Estuardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19063",
+      "nombre": "Garza Godoy, Katerin Dalila",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19067",
+      "nombre": "González Alfaro, Eddy Rafael",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19070",
+      "nombre": "González Jiménez, Elman Ivan",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19076",
+      "nombre": "Hernández Salguero, Karen Gemima",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19089",
+      "nombre": "López Alvarez, Lusbin Guadalupe",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19094",
+      "nombre": "López peña, Luis Fernando",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19110",
+      "nombre": "Najarro Barillas, Otilia Yesenia",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19111",
+      "nombre": "Willian Estuardo, Najarro Osorio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19133",
+      "nombre": "Ramirez Santos Willian Estuardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19162",
+      "nombre": "Vásquez Domínguez, Manolo Exzequiel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19163",
+      "nombre": "Vásquez Gonzalez, Edilson Romario",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19170",
+      "nombre": "Xoná Ajanel, Darwin Abelino",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19171",
+      "nombre": "Zamora Cabrera, José Luis",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "9005",
+      "nombre": "Quiñonez Hernandez, Edwing Orlando",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADIER IV",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12026",
+      "nombre": "Quiná Simon, Marvin Dinael",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11024",
+      "nombre": "Juarez Sanchez, Edwin Antonio",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12022",
+      "nombre": "Morataya Rosales, Gloria Lizeth",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BII",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17004",
+      "nombre": "Gomez Ramirez, Samy Renato",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16008",
+      "nombre": "Belloso Peñate Karen Jeannette",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16100",
+      "nombre": "Menchú Anavisca, Hilmy Julissa",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16057",
+      "nombre": "Florián Morán, Luis Fernando",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17027",
+      "nombre": "Jimenez Castillo Erick Geovanny",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18013",
+      "nombre": "Chapas Gonzáles, Catherin Yanira",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18032",
+      "nombre": "Jorge López, Kimberly Alejandra",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19031",
+      "nombre": "Corado Morán, Edgar Antonio",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19048",
+      "nombre": "Franco Herrera, Alma Yaneth",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19084",
+      "nombre": "Latin Bernal, Sandy Esperanza",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19068",
+      "nombre": "González Alvarado, Lestid Eliazar",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19091",
+      "nombre": "Lopez Jimenez, Jesfri Omar",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19100",
+      "nombre": "Maroquin Orozco, Iris Madai",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19109",
+      "nombre": "Morales Mejía, Yair Alexander",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "1006",
+      "nombre": "Santos Avila, Marvin, Donato",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "5003",
+      "nombre": "CUMEZ CHACACH, FREDY",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12010",
+      "nombre": "Esquivel Herrera, Blas Roosenvelt",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16061",
+      "nombre": "Gaitán Cruz, Juan José",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "13036",
+      "nombre": "Retana Valladares, Horacio Fabricio",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "14008",
+      "nombre": "Charchalac Cox, Victor Raul",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15002",
+      "nombre": "Alonzo Morales, Victor Manuel",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15056",
+      "nombre": "González García, Brayan Josué",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15128",
+      "nombre": "Santacruz Salazar, Ludbin Obel",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16042",
+      "nombre": "De La Rosa Monterroso, Manuel De Jesús",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16070",
+      "nombre": "González Ríos, Walfred David Alexander",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16097",
+      "nombre": "Martínez Arévalo, Noé De Jesús",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18019",
+      "nombre": "De Leon Alvarado Cesar Alejandro",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18021",
+      "nombre": "Díaz Chan, Josue David",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19046",
+      "nombre": "Florián Vásquez, José Manuel",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19118",
+      "nombre": "Pérez Arias, Axel René",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19126",
+      "nombre": "Pop Xé, Maurilio",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19135",
+      "nombre": "Retana Cardona, Jhonatan Guillermo",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19138",
+      "nombre": "Reyes Ortiz, Victor Daniel",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19161",
+      "nombre": "Vásquez Domínguez, Omer Naias",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "8044",
+      "nombre": "SANTIZO PÉREZ, JUAN ANTONIO",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "5041",
+      "nombre": "REYES SACUL CUPERTINO",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15061",
+      "nombre": "Guzmán Lemus, Erick Randolfo",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16052",
+      "nombre": "Escobar García, Kevin Alfredo",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16113",
+      "nombre": "Orellana Estrada, Jesús Emilio",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17036",
+      "nombre": "Najarro Barillas, Elvia Dalila",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18008",
+      "nombre": "Caál España, Astrid Melissa",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18016",
+      "nombre": "Cortez Sontay, Josselyne Anabella",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18025",
+      "nombre": "Garcia Garcia, Walter",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18026",
+      "nombre": "Garrido Trabanino, Evelyn Nohelí",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18029",
+      "nombre": "Gudiel Gallardo Angeliz Amordi",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19001",
+      "nombre": "Aguilar Melgar, Angel Humberto",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19019",
+      "nombre": "Canahuí García, Helen Marisol",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19030",
+      "nombre": "Corado Garza, Estéfany Melisa",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19051",
+      "nombre": "Galicia Najarro, Gerson David",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "4022",
+      "nombre": "Gutierrez Chaclán, Fernando Norberto",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "7058",
+      "nombre": "Ramirez Castillo, Remigio Alexander",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "9019",
+      "nombre": "Orellana Paz, David Gerardo",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12002",
+      "nombre": "Camas Andrade, Edwin José",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15052",
+      "nombre": "Gómez González, Wilfido Enrique",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "13010",
+      "nombre": "Hernandez Pèrez, Josuè Daniel",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15044",
+      "nombre": "Fuentes García, Milton Danilo",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18004",
+      "nombre": "Arévalo Florian, Paula Jimena",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19005",
+      "nombre": "Alvarez Hernandez, Domingo Bayron",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19112",
+      "nombre": "Navarro Vasquez Nancy Roxana",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19014",
+      "nombre": "Barrios López, Axel Eberto",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19130",
+      "nombre": "Ramírez Herrarte, Jenderly Andrea",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "8012",
+      "nombre": "Cuxil Xicay, Edwin Estuardo",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15019",
+      "nombre": "Carrillo García, Walter Aristides",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15064",
+      "nombre": "Isaacs Peñate, Carlos Iván",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15003",
+      "nombre": "Ardiano Velásquez, Abdi Abisaí",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15069",
+      "nombre": "López Castro, Francel Isaías",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16038",
+      "nombre": "Córdova González, Junnior Danilo",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18020",
+      "nombre": "De leon López, Alexander David",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18044",
+      "nombre": "Ramirez Guerrero, Sandro Emmanuel",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19002",
+      "nombre": "Aguilón Pérez, Juan Orlando",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19021",
+      "nombre": "Cardona López, Wilson Adán",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19036",
+      "nombre": "Diaz, Luis Angel",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19107",
+      "nombre": "Monzón García, Miguel Angel",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19156",
+      "nombre": "Tomás Agustín, Franklin Mayck",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19165",
+      "nombre": "Velasquez Coronado, Vinicio Efraín",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "8003",
+      "nombre": "ARRIVILLAGA OLIVA, EDGAR GEOVANNI",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16015",
+      "nombre": "Camó Acoj, Cristhian Geovany",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16139",
+      "nombre": "Ruiz Gutiérrez, Edvin José Rodolfo",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17047",
+      "nombre": "Sandoval Aguilar, RubÍ de los Angeles",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18035",
+      "nombre": "Morales Gálvez, Gervin Friceli",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19066",
+      "nombre": "Gómez Ortíz, Carmen Liliana",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19101",
+      "nombre": "Martinez Melgar, Gloria Francis Amabel",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19116",
+      "nombre": "Peñate Colindres, Yeymy Elizabeth",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19136",
+      "nombre": "Retana Mazariegos, Yeni Maritza",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19152",
+      "nombre": "Sánchez Vargas, Carlos Humberto",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19169",
+      "nombre": "Villanueva Corado, Jerson Alexander",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "4054",
+      "nombre": "XITUMUL PÉREZ JULIO ALBERTO",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15125",
+      "nombre": "Samayoa Dubón, Cristian Omar",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16117",
+      "nombre": "Ortíz Paz, Luis Carlos",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18009",
+      "nombre": "Cal Cal, Edgar Daniel",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18037",
+      "nombre": "Monzon Ramos, Cristopher Ricardo",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18052",
+      "nombre": "Santos López, Yulian Ronaldo",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19060",
+      "nombre": "García Pineda, Anibal Nicolas",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19072",
+      "nombre": "Gudiel Castillo, Ever Yahir Alexis",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19078",
+      "nombre": "Ichich Choc, Edgar Zaqueo",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19096",
+      "nombre": "Maquin Cacao, Cristian Vidal",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19103",
+      "nombre": "Melgar, Rogelio Raquel",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19144",
+      "nombre": "Rodríguez Hipólito, Cristian Alexander",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "13017",
+      "nombre": "Melgar Lòpez, Edwin Leonardo",
+      "sede_excel": "SEDE PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADIER II",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "9015",
+      "nombre": "Fuentes Fuentes, Federico Margarito",
+      "sede_excel": "SEDE PETEN",
+      "sede_id": 3,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16031",
+      "nombre": "Chén Xuc, José Luis",
+      "sede_excel": "SEDE PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16131",
+      "nombre": "Revolorio Arana, Brayan Alexander",
+      "sede_excel": "SEDE PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17032",
+      "nombre": "Méndez Súchite Roslyn Mariela",
+      "sede_excel": "SEDE PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19114",
+      "nombre": "Ortíz Jímenez, Esmeralda Idalia",
+      "sede_excel": "SEDE PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19164",
+      "nombre": "Vela Ortíz, Maynor Manuel",
+      "sede_excel": "SEDE PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "4016",
+      "nombre": "Fuentes López, Uber Dionel",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12025",
+      "nombre": "Quevedo Corado, Jeidí Patricia",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BII",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11035",
+      "nombre": "Quieza Porras, Chrystian Mario Enrique",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15063",
+      "nombre": "Hernández y Hernández, Edwin Rolando",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15014",
+      "nombre": "Bautista De León, Sergio Rubén",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16033",
+      "nombre": "Cojom Damian, Emanuel Isaías",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18039",
+      "nombre": "Peña Lemus, Elvis Rogelio",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19082",
+      "nombre": "Juárez Alfaro, Gustavo Adolfo",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19106",
+      "nombre": "Monzón de Paz, Jennifer Vanessa",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19129",
+      "nombre": "Rabanales Fuentes César Obdulio",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19149",
+      "nombre": "Sales Gómez, Antony Josue",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "1016",
+      "nombre": "EDNA MELISA MARCHORRO PAIZ",
+      "sede_excel": "EDU. VIAL",
+      "sede_id": 1,
+      "rango": "BDIER",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "4001",
+      "nombre": "AGUSTIN LOPEZ, ESTEBAN DOMINGO",
+      "sede_excel": "ACCIDENTOLOGIA",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17020",
+      "nombre": "Cifuentes Cermeño, Dora Iracema",
+      "sede_excel": "FINANCIERO",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15075",
+      "nombre": "Martinez Brol, Anthony Steven",
+      "sede_excel": "ASUNTOS INTER.",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11026",
+      "nombre": "Lopez Rosales, Marco Luis",
+      "sede_excel": "VOCERIA",
+      "sede_id": 1,
+      "rango": "BRIGADIER II",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16086",
+      "nombre": "Lima López, Hugo David",
+      "sede_excel": "ASUNTOS INTER.",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19087",
+      "nombre": "López, Gerber Ottoniel",
+      "sede_excel": "ACCIDENTOLOGIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15004",
+      "nombre": "Argueta Bernal, Beyker Eduardo",
+      "sede_excel": "ASUNTOS INTER.",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16151",
+      "nombre": "Sosa Barrios, Bryan Josue",
+      "sede_excel": "ASUNTOS INTER.",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "9021",
+      "nombre": "Perez Miranda, Feliciano",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "13009",
+      "nombre": "García Esquivel, Lester Yancarlo",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADIER I",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15040",
+      "nombre": "Esteban Estrada, Edras Josué",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16146",
+      "nombre": "Sical Manuel, Marlon Estuardo",
+      "sede_excel": "ASUNTOS INTER.",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "14020",
+      "nombre": "Najarro Moran, Dular Migdael",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16019",
+      "nombre": "Carrillo Rossell, Kevin Arnaldo",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15015",
+      "nombre": "Belloso Flores, Carlos Alex",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15099",
+      "nombre": "Peñate Arévalo, Ana Patricia",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "14017",
+      "nombre": "Monterroso Perez, Mynor Rene",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "13022",
+      "nombre": "Salgado Kegel, Romeo Alberto",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17000",
+      "nombre": "Lisardo Tash Giron",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    }
+  ],
+  "grupo2": [
+    {
+      "chapa": "5037",
+      "nombre": "QUICHÉ VELÁSQUEZ, BARTOLO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BV",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "1012",
+      "nombre": "ANGEL MARIO GARCIA GARCIA",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BV",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "10032",
+      "nombre": "RAMOS CINTO RODELFI ADELAIDO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER lll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "7045",
+      "nombre": "RODAS CARCAMO CESAR JOAQUIN",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "3025",
+      "nombre": "Perdomo Lòpez, Edgar Rolando",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "12005",
+      "nombre": "Castillo aguilar Breder Vidani",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15095",
+      "nombre": "NÁJERA MORALES EDVIN ANTONIO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15106",
+      "nombre": "PINEDA OSORIO, BRYAN ALEXANDER",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIIl",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "11018",
+      "nombre": "GODINEZ VELASQUEZ KEVIN",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "13012",
+      "nombre": "LEIVA RAMOS EVERTH LEMUEL",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "Bll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16153",
+      "nombre": "Valladares González Héctor Nóel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "Bll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15139",
+      "nombre": "ZUÑIGA FERNÁNDEZ GERMAN DANILO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "Bll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "12014",
+      "nombre": "Jimenez Cortez David Isaias",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "13011",
+      "nombre": "Juàrez Chen, Edwin Eduardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15097",
+      "nombre": "Ortíz Catalán, Augusto",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15098",
+      "nombre": "Palencia Morales, Anderson Brenner",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15129",
+      "nombre": "Santos Pérez, William Michael",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15073",
+      "nombre": "MANZANO PÉREZ JOSEPH ALEXANDER",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16083",
+      "nombre": "Ixchop Corado Efémber José Rodrigo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16152",
+      "nombre": "Tecú Raxcacó Víctor Manuel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17051",
+      "nombre": "Veliz Gereda Yerlin Yesenia",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "14024",
+      "nombre": "Santos Loy, Hiben Amadiel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15006",
+      "nombre": "Aroche Ucelo, Francisco Jesús",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15137",
+      "nombre": "Velásquez Escobar, Roger Wilfredo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15050",
+      "nombre": "Girón Méndez, Miguel Angel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15068",
+      "nombre": "Lima Yanes Jerson Geovani",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16032",
+      "nombre": "Chiroy Revolorio Kerlin Arturo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16075",
+      "nombre": "Hernández Barrera Rufino Dagoberto",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16076",
+      "nombre": "Hernández Castañeda Mario José",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16101",
+      "nombre": "Mendez Malchic, José Efraín",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16128",
+      "nombre": "Ramírez Gereda Tayron Alexander",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16155",
+      "nombre": "Virula y Virula, Osiel Antonio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17015",
+      "nombre": "Blanco Carias Evelin Maritza",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17033",
+      "nombre": "Morales Marroquin Dilan Alexis",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17034",
+      "nombre": "Gerson Augusto Morales Ochoa",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18018",
+      "nombre": "Alberto Josué  Cruz Sarceño",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18049",
+      "nombre": "Salazar Ortíz Walter Arturo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18046",
+      "nombre": "Ramirez Pineda Franklin Irael",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18048",
+      "nombre": "Reyes Ortiz Abner Antonio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18053",
+      "nombre": "Toto Paz Kevin Alberto",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18003",
+      "nombre": "Albizures Ramírez Wilmer Abel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18022",
+      "nombre": "Escobar Peñate Rubén Alejandro",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18017",
+      "nombre": "Crúz Méndez Cristian Alfredo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19151",
+      "nombre": "Sánchez Tobar Victor Francisco",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19042",
+      "nombre": "Ronald Israel Escobar Echeverría",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19071",
+      "nombre": "Grijalva Belloso Juan Carlos",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19077",
+      "nombre": "Hurtado Asencio Elvidio De Jesús",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19083",
+      "nombre": "Jui Alvarado Hugo Leonel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19069",
+      "nombre": "González Escobar Leidy Mariela",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19140",
+      "nombre": "Ríos Barrera De Asencio Zoila Virginia",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19035",
+      "nombre": "Cutzal García Eddy Obdulio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19095",
+      "nombre": "López Témaj Jonatan Rolando",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19155",
+      "nombre": "Tagua Zanunzini Frank Antonni",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19166",
+      "nombre": "Aury Ayendy Velásquez Dominguez",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19010",
+      "nombre": "Grely Aneth Aviche Carías",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19006",
+      "nombre": "Alvarez Muñoz Christian René",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19121",
+      "nombre": "Pérez Pérez Eber José",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19125",
+      "nombre": "Ponciano Lázaro Sandra Angélica",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19040",
+      "nombre": "Juan Antonio Donis Alfaro",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19009",
+      "nombre": "Arevalo Herrera Marvín Eduardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19044",
+      "nombre": "Estrada Corominal Mirza Lizette",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19033",
+      "nombre": "Cortéz Velásquez Alex Adonis",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19104",
+      "nombre": "Mazariegos Arana Gilma Yolanda",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19105",
+      "nombre": "Miranda Méndez Mynor",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19013",
+      "nombre": "Barrientos Corado, Danis Estid",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19117",
+      "nombre": "Peralta Marroquín Jasmine Saraí",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19143",
+      "nombre": "Rivera Vásquez Beverlin Graciela",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "5005",
+      "nombre": "CRUZ VELIZ OSMAR RAMIRO",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADIER lll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "9016",
+      "nombre": "JOR MAX RUBEN DARIO",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "4009",
+      "nombre": "CISNEROS ESQUIVEL RICARDO WILFREDO",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15005",
+      "nombre": "Argueta Sandoval, Delmi Odíly",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15138",
+      "nombre": "Yoc Elel, Edson Ernesto",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "6026",
+      "nombre": "Mateo Lopez, Cesar Everildo",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15041",
+      "nombre": "Estrada Morales, Carlos Leonel",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17022",
+      "nombre": "Divas Anavisca Carla Yohana",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17045",
+      "nombre": "Ramirez Chapas Antony Mateus",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18054",
+      "nombre": "Velásquez Mejía Yásmin Sorana",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19088",
+      "nombre": "López Gustavo Adolfo",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19020",
+      "nombre": "Cardona Coronado Ronald Geremías",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19145",
+      "nombre": "Rodríguez Orozco Yesica Fabiola",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18038",
+      "nombre": "Osorio Machán María Yesenia",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18047",
+      "nombre": "Madelin Ivania Revolorio Orantes",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19004",
+      "nombre": "Agustín Diego Luis Fernando",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19038",
+      "nombre": "De Páz Santos Breder Alexander",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19080",
+      "nombre": "Isidro Baltazar Adolfo Angel",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "3031",
+      "nombre": "RAMIREZ MARROQUIN, SANTIAGO LEONIDAS",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "4028",
+      "nombre": "LAJ TECU JUAN ANTONIO",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "10013",
+      "nombre": "GONZALES CARDONA LUIS ALBERTO",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "10033",
+      "nombre": "REVOLORIO REVOLORIO SILVERIO ELISEO",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15031",
+      "nombre": "Cruz López, Estuardo",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16067",
+      "nombre": "Gómez Elvira José Fernando",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15011",
+      "nombre": "Barillas Velásquez, Jaime Bernabé",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "13027",
+      "nombre": "Campos Retana, Aroldo Federico",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15082",
+      "nombre": "Miranda Aguilar, Esaú Emanuel",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15094",
+      "nombre": "Morán López, Jayme Josue.",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15100",
+      "nombre": "Pérez Asencio, Ronal Orlando",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18002",
+      "nombre": "Adriano Hernández Joshuá Emanuel",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18033",
+      "nombre": "Lopez Lau Rogers Ernesto",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18050",
+      "nombre": "Sánchez Pérez Esteban",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19012",
+      "nombre": "Barco Galicia Carlos Eduardo",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19065",
+      "nombre": "Gómez Sales Baudilio",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19032",
+      "nombre": "Corado y Corado José David",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19025",
+      "nombre": "Cazún Godoy Walter Oswaldo",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19142",
+      "nombre": "Rivera Vásquez Ander Yoel",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19131",
+      "nombre": "Ramirez Chapas Brandon Omar",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "1048",
+      "nombre": "MORALES ROMAN, JOSÈ ADRIÀN",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADIER lll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "9006",
+      "nombre": "OLIVA PAIZ, UBALDO",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15049",
+      "nombre": "García Pineda, Gelber Alexander",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16144",
+      "nombre": "Santos Beltetón, Yonatan Eduardo",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15109",
+      "nombre": "Quinteros Del Cid, Ervin Edgardo",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16130",
+      "nombre": "Ramírez Yanes, Jonyr Rolando",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17037",
+      "nombre": "Ordoñez García Sindy Carolina",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18051",
+      "nombre": "Santos Belteton, Seleni Yoliza",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19141",
+      "nombre": "Rivera Esquivel Edwin Vinicio",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19054",
+      "nombre": "García Bertránd Yeison Wilfredo",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19018",
+      "nombre": "Campos Cermeño Miguel Angel Arcangel",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19113",
+      "nombre": "Ordoñez Ortega Sergio Estuardo",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19154",
+      "nombre": "Soto Monterroso Freiser Enrique",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19099",
+      "nombre": "Marroquín Orellana María Alejandra",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19108",
+      "nombre": "Morales Mejía Beberlyn Alejandra",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19146",
+      "nombre": "Ruano Pernillo Vasti Madai",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "1032",
+      "nombre": "MAZARIEGOS RODRÍGUEZ, JULIO ORLANDO",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BDIER lll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "3032",
+      "nombre": "Ramirez Toc, Jorge Mario",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "7006",
+      "nombre": "Carrillo Hernàndez, Juan Alberto",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16106",
+      "nombre": "Morales Ochoa Selvin Vinicio",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "Bl",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17016",
+      "nombre": "Campos Cermeño César Eduardo",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19037",
+      "nombre": "De Paz Nicolás, Juan Alberto",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19034",
+      "nombre": "Marcela Judith Cotto Sanchez",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19115",
+      "nombre": "Pablo Tomás Gricelda Micaela",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19147",
+      "nombre": "Salanic Gómez Marvin Orlando",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19134",
+      "nombre": "Ramos Godoy Aracely",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19062",
+      "nombre": "Garza Flores William Armando",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19168",
+      "nombre": "Osbin Audiel Veliz Ramírez",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "7012",
+      "nombre": "DIAZ DE LEON GUSTAVO ADOLFO",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "12031",
+      "nombre": "Toj Lopez,  William Edilser",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15047",
+      "nombre": "García García, Pedro César",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16017",
+      "nombre": "Cano Serrano, Gervin Geovany",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16092",
+      "nombre": "López Morales, Mario Samuel",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16114",
+      "nombre": "Orozco Témaj Byron Armando",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18023",
+      "nombre": "Estrada Corominal Walter Isaias",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18027",
+      "nombre": "Godinez Martinez Jorge Antonio",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19029",
+      "nombre": "Cop Galvan Guillermo Eduardo",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19139",
+      "nombre": "Reyna Rivera Walter Alexis",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19092",
+      "nombre": "López Montero Crúz Armando",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19122",
+      "nombre": "Pérez Ramírez Elfido Miguel",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19157",
+      "nombre": "Tomás Cardona Fredy Ovando",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "6033",
+      "nombre": "Torres Perez, Denis Bernardo",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "8031",
+      "nombre": "PACHECO ESCOBAR VILMA YANETH",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "Bll",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16156",
+      "nombre": "Vivas Nimacachi David Amilcar",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16103",
+      "nombre": "Miranda Melgar Edson Ariel",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17038",
+      "nombre": "Ortiz Estrada Karla Edith",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19074",
+      "nombre": "Hernández De León Maria Fernanda De Aquino",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19057",
+      "nombre": "García Hernández Luciano",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19043",
+      "nombre": "Esquivel Ramírez Medary",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19017",
+      "nombre": "Cal Xona Liliana Beverly",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19127",
+      "nombre": "Quiñonez Hernández Rudimán Omar",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19120",
+      "nombre": "Pérez Crúz César Adonay",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19064",
+      "nombre": "Godoy López Wilson",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19093",
+      "nombre": "López Muñoz Augusto César",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "10005",
+      "nombre": "CALDERON RODRIGUEZ GERSON NOE",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "8043",
+      "nombre": "RIVAS DIAZ KENNEDY JOSUÉ",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15066",
+      "nombre": "Landaverde Rodriguez Byron Fernando",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16050",
+      "nombre": "Escobar Cermeño, Marvin Geovani",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17023",
+      "nombre": "Flores Vargas Douglas Waldermar",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18011",
+      "nombre": "Castellanos Perez Yeferson Gerber H.",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18036",
+      "nombre": "Morales Rivas Cristian Francisco",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19102",
+      "nombre": "Mayorga Pérez Remy Angel Arturo",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19098",
+      "nombre": "Marroquín Argueta Edwin Humberto",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19085",
+      "nombre": "Lémus Ramirez Wilmer Samuel",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "5006",
+      "nombre": "CIFUENTES CU JOSE LUIS",
+      "sede_excel": "POPTUN  PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16079",
+      "nombre": "Hernández Juárez, Pablo",
+      "sede_excel": "POPTUN  PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17019",
+      "nombre": "Chol Quiroa Cesar Antonio",
+      "sede_excel": "POPTUN  PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18043",
+      "nombre": "Perez Perez Damian de Jesus",
+      "sede_excel": "POPTUN  PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19159",
+      "nombre": "Valdéz Herrera Carlos Alberto",
+      "sede_excel": "POPTUN  PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "7043",
+      "nombre": "RAMOS ALFARO, BAYRON YOBANY",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16094",
+      "nombre": "Lorenzo Yac Anselmo",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15131",
+      "nombre": "Sióc Ortíz, Marvyn Gundemaro",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16077",
+      "nombre": "Hernández Cotill Abner Misael",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18015",
+      "nombre": "Coronado Alvarez Keiry Mirella",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19073",
+      "nombre": "Hernández Aguilar Angel David",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19124",
+      "nombre": "Pineda Carías Ivan Alexander",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19148",
+      "nombre": "Sales Gómez, Adán Alexander",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19160",
+      "nombre": "Valenzuela Asencio Lucas David",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "3016",
+      "nombre": "HERNÀNDEZ GALDÀMEZ, WILNER",
+      "sede_excel": "DIRECCION",
+      "sede_id": 1,
+      "rango": "BRIGADIER GENERAL",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "1022",
+      "nombre": "Adriano Lopez, Manuel de Jesús",
+      "sede_excel": "ACCIDENTOLOGIA",
+      "sede_id": 1,
+      "rango": "BDIER V",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "3024",
+      "nombre": "Morales Romero, Griselda Roxana",
+      "sede_excel": "EDUCACION VIAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER III",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "10041",
+      "nombre": "VELASQUEZ PABLO TELESFORO ALBERTO",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BDIER lll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "10025",
+      "nombre": "MONZON MORALES MITSIU YONATHAN",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "11020",
+      "nombre": "GUERRA MARROQUIN JOEL WILFREDO",
+      "sede_excel": "FINACIERO",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "11034",
+      "nombre": "PEREZ GOMEZ BRYAN ISRAEL",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "Blll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "11042",
+      "nombre": "Xajap Xuya, Jose Wenceslao",
+      "sede_excel": "INVENTARIO",
+      "sede_id": 1,
+      "rango": "Blll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17012",
+      "nombre": "Retana Vásquez, José Armando",
+      "sede_excel": "ASUNTOS INTERNOS",
+      "sede_id": 1,
+      "rango": "Blll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16145",
+      "nombre": "Santos Turcios, Nelson Bladimiro",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "Bll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15080",
+      "nombre": "Méndez García, Wiliam Neftalí",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16064",
+      "nombre": "García Ramirez Elder Alfredo",
+      "sede_excel": "ASUNTOS INTERNOS",
+      "sede_id": 1,
+      "rango": "Bl",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15025",
+      "nombre": "Chú Ichich, Oscar Arnoldo",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15026",
+      "nombre": "Chub Coc, Salvador",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15079",
+      "nombre": "Mejía Hernández, Christian Geovanni",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16016",
+      "nombre": "Cano Boteo Irrael",
+      "sede_excel": "ASUNTOS INTERNOS",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16158",
+      "nombre": "Florian Quiquivix, Edvin David",
+      "sede_excel": "ASUNTOS INTERNOS",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16158",
+      "nombre": "Zuñiga Godoy José Armando",
+      "sede_excel": "ASUNTOS INTERNOS",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17031",
+      "nombre": "Mayorga Perez Keyner Josue",
+      "sede_excel": "ASUNTOS INTERNOS",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17050",
+      "nombre": "Velásquez Yat Daniel Oswaldo",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18034",
+      "nombre": "Morales Barrios Anderson Giovani",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19061",
+      "nombre": "Gacía Zuñiga Nixozón Rolando",
+      "sede_excel": "ALMACEN",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19150",
+      "nombre": "Sánchez Ramos Jefrey Samuel",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15134",
+      "nombre": "Valdez Martínez, Cristopher Obed",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19119",
+      "nombre": "Pérez Arriaza Victor Ovidio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16045",
+      "nombre": "FRANKLIN YOEL DIAZ SOTO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "ASUNTOS INTERNOS",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17017",
+      "nombre": "Campos Pinelo Edwin Daniel",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15074",
+      "nombre": "MARROQUIN LOPEZ, EDWIN FABIO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "DIRECCION",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19137",
+      "nombre": "Revolorio Latín German Oswaldo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15076",
+      "nombre": "Martínez Herrera, Miguel Antonio",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19023",
+      "nombre": "Carías Godoy Ronald Vinicio",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19053",
+      "nombre": "García Asencio Dandis Imanol",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19132",
+      "nombre": "Ramírez Herrera Mynor Anibal",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17005",
+      "nombre": "LOPEZ GUILLEN MARIO ROLANDO",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15086",
+      "nombre": "MONTERROSO ARGUETA EDWIN RODOLFO",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18028",
+      "nombre": "Gómez Méndez Persy Aristides",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19075",
+      "nombre": "Hernández López Carlos Alberto",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    }
+  ],
+  "todasBrigadas": [
+    {
+      "chapa": "3018",
+      "nombre": "HERRARTE SILVA, GUSTAVO ADOLFO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BV",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "4046",
+      "nombre": "SALAZAR PORTILLO, PEDRO ANTONIO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BV",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11040",
+      "nombre": "TORRES GALVAN LUIS FERNANDO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BV",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "4015",
+      "nombre": "Fajardo Rodas, Elmer Antonio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER II",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11002",
+      "nombre": "Albisures García, Juan Carlos",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11004",
+      "nombre": "Arana Franco, Wagner Danuvy",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11017",
+      "nombre": "Garcia Lima, Edy Reginaldo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11006",
+      "nombre": "Atz Argueta, Jose Vicente",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12003",
+      "nombre": "Carias Zuñiga, Walfre Oswaldo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12018",
+      "nombre": "Mendoza Zelada, Marvín Emanuel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12024",
+      "nombre": "Obregón Chinchilla, Jorge Luis",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15096",
+      "nombre": "Orellana González, Leonel Enrique",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "7010",
+      "nombre": "De Leon Roldan, Marcos Roberto",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "13008",
+      "nombre": "DUARTE ALAY ROBERTO CARLOS",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15012",
+      "nombre": "Barrera Rodríguez, Félix Daniel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "14015",
+      "nombre": "Martinez Anavisca, William Estuardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15017",
+      "nombre": "Cabrera Suchite, Kleiver Josué",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15027",
+      "nombre": "Colop Xec, Abelardo Abigaíl",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15103",
+      "nombre": "Pérez Pérez, José Emedardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16040",
+      "nombre": "Cortéz Menéndez, Oscar Anibal",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "13037",
+      "nombre": "Vasquez Rivera, Luis Miguel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15021",
+      "nombre": "Cermeño Barahona, Wilsson Israel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15022",
+      "nombre": "Cermeño Barrios, Edgar Alfonso",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15024",
+      "nombre": "Chinchilla Valenzuela, Kevin Estuardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15036",
+      "nombre": "Donis Ortíz, Marco Tulio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15051",
+      "nombre": "Gómez Aceytuno, Manuel Estuardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15062",
+      "nombre": "Hernández Fajardo, Rufino David",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16036",
+      "nombre": "Corado Corado, Jerzon Anibal",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16048",
+      "nombre": "Escobar Beltrán, Marlon Geobany",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16095",
+      "nombre": "Marroquin Argueta, Esleyder Antonio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16107",
+      "nombre": "Morán Cazún, Mynor Armando",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16157",
+      "nombre": "Zepeda Chavez, Axel Ariel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17010",
+      "nombre": "Peñate Moran, Ana Mary",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17039",
+      "nombre": "Ortiz Catalán, Geovanni José Maria",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17048",
+      "nombre": "Santiago Sánchez, Joel Antonio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18010",
+      "nombre": "Campos González, Rony Emilio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18012",
+      "nombre": "Castillo Herrera, Dony Isidro",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18024",
+      "nombre": "Figueroa Moran, Edwin Alexander",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18030",
+      "nombre": "Hernández Castillo, Ahiderson André",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18042",
+      "nombre": "Pérez Osorio, Rudy Osmín",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19008",
+      "nombre": "Arana Martínez, Pedro Alberto",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19015",
+      "nombre": "Batres Hernández, Denilson Ottoniel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19016",
+      "nombre": "Cabrera Alfaro, Carlos Alfonso",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19022",
+      "nombre": "Carías Castro, Mario Llivinson",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19024",
+      "nombre": "Castillo Godoy, Mario Alejandro",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19026",
+      "nombre": "Cazún Zepeda, María Concepción",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19028",
+      "nombre": "Chinchilla Corado, Darwin Omar",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19039",
+      "nombre": "Dominguez Gaitán, Amalio Rodrigo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19041",
+      "nombre": "Donis Alfaro, María Celeste",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19047",
+      "nombre": "Florián Vásquez, José Rolando",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19049",
+      "nombre": "Fuentes Cruz, Luis Diego",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19050",
+      "nombre": "Galicia Gomez, Nelson Geovanny",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19052",
+      "nombre": "Galindo Hernández, Osmin Manolo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19056",
+      "nombre": "García Granados, Edilson Esaul",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19058",
+      "nombre": "Garcia Peréz, Lucas Fernando",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19059",
+      "nombre": "García Pineda, Amner Estuardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19063",
+      "nombre": "Garza Godoy, Katerin Dalila",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19067",
+      "nombre": "González Alfaro, Eddy Rafael",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19070",
+      "nombre": "González Jiménez, Elman Ivan",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19076",
+      "nombre": "Hernández Salguero, Karen Gemima",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19089",
+      "nombre": "López Alvarez, Lusbin Guadalupe",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19094",
+      "nombre": "López peña, Luis Fernando",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19110",
+      "nombre": "Najarro Barillas, Otilia Yesenia",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19111",
+      "nombre": "Willian Estuardo, Najarro Osorio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19133",
+      "nombre": "Ramirez Santos Willian Estuardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19162",
+      "nombre": "Vásquez Domínguez, Manolo Exzequiel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19163",
+      "nombre": "Vásquez Gonzalez, Edilson Romario",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19170",
+      "nombre": "Xoná Ajanel, Darwin Abelino",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19171",
+      "nombre": "Zamora Cabrera, José Luis",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "9005",
+      "nombre": "Quiñonez Hernandez, Edwing Orlando",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADIER IV",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12026",
+      "nombre": "Quiná Simon, Marvin Dinael",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11024",
+      "nombre": "Juarez Sanchez, Edwin Antonio",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12022",
+      "nombre": "Morataya Rosales, Gloria Lizeth",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BII",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17004",
+      "nombre": "Gomez Ramirez, Samy Renato",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16008",
+      "nombre": "Belloso Peñate Karen Jeannette",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16100",
+      "nombre": "Menchú Anavisca, Hilmy Julissa",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16057",
+      "nombre": "Florián Morán, Luis Fernando",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17027",
+      "nombre": "Jimenez Castillo Erick Geovanny",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18013",
+      "nombre": "Chapas Gonzáles, Catherin Yanira",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18032",
+      "nombre": "Jorge López, Kimberly Alejandra",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19031",
+      "nombre": "Corado Morán, Edgar Antonio",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19048",
+      "nombre": "Franco Herrera, Alma Yaneth",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19084",
+      "nombre": "Latin Bernal, Sandy Esperanza",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19068",
+      "nombre": "González Alvarado, Lestid Eliazar",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19091",
+      "nombre": "Lopez Jimenez, Jesfri Omar",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19100",
+      "nombre": "Maroquin Orozco, Iris Madai",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19109",
+      "nombre": "Morales Mejía, Yair Alexander",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "1006",
+      "nombre": "Santos Avila, Marvin, Donato",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "5003",
+      "nombre": "CUMEZ CHACACH, FREDY",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12010",
+      "nombre": "Esquivel Herrera, Blas Roosenvelt",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16061",
+      "nombre": "Gaitán Cruz, Juan José",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "13036",
+      "nombre": "Retana Valladares, Horacio Fabricio",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "14008",
+      "nombre": "Charchalac Cox, Victor Raul",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15002",
+      "nombre": "Alonzo Morales, Victor Manuel",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15056",
+      "nombre": "González García, Brayan Josué",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15128",
+      "nombre": "Santacruz Salazar, Ludbin Obel",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16042",
+      "nombre": "De La Rosa Monterroso, Manuel De Jesús",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16070",
+      "nombre": "González Ríos, Walfred David Alexander",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16097",
+      "nombre": "Martínez Arévalo, Noé De Jesús",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18019",
+      "nombre": "De Leon Alvarado Cesar Alejandro",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18021",
+      "nombre": "Díaz Chan, Josue David",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19046",
+      "nombre": "Florián Vásquez, José Manuel",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19118",
+      "nombre": "Pérez Arias, Axel René",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19126",
+      "nombre": "Pop Xé, Maurilio",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19135",
+      "nombre": "Retana Cardona, Jhonatan Guillermo",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19138",
+      "nombre": "Reyes Ortiz, Victor Daniel",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19161",
+      "nombre": "Vásquez Domínguez, Omer Naias",
+      "sede_excel": "SUB-SEDE PALIN",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "8044",
+      "nombre": "SANTIZO PÉREZ, JUAN ANTONIO",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "5041",
+      "nombre": "REYES SACUL CUPERTINO",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15061",
+      "nombre": "Guzmán Lemus, Erick Randolfo",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16052",
+      "nombre": "Escobar García, Kevin Alfredo",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16113",
+      "nombre": "Orellana Estrada, Jesús Emilio",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17036",
+      "nombre": "Najarro Barillas, Elvia Dalila",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18008",
+      "nombre": "Caál España, Astrid Melissa",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18016",
+      "nombre": "Cortez Sontay, Josselyne Anabella",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18025",
+      "nombre": "Garcia Garcia, Walter",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18026",
+      "nombre": "Garrido Trabanino, Evelyn Nohelí",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18029",
+      "nombre": "Gudiel Gallardo Angeliz Amordi",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19001",
+      "nombre": "Aguilar Melgar, Angel Humberto",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19019",
+      "nombre": "Canahuí García, Helen Marisol",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19030",
+      "nombre": "Corado Garza, Estéfany Melisa",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19051",
+      "nombre": "Galicia Najarro, Gerson David",
+      "sede_excel": "SAN CRISTOBAL AC.",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "4022",
+      "nombre": "Gutierrez Chaclán, Fernando Norberto",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "7058",
+      "nombre": "Ramirez Castillo, Remigio Alexander",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "9019",
+      "nombre": "Orellana Paz, David Gerardo",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12002",
+      "nombre": "Camas Andrade, Edwin José",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15052",
+      "nombre": "Gómez González, Wilfido Enrique",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "13010",
+      "nombre": "Hernandez Pèrez, Josuè Daniel",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15044",
+      "nombre": "Fuentes García, Milton Danilo",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18004",
+      "nombre": "Arévalo Florian, Paula Jimena",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19005",
+      "nombre": "Alvarez Hernandez, Domingo Bayron",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19112",
+      "nombre": "Navarro Vasquez Nancy Roxana",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19014",
+      "nombre": "Barrios López, Axel Eberto",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19130",
+      "nombre": "Ramírez Herrarte, Jenderly Andrea",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "8012",
+      "nombre": "Cuxil Xicay, Edwin Estuardo",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15019",
+      "nombre": "Carrillo García, Walter Aristides",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15064",
+      "nombre": "Isaacs Peñate, Carlos Iván",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15003",
+      "nombre": "Ardiano Velásquez, Abdi Abisaí",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15069",
+      "nombre": "López Castro, Francel Isaías",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16038",
+      "nombre": "Córdova González, Junnior Danilo",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18020",
+      "nombre": "De leon López, Alexander David",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18044",
+      "nombre": "Ramirez Guerrero, Sandro Emmanuel",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19002",
+      "nombre": "Aguilón Pérez, Juan Orlando",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19021",
+      "nombre": "Cardona López, Wilson Adán",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19036",
+      "nombre": "Diaz, Luis Angel",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19107",
+      "nombre": "Monzón García, Miguel Angel",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19156",
+      "nombre": "Tomás Agustín, Franklin Mayck",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19165",
+      "nombre": "Velasquez Coronado, Vinicio Efraín",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "8003",
+      "nombre": "ARRIVILLAGA OLIVA, EDGAR GEOVANNI",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16015",
+      "nombre": "Camó Acoj, Cristhian Geovany",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16139",
+      "nombre": "Ruiz Gutiérrez, Edvin José Rodolfo",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17047",
+      "nombre": "Sandoval Aguilar, RubÍ de los Angeles",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18035",
+      "nombre": "Morales Gálvez, Gervin Friceli",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19066",
+      "nombre": "Gómez Ortíz, Carmen Liliana",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19101",
+      "nombre": "Martinez Melgar, Gloria Francis Amabel",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19116",
+      "nombre": "Peñate Colindres, Yeymy Elizabeth",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19136",
+      "nombre": "Retana Mazariegos, Yeni Maritza",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19152",
+      "nombre": "Sánchez Vargas, Carlos Humberto",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19169",
+      "nombre": "Villanueva Corado, Jerson Alexander",
+      "sede_excel": "MORALES IZA",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "4054",
+      "nombre": "XITUMUL PÉREZ JULIO ALBERTO",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15125",
+      "nombre": "Samayoa Dubón, Cristian Omar",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16117",
+      "nombre": "Ortíz Paz, Luis Carlos",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18009",
+      "nombre": "Cal Cal, Edgar Daniel",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18037",
+      "nombre": "Monzon Ramos, Cristopher Ricardo",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18052",
+      "nombre": "Santos López, Yulian Ronaldo",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19060",
+      "nombre": "García Pineda, Anibal Nicolas",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19072",
+      "nombre": "Gudiel Castillo, Ever Yahir Alexis",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19078",
+      "nombre": "Ichich Choc, Edgar Zaqueo",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19096",
+      "nombre": "Maquin Cacao, Cristian Vidal",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19103",
+      "nombre": "Melgar, Rogelio Raquel",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19144",
+      "nombre": "Rodríguez Hipólito, Cristian Alexander",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "13017",
+      "nombre": "Melgar Lòpez, Edwin Leonardo",
+      "sede_excel": "SEDE PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADIER II",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "9015",
+      "nombre": "Fuentes Fuentes, Federico Margarito",
+      "sede_excel": "SEDE PETEN",
+      "sede_id": 3,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16031",
+      "nombre": "Chén Xuc, José Luis",
+      "sede_excel": "SEDE PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16131",
+      "nombre": "Revolorio Arana, Brayan Alexander",
+      "sede_excel": "SEDE PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17032",
+      "nombre": "Méndez Súchite Roslyn Mariela",
+      "sede_excel": "SEDE PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19114",
+      "nombre": "Ortíz Jímenez, Esmeralda Idalia",
+      "sede_excel": "SEDE PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19164",
+      "nombre": "Vela Ortíz, Maynor Manuel",
+      "sede_excel": "SEDE PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "4016",
+      "nombre": "Fuentes López, Uber Dionel",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "12025",
+      "nombre": "Quevedo Corado, Jeidí Patricia",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BII",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11035",
+      "nombre": "Quieza Porras, Chrystian Mario Enrique",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15063",
+      "nombre": "Hernández y Hernández, Edwin Rolando",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15014",
+      "nombre": "Bautista De León, Sergio Rubén",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16033",
+      "nombre": "Cojom Damian, Emanuel Isaías",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "18039",
+      "nombre": "Peña Lemus, Elvis Rogelio",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19082",
+      "nombre": "Juárez Alfaro, Gustavo Adolfo",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19106",
+      "nombre": "Monzón de Paz, Jennifer Vanessa",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19129",
+      "nombre": "Rabanales Fuentes César Obdulio",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19149",
+      "nombre": "Sales Gómez, Antony Josue",
+      "sede_excel": "COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "1016",
+      "nombre": "EDNA MELISA MARCHORRO PAIZ",
+      "sede_excel": "EDU. VIAL",
+      "sede_id": 1,
+      "rango": "BDIER",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "4001",
+      "nombre": "AGUSTIN LOPEZ, ESTEBAN DOMINGO",
+      "sede_excel": "ACCIDENTOLOGIA",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17020",
+      "nombre": "Cifuentes Cermeño, Dora Iracema",
+      "sede_excel": "FINANCIERO",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15075",
+      "nombre": "Martinez Brol, Anthony Steven",
+      "sede_excel": "ASUNTOS INTER.",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "11026",
+      "nombre": "Lopez Rosales, Marco Luis",
+      "sede_excel": "VOCERIA",
+      "sede_id": 1,
+      "rango": "BRIGADIER II",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16086",
+      "nombre": "Lima López, Hugo David",
+      "sede_excel": "ASUNTOS INTER.",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "19087",
+      "nombre": "López, Gerber Ottoniel",
+      "sede_excel": "ACCIDENTOLOGIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15004",
+      "nombre": "Argueta Bernal, Beyker Eduardo",
+      "sede_excel": "ASUNTOS INTER.",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16151",
+      "nombre": "Sosa Barrios, Bryan Josue",
+      "sede_excel": "ASUNTOS INTER.",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "9021",
+      "nombre": "Perez Miranda, Feliciano",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "13009",
+      "nombre": "García Esquivel, Lester Yancarlo",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADIER I",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15040",
+      "nombre": "Esteban Estrada, Edras Josué",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16146",
+      "nombre": "Sical Manuel, Marlon Estuardo",
+      "sede_excel": "ASUNTOS INTER.",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "14020",
+      "nombre": "Najarro Moran, Dular Migdael",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "16019",
+      "nombre": "Carrillo Rossell, Kevin Arnaldo",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15015",
+      "nombre": "Belloso Flores, Carlos Alex",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "15099",
+      "nombre": "Peñate Arévalo, Ana Patricia",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "14017",
+      "nombre": "Monterroso Perez, Mynor Rene",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "13022",
+      "nombre": "Salgado Kegel, Romeo Alberto",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "17000",
+      "nombre": "Lisardo Tash Giron",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 1
+    },
+    {
+      "chapa": "5037",
+      "nombre": "QUICHÉ VELÁSQUEZ, BARTOLO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BV",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "1012",
+      "nombre": "ANGEL MARIO GARCIA GARCIA",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BV",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "10032",
+      "nombre": "RAMOS CINTO RODELFI ADELAIDO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER lll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "7045",
+      "nombre": "RODAS CARCAMO CESAR JOAQUIN",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "3025",
+      "nombre": "Perdomo Lòpez, Edgar Rolando",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "12005",
+      "nombre": "Castillo aguilar Breder Vidani",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15095",
+      "nombre": "NÁJERA MORALES EDVIN ANTONIO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15106",
+      "nombre": "PINEDA OSORIO, BRYAN ALEXANDER",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BIIl",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "11018",
+      "nombre": "GODINEZ VELASQUEZ KEVIN",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "13012",
+      "nombre": "LEIVA RAMOS EVERTH LEMUEL",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "Bll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16153",
+      "nombre": "Valladares González Héctor Nóel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "Bll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15139",
+      "nombre": "ZUÑIGA FERNÁNDEZ GERMAN DANILO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "Bll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "12014",
+      "nombre": "Jimenez Cortez David Isaias",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "13011",
+      "nombre": "Juàrez Chen, Edwin Eduardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15097",
+      "nombre": "Ortíz Catalán, Augusto",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15098",
+      "nombre": "Palencia Morales, Anderson Brenner",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15129",
+      "nombre": "Santos Pérez, William Michael",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15073",
+      "nombre": "MANZANO PÉREZ JOSEPH ALEXANDER",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16083",
+      "nombre": "Ixchop Corado Efémber José Rodrigo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16152",
+      "nombre": "Tecú Raxcacó Víctor Manuel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17051",
+      "nombre": "Veliz Gereda Yerlin Yesenia",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "14024",
+      "nombre": "Santos Loy, Hiben Amadiel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15006",
+      "nombre": "Aroche Ucelo, Francisco Jesús",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15137",
+      "nombre": "Velásquez Escobar, Roger Wilfredo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15050",
+      "nombre": "Girón Méndez, Miguel Angel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15068",
+      "nombre": "Lima Yanes Jerson Geovani",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16032",
+      "nombre": "Chiroy Revolorio Kerlin Arturo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16075",
+      "nombre": "Hernández Barrera Rufino Dagoberto",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16076",
+      "nombre": "Hernández Castañeda Mario José",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16101",
+      "nombre": "Mendez Malchic, José Efraín",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16128",
+      "nombre": "Ramírez Gereda Tayron Alexander",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16155",
+      "nombre": "Virula y Virula, Osiel Antonio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17015",
+      "nombre": "Blanco Carias Evelin Maritza",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17033",
+      "nombre": "Morales Marroquin Dilan Alexis",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17034",
+      "nombre": "Gerson Augusto Morales Ochoa",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18018",
+      "nombre": "Alberto Josué  Cruz Sarceño",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18049",
+      "nombre": "Salazar Ortíz Walter Arturo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18046",
+      "nombre": "Ramirez Pineda Franklin Irael",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18048",
+      "nombre": "Reyes Ortiz Abner Antonio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18053",
+      "nombre": "Toto Paz Kevin Alberto",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18003",
+      "nombre": "Albizures Ramírez Wilmer Abel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18022",
+      "nombre": "Escobar Peñate Rubén Alejandro",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18017",
+      "nombre": "Crúz Méndez Cristian Alfredo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19151",
+      "nombre": "Sánchez Tobar Victor Francisco",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19042",
+      "nombre": "Ronald Israel Escobar Echeverría",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19071",
+      "nombre": "Grijalva Belloso Juan Carlos",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19077",
+      "nombre": "Hurtado Asencio Elvidio De Jesús",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19083",
+      "nombre": "Jui Alvarado Hugo Leonel",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19069",
+      "nombre": "González Escobar Leidy Mariela",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19140",
+      "nombre": "Ríos Barrera De Asencio Zoila Virginia",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19035",
+      "nombre": "Cutzal García Eddy Obdulio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19095",
+      "nombre": "López Témaj Jonatan Rolando",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19155",
+      "nombre": "Tagua Zanunzini Frank Antonni",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19166",
+      "nombre": "Aury Ayendy Velásquez Dominguez",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19010",
+      "nombre": "Grely Aneth Aviche Carías",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19006",
+      "nombre": "Alvarez Muñoz Christian René",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19121",
+      "nombre": "Pérez Pérez Eber José",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19125",
+      "nombre": "Ponciano Lázaro Sandra Angélica",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19040",
+      "nombre": "Juan Antonio Donis Alfaro",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19009",
+      "nombre": "Arevalo Herrera Marvín Eduardo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19044",
+      "nombre": "Estrada Corominal Mirza Lizette",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19033",
+      "nombre": "Cortéz Velásquez Alex Adonis",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19104",
+      "nombre": "Mazariegos Arana Gilma Yolanda",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19105",
+      "nombre": "Miranda Méndez Mynor",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19013",
+      "nombre": "Barrientos Corado, Danis Estid",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19117",
+      "nombre": "Peralta Marroquín Jasmine Saraí",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19143",
+      "nombre": "Rivera Vásquez Beverlin Graciela",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "5005",
+      "nombre": "CRUZ VELIZ OSMAR RAMIRO",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADIER lll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "9016",
+      "nombre": "JOR MAX RUBEN DARIO",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "4009",
+      "nombre": "CISNEROS ESQUIVEL RICARDO WILFREDO",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15005",
+      "nombre": "Argueta Sandoval, Delmi Odíly",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15138",
+      "nombre": "Yoc Elel, Edson Ernesto",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "6026",
+      "nombre": "Mateo Lopez, Cesar Everildo",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15041",
+      "nombre": "Estrada Morales, Carlos Leonel",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17022",
+      "nombre": "Divas Anavisca Carla Yohana",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17045",
+      "nombre": "Ramirez Chapas Antony Mateus",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18054",
+      "nombre": "Velásquez Mejía Yásmin Sorana",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19088",
+      "nombre": "López Gustavo Adolfo",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19020",
+      "nombre": "Cardona Coronado Ronald Geremías",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19145",
+      "nombre": "Rodríguez Orozco Yesica Fabiola",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18038",
+      "nombre": "Osorio Machán María Yesenia",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18047",
+      "nombre": "Madelin Ivania Revolorio Orantes",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19004",
+      "nombre": "Agustín Diego Luis Fernando",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19038",
+      "nombre": "De Páz Santos Breder Alexander",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19080",
+      "nombre": "Isidro Baltazar Adolfo Angel",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "3031",
+      "nombre": "RAMIREZ MARROQUIN, SANTIAGO LEONIDAS",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "4028",
+      "nombre": "LAJ TECU JUAN ANTONIO",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "10013",
+      "nombre": "GONZALES CARDONA LUIS ALBERTO",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "10033",
+      "nombre": "REVOLORIO REVOLORIO SILVERIO ELISEO",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15031",
+      "nombre": "Cruz López, Estuardo",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16067",
+      "nombre": "Gómez Elvira José Fernando",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15011",
+      "nombre": "Barillas Velásquez, Jaime Bernabé",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "13027",
+      "nombre": "Campos Retana, Aroldo Federico",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15082",
+      "nombre": "Miranda Aguilar, Esaú Emanuel",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15094",
+      "nombre": "Morán López, Jayme Josue.",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15100",
+      "nombre": "Pérez Asencio, Ronal Orlando",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18002",
+      "nombre": "Adriano Hernández Joshuá Emanuel",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18033",
+      "nombre": "Lopez Lau Rogers Ernesto",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18050",
+      "nombre": "Sánchez Pérez Esteban",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19012",
+      "nombre": "Barco Galicia Carlos Eduardo",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19065",
+      "nombre": "Gómez Sales Baudilio",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19032",
+      "nombre": "Corado y Corado José David",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19025",
+      "nombre": "Cazún Godoy Walter Oswaldo",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19142",
+      "nombre": "Rivera Vásquez Ander Yoel",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19131",
+      "nombre": "Ramirez Chapas Brandon Omar",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "1048",
+      "nombre": "MORALES ROMAN, JOSÈ ADRIÀN",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADIER lll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "9006",
+      "nombre": "OLIVA PAIZ, UBALDO",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15049",
+      "nombre": "García Pineda, Gelber Alexander",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16144",
+      "nombre": "Santos Beltetón, Yonatan Eduardo",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15109",
+      "nombre": "Quinteros Del Cid, Ervin Edgardo",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16130",
+      "nombre": "Ramírez Yanes, Jonyr Rolando",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17037",
+      "nombre": "Ordoñez García Sindy Carolina",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18051",
+      "nombre": "Santos Belteton, Seleni Yoliza",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19141",
+      "nombre": "Rivera Esquivel Edwin Vinicio",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19054",
+      "nombre": "García Bertránd Yeison Wilfredo",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19018",
+      "nombre": "Campos Cermeño Miguel Angel Arcangel",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19113",
+      "nombre": "Ordoñez Ortega Sergio Estuardo",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19154",
+      "nombre": "Soto Monterroso Freiser Enrique",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19099",
+      "nombre": "Marroquín Orellana María Alejandra",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19108",
+      "nombre": "Morales Mejía Beberlyn Alejandra",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19146",
+      "nombre": "Ruano Pernillo Vasti Madai",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "1032",
+      "nombre": "MAZARIEGOS RODRÍGUEZ, JULIO ORLANDO",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BDIER lll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "3032",
+      "nombre": "Ramirez Toc, Jorge Mario",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "7006",
+      "nombre": "Carrillo Hernàndez, Juan Alberto",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16106",
+      "nombre": "Morales Ochoa Selvin Vinicio",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "Bl",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17016",
+      "nombre": "Campos Cermeño César Eduardo",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19037",
+      "nombre": "De Paz Nicolás, Juan Alberto",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19034",
+      "nombre": "Marcela Judith Cotto Sanchez",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19115",
+      "nombre": "Pablo Tomás Gricelda Micaela",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19147",
+      "nombre": "Salanic Gómez Marvin Orlando",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19134",
+      "nombre": "Ramos Godoy Aracely",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19062",
+      "nombre": "Garza Flores William Armando",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19168",
+      "nombre": "Osbin Audiel Veliz Ramírez",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "7012",
+      "nombre": "DIAZ DE LEON GUSTAVO ADOLFO",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "12031",
+      "nombre": "Toj Lopez,  William Edilser",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15047",
+      "nombre": "García García, Pedro César",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16017",
+      "nombre": "Cano Serrano, Gervin Geovany",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16092",
+      "nombre": "López Morales, Mario Samuel",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16114",
+      "nombre": "Orozco Témaj Byron Armando",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18023",
+      "nombre": "Estrada Corominal Walter Isaias",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18027",
+      "nombre": "Godinez Martinez Jorge Antonio",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19029",
+      "nombre": "Cop Galvan Guillermo Eduardo",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19139",
+      "nombre": "Reyna Rivera Walter Alexis",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19092",
+      "nombre": "López Montero Crúz Armando",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19122",
+      "nombre": "Pérez Ramírez Elfido Miguel",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19157",
+      "nombre": "Tomás Cardona Fredy Ovando",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "6033",
+      "nombre": "Torres Perez, Denis Bernardo",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "8031",
+      "nombre": "PACHECO ESCOBAR VILMA YANETH",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "Bll",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16156",
+      "nombre": "Vivas Nimacachi David Amilcar",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16103",
+      "nombre": "Miranda Melgar Edson Ariel",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17038",
+      "nombre": "Ortiz Estrada Karla Edith",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19074",
+      "nombre": "Hernández De León Maria Fernanda De Aquino",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19057",
+      "nombre": "García Hernández Luciano",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19043",
+      "nombre": "Esquivel Ramírez Medary",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19017",
+      "nombre": "Cal Xona Liliana Beverly",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19127",
+      "nombre": "Quiñonez Hernández Rudimán Omar",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19120",
+      "nombre": "Pérez Crúz César Adonay",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19064",
+      "nombre": "Godoy López Wilson",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19093",
+      "nombre": "López Muñoz Augusto César",
+      "sede_excel": "MORALES IZABAL",
+      "sede_id": 8,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "10005",
+      "nombre": "CALDERON RODRIGUEZ GERSON NOE",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "8043",
+      "nombre": "RIVAS DIAZ KENNEDY JOSUÉ",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BIII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15066",
+      "nombre": "Landaverde Rodriguez Byron Fernando",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16050",
+      "nombre": "Escobar Cermeño, Marvin Geovani",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17023",
+      "nombre": "Flores Vargas Douglas Waldermar",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18011",
+      "nombre": "Castellanos Perez Yeferson Gerber H.",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18036",
+      "nombre": "Morales Rivas Cristian Francisco",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19102",
+      "nombre": "Mayorga Pérez Remy Angel Arturo",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19098",
+      "nombre": "Marroquín Argueta Edwin Humberto",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19085",
+      "nombre": "Lémus Ramirez Wilmer Samuel",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "5006",
+      "nombre": "CIFUENTES CU JOSE LUIS",
+      "sede_excel": "POPTUN  PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16079",
+      "nombre": "Hernández Juárez, Pablo",
+      "sede_excel": "POPTUN  PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17019",
+      "nombre": "Chol Quiroa Cesar Antonio",
+      "sede_excel": "POPTUN  PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18043",
+      "nombre": "Perez Perez Damian de Jesus",
+      "sede_excel": "POPTUN  PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19159",
+      "nombre": "Valdéz Herrera Carlos Alberto",
+      "sede_excel": "POPTUN  PETEN",
+      "sede_id": 3,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "7043",
+      "nombre": "RAMOS ALFARO, BAYRON YOBANY",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADIER III",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16094",
+      "nombre": "Lorenzo Yac Anselmo",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15131",
+      "nombre": "Sióc Ortíz, Marvyn Gundemaro",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16077",
+      "nombre": "Hernández Cotill Abner Misael",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18015",
+      "nombre": "Coronado Alvarez Keiry Mirella",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19073",
+      "nombre": "Hernández Aguilar Angel David",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19124",
+      "nombre": "Pineda Carías Ivan Alexander",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19148",
+      "nombre": "Sales Gómez, Adán Alexander",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19160",
+      "nombre": "Valenzuela Asencio Lucas David",
+      "sede_excel": "SEDE COATEPEQUE",
+      "sede_id": 6,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "3016",
+      "nombre": "HERNÀNDEZ GALDÀMEZ, WILNER",
+      "sede_excel": "DIRECCION",
+      "sede_id": 1,
+      "rango": "BRIGADIER GENERAL",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "1022",
+      "nombre": "Adriano Lopez, Manuel de Jesús",
+      "sede_excel": "ACCIDENTOLOGIA",
+      "sede_id": 1,
+      "rango": "BDIER V",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "3024",
+      "nombre": "Morales Romero, Griselda Roxana",
+      "sede_excel": "EDUCACION VIAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER III",
+      "genero": "FEMENINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "10041",
+      "nombre": "VELASQUEZ PABLO TELESFORO ALBERTO",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BDIER lll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "10025",
+      "nombre": "MONZON MORALES MITSIU YONATHAN",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "11020",
+      "nombre": "GUERRA MARROQUIN JOEL WILFREDO",
+      "sede_excel": "FINACIERO",
+      "sede_id": 1,
+      "rango": "BRIGADIER",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "11034",
+      "nombre": "PEREZ GOMEZ BRYAN ISRAEL",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "Blll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "11042",
+      "nombre": "Xajap Xuya, Jose Wenceslao",
+      "sede_excel": "INVENTARIO",
+      "sede_id": 1,
+      "rango": "Blll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17012",
+      "nombre": "Retana Vásquez, José Armando",
+      "sede_excel": "ASUNTOS INTERNOS",
+      "sede_id": 1,
+      "rango": "Blll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16145",
+      "nombre": "Santos Turcios, Nelson Bladimiro",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "Bll",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15080",
+      "nombre": "Méndez García, Wiliam Neftalí",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16064",
+      "nombre": "García Ramirez Elder Alfredo",
+      "sede_excel": "ASUNTOS INTERNOS",
+      "sede_id": 1,
+      "rango": "Bl",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15025",
+      "nombre": "Chú Ichich, Oscar Arnoldo",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15026",
+      "nombre": "Chub Coc, Salvador",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15079",
+      "nombre": "Mejía Hernández, Christian Geovanni",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16016",
+      "nombre": "Cano Boteo Irrael",
+      "sede_excel": "ASUNTOS INTERNOS",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16158",
+      "nombre": "Florian Quiquivix, Edvin David",
+      "sede_excel": "ASUNTOS INTERNOS",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16158",
+      "nombre": "Zuñiga Godoy José Armando",
+      "sede_excel": "ASUNTOS INTERNOS",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17031",
+      "nombre": "Mayorga Perez Keyner Josue",
+      "sede_excel": "ASUNTOS INTERNOS",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17050",
+      "nombre": "Velásquez Yat Daniel Oswaldo",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18034",
+      "nombre": "Morales Barrios Anderson Giovani",
+      "sede_excel": "ACADEMIA",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19061",
+      "nombre": "Gacía Zuñiga Nixozón Rolando",
+      "sede_excel": "ALMACEN",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19150",
+      "nombre": "Sánchez Ramos Jefrey Samuel",
+      "sede_excel": "COP",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15134",
+      "nombre": "Valdez Martínez, Cristopher Obed",
+      "sede_excel": "PALIN-ESCUINTLA",
+      "sede_id": 7,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19119",
+      "nombre": "Pérez Arriaza Victor Ovidio",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "16045",
+      "nombre": "FRANKLIN YOEL DIAZ SOTO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "ASUNTOS INTERNOS",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17017",
+      "nombre": "Campos Pinelo Edwin Daniel",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15074",
+      "nombre": "MARROQUIN LOPEZ, EDWIN FABIO",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "DIRECCION",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19137",
+      "nombre": "Revolorio Latín German Oswaldo",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15076",
+      "nombre": "Martínez Herrera, Miguel Antonio",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19023",
+      "nombre": "Carías Godoy Ronald Vinicio",
+      "sede_excel": "RIO DULCE",
+      "sede_id": 9,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19053",
+      "nombre": "García Asencio Dandis Imanol",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19132",
+      "nombre": "Ramírez Herrera Mynor Anibal",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "17005",
+      "nombre": "LOPEZ GUILLEN MARIO ROLANDO",
+      "sede_excel": "QUETZALTENANGO",
+      "sede_id": 5,
+      "rango": "BI",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "15086",
+      "nombre": "MONTERROSO ARGUETA EDWIN RODOLFO",
+      "sede_excel": "SAN CRISTOBAL AC",
+      "sede_id": 4,
+      "rango": "BII",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "18028",
+      "nombre": "Gómez Méndez Persy Aristides",
+      "sede_excel": "MAZATENANGO",
+      "sede_id": 2,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    },
+    {
+      "chapa": "19075",
+      "nombre": "Hernández López Carlos Alberto",
+      "sede_excel": "SEDE CENTRAL",
+      "sede_id": 1,
+      "rango": "BRIGADA",
+      "genero": "MASCULINO",
+      "grupo": 2
+    }
+  ],
+  "resumen": {
+    "totalExcel": 429,
+    "grupo1": 209,
+    "grupo2": 220,
+    "porSede": {
+      "Central": 222,
+      "Mazatenango": 25,
+      "Poptún": 12,
+      "San Cristóbal": 32,
+      "Quetzaltenango": 28,
+      "Coatepeque": 20,
+      "Palín Escuintla": 41,
+      "Morales": 24,
+      "Río Dulce": 25
+    }
+  }
+}

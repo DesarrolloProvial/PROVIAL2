@@ -6,6 +6,7 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 
 export type RootStackParamList = {
   Auth: undefined;
+  ResetPassword: { username: string; tieneChapa: boolean };
   Main: NavigatorScreenParams<MainDrawerParamList>;
 };
 

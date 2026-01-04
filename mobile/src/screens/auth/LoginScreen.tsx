@@ -11,12 +11,20 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuthStore } from '../../store/authStore';
+import { passwordResetService } from '../../services/passwordReset.service';
+import { RootStackParamList } from '../../types/navigation';
+
+type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Auth'>;
 
 export default function LoginScreen() {
+  const navigation = useNavigation<LoginScreenNavigationProp>();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const { login, isLoading } = useAuthStore();
+  const [isCheckingReset, setIsCheckingReset] = useState(false);
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -24,6 +32,26 @@ export default function LoginScreen() {
       return;
     }
 
+    try {
+      // Primero verificar si necesita reset de contraseña
+      setIsCheckingReset(true);
+      const resetCheck = await passwordResetService.verificarNecesitaReset(username);
+      setIsCheckingReset(false);
+
+      if (resetCheck.necesita_reset) {
+        // Redirigir a pantalla de reset
+        navigation.navigate('ResetPassword', {
+          username,
+          tieneChapa: resetCheck.tiene_chapa,
+        });
+        return;
+      }
+    } catch (error) {
+      // Si falla la verificación, continuar con login normal
+      setIsCheckingReset(false);
+    }
+
+    // Login normal
     const result = await login(username, password);
 
     if (!result.success) {
@@ -71,11 +99,11 @@ export default function LoginScreen() {
         />
 
         <TouchableOpacity
-          style={[styles.button, isLoading && styles.buttonDisabled]}
+          style={[styles.button, (isLoading || isCheckingReset) && styles.buttonDisabled]}
           onPress={handleLogin}
-          disabled={isLoading}
+          disabled={isLoading || isCheckingReset}
         >
-          {isLoading ? (
+          {isLoading || isCheckingReset ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.buttonText}>Iniciar Sesión</Text>

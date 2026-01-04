@@ -458,30 +458,52 @@ export default function COPMapaPage() {
             </label>
 
             <div className="border-t pt-3 mt-3">
-              <p className="text-xs font-medium text-gray-500 mb-2">Filtrar por sede:</p>
-              <div className="space-y-1 max-h-40 overflow-y-auto">
-                {Object.entries(SEDES_NOMBRES).map(([id, nombre]) => (
-                  <label key={id} className="flex items-center gap-2 cursor-pointer text-sm">
-                    <input
-                      type="checkbox"
-                      checked={filters.sedes.length === 0 || filters.sedes.includes(Number(id))}
-                      onChange={() => toggleSede(Number(id))}
-                      className="rounded"
-                      style={{ accentColor: COLORES_SEDE[Number(id)] }}
-                    />
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORES_SEDE[Number(id)] }} />
-                    <span>{nombre}</span>
-                  </label>
-                ))}
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-gray-500">Filtrar por sede:</p>
+                {filters.sedes.length > 0 ? (
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, sedes: [] }))}
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    Ver todas
+                  </button>
+                ) : (
+                  <span className="text-xs text-green-600">Todas visibles</span>
+                )}
               </div>
-              {filters.sedes.length > 0 && (
-                <button
-                  onClick={() => setFilters(prev => ({ ...prev, sedes: [] }))}
-                  className="text-xs text-blue-600 hover:underline mt-2"
-                >
-                  Mostrar todas las sedes
-                </button>
-              )}
+              <div className="space-y-1 max-h-40 overflow-y-auto">
+                {Object.entries(SEDES_NOMBRES).map(([id, nombre]) => {
+                  const sedeId = Number(id);
+                  const isActive = filters.sedes.length === 0 || filters.sedes.includes(sedeId);
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => {
+                        if (filters.sedes.length === 0) {
+                          // Si todas están visibles, al hacer clic solo muestra esa
+                          setFilters(prev => ({ ...prev, sedes: [sedeId] }));
+                        } else if (filters.sedes.includes(sedeId)) {
+                          // Si está seleccionada, quitarla
+                          const newSedes = filters.sedes.filter(s => s !== sedeId);
+                          setFilters(prev => ({ ...prev, sedes: newSedes }));
+                        } else {
+                          // Si no está seleccionada, agregarla
+                          setFilters(prev => ({ ...prev, sedes: [...prev.sedes, sedeId] }));
+                        }
+                      }}
+                      className={`flex items-center gap-2 w-full text-left text-sm px-2 py-1 rounded transition ${
+                        isActive ? 'bg-gray-100' : 'opacity-50'
+                      }`}
+                    >
+                      <div
+                        className={`w-3 h-3 rounded-full ${isActive ? '' : 'opacity-30'}`}
+                        style={{ backgroundColor: COLORES_SEDE[sedeId] }}
+                      />
+                      <span className={isActive ? '' : 'line-through'}>{nombre}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

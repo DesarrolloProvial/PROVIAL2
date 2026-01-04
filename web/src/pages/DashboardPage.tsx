@@ -8,7 +8,7 @@ import type { Incidente } from '../types';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
 import ResumenUnidadesTable from '../components/ResumenUnidadesTable';
-import { RefreshCw, Settings, X, Wifi, WifiOff, AlertTriangle, Crown } from 'lucide-react';
+import { RefreshCw, Settings, X, Wifi, WifiOff, AlertTriangle, Crown, LogOut } from 'lucide-react';
 import { useDashboardSocket } from '../hooks/useSocket';
 
 // Fix para iconos de Leaflet en Vite
@@ -87,7 +87,7 @@ function MapController({ center }: { center: LatLngExpression }) {
 }
 
 export default function DashboardPage() {
-  useAuthStore(); // Usado para autenticación
+  const { logout } = useAuthStore();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedIncidente, setSelectedIncidente] = useState<Incidente | null>(null);
@@ -254,6 +254,13 @@ export default function DashboardPage() {
               >
                 <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
+              <button
+                onClick={() => logout()}
+                className="p-2 bg-white/20 hover:bg-red-500/50 text-white rounded-lg transition"
+                title="Cerrar sesion"
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
             </div>
           </div>
           <p className="text-blue-100 text-sm">Centro de Operaciones</p>
@@ -326,12 +333,6 @@ export default function DashboardPage() {
               className="px-3 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg text-xs font-medium transition flex items-center gap-1"
             >
               <span>Persistentes</span>
-            </button>
-            <button
-              onClick={() => navigate('/eventos')}
-              className="px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-xs font-medium transition flex items-center gap-1"
-            >
-              <span>Eventos</span>
             </button>
             <button
               onClick={() => navigate('/operaciones')}

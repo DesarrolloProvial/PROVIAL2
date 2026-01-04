@@ -112,11 +112,11 @@ export const AdministracionModel = {
   // DEPARTAMENTOS
   // =====================================================
 
-  async getDepartamentos(): Promise<DepartamentoSistema[]> {
+  async getDepartamentos(incluirInactivos = false): Promise<DepartamentoSistema[]> {
     return db.manyOrNone(`
       SELECT id, codigo, nombre, descripcion, usa_sistema_grupos, orden, activo
       FROM departamento_sistema
-      WHERE activo = TRUE
+      ${incluirInactivos ? '' : 'WHERE activo = TRUE'}
       ORDER BY orden, nombre
     `);
   },
@@ -127,11 +127,30 @@ export const AdministracionModel = {
     `, [id]);
   },
 
+  async createDepartamento(data: {
+    codigo: string;
+    nombre: string;
+    descripcion?: string;
+    usa_sistema_grupos?: boolean;
+    orden?: number;
+  }): Promise<number> {
+    const result = await db.one<{ id: number }>(`
+      INSERT INTO departamento_sistema (codigo, nombre, descripcion, usa_sistema_grupos, orden)
+      VALUES ($1, $2, $3, $4, COALESCE($5, (SELECT COALESCE(MAX(orden), 0) + 1 FROM departamento_sistema)))
+      RETURNING id
+    `, [data.codigo, data.nombre, data.descripcion || null, data.usa_sistema_grupos ?? true, data.orden]);
+    return result.id;
+  },
+
   async updateDepartamento(id: number, data: Partial<DepartamentoSistema>): Promise<void> {
     const campos: string[] = [];
     const valores: unknown[] = [];
     let idx = 1;
 
+    if (data.codigo !== undefined) {
+      campos.push(`codigo = $${idx++}`);
+      valores.push(data.codigo);
+    }
     if (data.nombre !== undefined) {
       campos.push(`nombre = $${idx++}`);
       valores.push(data.nombre);
@@ -143,6 +162,10 @@ export const AdministracionModel = {
     if (data.usa_sistema_grupos !== undefined) {
       campos.push(`usa_sistema_grupos = $${idx++}`);
       valores.push(data.usa_sistema_grupos);
+    }
+    if (data.orden !== undefined) {
+      campos.push(`orden = $${idx++}`);
+      valores.push(data.orden);
     }
     if (data.activo !== undefined) {
       campos.push(`activo = $${idx++}`);
@@ -156,6 +179,110 @@ export const AdministracionModel = {
         UPDATE departamento_sistema SET ${campos.join(', ')} WHERE id = $${idx}
       `, valores);
     }
+  },
+
+  async deleteDepartamento(id: number): Promise<void> {
+    await db.none(`UPDATE departamento_sistema SET activo = FALSE WHERE id = $1`, [id]);
+  },
+
+  // =====================================================
+  // SEDES
+  // =====================================================
+
+  async getSedes(incluirInactivas = false): Promise<Array<{
+    id: number;
+    codigo: string;
+    nombre: string;
+    departamento_id: number | null;
+    departamento_nombre: string | null;
+    activa: boolean;
+    es_sede_central: boolean;
+    usuarios_count: number;
+    unidades_count: number;
+  }>> {
+    return db.manyOrNone(`
+      SELECT
+        s.id, s.codigo, s.nombre,
+        s.departamento_id, d.nombre AS departamento_nombre,
+        s.activa,
+        COALESCE(s.es_sede_central, FALSE) AS es_sede_central,
+        (SELECT COUNT(*) FROM usuario u WHERE u.sede_id = s.id AND u.activo = TRUE) AS usuarios_count,
+        (SELECT COUNT(*) FROM unidad un WHERE un.sede_id = s.id AND un.activa = TRUE) AS unidades_count
+      FROM sede s
+      LEFT JOIN departamento d ON d.id = s.departamento_id
+      ${incluirInactivas ? '' : 'WHERE s.activa = TRUE'}
+      ORDER BY COALESCE(s.es_sede_central, FALSE) DESC, s.nombre
+    `);
+  },
+
+  async getSede(id: number): Promise<{
+    id: number;
+    codigo: string;
+    nombre: string;
+    departamento_id: number | null;
+    activa: boolean;
+    es_sede_central: boolean;
+  } | null> {
+    return db.oneOrNone(`
+      SELECT id, codigo, nombre, departamento_id, activa, COALESCE(es_sede_central, FALSE) AS es_sede_central
+      FROM sede WHERE id = $1
+    `, [id]);
+  },
+
+  async createSede(data: {
+    codigo: string;
+    nombre: string;
+    departamento_id?: number;
+    es_sede_central?: boolean;
+  }): Promise<number> {
+    const result = await db.one<{ id: number }>(`
+      INSERT INTO sede (codigo, nombre, departamento_id, es_sede_central)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id
+    `, [
+      data.codigo, data.nombre, data.departamento_id || null, data.es_sede_central ?? false
+    ]);
+    return result.id;
+  },
+
+  async updateSede(id: number, data: Partial<{
+    codigo: string;
+    nombre: string;
+    departamento_id: number | null;
+    activa: boolean;
+    es_sede_central: boolean;
+  }>): Promise<void> {
+    const campos: string[] = [];
+    const valores: unknown[] = [];
+    let idx = 1;
+
+    const camposPermitidos: Array<keyof typeof data> = [
+      'codigo', 'nombre', 'departamento_id', 'activa', 'es_sede_central'
+    ];
+
+    for (const campo of camposPermitidos) {
+      if (data[campo] !== undefined) {
+        campos.push(`${campo} = $${idx++}`);
+        valores.push(data[campo]);
+      }
+    }
+
+    if (campos.length > 0) {
+      valores.push(id);
+      await db.none(`UPDATE sede SET ${campos.join(', ')}, updated_at = NOW() WHERE id = $${idx}`, valores);
+    }
+  },
+
+  async deleteSede(id: number): Promise<void> {
+    await db.none(`UPDATE sede SET activa = FALSE WHERE id = $1`, [id]);
+  },
+
+  async getDepartamentosGeograficos(): Promise<Array<{ id: number; nombre: string }>> {
+    return db.manyOrNone(`SELECT id, nombre FROM departamento ORDER BY nombre`);
+  },
+
+  async getMunicipiosPorDepartamento(departamentoId: number): Promise<Array<{ id: number; nombre: string }>> {
+    return db.manyOrNone(`SELECT id, nombre FROM municipio WHERE departamento_id = $1 ORDER BY nombre`, [departamentoId]);
   },
 
   // =====================================================
@@ -591,6 +718,69 @@ export const AdministracionModel = {
         normal: parseInt(gruposActivos.normal)
       }
     };
+  },
+
+  // =====================================================
+  // CONFIGURACION DE COLUMNAS DINAMICAS
+  // =====================================================
+
+  async getConfiguracionColumnas(sedeId: number | null, tablaNombre: string): Promise<{
+    columnas_visibles: string[];
+    orden_columnas: string[];
+  } | null> {
+    // Primero buscar configuracion especifica de la sede
+    if (sedeId) {
+      const config = await db.oneOrNone<{ columnas_visibles: string[]; orden_columnas: string[] }>(`
+        SELECT columnas_visibles, orden_columnas
+        FROM configuracion_columnas_tabla
+        WHERE sede_id = $1 AND tabla_nombre = $2
+      `, [sedeId, tablaNombre]);
+      if (config) return config;
+    }
+
+    // Si no hay configuracion de sede, buscar la global (sede_id = NULL)
+    return db.oneOrNone<{ columnas_visibles: string[]; orden_columnas: string[] }>(`
+      SELECT columnas_visibles, orden_columnas
+      FROM configuracion_columnas_tabla
+      WHERE sede_id IS NULL AND tabla_nombre = $1
+    `, [tablaNombre]);
+  },
+
+  async setConfiguracionColumnas(
+    sedeId: number | null,
+    tablaNombre: string,
+    columnasVisibles: string[],
+    ordenColumnas: string[],
+    usuarioId: number
+  ): Promise<void> {
+    await db.none(`
+      INSERT INTO configuracion_columnas_tabla (sede_id, tabla_nombre, columnas_visibles, orden_columnas, creado_por)
+      VALUES ($1, $2, $3::jsonb, $4, $5)
+      ON CONFLICT (sede_id, tabla_nombre)
+      DO UPDATE SET
+        columnas_visibles = $3::jsonb,
+        orden_columnas = $4,
+        updated_at = NOW()
+    `, [sedeId, tablaNombre, JSON.stringify(columnasVisibles), ordenColumnas, usuarioId]);
+  },
+
+  async getAllConfiguracionColumnas(tablaNombre: string): Promise<Array<{
+    sede_id: number | null;
+    sede_nombre: string | null;
+    columnas_visibles: string[];
+    orden_columnas: string[];
+  }>> {
+    return db.manyOrNone(`
+      SELECT
+        c.sede_id,
+        s.nombre AS sede_nombre,
+        c.columnas_visibles,
+        c.orden_columnas
+      FROM configuracion_columnas_tabla c
+      LEFT JOIN sede s ON s.id = c.sede_id
+      WHERE c.tabla_nombre = $1
+      ORDER BY c.sede_id NULLS FIRST, s.nombre
+    `, [tablaNombre]);
   },
 
   // =====================================================

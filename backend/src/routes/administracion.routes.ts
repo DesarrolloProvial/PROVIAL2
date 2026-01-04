@@ -11,11 +11,49 @@ import * as controller from '../controllers/administracion.controller';
 const router = Router();
 
 // =====================================================
-// DEPARTAMENTOS
+// DEPARTAMENTOS DEL SISTEMA
 // =====================================================
 
 // Obtener lista de departamentos
 router.get('/departamentos', authenticate, authorizeAdminOrSuperAdmin(), controller.getDepartamentos);
+
+// Crear departamento (solo SUPER_ADMIN)
+router.post('/departamentos', authenticate, authorizeSuperAdmin(), controller.createDepartamento);
+
+// Actualizar departamento (solo SUPER_ADMIN)
+router.put('/departamentos/:id', authenticate, authorizeSuperAdmin(), controller.updateDepartamento);
+
+// Eliminar (desactivar) departamento (solo SUPER_ADMIN)
+router.delete('/departamentos/:id', authenticate, authorizeSuperAdmin(), controller.deleteDepartamento);
+
+// =====================================================
+// SEDES
+// =====================================================
+
+// Obtener lista de sedes con conteos
+router.get('/sedes', authenticate, authorizeAdminOrSuperAdmin(), controller.getSedes);
+
+// Obtener sede por ID
+router.get('/sedes/:id', authenticate, authorizeAdminOrSuperAdmin(), controller.getSede);
+
+// Crear sede (solo SUPER_ADMIN)
+router.post('/sedes', authenticate, authorizeSuperAdmin(), controller.createSede);
+
+// Actualizar sede (solo SUPER_ADMIN)
+router.put('/sedes/:id', authenticate, authorizeSuperAdmin(), controller.updateSede);
+
+// Eliminar (desactivar) sede (solo SUPER_ADMIN)
+router.delete('/sedes/:id', authenticate, authorizeSuperAdmin(), controller.deleteSede);
+
+// =====================================================
+// CATALOGO GEOGRAFICO
+// =====================================================
+
+// Obtener departamentos geograficos (para selects)
+router.get('/catalogo/departamentos', authenticate, authorizeAdminOrSuperAdmin(), controller.getDepartamentosGeograficos);
+
+// Obtener municipios por departamento
+router.get('/catalogo/municipios/:departamento_id', authenticate, authorizeAdminOrSuperAdmin(), controller.getMunicipiosPorDepartamento);
 
 // =====================================================
 // ESTADO DE GRUPOS
@@ -110,5 +148,21 @@ router.get('/log', authenticate, authorizeSuperAdmin(), controller.getLogAdminis
 
 // Obtener estadisticas de administracion
 router.get('/estadisticas', authenticate, authorizeAdminOrSuperAdmin(), controller.getEstadisticas);
+
+// =====================================================
+// CONFIGURACION DE COLUMNAS DINAMICAS
+// =====================================================
+
+// Obtener columnas disponibles para una tabla
+router.get('/columnas/:tabla/disponibles', authenticate, authorizeAdminOrSuperAdmin(), controller.getColumnasDisponibles);
+
+// Obtener configuracion de columnas para una tabla (opcionalmente por sede)
+router.get('/columnas/:tabla', authenticate, controller.getConfiguracionColumnas);
+
+// Guardar configuracion de columnas
+router.put('/columnas/:tabla', authenticate, authorizeAdminOrSuperAdmin(), controller.setConfiguracionColumnas);
+
+// Obtener todas las configuraciones de columnas por sede
+router.get('/columnas/:tabla/all', authenticate, authorizeSuperAdmin(), controller.getAllConfiguracionColumnas);
 
 export default router;

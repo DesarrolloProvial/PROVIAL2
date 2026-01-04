@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/authStore';
 import {
   administracionAPI,
   DepartamentoSistema,
+  SedeCompleta,
   EstadoGrupo,
   EncargadoActual,
   UsuarioAdmin,
@@ -14,7 +15,6 @@ import {
   getNombreGrupo,
   getColorGrupo,
 } from '../services/administracion.service';
-import { api } from '../services/api';
 import {
   Users,
   Shield,
@@ -36,13 +36,10 @@ import {
   Eye,
   EyeOff,
   Save,
+  KeyRound,
+  MapPin,
+  Star,
 } from 'lucide-react';
-
-interface Sede {
-  id: number;
-  codigo: string;
-  nombre: string;
-}
 
 type TabType = 'dashboard' | 'usuarios' | 'grupos' | 'encargados' | 'configuracion' | 'auditoria';
 
@@ -75,12 +72,10 @@ export default function SuperAdminPage() {
   });
 
   const { data: sedes } = useQuery({
-    queryKey: ['admin-sedes'],
-    queryFn: async () => {
-      const res = await api.get<{ sedes: Sede[] }>('/sedes');
-      return res.data.sedes;
-    },
+    queryKey: ['admin-sedes-completas'],
+    queryFn: () => administracionAPI.getSedes(),
     enabled: canAccess,
+    select: (res) => res.data,
   });
 
   const { data: roles } = useQuery({
@@ -167,6 +162,7 @@ export default function SuperAdminPage() {
             estadisticas={estadisticas}
             departamentos={departamentos || []}
             sedes={sedes || []}
+            isSuperAdmin={isSuperAdmin}
           />
         )}
         {activeTab === 'usuarios' && (
@@ -204,11 +200,17 @@ function DashboardTab({
   estadisticas,
   departamentos,
   sedes,
+  isSuperAdmin,
 }: {
   estadisticas?: EstadisticasAdmin;
   departamentos: DepartamentoSistema[];
-  sedes: Sede[];
+  sedes: SedeCompleta[];
+  isSuperAdmin: boolean;
 }) {
+  const queryClient = useQueryClient();
+  const [modalDepartamento, setModalDepartamento] = useState<DepartamentoSistema | 'new' | null>(null);
+  const [modalSede, setModalSede] = useState<SedeCompleta | 'new' | null>(null);
+
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
@@ -242,15 +244,26 @@ function DashboardTab({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Departamentos */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-indigo-600" />
-            Departamentos del Sistema
-          </h3>
-          <div className="space-y-2">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-indigo-600" />
+              Departamentos del Sistema
+            </h3>
+            {isSuperAdmin && (
+              <button
+                onClick={() => setModalDepartamento('new')}
+                className="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded"
+                title="Agregar departamento"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+          <div className="space-y-2 max-h-80 overflow-y-auto">
             {departamentos.map((depto) => (
               <div
                 key={depto.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <div>
                   <p className="font-medium text-gray-900">{depto.nombre}</p>
@@ -269,6 +282,15 @@ function DashboardTab({
                   >
                     {depto.activo ? 'Activo' : 'Inactivo'}
                   </span>
+                  {isSuperAdmin && (
+                    <button
+                      onClick={() => setModalDepartamento(depto)}
+                      className="p-1 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded"
+                      title="Editar"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -277,16 +299,57 @@ function DashboardTab({
 
         {/* Sedes */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-green-600" />
-            Sedes ({sedes.length})
-          </h3>
-          <div className="space-y-2 max-h-64 overflow-y-auto">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-green-600" />
+              Sedes ({sedes.length})
+            </h3>
+            {isSuperAdmin && (
+              <button
+                onClick={() => setModalSede('new')}
+                className="p-1.5 text-green-600 hover:bg-green-100 rounded"
+                title="Agregar sede"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+          <div className="space-y-2 max-h-80 overflow-y-auto">
             {sedes.map((sede) => (
-              <div key={sede.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">{sede.nombre}</p>
+              <div key={sede.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-gray-900 truncate">{sede.nombre}</p>
+                    {sede.es_sede_central && (
+                      <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" />
+                    )}
+                  </div>
                   <p className="text-sm text-gray-500">{sede.codigo}</p>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                    <span className="flex items-center gap-1">
+                      <Users className="w-3 h-3" />
+                      {sede.usuarios_count}
+                    </span>
+                    <span>{sede.departamento_nombre || '-'}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`px-2 py-1 text-xs rounded ${
+                      sede.activa ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    {sede.activa ? 'Activa' : 'Inactiva'}
+                  </span>
+                  {isSuperAdmin && (
+                    <button
+                      onClick={() => setModalSede(sede)}
+                      className="p-1 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded"
+                      title="Editar"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -308,6 +371,352 @@ function DashboardTab({
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Modal Departamento */}
+      {modalDepartamento && (
+        <ModalDepartamento
+          departamento={modalDepartamento === 'new' ? null : modalDepartamento}
+          onClose={() => setModalDepartamento(null)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['admin-departamentos'] });
+            setModalDepartamento(null);
+          }}
+        />
+      )}
+
+      {/* Modal Sede */}
+      {modalSede && (
+        <ModalSede
+          sede={modalSede === 'new' ? null : modalSede}
+          onClose={() => setModalSede(null)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['admin-sedes-completas'] });
+            setModalSede(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// =====================================================
+// MODAL DEPARTAMENTO
+// =====================================================
+
+function ModalDepartamento({
+  departamento,
+  onClose,
+  onSuccess,
+}: {
+  departamento: DepartamentoSistema | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const isNew = !departamento;
+  const [formData, setFormData] = useState({
+    codigo: departamento?.codigo || '',
+    nombre: departamento?.nombre || '',
+    descripcion: departamento?.descripcion || '',
+    usa_sistema_grupos: departamento?.usa_sistema_grupos ?? true,
+    activo: departamento?.activo ?? true,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: () => administracionAPI.createDepartamento(formData),
+    onSuccess: () => {
+      alert('Departamento creado correctamente');
+      onSuccess();
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.error || 'Error al crear departamento');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: () => administracionAPI.updateDepartamento(departamento!.id, formData),
+    onSuccess: () => {
+      alert('Departamento actualizado correctamente');
+      onSuccess();
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.error || 'Error al actualizar departamento');
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.codigo.trim() || !formData.nombre.trim()) {
+      alert('Codigo y nombre son requeridos');
+      return;
+    }
+    if (isNew) {
+      createMutation.mutate();
+    } else {
+      updateMutation.mutate();
+    }
+  };
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-900">
+            {isNew ? 'Nuevo Departamento' : 'Editar Departamento'}
+          </h2>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Codigo</label>
+            <input
+              type="text"
+              value={formData.codigo}
+              onChange={(e) => setFormData({ ...formData, codigo: e.target.value.toUpperCase() })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              placeholder="Ej: BRIGADA"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <input
+              type="text"
+              value={formData.nombre}
+              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              placeholder="Ej: Brigadas de Campo"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Descripcion</label>
+            <textarea
+              value={formData.descripcion}
+              onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              rows={2}
+              placeholder="Descripcion del departamento..."
+            />
+          </div>
+
+          <div className="flex items-center gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.usa_sistema_grupos}
+                onChange={(e) => setFormData({ ...formData, usa_sistema_grupos: e.target.checked })}
+                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              />
+              <span className="text-sm text-gray-700">Usa Sistema de Grupos</span>
+            </label>
+
+            {!isNew && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.activo}
+                  onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
+                  className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                />
+                <span className="text-sm text-gray-700">Activo</span>
+              </label>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {isLoading ? 'Guardando...' : isNew ? 'Crear' : 'Guardar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
+// MODAL SEDE
+// =====================================================
+
+function ModalSede({
+  sede,
+  onClose,
+  onSuccess,
+}: {
+  sede: SedeCompleta | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const isNew = !sede;
+  const [formData, setFormData] = useState({
+    codigo: sede?.codigo || '',
+    nombre: sede?.nombre || '',
+    departamento_id: sede?.departamento_id || undefined as number | undefined,
+    es_sede_central: sede?.es_sede_central ?? false,
+    activa: sede?.activa ?? true,
+  });
+
+  const { data: departamentosGeo } = useQuery({
+    queryKey: ['catalogo-departamentos-geo'],
+    queryFn: () => administracionAPI.getDepartamentosGeograficos(),
+    select: (res) => res.data,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: () => administracionAPI.createSede(formData),
+    onSuccess: () => {
+      alert('Sede creada correctamente');
+      onSuccess();
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.error || 'Error al crear sede');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: () => administracionAPI.updateSede(sede!.id, formData),
+    onSuccess: () => {
+      alert('Sede actualizada correctamente');
+      onSuccess();
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.error || 'Error al actualizar sede');
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.codigo.trim() || !formData.nombre.trim()) {
+      alert('Codigo y nombre son requeridos');
+      return;
+    }
+    if (isNew) {
+      createMutation.mutate();
+    } else {
+      updateMutation.mutate();
+    }
+  };
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-900">
+            {isNew ? 'Nueva Sede' : 'Editar Sede'}
+          </h2>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Codigo</label>
+              <input
+                type="text"
+                value={formData.codigo}
+                onChange={(e) => setFormData({ ...formData, codigo: e.target.value.toUpperCase() })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                placeholder="Ej: GUATE"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+              <input
+                type="text"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                placeholder="Ej: Guatemala"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
+            <select
+              value={formData.departamento_id || ''}
+              onChange={(e) => setFormData({
+                ...formData,
+                departamento_id: e.target.value ? parseInt(e.target.value) : undefined,
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+            >
+              <option value="">Seleccionar...</option>
+              {departamentosGeo?.map((d) => (
+                <option key={d.id} value={d.id}>{d.nombre}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.es_sede_central}
+                onChange={(e) => setFormData({ ...formData, es_sede_central: e.target.checked })}
+                className="w-4 h-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500"
+              />
+              <span className="text-sm text-gray-700 flex items-center gap-1">
+                <Star className="w-4 h-4 text-yellow-500" />
+                Sede Central
+              </span>
+            </label>
+
+            {!isNew && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.activa}
+                  onChange={(e) => setFormData({ ...formData, activa: e.target.checked })}
+                  className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                />
+                <span className="text-sm text-gray-700">Activa</span>
+              </label>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+            >
+              {isLoading ? 'Guardando...' : isNew ? 'Crear' : 'Guardar'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -347,7 +756,7 @@ function UsuariosTab({
   isSuperAdmin,
 }: {
   roles: Rol[];
-  sedes: Sede[];
+  sedes: SedeCompleta[];
   isSuperAdmin: boolean;
 }) {
   const queryClient = useQueryClient();
@@ -409,6 +818,17 @@ function UsuariosTab({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-usuarios'] });
       setModalUsuario(null);
+    },
+  });
+
+  const habilitarResetMutation = useMutation({
+    mutationFn: (userId: number) => administracionAPI.habilitarResetPassword(userId),
+    onSuccess: () => {
+      alert('Reset de contraseña habilitado. El usuario podrá cambiar su contraseña desde la app móvil.');
+      queryClient.invalidateQueries({ queryKey: ['admin-usuarios'] });
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.error || 'Error al habilitar reset');
     },
   });
 
@@ -564,13 +984,27 @@ function UsuariosTab({
                       </button>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => setModalUsuario(usuario)}
-                        className="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded"
-                        title="Editar usuario"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => setModalUsuario(usuario)}
+                          className="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded"
+                          title="Editar usuario"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`¿Habilitar reset de contraseña para ${usuario.nombre_completo}?\n\nEl usuario podrá cambiar su contraseña desde la app móvil.`)) {
+                              habilitarResetMutation.mutate(usuario.id);
+                            }
+                          }}
+                          disabled={habilitarResetMutation.isPending}
+                          className="p-1.5 text-orange-600 hover:bg-orange-100 rounded disabled:opacity-50"
+                          title="Habilitar reset de contraseña"
+                        >
+                          <KeyRound className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -714,7 +1148,7 @@ function GruposTab({
   sedes,
 }: {
   departamentos: DepartamentoSistema[];
-  sedes: Sede[];
+  sedes: SedeCompleta[];
 }) {
   const queryClient = useQueryClient();
   const [sedeSeleccionada, setSedeSeleccionada] = useState<string>('');
@@ -871,7 +1305,7 @@ function GruposTab({
 // ENCARGADOS TAB
 // =====================================================
 
-function EncargadosTab({ sedes }: { sedes: Sede[] }) {
+function EncargadosTab({ sedes }: { sedes: SedeCompleta[] }) {
   const queryClient = useQueryClient();
   const [sedeSeleccionada, setSedeSeleccionada] = useState<string>('');
   const [modalAsignar, setModalAsignar] = useState<{
@@ -956,7 +1390,9 @@ function EncargadosTab({ sedes }: { sedes: Sede[] }) {
         <div className="text-center py-8 text-gray-500">Cargando encargados...</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {sedes.map((sede) => {
+          {sedes
+            .filter((sede) => !sedeSeleccionada || sede.id === parseInt(sedeSeleccionada))
+            .map((sede) => {
             const sedeData = encargadosPorSede?.[sede.id];
             return (
               <div key={sede.id} className="bg-white rounded-lg shadow">

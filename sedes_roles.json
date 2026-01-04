@@ -1,0 +1,79 @@
+{
+  "sedes": [
+    {
+      "id": 1,
+      "nombre": "Central",
+      "codigo": "CENTRAL"
+    },
+    {
+      "id": 2,
+      "nombre": "Mazatenango",
+      "codigo": "MAZATE"
+    },
+    {
+      "id": 5,
+      "nombre": "Quetzaltenango",
+      "codigo": "XELA"
+    },
+    {
+      "id": 6,
+      "nombre": "Coatepeque",
+      "codigo": "COATE"
+    },
+    {
+      "id": 7,
+      "nombre": "Palin Escuintla",
+      "codigo": "PALIN"
+    },
+    {
+      "id": 8,
+      "nombre": "Morales",
+      "codigo": "MORALES"
+    },
+    {
+      "id": 9,
+      "nombre": "Rio Dulce",
+      "codigo": "RIODULCE"
+    },
+    {
+      "id": 3,
+      "nombre": "Popt??n",
+      "codigo": "POPTUN"
+    },
+    {
+      "id": 4,
+      "nombre": "San Crist??bal",
+      "codigo": "SANCRIS"
+    }
+  ],
+  "roles": [
+    {
+      "id": 1,
+      "nombre": "ADMIN"
+    },
+    {
+      "id": 2,
+      "nombre": "COP"
+    },
+    {
+      "id": 3,
+      "nombre": "BRIGADA"
+    },
+    {
+      "id": 4,
+      "nombre": "OPERACIONES"
+    },
+    {
+      "id": 5,
+      "nombre": "ACCIDENTOLOGIA"
+    },
+    {
+      "id": 6,
+      "nombre": "MANDOS"
+    },
+    {
+      "id": 7,
+      "nombre": "PUBLICO"
+    }
+  ]
+}

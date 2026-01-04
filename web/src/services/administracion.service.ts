@@ -8,8 +8,32 @@ export interface DepartamentoSistema {
   id: number;
   codigo: string;
   nombre: string;
+  descripcion?: string;
   usa_sistema_grupos: boolean;
+  orden: number;
   activo: boolean;
+}
+
+export interface SedeCompleta {
+  id: number;
+  codigo: string;
+  nombre: string;
+  departamento_id: number | null;
+  departamento_nombre: string | null;
+  activa: boolean;
+  es_sede_central: boolean;
+  usuarios_count: number;
+  unidades_count: number;
+}
+
+export interface DepartamentoGeografico {
+  id: number;
+  nombre: string;
+}
+
+export interface Municipio {
+  id: number;
+  nombre: string;
 }
 
 export interface EstadoGrupo {
@@ -170,10 +194,74 @@ export interface FiltrosLog {
 
 export const administracionAPI = {
   // ------------------------------------
-  // DEPARTAMENTOS
+  // DEPARTAMENTOS DEL SISTEMA
   // ------------------------------------
-  getDepartamentos: () =>
-    api.get<DepartamentoSistema[]>('/admin/departamentos'),
+  getDepartamentos: (incluirInactivos = false) =>
+    api.get<DepartamentoSistema[]>('/admin/departamentos', {
+      params: { incluir_inactivos: incluirInactivos }
+    }),
+
+  createDepartamento: (data: {
+    codigo: string;
+    nombre: string;
+    descripcion?: string;
+    usa_sistema_grupos?: boolean;
+    orden?: number;
+  }) =>
+    api.post<{ success: boolean; id: number; message: string }>('/admin/departamentos', data),
+
+  updateDepartamento: (id: number, data: Partial<{
+    codigo: string;
+    nombre: string;
+    descripcion: string;
+    usa_sistema_grupos: boolean;
+    orden: number;
+    activo: boolean;
+  }>) =>
+    api.put<{ success: boolean; message: string }>(`/admin/departamentos/${id}`, data),
+
+  deleteDepartamento: (id: number) =>
+    api.delete<{ success: boolean; message: string }>(`/admin/departamentos/${id}`),
+
+  // ------------------------------------
+  // SEDES
+  // ------------------------------------
+  getSedes: (incluirInactivas = false) =>
+    api.get<SedeCompleta[]>('/admin/sedes', {
+      params: { incluir_inactivas: incluirInactivas }
+    }),
+
+  getSede: (id: number) =>
+    api.get<SedeCompleta>(`/admin/sedes/${id}`),
+
+  createSede: (data: {
+    codigo: string;
+    nombre: string;
+    departamento_id?: number;
+    es_sede_central?: boolean;
+  }) =>
+    api.post<{ success: boolean; id: number; message: string }>('/admin/sedes', data),
+
+  updateSede: (id: number, data: Partial<{
+    codigo: string;
+    nombre: string;
+    departamento_id: number | null;
+    activa: boolean;
+    es_sede_central: boolean;
+  }>) =>
+    api.put<{ success: boolean; message: string }>(`/admin/sedes/${id}`, data),
+
+  deleteSede: (id: number) =>
+    api.delete<{ success: boolean; message: string }>(`/admin/sedes/${id}`),
+
+  // ------------------------------------
+  // CATALOGO GEOGRAFICO
+  // ------------------------------------
+  getDepartamentosGeograficos: () =>
+    api.get<DepartamentoGeografico[]>('/admin/catalogo/departamentos'),
+
+  getMunicipiosPorDepartamento: (departamentoId: number) =>
+    api.get<Municipio[]>(`/admin/catalogo/municipios/${departamentoId}`),
 
   // ------------------------------------
   // ESTADO DE GRUPOS
@@ -311,6 +399,61 @@ export const administracionAPI = {
   // ------------------------------------
   getEstadisticas: () =>
     api.get<EstadisticasAdmin>('/admin/estadisticas'),
+
+  // ------------------------------------
+  // RESET DE CONTRASEÑA
+  // ------------------------------------
+  getUsuariosConResetPendiente: () =>
+    api.get<{ total: number; usuarios: UsuarioAdmin[] }>('/admin/usuarios/reset-pendiente'),
+
+  habilitarResetPassword: (userId: number) =>
+    api.post<{ success: boolean; message: string }>(`/admin/usuarios/${userId}/habilitar-reset-password`),
+
+  deshabilitarResetPassword: (userId: number) =>
+    api.delete<{ success: boolean; message: string }>(`/admin/usuarios/${userId}/habilitar-reset-password`),
+
+  getHistorialReset: (userId: number) =>
+    api.get<{ total: number; historial: any[] }>(`/admin/usuarios/${userId}/historial-reset`),
+
+  // ------------------------------------
+  // CONFIGURACION DE COLUMNAS DINAMICAS
+  // ------------------------------------
+  getColumnasDisponibles: (tabla: 'brigadas' | 'unidades') =>
+    api.get<{
+      tabla: string;
+      columnas: Array<{ key: string; label: string; descripcion: string }>;
+    }>(`/admin/columnas/${tabla}/disponibles`),
+
+  getConfiguracionColumnas: (tabla: 'brigadas' | 'unidades', sedeId?: number) =>
+    api.get<{
+      columnas_visibles: string[];
+      orden_columnas: string[];
+      es_default: boolean;
+    }>(`/admin/columnas/${tabla}`, {
+      params: sedeId ? { sede_id: sedeId } : undefined
+    }),
+
+  setConfiguracionColumnas: (
+    tabla: 'brigadas' | 'unidades',
+    data: {
+      sede_id?: number | null;
+      columnas_visibles: string[];
+      orden_columnas?: string[];
+    }
+  ) =>
+    api.put<{ success: boolean; message: string }>(`/admin/columnas/${tabla}`, data),
+
+  getAllConfiguracionColumnas: (tabla: 'brigadas' | 'unidades') =>
+    api.get<{
+      tabla: string;
+      columnas_disponibles: Array<{ key: string; label: string; descripcion: string }>;
+      configuraciones: Array<{
+        sede_id: number | null;
+        sede_nombre: string | null;
+        columnas_visibles: string[];
+        orden_columnas: string[];
+      }>;
+    }>(`/admin/columnas/${tabla}/all`),
 };
 
 // Helpers para nombres de grupos

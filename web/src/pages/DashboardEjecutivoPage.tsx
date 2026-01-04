@@ -16,7 +16,9 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { LogOut, RefreshCw } from 'lucide-react';
 import api from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 interface DashboardData {
   resumen: {
@@ -70,6 +72,7 @@ interface DashboardData {
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function DashboardEjecutivoPage() {
+  const { user, logout } = useAuthStore();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -134,7 +137,9 @@ export default function DashboardEjecutivoPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard Ejecutivo</h1>
-          <p className="text-gray-600">Vista general del sistema PROVIAL</p>
+          <p className="text-gray-600">
+            {user?.nombre_completo || user?.username} - {user?.rol}
+          </p>
         </div>
         <div className="flex items-center gap-4">
           <select
@@ -150,9 +155,17 @@ export default function DashboardEjecutivoPage() {
           </select>
           <button
             onClick={cargarDashboard}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
           >
+            <RefreshCw className="w-4 h-4" />
             Actualizar
+          </button>
+          <button
+            onClick={() => logout()}
+            className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition flex items-center gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            Salir
           </button>
         </div>
       </div>

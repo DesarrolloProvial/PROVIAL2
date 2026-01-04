@@ -5,6 +5,7 @@ import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { RootStackParamList } from '../types/navigation';
 import { useAuthStore } from '../store/authStore';
 import LoginScreen from '../screens/auth/LoginScreen';
+import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen';
 import MainDrawer from './MainDrawer';
 import { COLORS } from '../constants/colors';
 
@@ -29,7 +30,10 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator id="app" screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
-          <Stack.Screen name="Auth" component={LoginScreen} />
+          <>
+            <Stack.Screen name="Auth" component={LoginScreen} />
+            <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+          </>
         ) : (
           <Stack.Screen name="Main" component={MainDrawer} />
         )}
