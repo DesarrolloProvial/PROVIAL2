@@ -152,6 +152,7 @@ export interface SituacionPersistenteCompleta extends SituacionPersistente {
     unidad_codigo: string;
     fecha_asignacion: Date;
   }> | null;
+  sede_id?: number; // Agregado para filtros
 }
 
 export interface AsignacionSituacionPersistente {
@@ -196,6 +197,7 @@ export interface ActualizacionSituacionPersistente {
 // ========================================
 
 export const SituacionPersistenteModel = {
+  // ... (create, getById, getByUuid methods Unchanged)
   /**
    * Crear nueva situación persistente
    */
@@ -268,9 +270,11 @@ export const SituacionPersistenteModel = {
    */
   async getActivas(): Promise<SituacionPersistenteCompleta[]> {
     return db.manyOrNone(`
-      SELECT * FROM v_situaciones_persistentes_completas
-      WHERE estado = 'ACTIVA'
-      ORDER BY importancia DESC, fecha_inicio DESC
+      SELECT sp.*, u.sede_id
+      FROM v_situaciones_persistentes_completas sp
+      LEFT JOIN usuario u ON sp.creado_por = u.id
+      WHERE sp.estado = 'ACTIVA'
+      ORDER BY sp.importancia DESC, sp.fecha_inicio DESC
     `);
   },
 

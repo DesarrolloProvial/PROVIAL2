@@ -17,7 +17,8 @@ import {
   Filter,
   ArrowLeft,
   Settings,
-  Plus
+  Plus,
+  Key
 } from 'lucide-react';
 
 interface Brigada {
@@ -62,6 +63,7 @@ export default function GestionBrigadasPage() {
 
   // Estado de edición
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
   const [editData, setEditData] = useState<Partial<Brigada>>({});
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
@@ -160,6 +162,31 @@ export default function GestionBrigadasPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customFields'] })
   });
 
+  const createBrigadaMutation = useMutation({
+    mutationFn: async (data: Partial<Brigada>) => {
+      // Create expects: chapa, nombre, sede_id. And optional: telefono, email, grupo, rol_brigada
+      // Backend expects username/chapa to be same for brigadas usually.
+      return api.post('/brigadas', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brigadas'] });
+      setIsCreating(false);
+      setEditData({});
+    }
+  });
+
+  const enableResetPasswordMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return api.post(`/admin/usuarios/${id}/habilitar-reset-password`);
+    },
+    onSuccess: () => {
+      alert('Reset de contraseña habilitado para el usuario.');
+    },
+    onError: (error: any) => {
+      alert('Error al habilitar reset: ' + (error.response?.data?.error || 'Error desconocido'));
+    }
+  });
+
   const brigadas: Brigada[] = brigadasData?.brigadas || [];
 
   const getGrupoColor = (grupo: number | null) => {
@@ -195,6 +222,16 @@ export default function GestionBrigadasPage() {
               title="Configurar Columnas"
             >
               <Settings className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => {
+                setEditData({});
+                setIsCreating(true);
+              }}
+              className="p-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg flex items-center gap-1"
+              title="Nueva Brigada"
+            >
+              <Plus className="w-5 h-5" />
             </button>
             <button
               onClick={() => refetch()}
@@ -364,6 +401,17 @@ export default function GestionBrigadasPage() {
                             >
                               <Edit2 className="w-5 h-5" />
                             </button>
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`¿Habilitar reset de contraseña para ${brigada.nombre}?`)) {
+                                  enableResetPasswordMutation.mutate(brigada.id);
+                                }
+                              }}
+                              className="p-1 text-orange-500 hover:bg-orange-50 rounded"
+                              title="Reset Contraseña"
+                            >
+                              <Key className="w-5 h-5" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -407,13 +455,13 @@ export default function GestionBrigadasPage() {
         </div>
       </div>
 
-      {/* Modal de edicion */}
-      {editingId && (
+      {/* Modal de edicion/creacion */}
+      {(editingId || isCreating) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold">Editar Brigada</h3>
-              <button onClick={() => { setEditingId(null); setEditData({}); }} className="p-1 hover:bg-gray-100 rounded">
+              <h3 className="text-lg font-semibold">{isCreating ? 'Nueva Brigada' : 'Editar Brigada'}</h3>
+              <button onClick={() => { setEditingId(null); setIsCreating(false); setEditData({}); }} className="p-1 hover:bg-gray-100 rounded">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -427,6 +475,20 @@ export default function GestionBrigadasPage() {
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sede</label>
+                <select
+                  value={editData.sede_id || ''}
+                  onChange={(e) => setEditData({ ...editData, sede_id: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Seleccionar Sede</option>
+                  {sedes.map((sede: Sede) => (
+                    <option key={sede.id} value={sede.id}>{sede.nombre}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Chapa</label>
@@ -515,14 +577,22 @@ export default function GestionBrigadasPage() {
             </div>
             <div className="flex justify-end gap-2 p-4 border-t">
               <button
-                onClick={() => { setEditingId(null); setEditData({}); }}
+                onClick={() => { setEditingId(null); setIsCreating(false); setEditData({}); }}
                 className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => {
-                  updateBrigadaMutation.mutate({ id: editingId, data: editData });
+                  if (!editData.nombre || !editData.chapa || !editData.sede_id) {
+                    alert('Faltan campos requeridos (Nombre, Chapa, Sede)');
+                    return;
+                  }
+                  if (isCreating) {
+                    createBrigadaMutation.mutate(editData);
+                  } else if (editingId) {
+                    updateBrigadaMutation.mutate({ id: editingId, data: editData });
+                  }
                 }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
               >

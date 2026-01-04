@@ -4,7 +4,7 @@ import * as path from 'path';
 
 async function runMigration() {
     try {
-        const sqlPath = path.join('C:', 'Users', 'chris', '.gemini', 'antigravity', 'brain', '4b770e58-e2d0-475c-b1f7-0ddc8e809a81', '032_custom_fields_brigada.sql');
+        const sqlPath = path.join('C:', 'Users', 'chris', '.gemini', 'antigravity', 'brain', '4b770e58-e2d0-475c-b1f7-0ddc8e809a81', '034_rbac_tables.sql');
         console.log(`Reading migration file from: ${sqlPath}`);
 
         if (!fs.existsSync(sqlPath)) {

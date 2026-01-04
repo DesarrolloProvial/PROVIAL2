@@ -136,7 +136,8 @@ export async function crearUnidad(req: Request, res: Response) {
       modelo,
       anio,
       placa,
-      sede_id
+      sede_id,
+      custom_fields
     } = req.body;
 
     if (!codigo || !tipo_unidad || !sede_id) {
@@ -150,10 +151,10 @@ export async function crearUnidad(req: Request, res: Response) {
     }
 
     const unidad = await db.one(`
-      INSERT INTO unidad (codigo, tipo_unidad, marca, modelo, anio, placa, sede_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO unidad (codigo, tipo_unidad, marca, modelo, anio, placa, sede_id, custom_fields)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
-    `, [codigo, tipo_unidad, marca, modelo, anio, placa, sede_id]);
+    `, [codigo, tipo_unidad, marca, modelo, anio, placa, sede_id, custom_fields || {}]);
 
     return res.status(201).json({ message: 'Unidad creada exitosamente', unidad });
   } catch (error: any) {
@@ -175,7 +176,8 @@ export async function actualizarUnidad(req: Request, res: Response) {
       modelo,
       anio,
       placa,
-      sede_id
+      sede_id,
+      custom_fields
     } = req.body;
 
     const unidad = await db.oneOrNone('SELECT * FROM unidad WHERE id = $1', [id]);
@@ -191,10 +193,11 @@ export async function actualizarUnidad(req: Request, res: Response) {
         anio = COALESCE($4, anio),
         placa = COALESCE($5, placa),
         sede_id = COALESCE($6, sede_id),
+        custom_fields = COALESCE($8, custom_fields),
         updated_at = NOW()
       WHERE id = $7
       RETURNING *
-    `, [tipo_unidad, marca, modelo, anio, placa, sede_id, id]);
+    `, [tipo_unidad, marca, modelo, anio, placa, sede_id, id, custom_fields]);
 
     return res.json({ message: 'Unidad actualizada exitosamente', unidad: result });
   } catch (error) {

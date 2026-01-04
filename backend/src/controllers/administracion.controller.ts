@@ -546,6 +546,11 @@ export async function toggleUsuario(req: Request, res: Response) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
+    // Proteccion para usuario 19109
+    if (usuarioAnterior.chapa === '19109') {
+      return res.status(403).json({ error: 'No se puede desactivar al usuario maestro (19109)' });
+    }
+
     await AdministracionModel.toggleAccesoUsuario(usuarioId, activo);
 
     // Registrar en log
@@ -662,6 +667,22 @@ export async function cambiarRolUsuario(req: Request, res: Response) {
     const usuarioAnterior = await AdministracionModel.getUsuario(usuarioId);
     if (!usuarioAnterior) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // Validacion estricta para rol SUPER_ADMIN
+    const requester = await AdministracionModel.getUsuario(modificadoPor);
+    const roles = await AdministracionModel.getRoles();
+    const superAdminRole = roles.find(r => r.nombre === 'SUPER_ADMIN');
+
+    if (requester?.chapa !== '19109') {
+      // Si no es el 19109, no puede asignar SUPER_ADMIN
+      if (superAdminRole && rol_id === superAdminRole.id) {
+        return res.status(403).json({ error: 'Solo el usuario maestro (19109) puede asignar el rol de SUPER_ADMIN' });
+      }
+      // Si no es el 19109, no puede quitar/modificar a un SUPER_ADMIN existente
+      if (usuarioAnterior.rol_codigo === 'SUPER_ADMIN') {
+        return res.status(403).json({ error: 'Solo el usuario maestro (19109) puede modificar a un SUPER_ADMIN' });
+      }
     }
 
     await AdministracionModel.cambiarRolUsuario(usuarioId, rol_id);

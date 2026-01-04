@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Icon, LatLngExpression } from 'leaflet';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { incidentesAPI, situacionesAPI, eventosAPI } from '../services/api';
+import { incidentesAPI, situacionesAPI } from '../services/api';
 import { situacionesPersistentesAPI } from '../services/movimientos.service';
 import { useNavigate } from 'react-router-dom';
 import { RefreshCw, ArrowLeft, Wifi, WifiOff, AlertTriangle, Layers, Filter, X } from 'lucide-react';
@@ -60,12 +60,7 @@ const getIconBySede = (sedeId: number | null) => {
   return createCustomIcon(color);
 };
 
-const eventoIcon = new Icon({
-  iconUrl: 'https://cdn-icons-png.flaticon.com/512/564/564619.png',
-  iconSize: [36, 36],
-  iconAnchor: [18, 36],
-  popupAnchor: [0, -36],
-});
+
 
 const createPersistenteIcon = () => {
   const svgIcon = `
@@ -105,7 +100,7 @@ export default function COPMapaPage() {
   const [filters, setFilters] = useState({
     incidentes: true,
     situaciones: true,
-    eventos: true,
+
     persistentes: true,
     sedes: [] as number[],
   });
@@ -126,11 +121,7 @@ export default function COPMapaPage() {
     refetchInterval: socketConnected ? false : 30000,
   });
 
-  const { data: eventos = [] } = useQuery({
-    queryKey: ['eventos-activos-mapa'],
-    queryFn: eventosAPI.getActivos,
-    refetchInterval: 60000,
-  });
+
 
   const { data: situacionesPersistentes = [] } = useQuery({
     queryKey: ['situaciones-persistentes-mapa'],
@@ -176,23 +167,27 @@ export default function COPMapaPage() {
   };
 
   // Filtrar datos
-  const filteredIncidentes = filters.incidentes ? incidentes : [];
+  const filteredIncidentes = filters.incidentes
+    ? incidentes.filter((i: any) =>
+      filters.sedes.length === 0 || (i.sede_id && filters.sedes.includes(i.sede_id))
+    )
+    : [];
+
   const filteredSituaciones = filters.situaciones
     ? situaciones.filter((s: any) =>
-        filters.sedes.length === 0 || filters.sedes.includes(s.sede_id)
-      )
+      filters.sedes.length === 0 || (s.sede_id && filters.sedes.includes(s.sede_id))
+    )
     : [];
-  const filteredEventos = filters.eventos ? eventos : [];
-  const filteredPersistentes = filters.persistentes ? situacionesPersistentes : [];
 
-  const toggleSede = (sedeId: number) => {
-    setFilters(prev => ({
-      ...prev,
-      sedes: prev.sedes.includes(sedeId)
-        ? prev.sedes.filter(id => id !== sedeId)
-        : [...prev.sedes, sedeId]
-    }));
-  };
+
+
+  const filteredPersistentes = filters.persistentes
+    ? situacionesPersistentes.filter((p: any) =>
+      filters.sedes.length === 0 || (p.sede_id && filters.sedes.includes(p.sede_id))
+    ) // Asumiendo que persistentes también tienen sede_id, si no, se mostrarán solo si no hay filtro de sede o se añade lógica extra
+    : [];
+
+
 
   return (
     <div className="h-screen w-full relative">
@@ -285,38 +280,7 @@ export default function COPMapaPage() {
           );
         })}
 
-        {/* Marcadores de Eventos */}
-        {filteredEventos.map((evento: any) => {
-          if (!evento.latitud || !evento.longitud) return null;
-          return (
-            <Marker
-              key={`evento-${evento.id}`}
-              position={[evento.latitud, evento.longitud]}
-              icon={eventoIcon}
-            >
-              <Popup>
-                <div className="p-2 min-w-[200px]">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-lg text-blue-800">{evento.titulo}</h3>
-                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                      evento.importancia === 'CRITICA' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {evento.importancia}
-                    </span>
-                  </div>
-                  <p className="font-semibold text-gray-700 mb-1">{evento.tipo}</p>
-                  <div className="text-sm space-y-1">
-                    <p>📍 {evento.ruta_nombre} Km {evento.km}</p>
-                    <p className="italic text-gray-600 my-2">{evento.descripcion}</p>
-                    <p className="font-medium text-gray-800">
-                      {evento.total_unidades_asignadas || 0} Unidades asignadas
-                    </p>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
+
 
         {/* Marcadores de Situaciones Persistentes */}
         {filteredPersistentes.map((sp: any) => {
@@ -333,11 +297,10 @@ export default function COPMapaPage() {
                     <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0" />
                     <div>
                       <h3 className="font-bold text-lg text-red-800">{sp.titulo}</h3>
-                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                        sp.importancia === 'CRITICA' ? 'bg-red-100 text-red-800' :
+                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${sp.importancia === 'CRITICA' ? 'bg-red-100 text-red-800' :
                         sp.importancia === 'ALTA' ? 'bg-orange-100 text-orange-800' :
-                        'bg-blue-100 text-blue-800'
-                      }`}>
+                          'bg-blue-100 text-blue-800'
+                        }`}>
                         {sp.importancia}
                       </span>
                     </div>
@@ -438,15 +401,7 @@ export default function COPMapaPage() {
               />
               <span className="text-sm">Situaciones ({situaciones.length})</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.eventos}
-                onChange={(e) => setFilters(prev => ({ ...prev, eventos: e.target.checked }))}
-                className="rounded text-blue-600"
-              />
-              <span className="text-sm">Eventos ({eventos.length})</span>
-            </label>
+
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -491,9 +446,8 @@ export default function COPMapaPage() {
                           setFilters(prev => ({ ...prev, sedes: [...prev.sedes, sedeId] }));
                         }
                       }}
-                      className={`flex items-center gap-2 w-full text-left text-sm px-2 py-1 rounded transition ${
-                        isActive ? 'bg-gray-100' : 'opacity-50'
-                      }`}
+                      className={`flex items-center gap-2 w-full text-left text-sm px-2 py-1 rounded transition ${isActive ? 'bg-gray-100' : 'opacity-50'
+                        }`}
                     >
                       <div
                         className={`w-3 h-3 rounded-full ${isActive ? '' : 'opacity-30'}`}
@@ -561,10 +515,7 @@ export default function COPMapaPage() {
             <p className="text-xs text-gray-500">Unidades</p>
             <p className="text-lg font-bold text-purple-600">{filteredSituaciones.length}</p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Eventos</p>
-            <p className="text-lg font-bold text-blue-600">{filteredEventos.length}</p>
-          </div>
+
           <div>
             <p className="text-xs text-gray-500">Persistentes</p>
             <p className="text-lg font-bold text-orange-600">{filteredPersistentes.length}</p>

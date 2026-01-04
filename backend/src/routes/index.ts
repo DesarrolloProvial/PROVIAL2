@@ -34,6 +34,8 @@ import alertasRoutes from './alertas.routes';
 import accidentologiaRoutes from './accidentologia.routes';
 import comunicacionSocialRoutes from './comunicacionSocial.routes';
 import passwordResetRoutes from './passwordReset.routes';
+import rolesRoutes from './roles.routes';
+
 
 const router = Router();
 
@@ -141,5 +143,9 @@ router.use('/comunicacion-social', comunicacionSocialRoutes);
 
 // Sistema de reset de contraseña (rutas públicas y admin)
 router.use('/', passwordResetRoutes);
+
+// Gestión de Roles y Permisos
+router.use('/roles', rolesRoutes);
+
 
 export default router;

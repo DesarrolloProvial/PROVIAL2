@@ -52,12 +52,7 @@ const getIconBySede = (sedeId: number | null) => {
   return createCustomIcon(color);
 };
 
-const eventoIcon = new Icon({
-  iconUrl: 'https://cdn-icons-png.flaticon.com/512/564/564619.png', // Warning/Event
-  iconSize: [36, 36],
-  iconAnchor: [18, 36],
-  popupAnchor: [0, -36],
-});
+
 
 // Icono de exclamación para situaciones persistentes
 const createPersistenteIcon = () => {
@@ -92,7 +87,7 @@ export default function DashboardPage() {
   const queryClient = useQueryClient();
   const [selectedIncidente, setSelectedIncidente] = useState<Incidente | null>(null);
   const [selectedSituacion, setSelectedSituacion] = useState<any | null>(null);
-  const [, setSelectedEvento] = useState<any | null>(null);
+
   const [modoVista, setModoVista] = useState<'mapa' | 'tabla'>('mapa');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showPanelConfig, setShowPanelConfig] = useState(false);
@@ -135,13 +130,7 @@ export default function DashboardPage() {
     retry: 2,
   });
 
-  // Obtener eventos persistentes
-  const { data: eventos = [] } = useQuery({
-    queryKey: ['eventos-activos-mapa'],
-    queryFn: eventosAPI.getActivos,
-    refetchInterval: 60000, // Eventos cambian poco, mantener polling
-    retry: 2,
-  });
+
 
   // Obtener situaciones persistentes activas (para el mapa)
   const { data: situacionesPersistentes = [] } = useQuery({
@@ -227,11 +216,10 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               {/* Indicador de WebSocket */}
               <div
-                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${
-                  socketConnected
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${socketConnected
                     ? 'bg-green-500/20 text-green-100'
                     : 'bg-red-500/20 text-red-100'
-                }`}
+                  }`}
                 title={socketConnected ? 'Tiempo real activo' : 'Modo polling (reconectando...)'}
               >
                 {socketConnected ? (
@@ -335,10 +323,10 @@ export default function DashboardPage() {
               <span>Persistentes</span>
             </button>
             <button
-              onClick={() => navigate('/operaciones')}
+              onClick={() => navigate('/cop/situaciones')}
               className="px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg text-xs font-medium transition flex items-center gap-1"
             >
-              <span>Operaciones</span>
+              <span>Situaciones</span>
             </button>
           </div>
         </div>
@@ -489,277 +477,227 @@ export default function DashboardPage() {
       <div className="flex-1 relative">
         {modoVista === 'mapa' ? (
           <>
-          <MapContainer
-            center={defaultCenter}
-            zoom={11}
-            style={{ height: '100%', width: '100%' }}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            <MapContainer
+              center={defaultCenter}
+              zoom={11}
+              style={{ height: '100%', width: '100%' }}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
 
-            <MapController center={defaultCenter} />
+              <MapController center={defaultCenter} />
 
-            {/* Marcadores de Incidentes */}
-            {incidentes.map((incidente) => {
-              if (!incidente.latitud || !incidente.longitud) return null;
+              {/* Marcadores de Incidentes */}
+              {incidentes.map((incidente) => {
+                if (!incidente.latitud || !incidente.longitud) return null;
 
-              return (
-                <Marker
-                  key={`incidente-${incidente.id}`}
-                  position={[incidente.latitud, incidente.longitud]}
-                  icon={getIncidenteIcon(incidente.estado)}
-                  eventHandlers={{
-                    click: () => setSelectedIncidente(incidente),
-                  }}
-                >
-                  <Popup>
-                    <div className="p-2 min-w-[200px]">
-                      <h3 className="font-bold text-lg mb-2">
-                        {incidente.numero_reporte || `#${incidente.id}`}
-                      </h3>
-                      <p className="font-semibold text-gray-700 mb-2">
-                        {incidente.tipo_hecho}
-                      </p>
-                      <div className="text-sm space-y-1">
-                        <p>
-                          📍 {incidente.ruta_codigo} Km {incidente.km}
-                        </p>
-                        <p>
-                          Estado:{' '}
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${getEstadoBadgeColor(
-                              incidente.estado
-                            )}`}
-                          >
-                            {incidente.estado}
-                          </span>
-                        </p>
-                        {incidente.unidad_codigo && (
-                          <p>🚓 {incidente.unidad_codigo}</p>
-                        )}
-                        {incidente.observaciones_iniciales && (
-                          <p className="mt-2 text-gray-600">
-                            {incidente.observaciones_iniciales}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
-
-            {/* Marcadores de Situaciones */}
-            {situaciones.map((situacion: any) => {
-              if (!situacion.latitud || !situacion.longitud) return null;
-
-              return (
-                <Marker
-                  key={`situacion-${situacion.id}`}
-                  position={[situacion.latitud, situacion.longitud]}
-                  icon={getIconBySede(situacion.sede_id)}
-                  eventHandlers={{
-                    click: () => {
-                      setSelectedSituacion(situacion);
-                      setSelectedIncidente(null);
-                      setSelectedEvento(null);
-                    },
-                  }}
-                >
-                  <Popup>
-                    <div className="p-2 min-w-[220px]">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: COLORES_SEDE[situacion.sede_id] || '#6B7280' }}
-                        />
-                        <h3 className="font-bold text-lg" style={{ color: COLORES_SEDE[situacion.sede_id] || '#6B7280' }}>
-                          🚓 {situacion.unidad_codigo || `Unidad #${situacion.unidad_id}`}
-                        </h3>
-                      </div>
-                      {situacion.sede_nombre && (
-                        <p className="text-xs text-gray-500 mb-2">
-                          📍 Sede: {situacion.sede_nombre}
-                        </p>
-                      )}
-                      <p className="font-semibold text-gray-700 mb-2">
-                        {situacion.tipo_situacion?.replace(/_/g, ' ')}
-                      </p>
-                      <div className="text-sm space-y-1">
-                        {situacion.ruta_codigo && (
-                          <p>
-                            🛣️ {situacion.ruta_codigo} Km {situacion.km}
-                            {situacion.sentido && ` (${situacion.sentido})`}
-                          </p>
-                        )}
-                        <p>
-                          Estado:{' '}
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            {situacion.estado || 'ACTIVA'}
-                          </span>
-                        </p>
-                        {situacion.descripcion && (
-                          <p className="mt-2 text-gray-700">
-                            {situacion.descripcion}
-                          </p>
-                        )}
-                        {situacion.observaciones && (
-                          <p className="mt-1 text-gray-600 text-xs italic">
-                            {situacion.observaciones}
-                          </p>
-                        )}
-                        <div className="mt-3 pt-2 border-t border-gray-100">
-                          <button
-                            onClick={() => navigate(`/bitacora/${situacion.unidad_id}`)}
-                            className="w-full flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold py-1.5 px-3 rounded text-sm transition"
-                          >
-                            📄 Ver Bitácora
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
-
-            {/* Marcadores de Eventos de Larga Duración */}
-            {eventos.map((evento: any) => {
-              if (!evento.latitud || !evento.longitud) return null;
-
-              return (
-                <Marker
-                  key={`evento-${evento.id}`}
-                  position={[evento.latitud, evento.longitud]}
-                  icon={eventoIcon}
-                  eventHandlers={{
-                    click: () => {
-                      setSelectedEvento(evento);
-                      setSelectedIncidente(null);
-                      setSelectedSituacion(null);
-                    }
-                  }}
-                >
-                  <Popup>
-                    <div className="p-2 min-w-[200px]">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-bold text-lg text-blue-800">
-                          {evento.titulo}
-                        </h3>
-                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${evento.importancia === 'CRITICA' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
-                          }`}>
-                          {evento.importancia}
-                        </span>
-                      </div>
-                      <p className="font-semibold text-gray-700 mb-1">{evento.tipo}</p>
-                      <div className="text-sm space-y-1">
-                        <p>📍 {evento.ruta_nombre} Km {evento.km}</p>
-                        <p className="italic text-gray-600 my-2">{evento.descripcion}</p>
-                        <p className="font-medium text-gray-800">
-                          {evento.total_unidades_asignadas || 0} Unidades asignadas
-                        </p>
-                        <div className="mt-3 pt-2 border-t border-gray-100">
-                          <button
-                            onClick={() => navigate('/eventos')}
-                            className="w-full bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold py-1.5 px-3 rounded text-sm transition"
-                          >
-                            Gestionar / Asignar
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </Popup>
-                </Marker>
-              )
-            })}
-
-            {/* Marcadores de Situaciones Persistentes (Extraordinarias) */}
-            {situacionesPersistentes.map((sp: any) => {
-              // Las situaciones persistentes no tienen latitud/longitud propias aún
-              // pero podemos mostrarlas si la tienen
-              if (!sp.latitud || !sp.longitud) return null;
-
-              return (
-                <Marker
-                  key={`persistente-${sp.id}`}
-                  position={[sp.latitud, sp.longitud]}
-                  icon={persistenteIcon}
-                >
-                  <Popup>
-                    <div className="p-2 min-w-[220px]">
-                      <div className="flex items-start gap-2 mb-2">
-                        <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0" />
-                        <div>
-                          <h3 className="font-bold text-lg text-red-800">{sp.titulo}</h3>
-                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                            sp.importancia === 'CRITICA' ? 'bg-red-100 text-red-800' :
-                            sp.importancia === 'ALTA' ? 'bg-orange-100 text-orange-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
-                            {sp.importancia}
-                          </span>
-                        </div>
-                      </div>
-                      <p className="font-semibold text-gray-700 mb-1">
-                        {sp.tipo || 'Situacion Extraordinaria'}
-                      </p>
-                      <div className="text-sm space-y-1">
-                        {sp.ruta_codigo && (
-                          <p>📍 {sp.ruta_codigo} Km {sp.km_inicio}{sp.km_fin && ` - ${sp.km_fin}`}</p>
-                        )}
-                        {sp.descripcion && (
-                          <p className="italic text-gray-600">{sp.descripcion}</p>
-                        )}
-                        <p className="font-medium text-gray-800">
-                          {sp.unidades_asignadas_count || 0} Unidades asignadas
-                        </p>
-                        <div className="mt-3 pt-2 border-t border-gray-100">
-                          <button
-                            onClick={() => navigate('/situaciones-persistentes')}
-                            className="w-full bg-red-50 text-red-700 hover:bg-red-100 font-semibold py-1.5 px-3 rounded text-sm transition flex items-center justify-center gap-2"
-                          >
-                            <AlertTriangle className="w-4 h-4" />
-                            Ver Detalles
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
-          </MapContainer>
-
-          {/* Leyenda de Colores por Sede */}
-          <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 z-[1000] max-h-48 overflow-y-auto">
-            <h4 className="text-xs font-bold text-gray-600 mb-2 uppercase">Sedes</h4>
-            <div className="space-y-1">
-              {Object.entries(COLORES_SEDE).map(([sedeId, color]) => {
-                const sedeNames: Record<number, string> = {
-                  1: 'Central',
-                  2: 'Mazatenango',
-                  3: 'Poptún',
-                  4: 'San Cristóbal',
-                  5: 'Quetzaltenango',
-                  6: 'Coatepeque',
-                  7: 'Palín',
-                  8: 'Morales',
-                  9: 'Río Dulce',
-                };
                 return (
-                  <div key={sedeId} className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: color }}
-                    />
-                    <span className="text-xs text-gray-700">{sedeNames[parseInt(sedeId)]}</span>
-                  </div>
+                  <Marker
+                    key={`incidente-${incidente.id}`}
+                    position={[incidente.latitud, incidente.longitud]}
+                    icon={getIncidenteIcon(incidente.estado)}
+                    eventHandlers={{
+                      click: () => setSelectedIncidente(incidente),
+                    }}
+                  >
+                    <Popup>
+                      <div className="p-2 min-w-[200px]">
+                        <h3 className="font-bold text-lg mb-2">
+                          {incidente.numero_reporte || `#${incidente.id}`}
+                        </h3>
+                        <p className="font-semibold text-gray-700 mb-2">
+                          {incidente.tipo_hecho}
+                        </p>
+                        <div className="text-sm space-y-1">
+                          <p>
+                            📍 {incidente.ruta_codigo} Km {incidente.km}
+                          </p>
+                          <p>
+                            Estado:{' '}
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-xs font-medium ${getEstadoBadgeColor(
+                                incidente.estado
+                              )}`}
+                            >
+                              {incidente.estado}
+                            </span>
+                          </p>
+                          {incidente.unidad_codigo && (
+                            <p>🚓 {incidente.unidad_codigo}</p>
+                          )}
+                          {incidente.observaciones_iniciales && (
+                            <p className="mt-2 text-gray-600">
+                              {incidente.observaciones_iniciales}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Popup>
+                  </Marker>
                 );
               })}
+
+              {/* Marcadores de Situaciones */}
+              {situaciones.map((situacion: any) => {
+                if (!situacion.latitud || !situacion.longitud) return null;
+
+                return (
+                  <Marker
+                    key={`situacion-${situacion.id}`}
+                    position={[situacion.latitud, situacion.longitud]}
+                    icon={getIconBySede(situacion.sede_id)}
+                    eventHandlers={{
+                      click: () => {
+                        setSelectedSituacion(situacion);
+                        setSelectedIncidente(null);
+                      },
+                    }}
+                  >
+                    <Popup>
+                      <div className="p-2 min-w-[220px]">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: COLORES_SEDE[situacion.sede_id] || '#6B7280' }}
+                          />
+                          <h3 className="font-bold text-lg" style={{ color: COLORES_SEDE[situacion.sede_id] || '#6B7280' }}>
+                            🚓 {situacion.unidad_codigo || `Unidad #${situacion.unidad_id}`}
+                          </h3>
+                        </div>
+                        {situacion.sede_nombre && (
+                          <p className="text-xs text-gray-500 mb-2">
+                            📍 Sede: {situacion.sede_nombre}
+                          </p>
+                        )}
+                        <p className="font-semibold text-gray-700 mb-2">
+                          {situacion.tipo_situacion?.replace(/_/g, ' ')}
+                        </p>
+                        <div className="text-sm space-y-1">
+                          {situacion.ruta_codigo && (
+                            <p>
+                              🛣️ {situacion.ruta_codigo} Km {situacion.km}
+                              {situacion.sentido && ` (${situacion.sentido})`}
+                            </p>
+                          )}
+                          <p>
+                            Estado:{' '}
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              {situacion.estado || 'ACTIVA'}
+                            </span>
+                          </p>
+                          {situacion.descripcion && (
+                            <p className="mt-2 text-gray-700">
+                              {situacion.descripcion}
+                            </p>
+                          )}
+                          {situacion.observaciones && (
+                            <p className="mt-1 text-gray-600 text-xs italic">
+                              {situacion.observaciones}
+                            </p>
+                          )}
+                          <div className="mt-3 pt-2 border-t border-gray-100">
+                            <button
+                              onClick={() => navigate(`/bitacora/${situacion.unidad_id}`)}
+                              className="w-full flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold py-1.5 px-3 rounded text-sm transition"
+                            >
+                              📄 Ver Bitácora
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+
+
+
+              {/* Marcadores de Situaciones Persistentes (Extraordinarias) */}
+              {situacionesPersistentes.map((sp: any) => {
+                // Las situaciones persistentes no tienen latitud/longitud propias aún
+                // pero podemos mostrarlas si la tienen
+                if (!sp.latitud || !sp.longitud) return null;
+
+                return (
+                  <Marker
+                    key={`persistente-${sp.id}`}
+                    position={[sp.latitud, sp.longitud]}
+                    icon={persistenteIcon}
+                  >
+                    <Popup>
+                      <div className="p-2 min-w-[220px]">
+                        <div className="flex items-start gap-2 mb-2">
+                          <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0" />
+                          <div>
+                            <h3 className="font-bold text-lg text-red-800">{sp.titulo}</h3>
+                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${sp.importancia === 'CRITICA' ? 'bg-red-100 text-red-800' :
+                                sp.importancia === 'ALTA' ? 'bg-orange-100 text-orange-800' :
+                                  'bg-blue-100 text-blue-800'
+                              }`}>
+                              {sp.importancia}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="font-semibold text-gray-700 mb-1">
+                          {sp.tipo || 'Situacion Extraordinaria'}
+                        </p>
+                        <div className="text-sm space-y-1">
+                          {sp.ruta_codigo && (
+                            <p>📍 {sp.ruta_codigo} Km {sp.km_inicio}{sp.km_fin && ` - ${sp.km_fin}`}</p>
+                          )}
+                          {sp.descripcion && (
+                            <p className="italic text-gray-600">{sp.descripcion}</p>
+                          )}
+                          <p className="font-medium text-gray-800">
+                            {sp.unidades_asignadas_count || 0} Unidades asignadas
+                          </p>
+                          <div className="mt-3 pt-2 border-t border-gray-100">
+                            <button
+                              onClick={() => navigate('/situaciones-persistentes')}
+                              className="w-full bg-red-50 text-red-700 hover:bg-red-100 font-semibold py-1.5 px-3 rounded text-sm transition flex items-center justify-center gap-2"
+                            >
+                              <AlertTriangle className="w-4 h-4" />
+                              Ver Detalles
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+            </MapContainer>
+
+            {/* Leyenda de Colores por Sede */}
+            <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 z-[1000] max-h-48 overflow-y-auto">
+              <h4 className="text-xs font-bold text-gray-600 mb-2 uppercase">Sedes</h4>
+              <div className="space-y-1">
+                {Object.entries(COLORES_SEDE).map(([sedeId, color]) => {
+                  const sedeNames: Record<number, string> = {
+                    1: 'Central',
+                    2: 'Mazatenango',
+                    3: 'Poptún',
+                    4: 'San Cristóbal',
+                    5: 'Quetzaltenango',
+                    6: 'Coatepeque',
+                    7: 'Palín',
+                    8: 'Morales',
+                    9: 'Río Dulce',
+                  };
+                  return (
+                    <div key={sedeId} className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: color }}
+                      />
+                      <span className="text-xs text-gray-700">{sedeNames[parseInt(sedeId)]}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
           </>
         ) : (
           // Vista de Tabla
@@ -1037,11 +975,10 @@ export default function DashboardPage() {
                           <button
                             key={size}
                             onClick={() => setPanelConfig({ ...panelConfig, fontSize: size })}
-                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition ${
-                              panelConfig.fontSize === size
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition ${panelConfig.fontSize === size
                                 ? 'bg-blue-600 text-white'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
+                              }`}
                           >
                             {size === 'small' ? 'Pequeña' : size === 'normal' ? 'Normal' : 'Grande'}
                           </button>

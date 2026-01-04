@@ -38,7 +38,9 @@ export interface Usuario {
   puede_promover_situaciones?: boolean;
   puede_asignar_unidades?: boolean;
   solo_lectura?: boolean;
+  reset_password_enabled?: boolean;
 }
+
 
 export interface CreateUsuarioDTO {
   username: string;
@@ -136,4 +138,21 @@ export const UsuarioModel = {
       values
     );
   },
+
+  async checkResetEnabled(username: string): Promise<boolean> {
+    const result = await db.oneOrNone<{ reset_password_enabled: boolean }>(
+      `SELECT reset_password_enabled FROM usuario WHERE username = $1`,
+      [username]
+    );
+    return result?.reset_password_enabled || false;
+  },
+
+  async resetPassword(username: string, passwordHash: string): Promise<void> {
+    await db.none(
+      `UPDATE usuario 
+       SET password_hash = $2, reset_password_enabled = FALSE, updated_at = NOW()
+       WHERE username = $1`,
+      [username, passwordHash]
+    );
+  }
 };

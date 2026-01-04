@@ -39,14 +39,17 @@ import {
   KeyRound,
   MapPin,
   Star,
+  Lock
 } from 'lucide-react';
+import RolesTab from '../components/admin/RolesTab';
 
-type TabType = 'dashboard' | 'usuarios' | 'grupos' | 'encargados' | 'configuracion' | 'auditoria';
+type TabType = 'dashboard' | 'usuarios' | 'roles' | 'grupos' | 'encargados' | 'configuracion' | 'auditoria';
 
 export default function SuperAdminPage() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [encargadosSedeFilter, setEncargadosSedeFilter] = useState<string>('');
 
   // Verificar acceso (SUPER_ADMIN, ADMIN, o COP con ADMIN_COP)
   const isSuperAdmin = user?.rol === 'SUPER_ADMIN';
@@ -108,6 +111,7 @@ export default function SuperAdminPage() {
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 className="w-4 h-4" /> },
     { id: 'usuarios', label: 'Usuarios', icon: <Users className="w-4 h-4" /> },
+    { id: 'roles', label: 'Roles y Permisos', icon: <Lock className="w-4 h-4" /> },
     { id: 'grupos', label: 'Grupos', icon: <Shield className="w-4 h-4" /> },
     { id: 'encargados', label: 'Encargados', icon: <Crown className="w-4 h-4" /> },
     { id: 'configuracion', label: 'Configuracion', icon: <Settings className="w-4 h-4" /> },
@@ -142,11 +146,10 @@ export default function SuperAdminPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === tab.id
-                      ? 'border-indigo-600 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                  className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
                 >
                   {tab.icon}
                   {tab.label}
@@ -172,6 +175,9 @@ export default function SuperAdminPage() {
             isSuperAdmin={isSuperAdmin}
           />
         )}
+        {activeTab === 'roles' && (
+          <RolesTab />
+        )}
         {activeTab === 'grupos' && (
           <GruposTab
             departamentos={departamentos || []}
@@ -179,7 +185,11 @@ export default function SuperAdminPage() {
           />
         )}
         {activeTab === 'encargados' && (
-          <EncargadosTab sedes={sedes || []} />
+          <EncargadosTab
+            sedes={sedes || []}
+            sedeSeleccionada={encargadosSedeFilter}
+            onSedeChange={setEncargadosSedeFilter}
+          />
         )}
         {activeTab === 'configuracion' && (
           <ConfiguracionTab isSuperAdmin={isSuperAdmin} />
@@ -276,9 +286,8 @@ function DashboardTab({
                     </span>
                   )}
                   <span
-                    className={`px-2 py-1 text-xs rounded ${
-                      depto.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}
+                    className={`px-2 py-1 text-xs rounded ${depto.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}
                   >
                     {depto.activo ? 'Activo' : 'Inactivo'}
                   </span>
@@ -335,9 +344,8 @@ function DashboardTab({
                 </div>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`px-2 py-1 text-xs rounded ${
-                      sede.activa ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}
+                    className={`px-2 py-1 text-xs rounded ${sede.activa ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}
                   >
                     {sede.activa ? 'Activa' : 'Inactiva'}
                   </span>
@@ -778,8 +786,8 @@ function UsuariosTab({
           filtros.grupo === ''
             ? undefined
             : filtros.grupo === 'null'
-            ? null
-            : (parseInt(filtros.grupo) as 0 | 1 | 2),
+              ? null
+              : (parseInt(filtros.grupo) as 0 | 1 | 2),
         activo: filtros.activo === '' ? undefined : filtros.activo === 'true',
       }),
     select: (res) => res.data,
@@ -927,19 +935,18 @@ function UsuariosTab({
                     <td className="px-4 py-3 font-mono text-sm text-gray-700">{usuario.chapa}</td>
                     <td className="px-4 py-3 text-center">
                       <span
-                        className={`px-2 py-1 rounded text-xs font-semibold ${
-                          usuario.rol_codigo === 'SUPER_ADMIN'
-                            ? 'bg-red-600 text-white'
-                            : usuario.rol_codigo === 'ADMIN'
+                        className={`px-2 py-1 rounded text-xs font-semibold ${usuario.rol_codigo === 'SUPER_ADMIN'
+                          ? 'bg-red-600 text-white'
+                          : usuario.rol_codigo === 'ADMIN'
                             ? 'bg-orange-600 text-white'
                             : usuario.rol_codigo === 'COP'
-                            ? 'bg-blue-600 text-white'
-                            : usuario.rol_codigo === 'OPERACIONES'
-                            ? 'bg-purple-600 text-white'
-                            : usuario.rol_codigo === 'BRIGADA'
-                            ? 'bg-green-600 text-white'
-                            : 'bg-gray-600 text-white'
-                        }`}
+                              ? 'bg-blue-600 text-white'
+                              : usuario.rol_codigo === 'OPERACIONES'
+                                ? 'bg-purple-600 text-white'
+                                : usuario.rol_codigo === 'BRIGADA'
+                                  ? 'bg-green-600 text-white'
+                                  : 'bg-gray-600 text-white'
+                          }`}
                       >
                         {usuario.rol_codigo}
                       </span>
@@ -1214,6 +1221,7 @@ function GruposTab({
             <p className="text-sm text-blue-800 mt-1">
               Activa o desactiva el acceso de cada grupo por departamento y sede.
               Los usuarios del grupo desactivado no podran iniciar sesion.
+              Nota: El Centro de Operaciones (COP) no se ve afectado por estos bloqueos.
             </p>
           </div>
         </div>
@@ -1277,11 +1285,10 @@ function GruposTab({
                                     })
                                   }
                                   disabled={!sedeData.sede_id}
-                                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                                    activo
-                                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                      : 'bg-red-100 text-red-700 hover:bg-red-200'
-                                  }`}
+                                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${activo
+                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                    }`}
                                 >
                                   {activo ? 'Activo' : 'Inactivo'}
                                 </button>
@@ -1305,9 +1312,17 @@ function GruposTab({
 // ENCARGADOS TAB
 // =====================================================
 
-function EncargadosTab({ sedes }: { sedes: SedeCompleta[] }) {
+function EncargadosTab({
+  sedes,
+  sedeSeleccionada,
+  onSedeChange,
+}: {
+  sedes: SedeCompleta[];
+  sedeSeleccionada: string;
+  onSedeChange: (id: string) => void;
+}) {
   const queryClient = useQueryClient();
-  const [sedeSeleccionada, setSedeSeleccionada] = useState<string>('');
+  // Removed local state: const [sedeSeleccionada, setSedeSeleccionada] = useState<string>('');
   const [modalAsignar, setModalAsignar] = useState<{
     sede_id: number;
     grupo: 0 | 1 | 2;
@@ -1359,7 +1374,8 @@ function EncargadosTab({ sedes }: { sedes: SedeCompleta[] }) {
           <label className="font-medium text-gray-700">Filtrar por sede:</label>
           <select
             value={sedeSeleccionada}
-            onChange={(e) => setSedeSeleccionada(e.target.value)}
+            onChange={(e) => onSedeChange(e.target.value)}
+
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
           >
             <option value="">Todas las sedes</option>
@@ -1393,82 +1409,82 @@ function EncargadosTab({ sedes }: { sedes: SedeCompleta[] }) {
           {sedes
             .filter((sede) => !sedeSeleccionada || sede.id === parseInt(sedeSeleccionada))
             .map((sede) => {
-            const sedeData = encargadosPorSede?.[sede.id];
-            return (
-              <div key={sede.id} className="bg-white rounded-lg shadow">
-                <div className="px-6 py-4 bg-gray-50 border-b flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                    <Building2 className="w-5 h-5 text-indigo-600" />
-                    {sede.nombre}
-                  </h3>
-                  <button
-                    onClick={() => setHistorialSede(sede.id)}
-                    className="text-sm text-indigo-600 hover:text-indigo-800"
-                  >
-                    Ver historial
-                  </button>
-                </div>
-                <div className="p-4 space-y-3">
-                  {[0, 1, 2].map((grupo) => {
-                    const encargado = sedeData?.encargados.find((e) => e.grupo === grupo);
-                    return (
-                      <div
-                        key={grupo}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                      >
-                        <div>
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${getColorGrupo(grupo as 0 | 1 | 2)}`}>
-                            {getNombreGrupo(grupo as 0 | 1 | 2)}
-                          </span>
-                          {encargado ? (
-                            <div className="mt-1">
-                              <p className="font-medium text-gray-900">{encargado.nombre_completo}</p>
-                              <p className="text-xs text-gray-500">
-                                Chapa: {encargado.chapa} | Desde:{' '}
-                                {new Date(encargado.fecha_inicio).toLocaleDateString()}
-                              </p>
-                            </div>
-                          ) : (
-                            <p className="mt-1 text-sm text-gray-500 italic">Sin encargado asignado</p>
-                          )}
+              const sedeData = encargadosPorSede?.[sede.id];
+              return (
+                <div key={sede.id} className="bg-white rounded-lg shadow">
+                  <div className="px-6 py-4 bg-gray-50 border-b flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                      <Building2 className="w-5 h-5 text-indigo-600" />
+                      {sede.nombre}
+                    </h3>
+                    <button
+                      onClick={() => setHistorialSede(sede.id)}
+                      className="text-sm text-indigo-600 hover:text-indigo-800"
+                    >
+                      Ver historial
+                    </button>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    {[0, 1, 2].map((grupo) => {
+                      const encargado = sedeData?.encargados.find((e) => e.grupo === grupo);
+                      return (
+                        <div
+                          key={grupo}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        >
+                          <div>
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${getColorGrupo(grupo as 0 | 1 | 2)}`}>
+                              {getNombreGrupo(grupo as 0 | 1 | 2)}
+                            </span>
+                            {encargado ? (
+                              <div className="mt-1">
+                                <p className="font-medium text-gray-900">{encargado.nombre_completo}</p>
+                                <p className="text-xs text-gray-500">
+                                  Chapa: {encargado.chapa} | Desde:{' '}
+                                  {new Date(encargado.fecha_inicio).toLocaleDateString()}
+                                </p>
+                              </div>
+                            ) : (
+                              <p className="mt-1 text-sm text-gray-500 italic">Sin encargado asignado</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {encargado ? (
+                              <button
+                                onClick={() =>
+                                  removerEncargadoMutation.mutate({
+                                    sedeId: sede.id,
+                                    grupo: grupo as 0 | 1 | 2,
+                                  })
+                                }
+                                className="p-1.5 text-red-600 hover:bg-red-100 rounded"
+                                title="Remover encargado"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() =>
+                                  setModalAsignar({
+                                    sede_id: sede.id,
+                                    grupo: grupo as 0 | 1 | 2,
+                                    sede_nombre: sede.nombre,
+                                  })
+                                }
+                                className="p-1.5 text-green-600 hover:bg-green-100 rounded"
+                                title="Asignar encargado"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {encargado ? (
-                            <button
-                              onClick={() =>
-                                removerEncargadoMutation.mutate({
-                                  sedeId: sede.id,
-                                  grupo: grupo as 0 | 1 | 2,
-                                })
-                              }
-                              className="p-1.5 text-red-600 hover:bg-red-100 rounded"
-                              title="Remover encargado"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() =>
-                                setModalAsignar({
-                                  sede_id: sede.id,
-                                  grupo: grupo as 0 | 1 | 2,
-                                  sede_nombre: sede.nombre,
-                                })
-                              }
-                              className="p-1.5 text-green-600 hover:bg-green-100 rounded"
-                              title="Asignar encargado"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
       )}
 
@@ -1618,9 +1634,8 @@ function ModalAsignarEncargado({
               <button
                 key={brigada.id}
                 onClick={() => setUsuarioSeleccionado(brigada.id)}
-                className={`w-full px-4 py-3 text-left hover:bg-gray-50 border-b last:border-b-0 ${
-                  usuarioSeleccionado === brigada.id ? 'bg-amber-50 border-amber-200' : ''
-                }`}
+                className={`w-full px-4 py-3 text-left hover:bg-gray-50 border-b last:border-b-0 ${usuarioSeleccionado === brigada.id ? 'bg-amber-50 border-amber-200' : ''
+                  }`}
               >
                 <p className="font-medium text-gray-900">{brigada.nombre_completo}</p>
                 <p className="text-sm text-gray-500">Chapa: {brigada.chapa}</p>
@@ -1782,13 +1797,12 @@ function ConfiguracionItem({
           ) : (
             <>
               <span
-                className={`px-3 py-1 rounded text-sm font-medium ${
-                  config.tipo === 'boolean'
-                    ? config.valor === 'true'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-red-100 text-red-700'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
+                className={`px-3 py-1 rounded text-sm font-medium ${config.tipo === 'boolean'
+                  ? config.valor === 'true'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'
+                  : 'bg-gray-100 text-gray-700'
+                  }`}
               >
                 {config.valor}
               </span>

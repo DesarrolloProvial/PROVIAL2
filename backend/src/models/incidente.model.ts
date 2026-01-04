@@ -71,6 +71,7 @@ export interface IncidenteCompleto extends Incidente {
   vehiculos?: VehiculoIncidente[];
   obstruccion?: ObstruccionIncidente;
   recursos?: RecursoIncidente[];
+  sede_id?: number; // Agregado para filtros
 }
 
 export interface VehiculoIncidente {
@@ -245,29 +246,36 @@ export const IncidenteModel = {
     desde?: Date;
   }): Promise<IncidenteCompleto[]> {
     let query = `
-      SELECT * FROM v_incidentes_completos
-      WHERE estado IN ('REPORTADO', 'EN_ATENCION', 'REGULACION')
+      SELECT i.*, u.sede_id
+      FROM v_incidentes_completos i
+      LEFT JOIN unidad u ON i.unidad_id = u.id
+      WHERE i.estado IN ('REPORTADO', 'EN_ATENCION', 'REGULACION')
     `;
 
     const params: any[] = [];
     let paramIndex = 1;
 
     if (filters?.ruta_id) {
-      query += ` AND ruta_id = $${paramIndex++}`;
+      query += ` AND i.ruta_id = $${paramIndex++}`;
       params.push(filters.ruta_id);
     }
 
     if (filters?.unidad_id) {
-      query += ` AND unidad_id = $${paramIndex++}`;
+      query += ` AND i.unidad_id = $${paramIndex++}`;
       params.push(filters.unidad_id);
     }
 
+    if (filters?.sede_id) {
+      query += ` AND u.sede_id = $${paramIndex++}`;
+      params.push(filters.sede_id);
+    }
+
     if (filters?.desde) {
-      query += ` AND fecha_hora_aviso >= $${paramIndex++}`;
+      query += ` AND i.fecha_hora_aviso >= $${paramIndex++}`;
       params.push(filters.desde);
     }
 
-    query += ' ORDER BY fecha_hora_aviso DESC';
+    query += ' ORDER BY i.fecha_hora_aviso DESC';
 
     return db.manyOrNone(query, params);
   },

@@ -191,7 +191,48 @@ export async function me(req: Request, res: Response) {
       subRolCop,
     });
   } catch (error) {
-    console.error('Error en me:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
+
+// Verificar estado de reset
+export async function checkResetStatus(req: Request, res: Response) {
+  try {
+    const { username } = req.body;
+    if (!username) {
+      return res.status(400).json({ error: 'Username es requerido' });
+    }
+
+    const enabled = await UsuarioModel.checkResetEnabled(username);
+    return res.json({ enabled });
+  } catch (error) {
+    console.error('Error en checkResetStatus:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+// Reset password
+export async function resetPassword(req: Request, res: Response) {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username y password son requeridos' });
+    }
+
+    const enabled = await UsuarioModel.checkResetEnabled(username);
+    if (!enabled) {
+      return res.status(403).json({ error: 'El reseteo de contraseña no está habilitado para este usuario' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    await UsuarioModel.resetPassword(username, passwordHash);
+
+    return res.json({ success: true, message: 'Contraseña actualizada correctamente' });
+  } catch (error) {
+    console.error('Error en resetPassword:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+

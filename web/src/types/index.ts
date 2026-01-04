@@ -99,6 +99,7 @@ export interface Incidente {
   creado_por_nombre: string;
   created_at: string;
   updated_at: string;
+  sede_id?: number | null; // Agregado para filtros
 }
 
 export interface VehiculoIncidente {

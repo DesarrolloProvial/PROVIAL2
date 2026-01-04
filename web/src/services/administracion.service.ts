@@ -108,6 +108,14 @@ export interface Rol {
   id: number;
   nombre: string;
   descripcion: string | null;
+  permisos?: Permiso[];
+}
+
+export interface Permiso {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  modulo: string;
 }
 
 export interface SubRolCop {
@@ -377,7 +385,19 @@ export const administracionAPI = {
   // ROLES Y SUB-ROLES
   // ------------------------------------
   getRoles: () =>
-    api.get<Rol[]>('/admin/roles'),
+    api.get<Rol[]>('/roles'), // Updated to new endpoint
+
+  getPermisos: () =>
+    api.get<Permiso[]>('/roles/permisos'),
+
+  createRol: (data: { nombre: string; descripcion?: string; permisos_ids?: number[] }) =>
+    api.post<Rol>('/roles', data),
+
+  updateRol: (id: number, data: { nombre?: string; descripcion?: string; permisos_ids?: number[] }) =>
+    api.put(`/roles/${id}`, data),
+
+  deleteRol: (id: number) =>
+    api.delete(`/roles/${id}`),
 
   getSubRolesCop: () =>
     api.get<SubRolCop[]>('/admin/sub-roles-cop'),
