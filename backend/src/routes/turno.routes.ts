@@ -13,7 +13,8 @@ import {
   createReporteHorario,
   getReportesHorarios,
   cambiarRutaActiva,
-  registrarCombustible
+  registrarCombustible,
+  liberarNomina
 } from '../controllers/turno.controller';
 import { authenticate, authorize } from '../middlewares/auth';
 
@@ -48,5 +49,8 @@ router.post('/registrar-combustible', authenticate, authorize('BRIGADA'), regist
 // Reportes horarios
 router.post('/reportes-horarios', authenticate, authorize('BRIGADA'), createReporteHorario);
 router.get('/reportes-horarios/:asignacionId', authenticate, getReportesHorarios);
+
+// Liberar nómina (Encargado Nóminas y Super Admin)
+router.post('/:turnoId/liberar-nomina', authenticate, authorize('ENCARGADO_NOMINAS', 'SUPER_ADMIN'), liberarNomina);
 
 export default router;

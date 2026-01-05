@@ -731,3 +731,42 @@ export async function deleteAsignacion(req: Request, res: Response) {
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
+
+// POST /api/turnos/:turnoId/liberar-nomina - Liberar nómina (cambiar borradores a liberadas)
+export async function liberarNomina(req: Request, res: Response) {
+  try {
+    const { turnoId } = req.params;
+    const userSedeId = req.user?.sede;
+    const userRol = req.user?.rol;
+
+    // Solo ENCARGADO_NOMINAS y SUPER_ADMIN pueden liberar nómina
+    if (userRol !== 'ENCARGADO_NOMINAS' && userRol !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'No tienes permisos para liberar nómina' });
+    }
+
+    // Contar borradores antes de liberar
+    const countBorradores = await TurnoModel.countBorradores(parseInt(turnoId), userSedeId);
+
+    if (countBorradores === 0) {
+      return res.status(400).json({
+        error: 'No hay asignaciones en borrador para liberar',
+        count: 0
+      });
+    }
+
+    // Liberar nómina
+    const liberadas = await TurnoModel.liberarNomina(parseInt(turnoId), userSedeId);
+
+    // TODO: Enviar notificaciones push a brigadas asignados
+    // Esto requiere integración con servicio de notificaciones
+
+    return res.json({
+      message: `${liberadas} asignación(es) liberada(s) exitosamente`,
+      count: liberadas,
+      turno_id: parseInt(turnoId)
+    });
+  } catch (error) {
+    console.error('Error en liberarNomina:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}

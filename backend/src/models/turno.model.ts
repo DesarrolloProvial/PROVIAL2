@@ -138,10 +138,13 @@ export const TurnoModel = {
     );
   },
 
-  // Mi asignación de hoy
+  // Obtener mi asignación de hoy (para app móvil)
+  // SOLO muestra asignaciones LIBERADAS (no borradores)
   async getMiAsignacionHoy(usuarioId: number): Promise<MiAsignacionHoy | null> {
     return db.oneOrNone(
-      'SELECT * FROM v_mi_asignacion_hoy WHERE usuario_id = $1',
+      `SELECT * FROM v_mi_asignacion_hoy 
+       WHERE usuario_id = $1 
+       AND estado_nomina = 'LIBERADA'`,
       [usuarioId]
     );
   },
@@ -417,4 +420,43 @@ export const TurnoModel = {
   async deleteTripulacion(asignacionId: number): Promise<void> {
     await db.none('DELETE FROM tripulacion_turno WHERE asignacion_id = $1', [asignacionId]);
   },
+
+  // Liberar nómina (cambiar todas las asignaciones de BORRADOR a LIBERADA)
+  async liberarNomina(turnoId: number, sedeId?: number): Promise<number> {
+    let query = `
+      UPDATE asignacion_unidad
+      SET estado_nomina = 'LIBERADA'
+      WHERE turno_id = $1 AND estado_nomina = 'BORRADOR'
+    `;
+    const params: any[] = [turnoId];
+
+    // Filtrar por sede si se proporciona
+    if (sedeId) {
+      query += ` AND unidad_id IN (SELECT id FROM unidad WHERE sede_id = $2)`;
+      params.push(sedeId);
+    }
+
+    const result = await db.result(query, params);
+    return result.rowCount;
+  },
+
+  // Contar asignaciones en borrador
+  async countBorradores(turnoId: number, sedeId?: number): Promise<number> {
+    let query = `
+      SELECT COUNT(*) as count
+      FROM asignacion_unidad au
+      JOIN unidad u ON au.unidad_id = u.id
+      WHERE au.turno_id = $1 AND au.estado_nomina = 'BORRADOR'
+    `;
+    const params: any[] = [turnoId];
+
+    if (sedeId) {
+      query += ` AND u.sede_id = $2`;
+      params.push(sedeId);
+    }
+
+    const result = await db.one<{ count: string }>(query, params);
+    return parseInt(result.count);
+  },
 };
+
