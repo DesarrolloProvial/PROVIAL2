@@ -182,30 +182,6 @@ export async function createAsignacion(req: Request, res: Response) {
     // Verificar conflictos de tripulación ANTES de la transacción
     if (tripulacion && Array.isArray(tripulacion)) {
       for (const miembro of tripulacion) {
-        // Solo verificamos conflicto de unidad si hay unidad asignada
-        const conflictQuery = unidad_id
-          ? `
-          SELECT u.codigo, t.fecha
-          FROM tripulacion_turno tt
-          JOIN asignacion_unidad au ON tt.asignacion_id = au.id
-          JOIN turno t ON au.turno_id = t.id
-          LEFT JOIN unidad u ON au.unidad_id = u.id
-          WHERE tt.usuario_id = $1
-            AND t.fecha = (SELECT fecha FROM turno WHERE id = $2)
-            AND au.unidad_id IS NOT DISTINCT FROM $3
-            AND au.id IS NOT NULL -- asegurar que existe
-          `
-          : `
-          SELECT 'SIN UNIDAD' as codigo, t.fecha
-          FROM tripulacion_turno tt
-          JOIN asignacion_unidad au ON tt.asignacion_id = au.id
-          JOIN turno t ON au.turno_id = t.id
-          WHERE tt.usuario_id = $1
-            AND t.fecha = (SELECT fecha FROM turno WHERE id = $2)
-            -- Si es garita, verificamos si ya tiene otra asignacion activa? 
-            -- Por ahora asumimos que un usuario solo puede estar en una asignacion por turno
-          `;
-
         const conflicto = await db.oneOrNone(
           `SELECT u.codigo, t.fecha, au.tipo_asignacion
             FROM tripulacion_turno tt

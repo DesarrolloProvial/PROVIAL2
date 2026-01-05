@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { db } from '../config/database';
 
 // GET /api/roles - Listar roles con sus permisos
-export async function listarRoles(req: Request, res: Response) {
+export async function listarRoles(_req: Request, res: Response) {
     try {
         const roles = await db.any(`
       SELECT r.id, r.nombre, r.descripcion,
@@ -21,7 +21,7 @@ export async function listarRoles(req: Request, res: Response) {
 }
 
 // GET /api/roles/permisos - Listar permisos disponibles
-export async function listarPermisos(req: Request, res: Response) {
+export async function listarPermisos(_req: Request, res: Response) {
     try {
         const permisos = await db.any('SELECT * FROM permiso ORDER BY modulo, nombre');
         return res.json(permisos);
