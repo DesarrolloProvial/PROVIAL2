@@ -148,15 +148,14 @@ export const asignacionesAvanzadasAPI = {
     return response.data as RespuestaAsignacionesPorSede;
   },
 
-  // Publicar/despublicar turno
+  // Publicar // Liberar nómina (publicar asignaciones)
   publicarTurno: async (turnoId: number) => {
-    const response = await api.post(`/asignaciones-avanzadas/turno/${turnoId}/publicar`);
-    return response.data;
+    return api.post(`/turnos/${turnoId}/liberar-nomina`);
   },
 
+  // Despublicar turno (volver a borrador) - Deprecated, mantener por compatibilidad
   despublicarTurno: async (turnoId: number) => {
-    const response = await api.post(`/asignaciones-avanzadas/turno/${turnoId}/despublicar`);
-    return response.data;
+    return api.post(`/turnos/${turnoId}/despublicar`);
   },
 
   // Configuración visual de sede
