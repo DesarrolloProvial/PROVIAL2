@@ -27,7 +27,7 @@
 
 ## Paso 5: Configurar variables de entorno
 
-Click en el servicio del Backend y ve a "Variables". Agrega:
+Click en el servicio del Backend (el recuadro que dice tu repo) y ve a "Variables". Agrega:
 
 ```
 NODE_ENV=production
@@ -46,6 +46,13 @@ JWT_REFRESH_EXPIRES_IN=7d
 # CORS - Permite todas las conexiones para pruebas
 CORS_ORIGIN=*
 SOCKET_IO_CORS_ORIGIN=*
+
+# Cloudinary (para fotos y videos)
+# 1. Crea cuenta gratis en https://cloudinary.com
+# 2. Ve a Dashboard y copia las credenciales
+CLOUDINARY_CLOUD_NAME=tu-cloud-name
+CLOUDINARY_API_KEY=tu-api-key
+CLOUDINARY_API_SECRET=tu-api-secret
 ```
 
 ## Paso 6: Importar base de datos
@@ -53,8 +60,10 @@ SOCKET_IO_CORS_ORIGIN=*
 1. En Railway, click en el servicio PostgreSQL
 2. Ve a la pestana "Data"
 3. Click en "Query" para abrir el editor SQL
-4. Copia y pega el contenido de `database/backup/database_backup.sql`
+4. Copia y pega el contenido de `database/backup/database_backup_limpio.sql`
 5. Ejecuta el query
+
+**IMPORTANTE:** Usa `database_backup_limpio.sql` que viene sin datos de prueba.
 
 **Alternativa via CLI:**
 ```bash
@@ -67,8 +76,8 @@ railway login
 # Vincular proyecto
 railway link
 
-# Importar BD
-railway run psql $DATABASE_URL < database/backup/database_backup.sql
+# Importar BD (usar el backup limpio)
+railway run psql $DATABASE_URL < database/backup/database_backup_limpio.sql
 ```
 
 ## Paso 7: Obtener URL del backend
