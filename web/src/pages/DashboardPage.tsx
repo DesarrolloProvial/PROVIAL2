@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Icon, LatLngExpression } from 'leaflet';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { incidentesAPI, situacionesAPI, eventosAPI, turnosAPI } from '../services/api';
+import { incidentesAPI, situacionesAPI, turnosAPI } from '../services/api';
 import { situacionesPersistentesAPI } from '../services/movimientos.service';
 import type { Incidente } from '../types';
 import { useAuthStore } from '../store/authStore';

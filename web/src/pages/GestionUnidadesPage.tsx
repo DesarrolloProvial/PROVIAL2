@@ -13,6 +13,7 @@ import {
   X,
   Filter,
   ArrowLeft,
+  Settings,
 } from 'lucide-react';
 
 interface Unidad {
@@ -105,7 +106,7 @@ export default function GestionUnidadesPage() {
     }
   });
 
-  const { data: customFields = [], refetch: refetchFields } = useQuery({
+  const { data: customFields = [], refetch: _refetchFields } = useQuery({
     queryKey: ['customFields', 'UNIDAD'],
     queryFn: async () => {
       const res = await api.get('/admin/campos-personalizados/UNIDAD');
@@ -122,7 +123,7 @@ export default function GestionUnidadesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['unidades'] });
       setShowModal(false);
-      setFormData({ codigo: '', tipo_unidad: 'PICK-UP', marca: '', modelo: '', anio: new Date().getFullYear(), placa: '', sede_id: 1 });
+      setFormData({ codigo: '', tipo_unidad: 'PICK-UP', marca: '', modelo: '', anio: new Date().getFullYear(), placa: '', sede_id: 1, custom_fields: {} });
     }
   });
 

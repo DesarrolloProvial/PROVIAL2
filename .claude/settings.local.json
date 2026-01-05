@@ -20,7 +20,13 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\ndocs: Documentos de presentación ejecutiva y checklist de pruebas\n\n## Archivos creados\n\n### PRESENTACION_PROYECTO.md\n- Resumen ejecutivo del sistema\n- Módulos por departamento \\(8 departamentos\\)\n- Métricas: 388 endpoints, 24 páginas web, 25 pantallas móvil\n- Arquitectura técnica con diagrama\n- Costos de operación detallados \\($85-240/mes\\)\n- Tiempos de mantenimiento y downtime\n- Medidas de seguridad implementadas\n- Escalabilidad y próximos pasos\n\n### CHECKLIST_PRUEBAS.md\n- 150+ pruebas organizadas por módulo\n- Secciones para cada departamento\n- Espacio para notas y correcciones\n- Resumen de resultados\n- Lista priorizada de correcciones\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(node create-cop-admin.js:*)",
       "Bash(PGPASSWORD=postgres psql:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEzLCJyb2wiOiJTVVBFUl9BRE1JTiIsInB1ZWRlX3Zlcl90b2Rhc19zZWRlcyI6ZmFsc2UsImlhdCI6MTc2NzUwNTgwMCwiZXhwIjoxNzY3NTQ5MDAwfQ.vJn8Ri5hDvWzleVEaPYVThaRGS6RPJRoJtoG7n_AOEA\")",
+      "Bash(__NEW_LINE__ echo \"=== 1. Test: Obtener ID del rol SUPER_ADMIN ===\")",
+      "Bash(ls:*)",
+      "Bash(dir /b C:UserschrisOneDriveEscritorioproyectoProvialMovilWebdatabase_backup*.sql)",
+      "Bash(git commit:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

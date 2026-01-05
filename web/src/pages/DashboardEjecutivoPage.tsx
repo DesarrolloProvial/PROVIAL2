@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   BarChart,
   Bar,
-  LineChart,
-  Line,
   PieChart,
   Pie,
   Cell,
@@ -138,7 +136,7 @@ export default function DashboardEjecutivoPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard Ejecutivo</h1>
           <p className="text-gray-600">
-            {user?.nombre_completo || user?.username} - {user?.rol}
+            {user?.nombre || user?.username} - {user?.rol}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -323,7 +321,7 @@ export default function DashboardEjecutivoPage() {
                 fill="#8884d8"
                 dataKey="cantidad"
                 nameKey="tipo"
-                label={({ tipo, percent }) => `${tipo} (${(percent * 100).toFixed(0)}%)`}
+                label={({ name, percent }) => `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`}
               >
                 {dashboard.situaciones_por_tipo.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />

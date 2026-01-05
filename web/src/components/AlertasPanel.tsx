@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../services/api';
 
 interface Alerta {
@@ -56,14 +56,15 @@ const TIPO_ICONS: Record<string, string> = {
 
 export default function AlertasPanel({
   onAlertaClick,
-  mostrarContador = true,
+  mostrarContador: _mostrarContador = true,
   maxAlertas = 10,
 }: AlertasPanelProps) {
   const [alertas, setAlertas] = useState<Alerta[]>([]);
   const [conteo, setConteo] = useState<ConteoAlertas>({ total: 0, criticas: 0, altas: 0 });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  void _mostrarContador; // Para uso futuro
 
   useEffect(() => {
     cargarAlertas();

@@ -16,9 +16,8 @@ import {
   X,
   Filter,
   ArrowLeft,
-  Settings,
   Plus,
-  Key
+  KeyRound
 } from 'lucide-react';
 
 interface Brigada {
@@ -96,7 +95,7 @@ export default function GestionBrigadasPage() {
     }
   });
 
-  const { data: customFields = [], refetch: refetchFields } = useQuery({
+  const { data: customFields = [], refetch: _refetchFields } = useQuery({
     queryKey: ['customFields', 'BRIGADA'],
     queryFn: async () => {
       const res = await api.get('/admin/campos-personalizados/BRIGADA');
@@ -216,13 +215,7 @@ export default function GestionBrigadasPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={() => setShowColumnConfig(true)}
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-              title="Configurar Columnas"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
+
             <button
               onClick={() => {
                 setEditData({});
