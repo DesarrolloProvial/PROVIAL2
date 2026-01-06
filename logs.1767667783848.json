@@ -1,0 +1,1472 @@
+[
+    {
+        "message": "Starting Container",
+        "attributes": {
+            "level": "info"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:48.000000000Z"
+    },
+    {
+        "message": "npm warn config production Use `--omit=dev` instead.",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615077352Z"
+    },
+    {
+        "message": "",
+        "attributes": {
+            "level": "info"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615088961Z"
+    },
+    {
+        "message": "> @provial/backend@1.0.0 start",
+        "attributes": {
+            "level": "info"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615096054Z"
+    },
+    {
+        "message": "> node dist/index.js",
+        "attributes": {
+            "level": "info"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615102109Z"
+    },
+    {
+        "message": "",
+        "attributes": {
+            "level": "info"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615110805Z"
+    },
+    {
+        "message": "Firebase Admin inicializado correctamente",
+        "attributes": {
+            "level": "info"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615117562Z"
+    },
+    {
+        "message": "🔌 [Socket] Servicio WebSocket inicializado",
+        "attributes": {
+            "level": "info"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615123144Z"
+    },
+    {
+        "message": "(node:15) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615129963Z"
+    },
+    {
+        "message": "(Use `node --trace-deprecation ...` to show where the warning was created)",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615135453Z"
+    },
+    {
+        "message": "❌ Error en Redis: Error: connect ECONNREFUSED 127.0.0.1:6379",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615142058Z"
+    },
+    {
+        "message": "    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1610:16) {",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615148958Z"
+    },
+    {
+        "message": "  errno: -111,",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615156102Z"
+    },
+    {
+        "message": "  code: 'ECONNREFUSED',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615165310Z"
+    },
+    {
+        "message": "  syscall: 'connect',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615171935Z"
+    },
+    {
+        "message": "  address: '127.0.0.1',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615181722Z"
+    },
+    {
+        "message": "  port: 6379",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615188604Z"
+    },
+    {
+        "message": "}",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615195724Z"
+    },
+    {
+        "message": "❌ Error conectando a PostgreSQL: AggregateError [ECONNREFUSED]: ",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615203304Z"
+    },
+    {
+        "message": "    at internalConnectMultiple (node:net:1121:18)",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615210487Z"
+    },
+    {
+        "message": "    at afterConnectMultiple (node:net:1688:7) {",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615217270Z"
+    },
+    {
+        "message": "  code: 'ECONNREFUSED',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615224655Z"
+    },
+    {
+        "message": "  [errors]: [",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615233396Z"
+    },
+    {
+        "message": "    Error: connect ECONNREFUSED ::1:5432",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615562296Z"
+    },
+    {
+        "message": "        at createConnectionError (node:net:1651:14)",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615574605Z"
+    },
+    {
+        "message": "        at afterConnectMultiple (node:net:1681:16) {",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:02:56.615581724Z"
+    },
+    {
+        "message": "      errno: -111,",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902071845Z"
+    },
+    {
+        "message": "      code: 'ECONNREFUSED',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902080133Z"
+    },
+    {
+        "message": "      syscall: 'connect',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902087480Z"
+    },
+    {
+        "message": "      address: '::1',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902094817Z"
+    },
+    {
+        "message": "      port: 5432",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902102565Z"
+    },
+    {
+        "message": "    },",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902112483Z"
+    },
+    {
+        "message": "    Error: connect ECONNREFUSED 127.0.0.1:5432",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902120104Z"
+    },
+    {
+        "message": "        at createConnectionError (node:net:1651:14)",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902127635Z"
+    },
+    {
+        "message": "        at afterConnectMultiple (node:net:1681:16) {",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902134679Z"
+    },
+    {
+        "message": "      errno: -111,",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902142342Z"
+    },
+    {
+        "message": "      code: 'ECONNREFUSED',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902149813Z"
+    },
+    {
+        "message": "      syscall: 'connect',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902159450Z"
+    },
+    {
+        "message": "      address: '127.0.0.1',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902167103Z"
+    },
+    {
+        "message": "      port: 5432",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902174383Z"
+    },
+    {
+        "message": "    }",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902184261Z"
+    },
+    {
+        "message": "  ]",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902191363Z"
+    },
+    {
+        "message": "}",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902199203Z"
+    },
+    {
+        "message": "❌ Error en Redis: Error: connect ECONNREFUSED 127.0.0.1:6379",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902337251Z"
+    },
+    {
+        "message": "    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1610:16) {",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902347973Z"
+    },
+    {
+        "message": "  errno: -111,",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902356321Z"
+    },
+    {
+        "message": "  code: 'ECONNREFUSED',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902363689Z"
+    },
+    {
+        "message": "  syscall: 'connect',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902371195Z"
+    },
+    {
+        "message": "  address: '127.0.0.1',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902380799Z"
+    },
+    {
+        "message": "  port: 6379",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902387802Z"
+    },
+    {
+        "message": "}",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902395555Z"
+    },
+    {
+        "message": "❌ Error en Redis: Error: connect ECONNREFUSED 127.0.0.1:6379",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902403440Z"
+    },
+    {
+        "message": "    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1610:16) {",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902414305Z"
+    },
+    {
+        "message": "  errno: -111,",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902421701Z"
+    },
+    {
+        "message": "  code: 'ECONNREFUSED',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:03.902429246Z"
+    },
+    {
+        "message": "  syscall: 'connect',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453505357Z"
+    },
+    {
+        "message": "  address: '127.0.0.1',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453513885Z"
+    },
+    {
+        "message": "  port: 6379",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453523396Z"
+    },
+    {
+        "message": "}",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453536706Z"
+    },
+    {
+        "message": "❌ Error en Redis: Error: connect ECONNREFUSED 127.0.0.1:6379",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453543789Z"
+    },
+    {
+        "message": "    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1610:16) {",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453552261Z"
+    },
+    {
+        "message": "  errno: -111,",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453560001Z"
+    },
+    {
+        "message": "  code: 'ECONNREFUSED',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453570286Z"
+    },
+    {
+        "message": "  syscall: 'connect',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453579367Z"
+    },
+    {
+        "message": "  address: '127.0.0.1',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453587666Z"
+    },
+    {
+        "message": "  port: 6379",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453597096Z"
+    },
+    {
+        "message": "}",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453603371Z"
+    },
+    {
+        "message": "❌ Redis no está disponible: MaxRetriesPerRequestError: Reached the max retries per request limit (which is 3). Refer to \"maxRetriesPerRequest\" option for details.",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453612726Z"
+    },
+    {
+        "message": "    at Socket.<anonymous> (/app/node_modules/ioredis/built/redis/event_handler.js:207:37)",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453619570Z"
+    },
+    {
+        "message": "    at Object.onceWrapper (node:events:633:26)",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453627183Z"
+    },
+    {
+        "message": "    at Socket.emit (node:events:518:28)",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453637270Z"
+    },
+    {
+        "message": "    at TCP.<anonymous> (node:net:343:12)",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453645949Z"
+    },
+    {
+        "message": "❌ Error iniciando servidor: Error: No se pudo conectar a PostgreSQL",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453654354Z"
+    },
+    {
+        "message": "    at start (/app/backend/dist/index.js:80:19)",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453663352Z"
+    },
+    {
+        "message": "    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453671764Z"
+    },
+    {
+        "message": "npm error Lifecycle script `start` failed with error:",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453680534Z"
+    },
+    {
+        "message": "npm error code 1",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453689460Z"
+    },
+    {
+        "message": "npm error path /app/backend",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453697011Z"
+    },
+    {
+        "message": "npm error workspace @provial/backend@1.0.0",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:08.453708399Z"
+    },
+    {
+        "message": "    at afterConnectMultiple (node:net:1688:7) {",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007566315Z"
+    },
+    {
+        "message": "  code: 'ECONNREFUSED',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007584175Z"
+    },
+    {
+        "message": "> node dist/index.js",
+        "attributes": {
+            "level": "info"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007594263Z"
+    },
+    {
+        "message": "  [errors]: [",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007596657Z"
+    },
+    {
+        "message": "npm error location /app/backend",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007604358Z"
+    },
+    {
+        "message": "",
+        "attributes": {
+            "level": "info"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007607402Z"
+    },
+    {
+        "message": "    Error: connect ECONNREFUSED ::1:5432",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007610102Z"
+    },
+    {
+        "message": "npm error command failed",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007614715Z"
+    },
+    {
+        "message": "Firebase Admin inicializado correctamente",
+        "attributes": {
+            "level": "info"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007617653Z"
+    },
+    {
+        "message": "🔌 [Socket] Servicio WebSocket inicializado",
+        "attributes": {
+            "level": "info"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007626196Z"
+    },
+    {
+        "message": "(node:15) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007632440Z"
+    },
+    {
+        "message": "(Use `node --trace-deprecation ...` to show where the warning was created)",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007638607Z"
+    },
+    {
+        "message": "npm error command sh -c node dist/index.js",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007650393Z"
+    },
+    {
+        "message": "❌ Error en Redis: Error: connect ECONNREFUSED 127.0.0.1:6379",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007655654Z"
+    },
+    {
+        "message": "npm warn config production Use `--omit=dev` instead.",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007661955Z"
+    },
+    {
+        "message": "    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1610:16) {",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007668066Z"
+    },
+    {
+        "message": "",
+        "attributes": {
+            "level": "info"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007675939Z"
+    },
+    {
+        "message": "  errno: -111,",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007679201Z"
+    },
+    {
+        "message": "> @provial/backend@1.0.0 start",
+        "attributes": {
+            "level": "info"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007688240Z"
+    },
+    {
+        "message": "  code: 'ECONNREFUSED',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007690180Z"
+    },
+    {
+        "message": "  syscall: 'connect',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007699368Z"
+    },
+    {
+        "message": "  address: '127.0.0.1',",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007708604Z"
+    },
+    {
+        "message": "  port: 6379",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007717467Z"
+    },
+    {
+        "message": "}",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007726390Z"
+    },
+    {
+        "message": "❌ Error conectando a PostgreSQL: AggregateError [ECONNREFUSED]: ",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007735166Z"
+    },
+    {
+        "message": "    at internalConnectMultiple (node:net:1121:18)",
+        "attributes": {
+            "level": "error"
+        },
+        "tags": {
+            "project": "8468f710-5a06-45ba-86c0-5a1ee741d7c9",
+            "environment": "3f9ba904-7df7-4a87-813d-7df49d787e0d",
+            "service": "7b41be9c-1c3a-4d0d-83af-08de37f06405",
+            "deployment": "5a133de8-7211-4d8e-9b94-c32800c2e21a",
+            "replica": "a7e5231f-e57a-4ee2-afd1-9368813c7078"
+        },
+        "timestamp": "2026-01-05T20:03:12.007744342Z"
+    }
+]
