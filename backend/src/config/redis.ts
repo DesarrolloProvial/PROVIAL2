@@ -2,15 +2,25 @@ import Redis from 'ioredis';
 import { config } from './env';
 
 // Crear cliente Redis
-export const redis = new Redis({
-  host: config.redis.host,
-  port: config.redis.port,
-  retryStrategy(times) {
-    const delay = Math.min(times * 50, 2000);
-    return delay;
-  },
-  maxRetriesPerRequest: 3,
-});
+// Si REDIS_URL está disponible (Railway), usarla directamente
+// Si no, usar parámetros individuales (desarrollo local)
+export const redis = config.redis.url
+  ? new Redis(config.redis.url, {
+    retryStrategy(times) {
+      const delay = Math.min(times * 50, 2000);
+      return delay;
+    },
+    maxRetriesPerRequest: 3,
+  })
+  : new Redis({
+    host: config.redis.host,
+    port: config.redis.port,
+    retryStrategy(times) {
+      const delay = Math.min(times * 50, 2000);
+      return delay;
+    },
+    maxRetriesPerRequest: 3,
+  });
 
 // Event handlers
 redis.on('connect', () => {

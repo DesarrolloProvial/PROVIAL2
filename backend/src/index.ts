@@ -33,20 +33,29 @@ app.use((req, _res, next) => {
   next();
 });
 
-// Health check
+// Health check - Basic (always returns 200)
 app.get('/health', async (_req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Health check - Detailed (checks services)
+app.get('/api/health', async (_req, res) => {
   const dbConnected = await testConnection();
   const redisConnected = await testRedisConnection();
 
-  const status = dbConnected && redisConnected ? 'healthy' : 'unhealthy';
-  const statusCode = status === 'healthy' ? 200 : 503;
+  // Return 200 even if Redis is down (it's optional)
+  const status = dbConnected ? 'healthy' : 'unhealthy';
+  const statusCode = dbConnected ? 200 : 503;
 
   res.status(statusCode).json({
     status,
     timestamp: new Date().toISOString(),
     services: {
       database: dbConnected ? 'up' : 'down',
-      redis: redisConnected ? 'up' : 'down',
+      redis: redisConnected ? 'up' : 'down (optional)',
     },
   });
 });
@@ -105,13 +114,13 @@ async function start() {
     }
 
     // Iniciar servidor
-    server.listen(config.port, () => {
+    server.listen(config.port, '0.0.0.0', () => {
       console.log('');
       console.log('🚀 ========================================');
       console.log(`🚀  Servidor iniciado en puerto ${config.port}`);
       console.log(`🚀  Ambiente: ${config.env}`);
       console.log(`🚀  API: http://localhost:${config.port}${config.apiPrefix}`);
-      console.log(`🚀  Health: http://localhost:${config.port}/health`);
+      console.log(`🚀  Health: http://localhost:${config.port}/api/health`);
       console.log('🚀 ========================================');
       console.log('');
     });

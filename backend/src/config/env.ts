@@ -1,8 +1,35 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Cargar variables de entorno
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+// Cargar variables de entorno solo en desarrollo
+// En producción (Railway), las variables vienen del sistema
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.join(__dirname, '../../.env') });
+}
+
+// Debug: mostrar variables de conexión en producción
+if (process.env.NODE_ENV === 'production') {
+  console.log('🔧 [ENV DEBUG] NODE_ENV:', process.env.NODE_ENV);
+  console.log('🔧 [ENV DEBUG] DATABASE_URL exists:', !!process.env.DATABASE_URL);
+  console.log('🔧 [ENV DEBUG] REDIS_URL exists:', !!process.env.REDIS_URL);
+  // Mostrar solo el host de la URL (sin credenciales) para debug
+  if (process.env.DATABASE_URL) {
+    try {
+      const dbUrl = new URL(process.env.DATABASE_URL);
+      console.log('🔧 [ENV DEBUG] DB Host:', dbUrl.host);
+    } catch (e) {
+      console.log('🔧 [ENV DEBUG] DATABASE_URL format invalid');
+    }
+  }
+  if (process.env.REDIS_URL) {
+    try {
+      const redisUrl = new URL(process.env.REDIS_URL);
+      console.log('🔧 [ENV DEBUG] Redis Host:', redisUrl.host);
+    } catch (e) {
+      console.log('🔧 [ENV DEBUG] REDIS_URL format invalid');
+    }
+  }
+}
 
 export const config = {
   // Server

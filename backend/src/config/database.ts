@@ -10,31 +10,39 @@ const pgp = pgPromise({
 });
 
 // Configuración de conexión
-const connectionConfig = {
-  host: config.db.host,
-  port: config.db.port,
-  database: config.db.name,
-  user: config.db.user,
-  password: config.db.password,
-  max: 20, // Pool de 20 conexiones máximo
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-};
+// Si DATABASE_URL está disponible (Railway), usarla directamente
+// Si no, usar parámetros individuales (desarrollo local)
+const connectionConfig = config.db.url
+  ? config.db.url  // Railway: usa DATABASE_URL
+  : {              // Local: usa parámetros individuales
+    host: config.db.host,
+    port: config.db.port,
+    database: config.db.name,
+    user: config.db.user,
+    password: config.db.password,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+  };
 
 // Crear instancia de base de datos (pg-promise)
 export const db = pgp(connectionConfig);
 
 // Pool de pg nativo para controladores que usan pool.connect()
-const pool = new Pool({
-  host: config.db.host,
-  port: config.db.port,
-  database: config.db.name,
-  user: config.db.user,
-  password: config.db.password,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-});
+const pool = new Pool(
+  config.db.url
+    ? { connectionString: config.db.url, max: 20, idleTimeoutMillis: 30000, connectionTimeoutMillis: 10000 }
+    : {
+      host: config.db.host,
+      port: config.db.port,
+      database: config.db.name,
+      user: config.db.user,
+      password: config.db.password,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+    }
+);
 
 export default pool;
 
