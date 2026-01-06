@@ -403,7 +403,7 @@ export default function GestionBrigadasPage() {
                               className="p-1 text-orange-500 hover:bg-orange-50 rounded"
                               title="Reset Contraseña"
                             >
-                              <Key className="w-5 h-5" />
+                              <KeyRound className="w-5 h-5" />
                             </button>
                           </div>
                         </td>
