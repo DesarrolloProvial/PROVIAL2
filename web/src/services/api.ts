@@ -1,10 +1,13 @@
 import axios from 'axios';
 import type { LoginRequest, LoginResponse, Incidente } from '../types';
 
+// URL del API: usa variable de entorno en producción, proxy local en desarrollo
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+
 // Crear instancia de axios
 export const api = axios.create({
-  baseURL: '/api', // Proxy configurado en vite.config.ts
-  timeout: 10000,
+  baseURL: API_BASE_URL,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
