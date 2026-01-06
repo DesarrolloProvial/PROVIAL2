@@ -190,7 +190,6 @@ export async function createAsignacion(req: Request, res: Response) {
             LEFT JOIN unidad u ON au.unidad_id = u.id
             WHERE tt.usuario_id = $1
               AND t.fecha = (SELECT fecha FROM turno WHERE id = $2)
-              AND (au.estado != 'CANCELADA' OR au.estado IS NULL)
            `,
           [miembro.usuario_id, parseInt(turnoId)]
         );
