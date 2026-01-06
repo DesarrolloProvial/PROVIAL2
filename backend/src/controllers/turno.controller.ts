@@ -228,10 +228,10 @@ export async function createAsignacion(req: Request, res: Response) {
       if (tripulacion && Array.isArray(tripulacion)) {
         for (const miembro of tripulacion) {
           const tripulante = await t.one(
-            `INSERT INTO tripulacion_turno (asignacion_id, usuario_id, rol_tripulacion)
-             VALUES ($1, $2, $3)
+            `INSERT INTO tripulacion_turno (asignacion_id, usuario_id, rol_tripulacion, es_comandante, telefono_contacto)
+             VALUES ($1, $2, $3, $4, $5)
              RETURNING *`,
-            [asignacion.id, miembro.usuario_id, miembro.rol_tripulacion]
+            [asignacion.id, miembro.usuario_id, miembro.rol_tripulacion, miembro.es_comandante || false, miembro.telefono_contacto || null]
           );
           tripulacionCreada.push(tripulante);
         }
