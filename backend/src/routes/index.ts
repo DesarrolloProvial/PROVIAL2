@@ -35,6 +35,7 @@ import accidentologiaRoutes from './accidentologia.routes';
 import comunicacionSocialRoutes from './comunicacionSocial.routes';
 import passwordResetRoutes from './passwordReset.routes';
 import rolesRoutes from './roles.routes';
+import { migrateEstadoNomina } from '../controllers/migration.controller';
 
 
 const router = Router();
@@ -146,6 +147,9 @@ router.use('/', passwordResetRoutes);
 
 // Gestión de Roles y Permisos
 router.use('/roles', rolesRoutes);
+
+// TEMPORAL: Endpoint de migración (ELIMINAR DESPUÉS DE USAR)
+router.post('/admin/migrate-estado-nomina', migrateEstadoNomina);
 
 
 export default router;
