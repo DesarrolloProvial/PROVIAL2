@@ -174,17 +174,18 @@ export const TurnoModel = {
     combustible_asignado?: number;
     hora_salida?: string;
     hora_entrada_estimada?: string;
+    estado_nomina?: 'BORRADOR' | 'LIBERADA';
   }): Promise<AsignacionUnidad> {
     return db.one(
       `INSERT INTO asignacion_unidad
        (turno_id, tipo_asignacion, unidad_id, ruta_id, km_inicio, km_final, sentido, acciones,
-        combustible_inicial, combustible_asignado, hora_salida, hora_entrada_estimada)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        combustible_inicial, combustible_asignado, hora_salida, hora_entrada_estimada, estado_nomina)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING *`,
       [
         data.turno_id, data.tipo_asignacion || 'PATRULLA', data.unidad_id, data.ruta_id, data.km_inicio, data.km_final,
         data.sentido, data.acciones, data.combustible_inicial, data.combustible_asignado,
-        data.hora_salida, data.hora_entrada_estimada
+        data.hora_salida, data.hora_entrada_estimada, data.estado_nomina || 'BORRADOR'
       ]
     );
   },
