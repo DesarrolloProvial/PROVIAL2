@@ -714,8 +714,8 @@ export async function liberarNomina(req: Request, res: Response) {
     const userSedeId = req.user?.sede;
     const userRol = req.user?.rol;
 
-    // Solo ENCARGADO_NOMINAS y SUPER_ADMIN pueden liberar nómina
-    if (userRol !== 'ENCARGADO_NOMINAS' && userRol !== 'SUPER_ADMIN') {
+    // Solo ENCARGADO_NOMINAS, OPERACIONES, ADMIN y SUPER_ADMIN pueden liberar nómina
+    if (!['ENCARGADO_NOMINAS', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN'].includes(userRol || '')) {
       return res.status(403).json({ error: 'No tienes permisos para liberar nómina' });
     }
 

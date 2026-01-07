@@ -50,7 +50,7 @@ router.post('/registrar-combustible', authenticate, authorize('BRIGADA'), regist
 router.post('/reportes-horarios', authenticate, authorize('BRIGADA'), createReporteHorario);
 router.get('/reportes-horarios/:asignacionId', authenticate, getReportesHorarios);
 
-// Liberar nómina (Encargado Nóminas y Super Admin)
-router.post('/:turnoId/liberar-nomina', authenticate, authorize('ENCARGADO_NOMINAS', 'SUPER_ADMIN'), liberarNomina);
+// Liberar nómina (Encargado Nóminas, Operaciones, Admin y Super Admin)
+router.post('/:turnoId/liberar-nomina', authenticate, authorize('ENCARGADO_NOMINAS', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN'), liberarNomina);
 
 export default router;
