@@ -19,10 +19,10 @@ const io = initSocketService(server);
 // Middlewares globales
 app.use(helmet());
 app.use(cors({
-  origin: config.env === 'development' ? '*' : config.cors.origins,
+  origin: '*', // Permitir todas las conexiones
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: config.env !== 'development',
+  credentials: false, // Debe ser false cuando origin es '*'
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

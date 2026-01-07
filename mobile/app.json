@@ -25,9 +25,17 @@
       },
       "package": "com.provial.brigadas",
       "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "CAMERA"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO"
       ]
     },
     "web": {
@@ -62,13 +70,13 @@
           "savePhotosPermission": "Permitir a Provial guardar fotos en tu galería.",
           "isAccessMediaLocationEnabled": true
         }
-      ],
-      "expo-video"
+      ]
     ],
     "extra": {
       "eas": {
-        "projectId": "your-project-id"
+        "projectId": "bc7bf143-ef95-4f4b-8fc5-7eca4169ea89"
       }
-    }
+    },
+    "owner": "yorfad"
   }
 }
