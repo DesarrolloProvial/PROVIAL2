@@ -1,32 +1,16 @@
-// =============================================
-// CONFIGURACION DE LA APP MOVIL - PROVIAL
-// =============================================
-// IMPORTANTE: Cambiar API_URL antes de compilar APK
+// Configuración de la aplicación - PC 1
+// Red: 172.20.10.4
 
-// =============================================
-// URL DEL API - CAMBIAR SEGUN ENTORNO
-// =============================================
-
-// Para desarrollo local (tu PC):
-// export const API_URL = 'http://192.168.1.100:3000/api';
-
-// Para Railway (produccion):
-// export const API_URL = 'https://tu-app.railway.app/api';
-
-// URL ACTUAL - PRODUCCION (Railway):
+// API Configuration
 export const API_URL = 'https://provial-production.up.railway.app/api';
 
-// =============================================
-// CONFIGURACION GENERAL
-// =============================================
+// Configuración de timeouts
+export const REQUEST_TIMEOUT = 10000; // 10 segundos
 
-// Timeouts
-export const REQUEST_TIMEOUT = 15000; // 15 segundos
-
-// Configuracion de mapa (Guatemala)
+// Configuración de mapa
 export const MAP_CONFIG = {
   initialRegion: {
-    latitude: 14.6349,
+    latitude: 14.6349, // Guatemala City
     longitude: -90.5069,
     latitudeDelta: 2.0,
     longitudeDelta: 2.0,
@@ -35,23 +19,31 @@ export const MAP_CONFIG = {
   maxZoomLevel: 18,
 };
 
-// Configuracion de ubicacion GPS
+// Configuración de ubicación GPS
 export const LOCATION_CONFIG = {
-  accuracy: 'high' as const,
+  // Precisión de la ubicación
+  accuracy: 'high' as const, // 'low' | 'balanced' | 'high' | 'best'
+
+  // Distancia mínima (metros) para actualizar ubicación
   distanceInterval: 10,
-  timeInterval: 5000,
+
+  // Tiempo mínimo (ms) para actualizar ubicación
+  timeInterval: 5000, // 5 segundos
 };
 
-// Configuracion de polling
+// Configuración de polling (si no se usa WebSocket)
 export const POLLING_CONFIG = {
-  situacionesInterval: 30000,
-  mapaInterval: 15000,
+  // Intervalo de actualización de situaciones (ms)
+  situacionesInterval: 30000, // 30 segundos
+
+  // Intervalo de actualización de mapa (ms)
+  mapaInterval: 15000, // 15 segundos
 };
 
-// Version de la app
+// Versión de la app
 export const APP_VERSION = '1.0.0';
 
-// Keys de AsyncStorage
+// Configuración de AsyncStorage keys
 export const STORAGE_KEYS = {
   TOKEN: 'token',
   REFRESH_TOKEN: 'refreshToken',

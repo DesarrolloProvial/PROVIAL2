@@ -39,7 +39,8 @@ mobile/.expo/
 mobile/.expo-shared/
 mobile/dist/
 # Ignorar config.ts activo pero no los templates
-mobile/src/constants/config.ts
+# COMENTADO PARA PERMITIR BUILD EN EAS
+# mobile/src/constants/config.ts
 !mobile/src/constants/config.pc1.ts
 !mobile/src/constants/config.pc2.ts
 
