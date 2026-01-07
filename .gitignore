@@ -73,7 +73,14 @@ Thumbs.db
 *.sql
 !migrations/*.sql
 !database/backup/*.sql
+!RESET_OPERATIONAL_DATA.sql
 backup_*.sql
+
+# Archive folder (old files)
+archive/
+
+# Reorganization script
+reorganize.ps1
 
 # Configuración de PC actual
 .pc-config
