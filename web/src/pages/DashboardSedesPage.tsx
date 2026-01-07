@@ -63,11 +63,11 @@ export default function DashboardSedesPage() {
     mutationFn: (turnoId: number) => asignacionesAvanzadasAPI.publicarTurno(turnoId),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones-por-sede'] });
-      toast.success(data.data.message || 'Nómina publicada exitosamente');
+      console.log('Nómina publicada:', data.data);
     },
     onError: (error: any) => {
-      const errorMsg = error.response?.data?.error || 'Error al publicar nómina';
-      toast.error(errorMsg);
+      console.error('Error al publicar nómina:', error.response?.data?.error || error.message);
+      alert(error.response?.data?.error || 'Error al publicar nómina');
     }
   });
 
@@ -75,11 +75,11 @@ export default function DashboardSedesPage() {
     mutationFn: (turnoId: number) => asignacionesAvanzadasAPI.despublicarTurno(turnoId),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones-por-sede'] });
-      toast.success(data.data.message || 'Nómina despublicada exitosamente');
+      console.log('Nómina despublicada:', data.data);
     },
     onError: (error: any) => {
-      const errorMsg = error.response?.data?.error || 'Error al despublicar nómina';
-      toast.error(errorMsg);
+      console.error('Error al despublicar nómina:', error.response?.data?.error || error.message);
+      alert(error.response?.data?.error || 'Error al despublicar nómina');
     }
   });
 
