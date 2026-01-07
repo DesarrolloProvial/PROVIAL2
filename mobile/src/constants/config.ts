@@ -13,8 +13,8 @@
 // Para Railway (produccion):
 // export const API_URL = 'https://tu-app.railway.app/api';
 
-// URL ACTUAL (cambiar antes de compilar APK):
-export const API_URL = 'http://172.20.10.4:3000/api';
+// URL ACTUAL - PRODUCCION (Railway):
+export const API_URL = 'https://provial-production.up.railway.app/api';
 
 // =============================================
 // CONFIGURACION GENERAL
