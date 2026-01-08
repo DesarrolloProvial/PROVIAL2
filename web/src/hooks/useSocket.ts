@@ -8,18 +8,23 @@ import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../store/authStore';
 
 // URL del servidor WebSocket
-// URL del servidor WebSocket
 const getSocketUrl = () => {
-  // En producción (cuando VITE_API_URL está definida), usar el backend directamente
+  // 1. Intentar usar variable de entorno
   if (import.meta.env.VITE_API_URL) {
-    // Si la URL termina en /api, quitarlo porque Socket.io usa la raíz por defecto
     const apiUrl = import.meta.env.VITE_API_URL;
     const socketUrl = apiUrl.replace(/\/api\/?$/, '');
-    console.log('🔌 [Socket Config] Usando URL de producción:', socketUrl);
+    console.log('🔌 [Socket Config] Usando URL de entorno:', socketUrl);
     return socketUrl;
   }
 
-  // Usar el mismo origen que el frontend (proxy de Vite redirige /socket.io al backend)
+  // 2. Fallback: Si estamos en producción (no localhost), usar la URL de Railway conocida
+  if (!window.location.hostname.includes('localhost')) {
+    const railwayUrl = 'https://provial-production.up.railway.app';
+    console.log('🔌 [Socket Config] Usando URL de Railway (Fallback):', railwayUrl);
+    return railwayUrl;
+  }
+
+  // 3. Desarrollo: Usar el mismo origen (proxy)
   return window.location.origin;
 };
 
