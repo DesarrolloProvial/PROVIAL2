@@ -87,7 +87,7 @@ export function useSocket(callbacks: SocketCallbacks = {}): UseSocketReturn {
 
     const socket = io(socketUrl, {
       auth: { token: accessToken },
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'], // Forzar WebSocket para evitar problemas de sticky sessions en Railway
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
