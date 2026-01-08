@@ -9,23 +9,17 @@ import { useAuthStore } from '../store/authStore';
 
 // URL del servidor WebSocket
 const getSocketUrl = () => {
-  // 1. Intentar usar variable de entorno
-  if (import.meta.env.VITE_API_URL) {
-    const apiUrl = import.meta.env.VITE_API_URL;
-    const socketUrl = apiUrl.replace(/\/api\/?$/, '');
-    console.log('🔌 [Socket Config] Usando URL de entorno:', socketUrl);
-    return socketUrl;
+  const PRODUCTION_URL = 'https://provial-production.up.railway.app';
+
+  // 1. Desarrollo local
+  if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
+    return window.location.origin;
   }
 
-  // 2. Fallback: Si estamos en producción (no localhost), usar la URL de Railway conocida
-  if (!window.location.hostname.includes('localhost')) {
-    const railwayUrl = 'https://provial-production.up.railway.app';
-    console.log('🔌 [Socket Config] Usando URL de Railway (Fallback):', railwayUrl);
-    return railwayUrl;
-  }
-
-  // 3. Desarrollo: Usar el mismo origen (proxy)
-  return window.location.origin;
+  // 2. Producción (Vercel, Railway, etc)
+  // SIEMPRE usar la URL del backend real, ignorando VITE_API_URL si es confusa
+  console.log('🔌 [Socket Config] Entorno Cloud - Forzando conexión a:', PRODUCTION_URL);
+  return PRODUCTION_URL;
 };
 
 // Tipos de eventos
