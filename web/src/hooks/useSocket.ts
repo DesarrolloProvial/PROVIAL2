@@ -9,16 +9,11 @@ import { useAuthStore } from '../store/authStore';
 
 // URL del servidor WebSocket
 const getSocketUrl = () => {
+  // CONFIGURACIÓN FORZADA PARA PRODUCCIÓN
+  // Eliminadas referencias locales para asegurar conexión en Vercel
   const PRODUCTION_URL = 'https://provial-production.up.railway.app';
 
-  // 1. Desarrollo local
-  if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
-    return window.location.origin;
-  }
-
-  // 2. Producción (Vercel, Railway, etc)
-  // SIEMPRE usar la URL del backend real, ignorando VITE_API_URL si es confusa
-  console.log('🔌 [Socket Config] Entorno Cloud - Forzando conexión a:', PRODUCTION_URL);
+  console.log('🔌 [Socket Config] URL Forzada:', PRODUCTION_URL);
   return PRODUCTION_URL;
 };
 
