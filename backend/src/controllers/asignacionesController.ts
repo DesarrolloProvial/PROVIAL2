@@ -361,6 +361,7 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
         const response = {
             // IDs principales
             asignacion_id: asignacion.id,
+            id: asignacion.id,
             unidad_id: asignacion.unidad_id,
             turno_id: asignacion.turno_id,
             
@@ -369,7 +370,8 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
             tipo_unidad: asignacion.tipo_unidad,
             
             // Mi rol en la tripulación
-            rol_tripulacion: miTripulacion?.rol_tripulacion || null,
+            rol_tripulacion: miTripulacion?.rol_tripulacion || 'SIN_ROL',
+            mi_rol: miTripulacion?.rol_tripulacion || 'SIN_ROL',
             
             // Fechas y estado
             fecha_asignacion: asignacion.fecha_programada,
@@ -392,8 +394,8 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
             actividades_especificas: asignacion.actividades_especificas,
             acciones: asignacion.actividades_especificas,
             
-            // Tripulación completa
-            tripulacion: asignacion.tripulacion,
+            // Tripulación completa con nombres
+            tripulacion: asignacion.tripulacion || [],
             
             // Información adicional
             comandante_usuario_id: asignacion.comandante_usuario_id,
@@ -402,8 +404,24 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
             updated_at: asignacion.updated_at,
             
             // Campos adicionales que puede necesitar el mobile
-            mi_rol: miTripulacion?.rol_tripulacion || null,
             es_comandante: miTripulacion?.usuario_id === asignacion.comandante_usuario_id,
+            
+            // Información de sede (si está disponible en la vista)
+            sede_id: asignacion.sede_id,
+            sede_codigo: asignacion.sede_codigo,
+            sede_nombre: asignacion.sede_nombre,
+            
+            // Información adicional de la unidad
+            marca: asignacion.marca,
+            modelo: asignacion.modelo,
+            placa: asignacion.placa,
+            
+            // Horarios si están disponibles
+            hora_salida: asignacion.hora_salida,
+            hora_entrada_estimada: asignacion.hora_entrada_estimada,
+            
+            // Sentido si está disponible
+            sentido: asignacion.sentido,
             
             // Datos completos originales (por si se necesitan)
             ...asignacion

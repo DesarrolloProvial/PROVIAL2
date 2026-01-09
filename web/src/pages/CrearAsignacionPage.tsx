@@ -6,7 +6,7 @@ import { asignacionesService } from '../services/asignaciones.service';
 import { operacionesService } from '../services/operaciones.service';
 import { administracionAPI } from '../services/administracion.service';
 import type { TripulacionMiembro, CreateAsignacionDTO } from '../services/turnos.service';
-import type { TripulacionMiembro as TripulacionMiembroProgramada, CreateAsignacionProgramadaDTO } from '../services/asignaciones.service';
+import type { CreateAsignacionProgramadaDTO } from '../services/asignaciones.service';
 import type { BrigadaDisponible } from '../services/operaciones.service';
 import { AlertCircle, CheckCircle, Users, Truck, ArrowLeft, Plus, X, Search, Crown } from 'lucide-react';
 
@@ -723,10 +723,10 @@ export default function CrearAsignacionPage() {
             </button>
             <button
               type="submit"
-              disabled={crearAsignacionMutation.isPending || crearAsignacionTurnoMutation.isPending || actualizarAsignacionMutation.isPending}
+              disabled={crearAsignacionMutation.isPending || actualizarAsignacionMutation.isPending}
               className="btn-primary"
             >
-              {crearAsignacionMutation.isPending || crearAsignacionTurnoMutation.isPending || actualizarAsignacionMutation.isPending
+              {crearAsignacionMutation.isPending || actualizarAsignacionMutation.isPending
                 ? (isEditMode ? 'Guardando...' : 'Creando...')
                 : (isEditMode ? 'Guardar Cambios' : 'Crear Asignacion')}
             </button>
