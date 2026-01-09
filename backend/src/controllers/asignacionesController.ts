@@ -336,97 +336,125 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
         const usuario = (req as any).user;
 
         // Buscar asignación activa usando la vista v_asignaciones_completas
+        // Usamos el filtro JSONB robusto para evitar problemas de JOIN
         const result = await pool.query(
             `SELECT * FROM v_asignaciones_completas 
              WHERE tripulacion::jsonb @> $1::jsonb
              AND estado IN ('PROGRAMADA', 'EN_AUTORIZACION', 'AUTORIZADA', 'EN_CURSO')
              ORDER BY fecha_programada DESC
              LIMIT 1`,
-            [JSON.stringify([{ usuario_id: usuario.id }])]
+            [JSON.stringify([{ usuario_id: Number(usuario.id) }])]
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 error: 'No tienes asignación activa'
             });
         }
 
-        // Obtener la asignación completa con todos los datos
-        const asignacion = result.rows[0];
-        
-        // Encontrar mi rol en la tripulación
-        const miTripulacion = asignacion.tripulacion.find((t: any) => t.usuario_id === usuario.id);
-        
-        // Formatear la respuesta con todos los datos necesarios para el mobile
+        const asignacionBase = result.rows[0];
+
+        // ENRIQUECIMIENTO DE DATOS
+        // 1. Obtener detalles de la unidad (marca, modelo, placa) que no están en la vista
+        const unidadQuery = await pool.query(
+            `SELECT marca, modelo, placa, anio 
+             FROM unidad 
+             WHERE id = $1`,
+            [asignacionBase.unidad_id]
+        );
+        const unidadDetalles = unidadQuery.rows[0] || {};
+
+        // 2. Obtener tripulación detallada (incluyendo es_comandante y chapa/placa del usuario)
+        const tripulacionQuery = await pool.query(
+            `SELECT 
+                tt.usuario_id, 
+                tt.rol_tripulacion, 
+                tt.presente, 
+                tt.es_comandante,
+                u.nombre_completo as nombre,
+                u.chapa as placa,
+                u.telefono
+             FROM tripulacion_turno tt
+             JOIN usuario u ON tt.usuario_id = u.id
+             WHERE tt.asignacion_id = $1`,
+            [asignacionBase.id]
+        );
+        const tripulacionDetallada = tripulacionQuery.rows;
+
+        // 3. Determinar quién es el comandante
+        const comandante = tripulacionDetallada.find(t => t.es_comandante) ||
+            tripulacionDetallada.find(t => t.rol_tripulacion === 'PILOTO');
+
+        const miDatos = tripulacionDetallada.find(t => t.usuario_id === usuario.id);
+
+        // Construir la respuesta completa para el móvil
         const response = {
-            // IDs principales
-            asignacion_id: asignacion.id,
-            id: asignacion.id,
-            unidad_id: asignacion.unidad_id,
-            turno_id: asignacion.turno_id,
-            
-            // Información de la unidad
-            unidad_codigo: asignacion.unidad_codigo,
-            tipo_unidad: asignacion.tipo_unidad,
-            
-            // Mi rol en la tripulación
-            rol_tripulacion: miTripulacion?.rol_tripulacion || 'SIN_ROL',
-            mi_rol: miTripulacion?.rol_tripulacion || 'SIN_ROL',
-            
-            // Fechas y estado
-            fecha_asignacion: asignacion.fecha_programada,
-            fecha_programada: asignacion.fecha_programada,
-            estado: asignacion.estado,
-            
-            // Información de ruta
-            ruta_asignada_id: asignacion.ruta_id,
-            ruta_asignada_codigo: asignacion.ruta_codigo,
-            ruta_codigo: asignacion.ruta_codigo,
-            ruta_nombre: asignacion.ruta_nombre,
-            
-            // Detalles del recorrido
-            recorrido_inicio_km: asignacion.recorrido_inicio_km,
-            recorrido_fin_km: asignacion.recorrido_fin_km,
-            km_inicio: asignacion.recorrido_inicio_km,
-            km_final: asignacion.recorrido_fin_km,
-            
-            // Actividades y horarios
-            actividades_especificas: asignacion.actividades_especificas,
-            acciones: asignacion.actividades_especificas,
-            
-            // Tripulación completa con nombres
-            tripulacion: asignacion.tripulacion || [],
-            
-            // Información adicional
-            comandante_usuario_id: asignacion.comandante_usuario_id,
-            creado_por_usuario_id: asignacion.creado_por_usuario_id,
-            created_at: asignacion.created_at,
-            updated_at: asignacion.updated_at,
-            
-            // Campos adicionales que puede necesitar el mobile
-            es_comandante: miTripulacion?.usuario_id === asignacion.comandante_usuario_id,
-            
-            // Información de sede (si está disponible en la vista)
-            sede_id: asignacion.sede_id,
-            sede_codigo: asignacion.sede_codigo,
-            sede_nombre: asignacion.sede_nombre,
-            
-            // Información adicional de la unidad
-            marca: asignacion.marca,
-            modelo: asignacion.modelo,
-            placa: asignacion.placa,
-            
-            // Horarios si están disponibles
-            hora_salida: asignacion.hora_salida,
-            hora_entrada_estimada: asignacion.hora_entrada_estimada,
-            
-            // Sentido si está disponible
-            sentido: asignacion.sentido,
-            
-            // Datos completos originales (por si se necesitan)
-            ...asignacion
+            // IDs
+            id: asignacionBase.id,
+            asignacion_id: asignacionBase.id,
+            unidad_id: asignacionBase.unidad_id,
+            turno_id: asignacionBase.turno_id,
+
+            // Unidad
+            unidad_codigo: asignacionBase.unidad_codigo,
+            tipo_unidad: asignacionBase.tipo_unidad,
+            marca: unidadDetalles.marca,
+            modelo: unidadDetalles.modelo,
+            placa: unidadDetalles.placa, // Placa del vehículo
+
+            // Fechas
+            fecha_programada: asignacionBase.fecha_programada,
+            fecha_asignacion: asignacionBase.fecha_programada,
+            estado: asignacionBase.estado,
+
+            // Ruta
+            ruta_id: asignacionBase.ruta_id,
+            ruta_nombre: asignacionBase.ruta_nombre,
+            ruta_codigo: asignacionBase.ruta_codigo,
+            recorrido_inicio_km: asignacionBase.km_inicio,
+            recorrido_fin_km: asignacionBase.km_final,
+            km_inicio: asignacionBase.km_inicio,
+            km_final: asignacionBase.km_final,
+            sentido: asignacionBase.sentido,
+
+            // Actividades
+            actividades_especificas: asignacionBase.acciones, // View column is 'acciones'
+            acciones: asignacionBase.acciones,
+
+            // Horarios
+            hora_salida: asignacionBase.hora_salida,
+            hora_entrada_estimada: asignacionBase.hora_entrada_estimada,
+
+            // Tripulación (Array enriquecido)
+            tripulacion: tripulacionDetallada.map(t => ({
+                usuario_id: t.usuario_id,
+                nombre: t.nombre,
+                placa: t.placa, // Chapa del usuario
+                rol: t.rol_tripulacion,
+                es_comandante: t.es_comandante,
+                notificado: true,
+                vio_notificacion: true,
+                acepto: true
+            })),
+
+            // Contexto del usuario actual
+            mi_rol: miDatos?.rol_tripulacion,
+            rol_tripulacion: miDatos?.rol_tripulacion,
+            es_comandante: miDatos?.es_comandante || (miDatos?.usuario_id === comandante?.usuario_id),
+
+            // Datls del Comandante
+            comandante_usuario_id: comandante?.usuario_id,
+            comandante_nombre: comandante?.nombre,
+            comandante_placa: comandante?.placa,
+
+            // Metadata
+            created_at: asignacionBase.created_at || new Date(),
+            updated_at: new Date(),
+
+            // Datos originales por si acaso
+            ...asignacionBase
         };
-        
+
         res.json(response);
 
     } catch (error: any) {
@@ -489,9 +517,9 @@ export async function cancelarAsignacion(req: Request, res: Response) {
         await client.query(
             `UPDATE asignaciones_programadas
              SET estado = 'CANCELADA',
-                 cancelada_por_usuario_id = $1,
-                 motivo_cancelacion = $2,
-                 fecha_cancelacion = NOW()
+             cancelada_por_usuario_id = $1,
+             motivo_cancelacion = $2,
+             fecha_cancelacion = NOW()
              WHERE id = $3`,
             [usuario.id, motivo || 'Sin motivo especificado', id]
         );
