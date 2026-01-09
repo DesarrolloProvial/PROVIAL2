@@ -335,29 +335,50 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
     try {
         const usuario = (req as any).user;
 
-        // Buscar asignación activa usando consulta directa
+        console.log(`[DEBUG] Buscando asignación para usuario ID: ${usuario.id}`);
+
+        // Buscar asignación activa usando la vista v_asignaciones_completas
         const result = await pool.query(
-            `SELECT ap.*, u.codigo as unidad_codigo, u.tipo as tipo_unidad,
-                    r.codigo as ruta_codigo, r.nombre as ruta_nombre,
-                    tt.rol_tripulacion as mi_rol
-             FROM asignaciones_programadas ap
-             JOIN unidades u ON ap.unidad_id = u.id
-             LEFT JOIN rutas r ON ap.ruta_id = r.id
-             JOIN tripulacion_turno tt ON tt.asignacion_id = ap.id
-             WHERE tt.usuario_id = $1
-             AND ap.estado IN ('PROGRAMADA', 'EN_AUTORIZACION', 'AUTORIZADA', 'EN_CURSO')
-             ORDER BY ap.fecha_programada DESC
+            `SELECT * FROM v_asignaciones_completas 
+             WHERE tripulacion::jsonb @> $1::jsonb
+             AND estado IN ('PROGRAMADA', 'EN_AUTORIZACION', 'AUTORIZADA', 'EN_CURSO')
+             ORDER BY fecha_programada DESC
              LIMIT 1`,
-            [usuario.id]
+            [JSON.stringify([{ usuario_id: usuario.id }])]
         );
 
+        console.log(`[DEBUG] Resultado de consulta:`, result.rows);
+
         if (result.rows.length === 0) {
+            // Debug adicional: verificar si el usuario existe en alguna asignación
+            const debugResult = await pool.query(
+                `SELECT id, estado, tripulacion FROM v_asignaciones_completas 
+                 WHERE tripulacion::jsonb @> $1::jsonb
+                 ORDER BY fecha_programada DESC
+                 LIMIT 5`,
+                [JSON.stringify([{ usuario_id: usuario.id }])]
+            );
+            
+            console.log(`[DEBUG] Todas las asignaciones del usuario:`, debugResult.rows);
+
             return res.status(404).json({ 
-                error: 'No tienes asignación activa'
+                error: 'No tienes asignación activa',
+                debug: {
+                    usuario_id: usuario.id,
+                    total_asignaciones: debugResult.rows.length,
+                    asignaciones: debugResult.rows
+                }
             });
         }
 
-        res.json(result.rows[0]);
+        // Encontrar mi rol en la tripulación
+        const asignacion = result.rows[0];
+        const miTripulacion = asignacion.tripulacion.find((t: any) => t.usuario_id === usuario.id);
+        
+        res.json({
+            ...asignacion,
+            mi_rol: miTripulacion?.rol_tripulacion || null
+        });
 
     } catch (error: any) {
         console.error('[ASIGNACIONES] Error al obtener mi asignación:', error);
