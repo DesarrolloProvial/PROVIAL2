@@ -335,6 +335,20 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
     try {
         const usuario = (req as any).user;
 
+        console.log(`[DEBUG] Buscando asignación para usuario ID: ${usuario.id}`);
+
+        // Primero, buscar TODAS las asignaciones del usuario para debug
+        const debugResult = await pool.query(
+            `SELECT ac.id, ac.estado, ac.fecha_programada, ac.unidad_codigo, tt.usuario_id, tt.rol_tripulacion
+             FROM v_asignaciones_completas ac
+             JOIN tripulacion_turno tt ON tt.asignacion_id = ac.id
+             WHERE tt.usuario_id = $1
+             ORDER BY ac.fecha_programada DESC`,
+            [usuario.id]
+        );
+
+        console.log(`[DEBUG] Todas las asignaciones del usuario:`, debugResult.rows);
+
         // Buscar asignación activa usando JOIN directo con tripulacion_turno
         const result = await pool.query(
             `SELECT ac.*
@@ -348,7 +362,26 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'No tienes asignación activa' });
+            // También verificar si hay asignaciones en otros estados
+            const otrosEstados = await pool.query(
+                `SELECT ac.estado, COUNT(*) as cantidad
+                 FROM v_asignaciones_completas ac
+                 JOIN tripulacion_turno tt ON tt.asignacion_id = ac.id
+                 WHERE tt.usuario_id = $1
+                 GROUP BY ac.estado`,
+                [usuario.id]
+            );
+
+            console.log(`[DEBUG] Asignaciones por estado:`, otrosEstados.rows);
+
+            return res.status(404).json({ 
+                error: 'No tienes asignación activa',
+                debug: {
+                    usuario_id: usuario.id,
+                    total_asignaciones: debugResult.rows.length,
+                    estados_encontrados: otrosEstados.rows
+                }
+            });
         }
 
         res.json(result.rows[0]);
