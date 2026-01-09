@@ -351,6 +351,17 @@ export default function MiAsignacionScreen() {
       {asignacion.estado === 'PROGRAMADA' && (
         <View style={styles.actionContainer}>
           <TouchableOpacity
+            style={styles.inspeccionButton}
+            onPress={() => navigation.navigate('Inspeccion360' as never, {
+              unidadId: asignacion.unidad_id,
+              unidadCodigo: asignacion.unidad_codigo,
+              tipoUnidad: asignacion.unidad_tipo,
+            } as never)}
+          >
+            <Text style={styles.inspeccionButtonText}>📋 Realizar Inspección 360</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={styles.solicitarButton}
             onPress={handleSolicitarSalida}
           >
@@ -599,6 +610,20 @@ const styles = StyleSheet.create({
   },
   actionContainer: {
     padding: 16,
+  },
+  inspeccionButton: {
+    backgroundColor: COLORS.white,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    marginBottom: 12,
+  },
+  inspeccionButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.primary,
   },
   solicitarButton: {
     backgroundColor: COLORS.success,

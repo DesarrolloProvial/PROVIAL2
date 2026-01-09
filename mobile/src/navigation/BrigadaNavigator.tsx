@@ -18,6 +18,8 @@ import RelevoScreen from '../screens/brigada/RelevoScreen';
 import ConfiguracionPruebasScreen from '../screens/brigada/ConfiguracionPruebasScreen';
 import Inspeccion360Screen from '../screens/brigada/Inspeccion360Screen';
 import AprobarInspeccion360Screen from '../screens/brigada/AprobarInspeccion360Screen';
+import SolicitarSalidaAsignacionScreen from '../screens/brigada/SolicitarSalidaAsignacionScreen';
+import AutorizarSalidaScreen from '../screens/brigada/AutorizarSalidaScreen';
 
 // Placeholder screens - to be implemented
 import { View, Text, StyleSheet } from 'react-native';
@@ -123,6 +125,16 @@ export default function BrigadaNavigator() {
         name="AprobarInspeccion360"
         component={AprobarInspeccion360Screen}
         options={{ title: 'Aprobar Inspeccion', headerShown: true }}
+      />
+      <Stack.Screen
+        name="SolicitarSalidaAsignacion"
+        component={SolicitarSalidaAsignacionScreen}
+        options={{ title: 'Solicitar Salida', headerShown: true }}
+      />
+      <Stack.Screen
+        name="AutorizarSalida"
+        component={AutorizarSalidaScreen}
+        options={{ title: 'Autorizar Salida', headerShown: true }}
       />
     </Stack.Navigator>
   );

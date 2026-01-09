@@ -128,7 +128,7 @@ export async function crearAsignacionProgramada(req: Request, res: Response) {
             const brigadaAsignacionCheck = await client.query(
                 `SELECT ap.id, u.codigo as unidad_codigo
                  FROM asignaciones_programadas ap
-                 JOIN asignaciones_tripulacion at ON at.asignacion_programada_id = ap.id
+                 JOIN tripulacion_turno at ON at.asignacion_id = ap.id
                  JOIN unidades u ON ap.unidad_id = u.id
                  WHERE at.usuario_id = $1
                  AND ap.estado IN ('PROGRAMADA', 'EN_AUTORIZACION', 'AUTORIZADA', 'EN_CURSO')
@@ -176,8 +176,8 @@ export async function crearAsignacionProgramada(req: Request, res: Response) {
         // Insertar tripulación
         for (const t of tripulacion) {
             await client.query(
-                `INSERT INTO asignaciones_tripulacion (
-                    asignacion_programada_id,
+                `INSERT INTO tripulacion_turno (
+                    asignacion_id,
                     usuario_id,
                     rol_tripulacion
                 ) VALUES ($1, $2, $3)`,
@@ -225,9 +225,9 @@ export async function crearAsignacionProgramada(req: Request, res: Response) {
         // Para cada tripulante, marcar como notificado
         for (const t of tripulacion) {
             await client.query(
-                `UPDATE asignaciones_tripulacion
+                `UPDATE tripulacion_turno
                  SET notificado_at = NOW()
-                 WHERE asignacion_programada_id = $1 AND usuario_id = $2`,
+                 WHERE asignacion_id = $1 AND usuario_id = $2`,
                 [asignacionId, t.usuario_id]
             );
 
@@ -359,7 +359,7 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
         const result = await pool.query(
             `SELECT ac.*
              FROM v_asignaciones_completas ac
-             JOIN asignaciones_tripulacion at ON at.asignacion_programada_id = ac.id
+             JOIN tripulacion_turno at ON at.asignacion_id = ac.id
              WHERE at.usuario_id = $1
              AND ac.estado IN ('PROGRAMADA', 'EN_AUTORIZACION', 'AUTORIZADA', 'EN_CURSO')
              ORDER BY ac.fecha_programada DESC
@@ -373,9 +373,9 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
 
         // Marcar como vista
         await pool.query(
-            `UPDATE asignaciones_tripulacion
+            `UPDATE tripulacion_turno
              SET vio_notificacion_at = NOW()
-             WHERE asignacion_programada_id = $1
+             WHERE asignacion_id = $1
              AND usuario_id = $2
              AND vio_notificacion_at IS NULL`,
             [result.rows[0].id, usuario.id]
