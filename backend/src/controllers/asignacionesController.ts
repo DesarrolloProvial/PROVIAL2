@@ -172,12 +172,20 @@ export async function crearAsignacionProgramada(req: Request, res: Response) {
         if (turnoExistente.rows.length > 0) {
             turnoId = turnoExistente.rows[0].id;
         } else {
+            // Verificar que tenemos usuario.userId antes de crear turno
+            if (!usuario || !usuario.userId) {
+                await client.query('ROLLBACK');
+                return res.status(401).json({
+                    error: 'No se pudo identificar el usuario autenticado'
+                });
+            }
+
             // Crear nuevo turno
             const nuevoTurno = await client.query(
                 `INSERT INTO turno (fecha, estado, creado_por, sede_id)
                  VALUES ($1, 'PLANIFICADO', $2, $3)
                  RETURNING id`,
-                [fecha_programada, usuario.id, sedeIdFinal]
+                [fecha_programada, usuario.userId, sedeIdFinal]
             );
             turnoId = nuevoTurno.rows[0].id;
         }
@@ -388,7 +396,7 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
              AND au.hora_entrada_real IS NULL
              ORDER BY t.fecha DESC
              LIMIT 1`,
-            [usuario.id]
+            [usuario.userId]
         );
 
         if (result.rows.length === 0) {
