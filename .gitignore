@@ -95,3 +95,4 @@ reorganize.ps1
 tmp/
 backend/nul
 **/nul
+.aider*
