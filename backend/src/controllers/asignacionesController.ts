@@ -335,8 +335,6 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
     try {
         const usuario = (req as any).user;
 
-        console.log(`[DEBUG] Buscando asignación para usuario ID: ${usuario.id}`);
-
         // Buscar asignación activa usando la vista v_asignaciones_completas
         const result = await pool.query(
             `SELECT * FROM v_asignaciones_completas 
@@ -347,38 +345,71 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
             [JSON.stringify([{ usuario_id: usuario.id }])]
         );
 
-        console.log(`[DEBUG] Resultado de consulta:`, result.rows);
-
         if (result.rows.length === 0) {
-            // Debug adicional: verificar si el usuario existe en alguna asignación
-            const debugResult = await pool.query(
-                `SELECT id, estado, tripulacion FROM v_asignaciones_completas 
-                 WHERE tripulacion::jsonb @> $1::jsonb
-                 ORDER BY fecha_programada DESC
-                 LIMIT 5`,
-                [JSON.stringify([{ usuario_id: usuario.id }])]
-            );
-            
-            console.log(`[DEBUG] Todas las asignaciones del usuario:`, debugResult.rows);
-
             return res.status(404).json({ 
-                error: 'No tienes asignación activa',
-                debug: {
-                    usuario_id: usuario.id,
-                    total_asignaciones: debugResult.rows.length,
-                    asignaciones: debugResult.rows
-                }
+                error: 'No tienes asignación activa'
             });
         }
 
-        // Encontrar mi rol en la tripulación
+        // Obtener la asignación completa con todos los datos
         const asignacion = result.rows[0];
+        
+        // Encontrar mi rol en la tripulación
         const miTripulacion = asignacion.tripulacion.find((t: any) => t.usuario_id === usuario.id);
         
-        res.json({
-            ...asignacion,
-            mi_rol: miTripulacion?.rol_tripulacion || null
-        });
+        // Formatear la respuesta con todos los datos necesarios para el mobile
+        const response = {
+            // IDs principales
+            asignacion_id: asignacion.id,
+            unidad_id: asignacion.unidad_id,
+            turno_id: asignacion.turno_id,
+            
+            // Información de la unidad
+            unidad_codigo: asignacion.unidad_codigo,
+            tipo_unidad: asignacion.tipo_unidad,
+            
+            // Mi rol en la tripulación
+            rol_tripulacion: miTripulacion?.rol_tripulacion || null,
+            
+            // Fechas y estado
+            fecha_asignacion: asignacion.fecha_programada,
+            fecha_programada: asignacion.fecha_programada,
+            estado: asignacion.estado,
+            
+            // Información de ruta
+            ruta_asignada_id: asignacion.ruta_id,
+            ruta_asignada_codigo: asignacion.ruta_codigo,
+            ruta_codigo: asignacion.ruta_codigo,
+            ruta_nombre: asignacion.ruta_nombre,
+            
+            // Detalles del recorrido
+            recorrido_inicio_km: asignacion.recorrido_inicio_km,
+            recorrido_fin_km: asignacion.recorrido_fin_km,
+            km_inicio: asignacion.recorrido_inicio_km,
+            km_final: asignacion.recorrido_fin_km,
+            
+            // Actividades y horarios
+            actividades_especificas: asignacion.actividades_especificas,
+            acciones: asignacion.actividades_especificas,
+            
+            // Tripulación completa
+            tripulacion: asignacion.tripulacion,
+            
+            // Información adicional
+            comandante_usuario_id: asignacion.comandante_usuario_id,
+            creado_por_usuario_id: asignacion.creado_por_usuario_id,
+            created_at: asignacion.created_at,
+            updated_at: asignacion.updated_at,
+            
+            // Campos adicionales que puede necesitar el mobile
+            mi_rol: miTripulacion?.rol_tripulacion || null,
+            es_comandante: miTripulacion?.usuario_id === asignacion.comandante_usuario_id,
+            
+            // Datos completos originales (por si se necesitan)
+            ...asignacion
+        };
+        
+        res.json(response);
 
     } catch (error: any) {
         console.error('[ASIGNACIONES] Error al obtener mi asignación:', error);
