@@ -426,26 +426,50 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
         // Encontrar comandante
         const comandante = tripulacionQuery.rows.find((t: any) => t.es_comandante);
 
-        // Construir respuesta
-        const response = {
-            ...asignacionBase,
+        // Construir respuesta que coincida con la interfaz Asignacion del mobile
+        const asignacionResponse = {
+            // IDs
+            id: asignacionBase.id,
+            unidad_id: asignacionBase.unidad_id,
+
+            // Unidad - IMPORTANTE: mobile espera 'unidad_tipo' no 'tipo_unidad'
+            unidad_codigo: asignacionBase.unidad_codigo,
+            unidad_tipo: asignacionBase.tipo_unidad, // Mapear correctamente
+
+            // Fechas
+            fecha_programada: asignacionBase.fecha_programada,
+            fecha_creacion: asignacionBase.fecha_programada, // Usar fecha programada como creación
+            estado: asignacionBase.estado,
+
+            // Ruta
+            ruta_id: asignacionBase.ruta_id,
+            ruta_nombre: asignacionBase.ruta_nombre,
+            ruta_codigo: asignacionBase.ruta_codigo,
+            recorrido_inicio_km: asignacionBase.km_inicio,
+            recorrido_fin_km: asignacionBase.km_final,
+
+            // Actividades
+            actividades_especificas: asignacionBase.actividades_especificas,
+
+            // Comandante
+            comandante_usuario_id: comandante?.usuario_id,
+            comandante_nombre: comandante?.nombre,
+            comandante_placa: comandante?.placa,
+
+            // Tripulación (formato que espera mobile)
             tripulacion: tripulacionQuery.rows.map((t: any) => ({
                 usuario_id: t.usuario_id,
                 nombre: t.nombre,
                 placa: t.placa,
                 rol: t.rol,
-                es_comandante: t.es_comandante,
-                presente: t.presente
-            })),
-            comandante_usuario_id: comandante?.usuario_id,
-            comandante_nombre: comandante?.nombre,
-            comandante_placa: comandante?.placa,
-            recorrido_inicio_km: asignacionBase.km_inicio,
-            recorrido_fin_km: asignacionBase.km_final,
-            acciones: asignacionBase.actividades_especificas
+                notificado: true,  // Asumimos notificado
+                vio_notificacion: true,
+                acepto: true
+            }))
         };
 
-        res.json(response);
+        // IMPORTANTE: Mobile espera { asignacion: ... }
+        res.json({ asignacion: asignacionResponse });
 
     } catch (error: any) {
         console.error('[ASIGNACIONES] Error al obtener mi asignación:', error);
