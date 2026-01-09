@@ -337,49 +337,59 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
 
         console.log(`[DEBUG] Buscando asignación para usuario ID: ${usuario.id}`);
 
-        // Primero, buscar TODAS las asignaciones del usuario para debug
-        const debugResult = await pool.query(
-            `SELECT ac.id, ac.estado, ac.fecha_programada, ac.unidad_codigo, tt.usuario_id, tt.rol_tripulacion
-             FROM v_asignaciones_completas ac
-             JOIN tripulacion_turno tt ON tt.asignacion_id = ac.id
-             WHERE tt.usuario_id = $1
-             ORDER BY ac.fecha_programada DESC`,
+        // Debug 1: Verificar si existe en tripulacion_turno
+        const tripulacionDebug = await pool.query(
+            `SELECT asignacion_id, usuario_id, rol_tripulacion 
+             FROM tripulacion_turno 
+             WHERE usuario_id = $1`,
             [usuario.id]
         );
+        console.log(`[DEBUG] Registros en tripulacion_turno:`, tripulacionDebug.rows);
 
-        console.log(`[DEBUG] Todas las asignaciones del usuario:`, debugResult.rows);
+        // Debug 2: Verificar si existe en v_asignaciones_completas
+        const vistaDebug = await pool.query(
+            `SELECT id, estado, fecha_programada, unidad_codigo 
+             FROM v_asignaciones_completas 
+             WHERE id = ANY($1::int[])`,
+            [tripulacionDebug.rows.map(r => r.asignacion_id)]
+        );
+        console.log(`[DEBUG] Registros en v_asignaciones_completas:`, vistaDebug.rows);
 
-        // Buscar asignación activa usando JOIN directo con tripulacion_turno
+        // Debug 3: Verificar directamente en asignaciones_programadas
+        const asignacionesDebug = await pool.query(
+            `SELECT ap.id, ap.estado, ap.fecha_programada, u.codigo as unidad_codigo
+             FROM asignaciones_programadas ap
+             JOIN unidades u ON ap.unidad_id = u.id
+             JOIN tripulacion_turno tt ON tt.asignacion_id = ap.id
+             WHERE tt.usuario_id = $1`,
+            [usuario.id]
+        );
+        console.log(`[DEBUG] Consulta directa asignaciones_programadas:`, asignacionesDebug.rows);
+
+        // Buscar asignación activa usando consulta directa
         const result = await pool.query(
-            `SELECT ac.*
-             FROM v_asignaciones_completas ac
-             JOIN tripulacion_turno tt ON tt.asignacion_id = ac.id
+            `SELECT ap.*, u.codigo as unidad_codigo, u.tipo as tipo_unidad,
+                    r.codigo as ruta_codigo, r.nombre as ruta_nombre,
+                    tt.rol_tripulacion as mi_rol
+             FROM asignaciones_programadas ap
+             JOIN unidades u ON ap.unidad_id = u.id
+             LEFT JOIN rutas r ON ap.ruta_id = r.id
+             JOIN tripulacion_turno tt ON tt.asignacion_id = ap.id
              WHERE tt.usuario_id = $1
-             AND ac.estado IN ('PROGRAMADA', 'EN_AUTORIZACION', 'AUTORIZADA', 'EN_CURSO')
-             ORDER BY ac.fecha_programada DESC
+             AND ap.estado IN ('PROGRAMADA', 'EN_AUTORIZACION', 'AUTORIZADA', 'EN_CURSO')
+             ORDER BY ap.fecha_programada DESC
              LIMIT 1`,
             [usuario.id]
         );
 
         if (result.rows.length === 0) {
-            // También verificar si hay asignaciones en otros estados
-            const otrosEstados = await pool.query(
-                `SELECT ac.estado, COUNT(*) as cantidad
-                 FROM v_asignaciones_completas ac
-                 JOIN tripulacion_turno tt ON tt.asignacion_id = ac.id
-                 WHERE tt.usuario_id = $1
-                 GROUP BY ac.estado`,
-                [usuario.id]
-            );
-
-            console.log(`[DEBUG] Asignaciones por estado:`, otrosEstados.rows);
-
             return res.status(404).json({ 
                 error: 'No tienes asignación activa',
                 debug: {
                     usuario_id: usuario.id,
-                    total_asignaciones: debugResult.rows.length,
-                    estados_encontrados: otrosEstados.rows
+                    tripulacion_registros: tripulacionDebug.rows.length,
+                    vista_registros: vistaDebug.rows.length,
+                    asignaciones_directas: asignacionesDebug.rows.length
                 }
             });
         }
