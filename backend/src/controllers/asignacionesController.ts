@@ -382,10 +382,10 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
         const tripulacionDetallada = tripulacionQuery.rows;
 
         // 3. Determinar quién es el comandante
-        const comandante = tripulacionDetallada.find(t => t.es_comandante) ||
-            tripulacionDetallada.find(t => t.rol_tripulacion === 'PILOTO');
+        const comandante = tripulacionDetallada.find((t: any) => t.es_comandante) ||
+            tripulacionDetallada.find((t: any) => t.rol_tripulacion === 'PILOTO');
 
-        const miDatos = tripulacionDetallada.find(t => t.usuario_id === usuario.id);
+        const miDatos = tripulacionDetallada.find((t: any) => t.usuario_id === usuario.id);
 
         // Construir la respuesta completa para el móvil
         const response = {
@@ -426,7 +426,7 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
             hora_entrada_estimada: asignacionBase.hora_entrada_estimada,
 
             // Tripulación (Array enriquecido)
-            tripulacion: tripulacionDetallada.map(t => ({
+            tripulacion: tripulacionDetallada.map((t: any) => ({
                 usuario_id: t.usuario_id,
                 nombre: t.nombre,
                 placa: t.placa, // Chapa del usuario
