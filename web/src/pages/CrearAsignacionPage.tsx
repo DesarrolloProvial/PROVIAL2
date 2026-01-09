@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { turnosService, geografiaService } from '../services/turnos.service';
+import { asignacionesService } from '../services/asignaciones.service';
 import { operacionesService } from '../services/operaciones.service';
 import { administracionAPI } from '../services/administracion.service';
 import type { TripulacionMiembro, CreateAsignacionDTO } from '../services/turnos.service';
+import type { TripulacionMiembro as TripulacionMiembroProgramada, CreateAsignacionProgramadaDTO } from '../services/asignaciones.service';
 import type { BrigadaDisponible } from '../services/operaciones.service';
 import { AlertCircle, CheckCircle, Users, Truck, ArrowLeft, Plus, X, Search, Crown } from 'lucide-react';
 
@@ -128,18 +130,10 @@ export default function CrearAsignacionPage() {
   }, [unidadId, isEditMode, tipoAsignacion]);
 
 
-  // Mutation para crear asignacion
+  // Mutation para crear asignacion programada
   const crearAsignacionMutation = useMutation({
-    mutationFn: async (asignacion: CreateAsignacionDTO) => {
-      let turno = await turnosService.getTurnoByFecha(fecha);
-      if (!turno) {
-        turno = await turnosService.createTurno({
-          fecha,
-          fecha_fin: esComisionLarga && fechaFin ? fechaFin : undefined,
-          observaciones: observaciones || undefined,
-        });
-      }
-      return turnosService.createAsignacion(turno.id, asignacion);
+    mutationFn: async (asignacion: CreateAsignacionProgramadaDTO) => {
+      return asignacionesService.crearAsignacionProgramada(asignacion);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['turno-hoy'] });
@@ -250,28 +244,52 @@ export default function CrearAsignacionPage() {
       return;
     }
 
-    const asignacionData: CreateAsignacionDTO = {
-      tipo_asignacion: tipoAsignacion,
-      unidad_id: tipoAsignacion === 'PATRULLA' ? unidadId : null,
-      ruta_id: (tipoAsignacion === 'PATRULLA' && !esReaccion) ? rutaId : null,
-      km_inicio: (tipoAsignacion === 'PATRULLA' && kmInicio) ? parseFloat(kmInicio) : undefined,
-      km_final: (tipoAsignacion === 'PATRULLA' && kmFinal) ? parseFloat(kmFinal) : undefined,
-      sentido: (sentido as any) || undefined,
-      acciones: acciones || undefined,
-      hora_salida: horaSalida || undefined,
-      hora_entrada_estimada: horaEntrada || undefined,
-      tripulacion,
-      es_reaccion: esReaccion
-    };
+    // Encontrar el comandante
+    const comandante = tripulacion.find(t => t.es_comandante);
+    if (!comandante) {
+      alert('Debe designar un comandante para la unidad.');
+      return;
+    }
 
     if (isEditMode && asignacionEdit?.id) {
-      // Modo edicion - actualizar asignacion existente
+      // Modo edicion - usar sistema de turnos (mantener compatibilidad)
+      const asignacionData: CreateAsignacionDTO = {
+        tipo_asignacion: tipoAsignacion,
+        unidad_id: tipoAsignacion === 'PATRULLA' ? unidadId : null,
+        ruta_id: (tipoAsignacion === 'PATRULLA' && !esReaccion) ? rutaId : null,
+        km_inicio: (tipoAsignacion === 'PATRULLA' && kmInicio) ? parseFloat(kmInicio) : undefined,
+        km_final: (tipoAsignacion === 'PATRULLA' && kmFinal) ? parseFloat(kmFinal) : undefined,
+        sentido: (sentido as any) || undefined,
+        acciones: acciones || undefined,
+        hora_salida: horaSalida || undefined,
+        hora_entrada_estimada: horaEntrada || undefined,
+        tripulacion,
+        es_reaccion: esReaccion
+      };
+
       actualizarAsignacionMutation.mutate({
         asignacionId: asignacionEdit.id,
         asignacion: asignacionData,
       });
     } else {
-      // Modo creacion - crear nueva asignacion
+      // Modo creacion - usar sistema de asignaciones programadas
+      const asignacionData: CreateAsignacionProgramadaDTO = {
+        unidad_id: unidadId!,
+        fecha_programada: fecha,
+        ruta_id: (tipoAsignacion === 'PATRULLA' && !esReaccion) ? rutaId : null,
+        recorrido_inicio_km: (tipoAsignacion === 'PATRULLA' && kmInicio) ? parseFloat(kmInicio) : undefined,
+        recorrido_fin_km: (tipoAsignacion === 'PATRULLA' && kmFinal) ? parseFloat(kmFinal) : undefined,
+        actividades_especificas: acciones || undefined,
+        comandante_usuario_id: comandante.usuario_id,
+        tripulacion: tripulacion.map(t => ({
+          usuario_id: t.usuario_id,
+          rol_tripulacion: t.rol_tripulacion,
+          telefono_contacto: t.telefono_contacto,
+          presente: t.presente,
+          observaciones: t.observaciones,
+        })),
+      };
+
       crearAsignacionMutation.mutate(asignacionData);
     }
   };
@@ -705,10 +723,10 @@ export default function CrearAsignacionPage() {
             </button>
             <button
               type="submit"
-              disabled={crearAsignacionMutation.isPending || actualizarAsignacionMutation.isPending}
+              disabled={crearAsignacionMutation.isPending || crearAsignacionTurnoMutation.isPending || actualizarAsignacionMutation.isPending}
               className="btn-primary"
             >
-              {crearAsignacionMutation.isPending || actualizarAsignacionMutation.isPending
+              {crearAsignacionMutation.isPending || crearAsignacionTurnoMutation.isPending || actualizarAsignacionMutation.isPending
                 ? (isEditMode ? 'Guardando...' : 'Creando...')
                 : (isEditMode ? 'Guardar Cambios' : 'Crear Asignacion')}
             </button>

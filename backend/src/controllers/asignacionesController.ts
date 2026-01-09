@@ -335,37 +335,6 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
     try {
         const usuario = (req as any).user;
 
-        console.log(`[DEBUG] Buscando asignación para usuario ID: ${usuario.id}`);
-
-        // Debug 1: Verificar si existe en tripulacion_turno
-        const tripulacionDebug = await pool.query(
-            `SELECT asignacion_id, usuario_id, rol_tripulacion 
-             FROM tripulacion_turno 
-             WHERE usuario_id = $1`,
-            [usuario.id]
-        );
-        console.log(`[DEBUG] Registros en tripulacion_turno:`, tripulacionDebug.rows);
-
-        // Debug 2: Verificar si existe en v_asignaciones_completas
-        const vistaDebug = await pool.query(
-            `SELECT id, estado, fecha_programada, unidad_codigo 
-             FROM v_asignaciones_completas 
-             WHERE id = ANY($1::int[])`,
-            [tripulacionDebug.rows.map((r: any) => r.asignacion_id)]
-        );
-        console.log(`[DEBUG] Registros en v_asignaciones_completas:`, vistaDebug.rows);
-
-        // Debug 3: Verificar directamente en asignaciones_programadas
-        const asignacionesDebug = await pool.query(
-            `SELECT ap.id, ap.estado, ap.fecha_programada, u.codigo as unidad_codigo
-             FROM asignaciones_programadas ap
-             JOIN unidades u ON ap.unidad_id = u.id
-             JOIN tripulacion_turno tt ON tt.asignacion_id = ap.id
-             WHERE tt.usuario_id = $1`,
-            [usuario.id]
-        );
-        console.log(`[DEBUG] Consulta directa asignaciones_programadas:`, asignacionesDebug.rows);
-
         // Buscar asignación activa usando consulta directa
         const result = await pool.query(
             `SELECT ap.*, u.codigo as unidad_codigo, u.tipo as tipo_unidad,
@@ -384,13 +353,7 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
 
         if (result.rows.length === 0) {
             return res.status(404).json({ 
-                error: 'No tienes asignación activa',
-                debug: {
-                    usuario_id: usuario.id,
-                    tripulacion_registros: tripulacionDebug.rows.length,
-                    vista_registros: vistaDebug.rows.length,
-                    asignaciones_directas: asignacionesDebug.rows.length
-                }
+                error: 'No tienes asignación activa'
             });
         }
 
