@@ -223,36 +223,12 @@ export async function crearAsignacionProgramada(req: Request, res: Response) {
         // TODO: Enviar notificaciones push a todos los tripulantes
         // En una implementación real, aquí se enviarían notificaciones
         // Para cada tripulante, marcar como notificado
+        /*
         for (const t of tripulacion) {
             // NOTE: Column 'notificado_at' does not exist in 'tripulacion_turno'
-            /*
-            await client.query(
-                `UPDATE tripulacion_turno
-                 SET notificado_at = NOW()
-                 WHERE asignacion_id = $1 AND usuario_id = $2`,
-                [asignacionId, t.usuario_id]
-            );
-
-            // Registrar evento de notificación
-            await client.query(
-                `SELECT registrar_auditoria_salida(
-                    'NOTIFICACION_ENVIADA',
-                    $1,
-                    $2,
-                    NULL,
-                    NULL,
-                    $3,
-                    NULL,
-                    NULL
-                )`,
-                [
-                    t.usuario_id,
-                    asignacionId,
-                    JSON.stringify({ medio: 'PUSH', usuario_id: t.usuario_id })
-                ]
-            );
-            */
+            // Code removed to prevent build errors and runtime crashes
         }
+        */
 
         res.status(201).json({
             message: 'Asignación programada creada exitosamente',
