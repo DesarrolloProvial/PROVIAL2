@@ -359,12 +359,11 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
         const result = await pool.query(
             `SELECT ac.*
              FROM v_asignaciones_completas ac
-             JOIN tripulacion_turno at ON at.asignacion_id = ac.id
-             WHERE at.usuario_id = $1
+             WHERE ac.tripulacion::jsonb @> $1::jsonb
              AND ac.estado IN ('PROGRAMADA', 'EN_AUTORIZACION', 'AUTORIZADA', 'EN_CURSO')
              ORDER BY ac.fecha_programada DESC
              LIMIT 1`,
-            [usuario.id]
+            [JSON.stringify([{ usuario_id: usuario.id }])]
         );
 
         if (result.rows.length === 0) {
