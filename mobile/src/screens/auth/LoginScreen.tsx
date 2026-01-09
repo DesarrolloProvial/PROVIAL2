@@ -16,6 +16,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuthStore } from '../../store/authStore';
 import { passwordResetService } from '../../services/passwordReset.service';
 import { RootStackParamList } from '../../types/navigation';
+import axios from 'axios';
+import { API_URL } from '../../constants/config';
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Auth'>;
 
@@ -59,6 +61,32 @@ export default function LoginScreen() {
         'Error de Login',
         result.error || 'Usuario o contraseña incorrectos'
       );
+    } else {
+      // DEBUG: Probar endpoint de asignaciones después del login exitoso
+      try {
+        const { token } = useAuthStore.getState();
+        console.log('🔍 [DEBUG] Probando endpoint /asignaciones/mi-asignacion...');
+        
+        const response = await axios.get(`${API_URL}/asignaciones/mi-asignacion`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        console.log('✅ [DEBUG] Respuesta de /asignaciones/mi-asignacion:', JSON.stringify(response.data, null, 2));
+        
+        Alert.alert(
+          'DEBUG - Asignación encontrada',
+          `Unidad: ${response.data.unidad_codigo}\nEstado: ${response.data.estado}\nFecha: ${response.data.fecha_programada}`,
+          [{ text: 'OK' }]
+        );
+      } catch (error: any) {
+        console.log('❌ [DEBUG] Error en /asignaciones/mi-asignacion:', error.response?.status, error.response?.data);
+        
+        Alert.alert(
+          'DEBUG - Error de asignación',
+          `Status: ${error.response?.status}\nError: ${JSON.stringify(error.response?.data, null, 2)}`,
+          [{ text: 'OK' }]
+        );
+      }
     }
   };
 
