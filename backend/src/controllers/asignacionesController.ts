@@ -349,6 +349,8 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
     try {
         const usuario = (req as any).user;
 
+        console.log('[MI-ASIGNACION] Buscando asignación para userId:', usuario.userId);
+
         // Buscar asignación activa del usuario en tripulacion_turno
         // vinculada a un turno activo (PLANIFICADO o ACTIVO)
         const result = await pool.query(
@@ -399,7 +401,10 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
             [usuario.userId]
         );
 
+        console.log('[MI-ASIGNACION] Resultado filas:', result.rows.length);
+
         if (result.rows.length === 0) {
+            console.log('[MI-ASIGNACION] No se encontró asignación activa');
             return res.status(404).json({
                 error: 'No tienes asignación activa'
             });
