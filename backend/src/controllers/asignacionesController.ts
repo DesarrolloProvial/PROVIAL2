@@ -224,6 +224,8 @@ export async function crearAsignacionProgramada(req: Request, res: Response) {
         // En una implementación real, aquí se enviarían notificaciones
         // Para cada tripulante, marcar como notificado
         for (const t of tripulacion) {
+            // NOTE: Column 'notificado_at' does not exist in 'tripulacion_turno'
+            /*
             await client.query(
                 `UPDATE tripulacion_turno
                  SET notificado_at = NOW()
@@ -249,6 +251,7 @@ export async function crearAsignacionProgramada(req: Request, res: Response) {
                     JSON.stringify({ medio: 'PUSH', usuario_id: t.usuario_id })
                 ]
             );
+            */
         }
 
         res.status(201).json({
@@ -363,14 +366,15 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
              AND ac.estado IN ('PROGRAMADA', 'EN_AUTORIZACION', 'AUTORIZADA', 'EN_CURSO')
              ORDER BY ac.fecha_programada DESC
              LIMIT 1`,
-            [JSON.stringify([{ usuario_id: usuario.id }])]
+            [JSON.stringify([{ usuario_id: Number(usuario.id) }])]
         );
 
         if (result.rows.length === 0) {
             return res.json({ asignacion: null });
         }
 
-        // Marcar como vista
+        // NOTE: Column 'vio_notificacion_at' does not exist in 'tripulacion_turno'
+        /*
         await pool.query(
             `UPDATE tripulacion_turno
              SET vio_notificacion_at = NOW()
@@ -394,6 +398,7 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
             )`,
             [usuario.id, result.rows[0].id, req.ip, req.headers['user-agent']]
         );
+        */
 
         res.json({ asignacion: result.rows[0] });
 
