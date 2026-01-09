@@ -117,10 +117,10 @@ export async function crearAsignacionProgramada(req: Request, res: Response) {
             });
         }
 
-        // Verificar que todos los tripulantes existen y son brigadas
+        // Verificar que todos los tripulantes existen y son BRIGADA
         for (const t of tripulacion) {
             const usuarioCheck = await client.query(
-                `SELECT id, rol FROM usuario WHERE id = $1`,
+                `SELECT id, rol_id, nombre_completo FROM usuario WHERE id = $1`,
                 [t.usuario_id]
             );
 
@@ -128,6 +128,14 @@ export async function crearAsignacionProgramada(req: Request, res: Response) {
                 await client.query('ROLLBACK');
                 return res.status(404).json({
                     error: `Usuario con ID ${t.usuario_id} no encontrado`
+                });
+            }
+
+            // Verificar que el usuario es BRIGADA (rol_id = 3)
+            if (usuarioCheck.rows[0].rol_id !== 3) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({
+                    error: `El usuario ${usuarioCheck.rows[0].nombre_completo} no es un brigada`
                 });
             }
 
