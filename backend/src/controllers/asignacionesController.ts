@@ -351,7 +351,7 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
             `SELECT id, estado, fecha_programada, unidad_codigo 
              FROM v_asignaciones_completas 
              WHERE id = ANY($1::int[])`,
-            [tripulacionDebug.rows.map(r => r.asignacion_id)]
+            [tripulacionDebug.rows.map((r: any) => r.asignacion_id)]
         );
         console.log(`[DEBUG] Registros en v_asignaciones_completas:`, vistaDebug.rows);
 
