@@ -335,48 +335,23 @@ export async function obtenerMiAsignacion(req: Request, res: Response) {
     try {
         const usuario = (req as any).user;
 
+        // Buscar asignación activa usando JOIN directo con tripulacion_turno
         const result = await pool.query(
             `SELECT ac.*
              FROM v_asignaciones_completas ac
-             WHERE ac.tripulacion::jsonb @> $1::jsonb
+             JOIN tripulacion_turno tt ON tt.asignacion_id = ac.id
+             WHERE tt.usuario_id = $1
              AND ac.estado IN ('PROGRAMADA', 'EN_AUTORIZACION', 'AUTORIZADA', 'EN_CURSO')
              ORDER BY ac.fecha_programada DESC
              LIMIT 1`,
-            [JSON.stringify([{ usuario_id: Number(usuario.id) }])]
+            [usuario.id]
         );
 
         if (result.rows.length === 0) {
-            return res.json({ asignacion: null });
+            return res.status(404).json({ error: 'No tienes asignación activa' });
         }
 
-        // NOTE: Column 'vio_notificacion_at' does not exist in 'tripulacion_turno'
-        /*
-        await pool.query(
-            `UPDATE tripulacion_turno
-             SET vio_notificacion_at = NOW()
-             WHERE asignacion_id = $1
-             AND usuario_id = $2
-             AND vio_notificacion_at IS NULL`,
-            [result.rows[0].id, usuario.id]
-        );
-
-        // Registrar que vio la notificación
-        await pool.query(
-            `SELECT registrar_auditoria_salida(
-                'NOTIFICACION_VISTA',
-                $1,
-                $2,
-                NULL,
-                NULL,
-                NULL,
-                $3,
-                $4
-            )`,
-            [usuario.id, result.rows[0].id, req.ip, req.headers['user-agent']]
-        );
-        */
-
-        res.json({ asignacion: result.rows[0] });
+        res.json(result.rows[0]);
 
     } catch (error: any) {
         console.error('[ASIGNACIONES] Error al obtener mi asignación:', error);

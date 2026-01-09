@@ -287,7 +287,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     try {
-      const response = await axios.get(`${API_URL}/salidas/mi-unidad`, {
+      const response = await axios.get(`${API_URL}/asignaciones/mi-asignacion`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
