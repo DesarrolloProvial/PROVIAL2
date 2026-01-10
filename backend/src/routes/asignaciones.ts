@@ -10,6 +10,7 @@ import {
     cancelarAsignacion
 } from '../controllers/asignacionesController';
 import { authenticate, authorize } from '../middlewares/auth';
+import { getMiAsignacionHoy } from '../controllers/turno.controller';
 
 const router = express.Router();
 
@@ -35,6 +36,13 @@ router.get(
     authorize('OPERACIONES', 'ADMIN', 'COP', 'ENCARGADO_SEDE', 'ENCARGADO_NOMINAS'),
     listarAsignaciones
 );
+
+/**
+ * GET /api/asignaciones/mi-asignacion
+ * RUTA DE COMPATIBILIDAD - Redirige a /api/turnos/mi-asignacion-hoy
+ * TODO: DEPRECAR cuando todas las apps móviles estén actualizadas
+ */
+router.get('/mi-asignacion', getMiAsignacionHoy);
 
 // NOTA: Para obtener "mi asignación" como brigada, usar /api/turnos/mi-asignacion-hoy
 
