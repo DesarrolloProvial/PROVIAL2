@@ -32,31 +32,40 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 interface Tripulante {
   usuario_id: number;
   nombre: string;
-  placa: string;
+  chapa: string;
   rol: string;
-  notificado: boolean;
-  vio_notificacion: boolean;
-  acepto: boolean;
+  telefono?: string;
+  es_comandante: boolean;
 }
 
 interface Asignacion {
-  id: number;
+  usuario_id: number;
+  nombre_completo: string;
+  turno_id: number;
+  fecha: string;
+  fecha_fin?: string;
+  turno_estado: string;
+  asignacion_id: number;
   unidad_id: number;
   unidad_codigo: string;
-  unidad_tipo: string;
-  fecha_programada: string;
-  fecha_creacion: string;
-  estado: string;
+  tipo_unidad: string;
+  mi_rol: string;
+  es_comandante: boolean;
   ruta_id?: number;
-  ruta_nombre?: string;
   ruta_codigo?: string;
-  recorrido_inicio_km?: number;
-  recorrido_fin_km?: number;
-  actividades_especificas?: string;
-  comandante_usuario_id: number;
-  comandante_nombre: string;
-  comandante_placa: string;
+  ruta_nombre?: string;
+  km_inicio?: number;
+  km_final?: number;
+  sentido?: string;
+  acciones?: string;
+  estado_nomina: string;
+  recorrido_permitido?: string;
+  hora_salida?: string;
+  hora_entrada_estimada?: string;
+  hora_salida_real?: string;
+  dias_para_salida: number;
   tripulacion: Tripulante[];
+  companeros?: Tripulante[];
 }
 
 export default function MiAsignacionScreen() {
@@ -93,11 +102,11 @@ export default function MiAsignacionScreen() {
       setLoading(true);
       const token = await AsyncStorage.getItem('token');
 
-      const response = await axios.get(`${API_URL}/asignaciones/mi-asignacion`, {
+      const response = await axios.get(`${API_URL}/turnos/mi-asignacion-hoy`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setAsignacion(response.data.asignacion);
+      setAsignacion(response.data);
     } catch (error: any) {
       console.error('[MI ASIGNACION] Error:', error);
       // Si no hay asignación, simplemente mostrar pantalla vacía
@@ -116,49 +125,43 @@ export default function MiAsignacionScreen() {
   const handleSolicitarSalida = () => {
     if (!asignacion) return;
 
-    if (asignacion.estado !== 'PROGRAMADA') {
+    if (asignacion.turno_estado !== 'PLANIFICADO') {
       Alert.alert(
         'No Disponible',
-        `Esta asignación está ${asignacion.estado}. Solo puedes solicitar salida para asignaciones PROGRAMADAS.`
+        `Esta asignación está ${asignacion.turno_estado}. Solo puedes solicitar salida para asignaciones PLANIFICADAS.`
       );
       return;
     }
 
     navigation.navigate('SolicitarSalidaAsignacion' as never, {
-      asignacion_id: asignacion.id
+      asignacion_id: asignacion.asignacion_id
     } as never);
   };
 
   const formatFecha = (fecha: string) => {
-    const date = new Date(fecha);
-    return date.toLocaleString('es-GT', {
+    const date = new Date(fecha + 'T00:00:00');
+    return date.toLocaleDateString('es-GT', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     });
   };
 
   const getEstadoBadgeColor = (estado: string) => {
     switch (estado) {
-      case 'PROGRAMADA': return COLORS.info;
-      case 'EN_AUTORIZACION': return COLORS.warning;
-      case 'EN_CURSO': return COLORS.success;
-      case 'FINALIZADA': return COLORS.text.secondary;
-      case 'CANCELADA': return COLORS.danger;
+      case 'PLANIFICADO': return COLORS.info;
+      case 'ACTIVO': return COLORS.success;
+      case 'CERRADO': return COLORS.text.secondary;
       default: return COLORS.text.secondary;
     }
   };
 
   const getEstadoLabel = (estado: string) => {
     switch (estado) {
-      case 'PROGRAMADA': return '📋 Programada';
-      case 'EN_AUTORIZACION': return '⏳ En Autorización';
-      case 'EN_CURSO': return '🚨 En Curso';
-      case 'FINALIZADA': return '✅ Finalizada';
-      case 'CANCELADA': return '❌ Cancelada';
+      case 'PLANIFICADO': return '📋 Planificado';
+      case 'ACTIVO': return '🚨 Activo';
+      case 'CERRADO': return '✅ Cerrado';
       default: return estado;
     }
   };
@@ -173,7 +176,7 @@ export default function MiAsignacionScreen() {
   };
 
   const miTripulacion = asignacion?.tripulacion?.find(t => t.usuario_id === miUsuarioId);
-  const esComandante = asignacion?.comandante_usuario_id === miUsuarioId;
+  const esComandante = asignacion?.es_comandante || false;
 
   if (loading) {
     return (
@@ -214,9 +217,9 @@ export default function MiAsignacionScreen() {
       }
     >
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: getEstadoBadgeColor(asignacion.estado) }]}>
+      <View style={[styles.header, { backgroundColor: getEstadoBadgeColor(asignacion.turno_estado) }]}>
         <Text style={styles.headerTitle}>Tu Asignación</Text>
-        <Text style={styles.headerSubtitle}>{getEstadoLabel(asignacion.estado)}</Text>
+        <Text style={styles.headerSubtitle}>{getEstadoLabel(asignacion.turno_estado)}</Text>
       </View>
 
       {/* Unidad Asignada */}
@@ -237,7 +240,10 @@ export default function MiAsignacionScreen() {
           <Text style={styles.cardIcon}>📅</Text>
           <Text style={styles.cardTitle}>Fecha Programada</Text>
         </View>
-        <Text style={styles.fechaText}>{formatFecha(asignacion.fecha_programada)}</Text>
+        <Text style={styles.fechaText}>{formatFecha(asignacion.fecha)}</Text>
+        {asignacion.hora_salida && (
+          <Text style={styles.fechaText}>Hora salida: {asignacion.hora_salida}</Text>
+        )}
       </View>
 
       {/* Tu Rol */}
@@ -271,10 +277,10 @@ export default function MiAsignacionScreen() {
               <View style={styles.tripulanteTexts}>
                 <Text style={styles.tripulanteNombre}>
                   {tripulante.nombre}
-                  {tripulante.usuario_id === asignacion.comandante_usuario_id && ' ⭐'}
+                  {tripulante.es_comandante && ' ⭐'}
                   {tripulante.usuario_id === miUsuarioId && ' (Tú)'}
                 </Text>
-                <Text style={styles.tripulantePlaca}>{tripulante.placa}</Text>
+                <Text style={styles.tripulantePlaca}>{tripulante.chapa}</Text>
               </View>
             </View>
             <View style={styles.tripulanteRol}>
@@ -294,25 +300,31 @@ export default function MiAsignacionScreen() {
           <Text style={styles.rutaNombre}>
             {asignacion.ruta_codigo} - {asignacion.ruta_nombre}
           </Text>
-          {(asignacion.recorrido_inicio_km || asignacion.recorrido_fin_km) && (
+          {(asignacion.km_inicio || asignacion.km_final) && (
             <View style={styles.recorridoInfo}>
               <Text style={styles.recorridoLabel}>Recorrido:</Text>
               <Text style={styles.recorridoText}>
-                Km {asignacion.recorrido_inicio_km || '?'} al {asignacion.recorrido_fin_km || '?'}
+                Km {asignacion.km_inicio || '?'} al {asignacion.km_final || '?'}
               </Text>
+            </View>
+          )}
+          {asignacion.sentido && (
+            <View style={styles.recorridoInfo}>
+              <Text style={styles.recorridoLabel}>Sentido:</Text>
+              <Text style={styles.recorridoText}>{asignacion.sentido}</Text>
             </View>
           )}
         </View>
       )}
 
       {/* Actividades */}
-      {asignacion.actividades_especificas && (
+      {asignacion.acciones && (
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardIcon}>📋</Text>
             <Text style={styles.cardTitle}>Actividades del Día</Text>
           </View>
-          <Text style={styles.actividadesText}>{asignacion.actividades_especificas}</Text>
+          <Text style={styles.actividadesText}>{asignacion.acciones}</Text>
         </View>
       )}
 
@@ -320,21 +332,14 @@ export default function MiAsignacionScreen() {
       <View style={styles.instructionsCard}>
         <Text style={styles.instructionsTitle}>📌 Instrucciones</Text>
         <Text style={styles.instructionsText}>
-          {asignacion.estado === 'PROGRAMADA' ? (
+          {asignacion.turno_estado === 'PLANIFICADO' ? (
             <>
               • A la hora programada, cualquier miembro puede solicitar la salida{'\n'}
               • TODOS los tripulantes deben autorizar la salida{'\n'}
               • Si uno rechaza, la unidad no sale{'\n'}
               • En emergencias, el COP puede aprobar la salida manualmente
             </>
-          ) : asignacion.estado === 'EN_AUTORIZACION' ? (
-            <>
-              • Hay una solicitud de salida pendiente{'\n'}
-              • Revisa la solicitud y autoriza o rechaza{'\n'}
-              • Tienes 5 minutos para responder{'\n'}
-              • La salida requiere consenso de TODA la tripulación
-            </>
-          ) : asignacion.estado === 'EN_CURSO' ? (
+          ) : asignacion.turno_estado === 'ACTIVO' ? (
             <>
               • La unidad está actualmente en servicio{'\n'}
               • Puedes reportar situaciones durante el patrullaje{'\n'}
@@ -348,14 +353,14 @@ export default function MiAsignacionScreen() {
       </View>
 
       {/* Botón de acción */}
-      {asignacion.estado === 'PROGRAMADA' && (
+      {asignacion.turno_estado === 'PLANIFICADO' && (
         <View style={styles.actionContainer}>
           <TouchableOpacity
             style={styles.inspeccionButton}
             onPress={() => navigation.navigate('Inspeccion360' as never, {
               unidadId: asignacion.unidad_id,
               unidadCodigo: asignacion.unidad_codigo,
-              tipoUnidad: asignacion.unidad_tipo,
+              tipoUnidad: asignacion.tipo_unidad,
             } as never)}
           >
             <Text style={styles.inspeccionButtonText}>📋 Realizar Inspección 360</Text>
@@ -370,17 +375,6 @@ export default function MiAsignacionScreen() {
           <Text style={styles.actionHint}>
             Todos los tripulantes deben autorizar
           </Text>
-        </View>
-      )}
-
-      {asignacion.estado === 'EN_AUTORIZACION' && (
-        <View style={styles.actionContainer}>
-          <TouchableOpacity
-            style={styles.autorizarButton}
-            onPress={() => navigation.navigate('AutorizarSalida' as never)}
-          >
-            <Text style={styles.autorizarButtonText}>⏳ Ver Solicitud Pendiente</Text>
-          </TouchableOpacity>
         </View>
       )}
 

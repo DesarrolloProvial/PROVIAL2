@@ -7,7 +7,6 @@ import {
     crearAsignacionProgramada,
     listarAsignaciones,
     obtenerAsignacion,
-    obtenerMiAsignacion,
     cancelarAsignacion
 } from '../controllers/asignacionesController';
 import { authenticate, authorize } from '../middlewares/auth';
@@ -37,11 +36,7 @@ router.get(
     listarAsignaciones
 );
 
-/**
- * GET /api/asignaciones/mi-asignacion
- * Obtener la asignación activa del brigada autenticado
- */
-router.get('/mi-asignacion', obtenerMiAsignacion);
+// NOTA: Para obtener "mi asignación" como brigada, usar /api/turnos/mi-asignacion-hoy
 
 /**
  * GET /api/asignaciones/:id
