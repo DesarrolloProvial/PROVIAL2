@@ -1,11 +1,11 @@
 -- Migración 083: Reemplazar plantilla 360 con encoding UTF-8 correcto
 -- Fecha: 2026-01-11
--- Corrige caracteres con encoding incorrecto
+-- NOTA: Ejecutar con cliente que soporte UTF-8 (psql con PGCLIENTENCODING=UTF8)
 
 -- Desactivar todas las plantillas anteriores
 UPDATE plantilla_inspeccion_360 SET activa = false WHERE activa = true;
 
--- Insertar plantilla con encoding UTF-8 correcto
+-- Insertar plantilla con tildes correctas
 INSERT INTO plantilla_inspeccion_360 (tipo_unidad, nombre, descripcion, version, secciones, activa)
 VALUES (
     'DEFAULT',
@@ -187,8 +187,8 @@ VALUES (
             "items": [
                 {"codigo": "CW001", "descripcion": "Función Out", "tipo": "ESTADO_OBS", "opciones": ["BUENO", "REGULAR", "MALO", "N/A"], "requerido": false},
                 {"codigo": "CW002", "descripcion": "Función In", "tipo": "ESTADO_OBS", "opciones": ["BUENO", "REGULAR", "MALO", "N/A"], "requerido": false},
-                {"codigo": "CW003", "descripcion": "Switch Negro", "tipo": "ESTADO_OBS", "opciones": ["BUENO", "REGULAR", "MALO", "N/A"], "requerido": false},
-                {"codigo": "CW004", "descripcion": "Switch Rojo", "tipo": "ESTADO_OBS", "opciones": ["BUENO", "REGULAR", "MALO", "N/A"], "requerido": false},
+                {"codigo": "CW003", "descripcion": "Swich Negro", "tipo": "ESTADO_OBS", "opciones": ["BUENO", "REGULAR", "MALO", "N/A"], "requerido": false},
+                {"codigo": "CW004", "descripcion": "Swich Rojo", "tipo": "ESTADO_OBS", "opciones": ["BUENO", "REGULAR", "MALO", "N/A"], "requerido": false},
                 {"codigo": "CW005", "descripcion": "Cable de Acero", "tipo": "ESTADO_OBS", "opciones": ["BUENO", "REGULAR", "MALO", "N/A"], "requerido": false},
                 {"codigo": "CW006", "descripcion": "Guantes", "tipo": "ESTADO_OBS", "opciones": ["BUENO", "REGULAR", "MALO", "N/A"], "requerido": false},
                 {"codigo": "CW007", "descripcion": "Cable de Control", "tipo": "ESTADO_OBS", "opciones": ["BUENO", "REGULAR", "MALO", "N/A"], "requerido": false},
@@ -234,5 +234,5 @@ VALUES (
 );
 
 -- Verificar
-SELECT 'Migración 083 completada: Plantilla con encoding UTF-8 correcto' AS resultado;
+SELECT 'Migración 083 completada: Plantilla con encoding UTF-8' AS resultado;
 SELECT id, tipo_unidad, nombre, version, activa FROM plantilla_inspeccion_360 ORDER BY activa DESC, id DESC LIMIT 3;
