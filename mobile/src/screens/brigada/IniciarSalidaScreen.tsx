@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
 import { COLORS } from '../../constants/colors';
-import { useNavigation, useRoute, CommonActions, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, CommonActions, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { API_URL } from '../../constants/config';
@@ -74,6 +74,15 @@ export default function IniciarSalidaScreen() {
     },
     enabled: !editMode && !loadingAsignacion && !!(asignacionTurno?.unidad_id || asignacion?.unidad_id),
   });
+
+  // Refrescar estado al volver a la pantalla (ej: despues de hacer la inspeccion)
+  useFocusEffect(
+    useCallback(() => {
+      if (!editMode) {
+        refetchInspeccion360();
+      }
+    }, [editMode, refetchInspeccion360])
+  );
 
   const handleCombustibleChange = (fraccion: string, decimal: number) => {
     setCombustibleFraccion(fraccion);
