@@ -295,6 +295,7 @@ export const TurnoModel = {
   },
 
   // Verificar si un usuario pertenece a la tripulación de una unidad hoy
+  // FIX: Se elimina restricción de fecha estricta, ahora se valida que el turno esté ACTIVO
   async esMiembroTripulacion(usuarioId: number, unidadId: number): Promise<boolean> {
     const result = await db.oneOrNone(
       `SELECT 1
@@ -303,7 +304,7 @@ export const TurnoModel = {
        JOIN turno t ON au.turno_id = t.id
        WHERE tt.usuario_id = $1
          AND au.unidad_id = $2
-         AND t.fecha = CURRENT_DATE`,
+         AND t.estado = 'ACTIVO'`, // Se reemplaza t.fecha = CURRENT_DATE por estado ACTIVO
       [usuarioId, unidadId]
     );
     return !!result;

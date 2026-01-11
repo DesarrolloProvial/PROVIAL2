@@ -79,46 +79,18 @@ export async function canEditSituacion(req: Request, res: Response, next: NextFu
       return next();
     }
 
-    // Permitir si es el CREADOR de la situación (bypasea validación de tripulación estricta)
+    // Permitir si es el CREADOR de la situación
     if (situacion.creado_por === req.user.userId) {
-      // Aún verificamos la fecha para evitar editar cosas muy viejas, pero somos más flexibles (24h)
-      const now = new Date();
-      const situacionTime = new Date(situacion.created_at);
-      const diffHours = (now.getTime() - situacionTime.getTime()) / (1000 * 60 * 60);
-
-      if (diffHours < 24) {
-        return next();
-      }
+      return next();
     }
 
-    // Verificar si la situación fue creada hoy (no ha finalizado el día)
-    // FIX: Usar comparación de fecha local o permitir margen de error para turnos nocturnos
-    const today = new Date().toISOString().split('T')[0];
-    const situacionDate = new Date(situacion.created_at).toISOString().split('T')[0];
-
-    // Si no es el creador, mantenemos la restricción de día estricto o lo relajamos también?
-    // Por seguridad, mantenemos estricto para otros miembros, pero si es creador ya pasó arriba.
-
-    if (situacionDate !== today) {
-      // Permitir si es turno nocturno (diferencia < 12 horas)
-      const now = new Date();
-      const situacionTime = new Date(situacion.created_at);
-      const diffHours = (now.getTime() - situacionTime.getTime()) / (1000 * 60 * 60);
-
-      if (diffHours > 12) {
-        return res.status(403).json({
-          error: 'No puedes editar situaciones de días anteriores',
-        });
-      }
-    }
-
-    // Verificar si el usuario es miembro de la tripulación
+    // Verificar si el usuario es miembro de la tripulación (Turno ACTIVO)
     const esMiembro = await TurnoModel.esMiembroTripulacion(req.user.userId, situacion.unidad_id);
 
     if (!esMiembro) {
       return res.status(403).json({
         error: 'No tienes permiso para editar esta situación',
-        mensaje: 'Solo los miembros de la tripulación asignada pueden editar situaciones de su unidad',
+        mensaje: 'Solo los miembros de la tripulación asignada (en turno activo) pueden editar situaciones',
       });
     }
 
