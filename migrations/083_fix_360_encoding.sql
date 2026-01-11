@@ -1,11 +1,11 @@
--- Migración 083: Reemplazar plantilla 360 con encoding UTF-8 correcto
+-- Migración 083: Reemplazar plantilla 360 con encoding correcto UTF-8
 -- Fecha: 2026-01-11
--- NOTA: Ejecutar con cliente que soporte UTF-8 (psql con PGCLIENTENCODING=UTF8)
+-- Corrige caracteres con encoding incorrecto
 
 -- Desactivar todas las plantillas anteriores
 UPDATE plantilla_inspeccion_360 SET activa = false WHERE activa = true;
 
--- Insertar plantilla con tildes correctas
+-- Insertar plantilla con encoding UTF-8 correcto
 INSERT INTO plantilla_inspeccion_360 (tipo_unidad, nombre, descripcion, version, secciones, activa)
 VALUES (
     'DEFAULT',
@@ -234,5 +234,5 @@ VALUES (
 );
 
 -- Verificar
-SELECT 'Migración 083 completada: Plantilla con encoding UTF-8' AS resultado;
+SELECT 'Migración 083 completada: Plantilla con encoding UTF-8 correcto' AS resultado;
 SELECT id, tipo_unidad, nombre, version, activa FROM plantilla_inspeccion_360 ORDER BY activa DESC, id DESC LIMIT 3;
