@@ -296,9 +296,13 @@ export async function createSituacion(req: Request, res: Response) {
       message: 'Situación creada exitosamente',
       situacion: situacionCompleta,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error en createSituacion:', error);
-    return res.status(500).json({ error: 'Error interno del servidor' });
+    return res.status(500).json({
+      error: 'Error interno del servidor',
+      message: error.message,
+      detail: error.detail || error.toString()
+    });
   }
 }
 
