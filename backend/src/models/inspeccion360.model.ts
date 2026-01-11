@@ -497,6 +497,7 @@ export const Inspeccion360Model = {
    * Verificar si usuario es comandante de una unidad
    */
   async esComandante(usuarioId: number, unidadId: number): Promise<boolean> {
+    // 1. Verificar si es comandante explícito
     const result = await db.oneOrNone(
       `SELECT 1 FROM brigada_unidad
        WHERE brigada_id = $1
@@ -511,7 +512,27 @@ export const Inspeccion360Model = {
          AND tt.es_comandante = TRUE`,
       [usuarioId, unidadId]
     );
-    return !!result;
+
+    if (result) return true;
+
+    // 2. Verificar si es el ÚNICO tripulante de la unidad hoy (Caso especial solicitado)
+    // Si solo hay una persona en la unidad, esa persona es responsable/comandante
+    const tripulacion = await db.any(
+      `SELECT tt.usuario_id 
+       FROM tripulacion_turno tt
+       JOIN asignacion_unidad au ON tt.asignacion_id = au.id
+       JOIN turno t ON au.turno_id = t.id
+       WHERE au.unidad_id = $1
+         AND t.fecha = CURRENT_DATE
+         AND au.estado_nomina = 'LIBERADA'`,
+      [unidadId]
+    );
+
+    if (tripulacion && tripulacion.length === 1 && tripulacion[0].usuario_id === usuarioId) {
+      return true;
+    }
+
+    return false;
   },
 
   /**

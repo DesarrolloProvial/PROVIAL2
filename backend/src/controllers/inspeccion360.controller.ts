@@ -114,15 +114,22 @@ export const Inspeccion360Controller = {
   async crearInspeccion(req: Request, res: Response) {
     try {
       const {
-        salida_id,
         unidad_id,
         plantilla_id,
         respuestas,
         observaciones_inspector,
         firma_inspector,
-        fotos
+        fotos,
+        salida_id
       } = req.body;
       const userId = (req as any).user?.userId;
+
+      console.log('Creando inspección 360:', {
+        userId,
+        unidad_id,
+        plantilla_id,
+        total_respuestas: respuestas?.length
+      });
 
       if (!unidad_id || !plantilla_id || !respuestas) {
         return res.status(400).json({
@@ -131,31 +138,19 @@ export const Inspeccion360Controller = {
       }
 
       // Validar que exista la plantilla
-      const plantilla = await Inspeccion360Model.obtenerPlantillaPorId(plantilla_id);
+      const plantilla = await Inspeccion360Model.obtenerPlantillaPorId(Number(plantilla_id));
       if (!plantilla) {
         return res.status(404).json({ error: 'Plantilla no encontrada' });
       }
 
-      // Validar respuestas requeridas
-      const itemsRequeridos = plantilla.secciones.flatMap(s =>
-        s.items.filter(i => i.requerido).map(i => i.codigo)
-      );
-
-      const codigosRespondidos = respuestas.map((r: any) => r.codigo);
-      const faltantes = itemsRequeridos.filter(
-        (codigo: string) => !codigosRespondidos.includes(codigo)
-      );
-
-      if (faltantes.length > 0) {
-        return res.status(400).json({
-          error: 'Faltan respuestas requeridas',
-          faltantes
-        });
-      }
+      const unidadIdInt = parseInt(String(unidad_id), 10);
+      const plantillaIdInt = parseInt(String(plantilla_id), 10);
+      const salidaIdInt = salida_id ? parseInt(String(salida_id), 10) : undefined;
 
       // Verificar si ya existe una inspección pendiente para esta unidad hoy
-      const existePendiente = await Inspeccion360Model.obtenerInspeccionPendienteUnidad(unidad_id);
+      const existePendiente = await Inspeccion360Model.obtenerInspeccionPendienteUnidad(unidadIdInt);
       if (existePendiente) {
+        console.warn('Ya existe inspección pendiente:', existePendiente.id);
         return res.status(400).json({
           error: 'Ya existe una inspección pendiente para esta unidad',
           inspeccion_id: existePendiente.id
@@ -163,12 +158,13 @@ export const Inspeccion360Controller = {
       }
 
       // Verificar si el usuario es comandante de la unidad (auto-aprobación)
-      const esComandante = await Inspeccion360Model.esComandante(userId, unidad_id);
+      const esComandante = await Inspeccion360Model.esComandante(userId, unidadIdInt);
+      console.log('Verificación comandante:', { userId, unidadId: unidadIdInt, esComandante });
 
       const inspeccion = await Inspeccion360Model.crearInspeccion({
-        salida_id,
-        unidad_id,
-        plantilla_id,
+        salida_id: salidaIdInt,
+        unidad_id: unidadIdInt,
+        plantilla_id: plantillaIdInt,
         realizado_por: userId,
         respuestas,
         observaciones_inspector,
@@ -176,9 +172,11 @@ export const Inspeccion360Controller = {
         fotos
       });
 
-      // Si el usuario es comandante, auto-aprobar
+      console.log('Inspección creada en BD:', inspeccion.id);
+
       // Si el usuario es comandante, auto-aprobar
       if (esComandante) {
+        console.log('Auto-aprobando inspección:', inspeccion.id);
         await Inspeccion360Model.aprobarInspeccion(
           inspeccion.id,
           userId,
@@ -187,12 +185,14 @@ export const Inspeccion360Controller = {
         );
         (inspeccion as any).estado = 'APROBADA';
         (inspeccion as any).mensaje = 'Inspección aprobada automáticamente (comandante)';
+      } else {
+        console.log('Inspección pendiente de aprobación');
       }
 
       res.status(201).json(inspeccion);
     } catch (error: any) {
       console.error('Error al crear inspección:', error);
-      res.status(500).json({ error: 'Error al crear inspección' });
+      res.status(500).json({ error: 'Error al crear inspección', details: error.message });
     }
   },
 

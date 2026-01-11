@@ -198,8 +198,21 @@ export default function Inspeccion360Screen() {
       seccion.items.forEach((item) => {
         if (item.requerido) {
           const respuesta = respuestas.get(item.codigo);
-          if (!respuesta || respuesta.valor === '' || respuesta.valor === false) {
+
+          // Para CHECKBOX, false es válido (significa NO)
+          // Solo validamos que exista una respuesta
+          if (!respuesta) {
             faltantes.push(item.descripcion);
+          } else if (item.tipo === 'CHECKBOX' || item.tipo === 'CHECKBOX_BLOQUEO') {
+            // CHECKBOX: cualquier valor boolean es válido
+            if (respuesta.valor === null || respuesta.valor === undefined) {
+              faltantes.push(item.descripcion);
+            }
+          } else {
+            // Otros tipos: validar que no esté vacío
+            if (respuesta.valor === '' || respuesta.valor === null || respuesta.valor === undefined) {
+              faltantes.push(item.descripcion);
+            }
           }
         }
       });
