@@ -116,8 +116,8 @@ export default function COPMapaPage() {
   });
 
   const { data: situaciones = [], refetch: refetchSituaciones } = useQuery({
-    queryKey: ['situaciones-activas'],
-    queryFn: situacionesAPI.getActivas,
+    queryKey: ['resumen-unidades'],
+    queryFn: situacionesAPI.getResumenUnidades,
     refetchInterval: socketConnected ? false : 30000,
   });
 
