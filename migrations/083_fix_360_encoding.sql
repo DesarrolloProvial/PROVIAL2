@@ -1,11 +1,11 @@
--- Migración 083: Reemplazar plantilla 360 con encoding correcto UTF-8
+-- Migración 083: Actualizar plantilla 360 con encoding UTF-8 correcto
 -- Fecha: 2026-01-11
--- Corrige caracteres con encoding incorrecto
+-- IMPORTANTE: Este archivo debe ejecutarse con encoding UTF-8
 
 -- Desactivar todas las plantillas anteriores
 UPDATE plantilla_inspeccion_360 SET activa = false WHERE activa = true;
 
--- Insertar plantilla con encoding UTF-8 correcto
+-- Insertar nueva plantilla con versión 3 (sin CHECKBOX_BLOQUEO duplicado)
 INSERT INTO plantilla_inspeccion_360 (tipo_unidad, nombre, descripcion, version, secciones, activa)
 VALUES (
     'DEFAULT',
@@ -54,7 +54,7 @@ VALUES (
                 {"codigo": "AC001", "descripcion": "Llanta de Repuesto", "tipo": "CHECKBOX", "requerido": true},
                 {"codigo": "AC002", "descripcion": "Llave de Ruedas/Chuchos", "tipo": "CHECKBOX", "requerido": true},
                 {"codigo": "AC003", "descripcion": "Tricket", "tipo": "CHECKBOX", "requerido": true},
-                {"codigo": "AC004", "descripcion": "PÓLIZA DE VEHÍCULO", "tipo": "CHECKBOX", "requerido": true},
+                {"codigo": "AC004", "descripcion": "POLIZA DE VEHICULO", "tipo": "CHECKBOX", "requerido": true},
                 {"codigo": "AC005", "descripcion": "Defensa de tubo", "tipo": "CHECKBOX", "requerido": true},
                 {"codigo": "AC006", "descripcion": "Observaciones de accesorios", "tipo": "TEXTO", "requerido": false}
             ]
@@ -111,7 +111,7 @@ VALUES (
                 {"codigo": "HV001", "descripcion": "Cables Para Pasar Corriente", "tipo": "CHECKBOX", "requerido": false},
                 {"codigo": "HV002", "descripcion": "Llave de Cruz de 4 Medidas", "tipo": "CHECKBOX", "requerido": false},
                 {"codigo": "HV003", "descripcion": "Tricket del Vehículo", "tipo": "CHECKBOX", "requerido": false},
-                {"codigo": "HV004", "descripcion": "Llave de Chuchos del Vehículo", "tipo": "CHECKBOX", "requerido": false},
+                {"codigo": "HV004", "descripcion": "Llave de Chuchos del Vehiculo", "tipo": "CHECKBOX", "requerido": false},
                 {"codigo": "HV005", "descripcion": "Varilla del Tricket", "tipo": "CHECKBOX", "requerido": false}
             ]
         },
@@ -234,5 +234,5 @@ VALUES (
 );
 
 -- Verificar
-SELECT 'Migración 083 completada: Plantilla con encoding UTF-8 correcto' AS resultado;
+SELECT 'Migración 083 completada: Plantilla actualizada con encoding UTF-8 correcto' AS resultado;
 SELECT id, tipo_unidad, nombre, version, activa FROM plantilla_inspeccion_360 ORDER BY activa DESC, id DESC LIMIT 3;
