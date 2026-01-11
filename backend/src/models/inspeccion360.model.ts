@@ -497,42 +497,40 @@ export const Inspeccion360Model = {
    * Verificar si usuario es comandante de una unidad
    */
   async esComandante(usuarioId: number, unidadId: number): Promise<boolean> {
-    // 1. Verificar si es comandante explícito
+    // Lógica simplificada solicitada por el usuario:
+    // 1. Buscar la asignación del usuario para esa unidad
+    // 2. Contar cuántos miembros tiene esa asignación
+    // 3. Si solo hay 1 miembro (él mismo) -> Auto-aprobar
+    // 4. Si es comandante -> Auto-aprobar
+
     const result = await db.oneOrNone(
-      `SELECT 1 FROM brigada_unidad
-       WHERE brigada_id = $1
-         AND unidad_id = $2
-         AND activo = TRUE
-         AND es_comandante = TRUE
-       UNION
-       SELECT 1 FROM tripulacion_turno tt
-       JOIN asignacion_unidad au ON tt.asignacion_id = au.id
-       WHERE tt.usuario_id = $1
-         AND au.unidad_id = $2
-         AND tt.es_comandante = TRUE`,
+      `WITH mi_datos AS (
+         SELECT tt.asignacion_id
+         FROM tripulacion_turno tt
+         JOIN asignacion_unidad au ON tt.asignacion_id = au.id
+         WHERE tt.usuario_id = $1
+           AND au.unidad_id = $2
+           AND au.estado_nomina = 'LIBERADA'
+         LIMIT 1
+       ),
+       stats_asignacion AS (
+         SELECT 
+           COUNT(*) as total_miembros,
+           BOOL_OR(CASE WHEN usuario_id = $1 THEN es_comandante ELSE FALSE END) as es_jefe
+         FROM tripulacion_turno
+         WHERE asignacion_id = (SELECT asignacion_id FROM mi_datos)
+       )
+       SELECT 
+         CASE 
+           WHEN es_jefe IS TRUE THEN TRUE          -- Es comandante explícito
+           WHEN total_miembros = 1 THEN TRUE       -- Está solo en la unidad
+           ELSE FALSE 
+         END as puede_aprobar
+       FROM stats_asignacion;`,
       [usuarioId, unidadId]
     );
 
-    if (result) return true;
-
-    // 2. Verificar si es el ÚNICO tripulante de la unidad hoy (Caso especial solicitado)
-    // Si solo hay una persona en la unidad, esa persona es responsable/comandante
-    const tripulacion = await db.any(
-      `SELECT tt.usuario_id 
-       FROM tripulacion_turno tt
-       JOIN asignacion_unidad au ON tt.asignacion_id = au.id
-       JOIN turno t ON au.turno_id = t.id
-       WHERE au.unidad_id = $1
-         AND t.fecha = CURRENT_DATE
-         AND au.estado_nomina = 'LIBERADA'`,
-      [unidadId]
-    );
-
-    if (tripulacion && tripulacion.length === 1 && tripulacion[0].usuario_id === usuarioId) {
-      return true;
-    }
-
-    return false;
+    return result ? result.puede_aprobar : false;
   },
 
   /**
