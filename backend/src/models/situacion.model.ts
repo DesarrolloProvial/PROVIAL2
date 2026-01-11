@@ -252,7 +252,7 @@ export const SituacionModel = {
     unidad_id?: number;
     turno_id?: number;
   }): Promise<SituacionCompleta[]> {
-    let whereConditions: string[] = ["s.estado = 'ACTIVA'", "sal.estado = 'EN_SALIDA'"];
+    let whereConditions: string[] = ["sal.estado = 'EN_SALIDA'"];
     let params: any[] = [];
     let paramIndex = 1;
 
