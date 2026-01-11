@@ -195,12 +195,13 @@ export const TurnoModel = {
     asignacion_id: number;
     usuario_id: number;
     rol_tripulacion: TripulacionTurno['rol_tripulacion'];
+    es_comandante?: boolean;
   }): Promise<TripulacionTurno> {
     return db.one(
-      `INSERT INTO tripulacion_turno (asignacion_id, usuario_id, rol_tripulacion)
-       VALUES ($1, $2, $3)
+      `INSERT INTO tripulacion_turno (asignacion_id, usuario_id, rol_tripulacion, es_comandante)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [data.asignacion_id, data.usuario_id, data.rol_tripulacion]
+      [data.asignacion_id, data.usuario_id, data.rol_tripulacion, data.es_comandante || false]
     );
   },
 

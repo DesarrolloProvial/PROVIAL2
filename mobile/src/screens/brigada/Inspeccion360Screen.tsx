@@ -10,7 +10,10 @@ import {
   ActivityIndicator,
   Switch,
   Image,
+  Platform,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/colors';
@@ -22,9 +25,10 @@ import FirmaCaptura from '../../components/FirmaCaptura';
 interface Item360 {
   codigo: string;
   descripcion: string;
-  tipo: 'CHECKBOX' | 'ESTADO' | 'TEXTO' | 'TEXTO_FOTO' | 'NUMERO';
+  tipo: 'CHECKBOX' | 'ESTADO' | 'TEXTO' | 'TEXTO_FOTO' | 'NUMERO' | 'ESTADO_OBS' | 'SELECT' | 'CHECKBOX_BLOQUEO' | 'DANOS_LISTA';
   requerido: boolean;
   opciones?: string[];
+  config?: any; // Configuración adicional para tipos complejos
 }
 
 interface Seccion360 {
@@ -48,6 +52,15 @@ interface Respuesta360 {
   foto_url?: string;
 }
 
+// Interface para reporte de daños
+interface Dano360 {
+  id: string;
+  descripcion: string;
+  ubicacion: string;
+  clasificacion: string;
+  fotos: string[]; // URLs o base64 de hasta 3 fotos
+}
+
 type Inspeccion360RouteProp = RouteProp<{
   Inspeccion360: {
     unidadId: number;
@@ -59,6 +72,7 @@ type Inspeccion360RouteProp = RouteProp<{
 export default function Inspeccion360Screen() {
   const navigation = useNavigation();
   const route = useRoute<Inspeccion360RouteProp>();
+  const insets = useSafeAreaInsets();
   const { unidadId, unidadCodigo, tipoUnidad } = route.params || {};
 
   const { user } = useAuthStore();
@@ -70,6 +84,10 @@ export default function Inspeccion360Screen() {
   const [observacionesGenerales, setObservacionesGenerales] = useState('');
   const [seccionActiva, setSeccionActiva] = useState(0);
   const [firmaInspector, setFirmaInspector] = useState<string>('');
+
+  // Estado para reporte de daños
+  const [danos, setDanos] = useState<Dano360[]>([]);
+  const [sinDanos, setSinDanos] = useState(false);
 
   // Cargar plantilla al montar
   useEffect(() => {
@@ -127,6 +145,48 @@ export default function Inspeccion360Screen() {
       });
       setRespuestas(nuevasRespuestas);
     }
+  };
+
+  // Funciones para gestionar daños
+  const agregarDano = () => {
+    const nuevoDano: Dano360 = {
+      id: Date.now().toString(),
+      descripcion: '',
+      ubicacion: '',
+      clasificacion: '',
+      fotos: [],
+    };
+    setDanos([...danos, nuevoDano]);
+  };
+
+  const eliminarDano = (id: string) => {
+    setDanos(danos.filter(d => d.id !== id));
+  };
+
+  const actualizarDano = (id: string, campo: keyof Dano360, valor: any) => {
+    setDanos(danos.map(d =>
+      d.id === id ? { ...d, [campo]: valor } : d
+    ));
+  };
+
+  const agregarFotoDano = (id: string, fotoUri: string) => {
+    setDanos(danos.map(d => {
+      if (d.id === id && d.fotos.length < 3) {
+        return { ...d, fotos: [...d.fotos, fotoUri] };
+      }
+      return d;
+    }));
+  };
+
+  const eliminarFotoDano = (id: string, index: number) => {
+    setDanos(danos.map(d => {
+      if (d.id === id) {
+        const nuevasFotos = [...d.fotos];
+        nuevasFotos.splice(index, 1);
+        return { ...d, fotos: nuevasFotos };
+      }
+      return d;
+    }));
   };
 
   const handleSubmit = async () => {
@@ -203,11 +263,17 @@ export default function Inspeccion360Screen() {
         respuestas: respuestasConFotos,
         observaciones_inspector: observacionesGenerales.trim() || undefined,
         firma_inspector: firmaInspector,
+        danos: sinDanos ? [] : danos, // Incluir daños
       });
 
+      // Verificar si fue auto-aprobada
+      const autoAprobada = response.data.estado === 'APROBADA';
+
       Alert.alert(
-        'Inspección Enviada',
-        'La inspección 360 ha sido enviada al comandante para su aprobación.',
+        autoAprobada ? 'Inspección Aprobada' : 'Inspección Enviada',
+        autoAprobada
+          ? 'La inspección 360 ha sido aprobada. Ya puede iniciar salida.'
+          : 'La inspección 360 ha sido enviada al comandante para su aprobación.',
         [
           {
             text: 'OK',
@@ -266,14 +332,14 @@ export default function Inspeccion360Screen() {
                     opcion.includes('MALO') || opcion.includes('NO FUNCIONA') || opcion.includes('CRÍTICO')
                       ? { borderColor: COLORS.danger }
                       : opcion.includes('REGULAR') || opcion.includes('BAJO') || opcion.includes('PARCIAL')
-                      ? { borderColor: COLORS.warning }
-                      : { borderColor: COLORS.success },
+                        ? { borderColor: COLORS.warning }
+                        : { borderColor: COLORS.success },
                     valor === opcion && (
                       opcion.includes('MALO') || opcion.includes('NO FUNCIONA') || opcion.includes('CRÍTICO')
                         ? { backgroundColor: COLORS.danger }
                         : opcion.includes('REGULAR') || opcion.includes('BAJO') || opcion.includes('PARCIAL')
-                        ? { backgroundColor: COLORS.warning }
-                        : { backgroundColor: COLORS.success }
+                          ? { backgroundColor: COLORS.warning }
+                          : { backgroundColor: COLORS.success }
                     ),
                   ]}
                   onPress={() => actualizarRespuesta(item.codigo, opcion)}
@@ -354,6 +420,233 @@ export default function Inspeccion360Screen() {
           </View>
         );
 
+      case 'ESTADO_OBS':
+        // Estado con campo de observación adicional
+        return (
+          <View style={styles.itemContainer} key={item.codigo}>
+            <Text style={styles.itemDescripcion}>
+              {item.descripcion}
+              {item.requerido && <Text style={styles.required}> *</Text>}
+            </Text>
+            <View style={styles.opcionesContainer}>
+              {item.opciones?.map((opcion) => (
+                <TouchableOpacity
+                  key={opcion}
+                  style={[
+                    styles.opcionButton,
+                    valor === opcion && styles.opcionButtonActiva,
+                    opcion.includes('MALO') || opcion.includes('NO FUNCIONA') || opcion.includes('CRÍTICO')
+                      ? { borderColor: COLORS.danger }
+                      : opcion.includes('REGULAR') || opcion.includes('BAJO') || opcion.includes('PARCIAL') || opcion.includes('MEDIO')
+                        ? { borderColor: COLORS.warning }
+                        : opcion === 'N/A'
+                          ? { borderColor: COLORS.gray[400] }
+                          : { borderColor: COLORS.success },
+                    valor === opcion && (
+                      opcion.includes('MALO') || opcion.includes('NO FUNCIONA') || opcion.includes('CRÍTICO')
+                        ? { backgroundColor: COLORS.danger }
+                        : opcion.includes('REGULAR') || opcion.includes('BAJO') || opcion.includes('PARCIAL') || opcion.includes('MEDIO')
+                          ? { backgroundColor: COLORS.warning }
+                          : opcion === 'N/A'
+                            ? { backgroundColor: COLORS.gray[400] }
+                            : { backgroundColor: COLORS.success }
+                    ),
+                  ]}
+                  onPress={() => actualizarRespuesta(item.codigo, opcion)}
+                >
+                  <Text
+                    style={[
+                      styles.opcionText,
+                      valor === opcion && styles.opcionTextActiva,
+                    ]}
+                  >
+                    {opcion}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TextInput
+              style={[styles.input, styles.observacionInput]}
+              value={respuesta?.observacion || ''}
+              onChangeText={(text) => {
+                const nuevasRespuestas = new Map(respuestas);
+                nuevasRespuestas.set(item.codigo, { ...respuesta!, observacion: text });
+                setRespuestas(nuevasRespuestas);
+              }}
+              placeholder="Observación (opcional)"
+            />
+          </View>
+        );
+
+      case 'SELECT':
+        // Dropdown de opciones
+        return (
+          <View style={styles.itemContainer} key={item.codigo}>
+            <Text style={styles.itemDescripcion}>
+              {item.descripcion}
+              {item.requerido && <Text style={styles.required}> *</Text>}
+            </Text>
+            <View style={styles.opcionesContainer}>
+              {item.opciones?.map((opcion) => (
+                <TouchableOpacity
+                  key={opcion}
+                  style={[
+                    styles.opcionButton,
+                    styles.selectButton,
+                    valor === opcion && styles.opcionButtonActiva,
+                    valor === opcion && { backgroundColor: COLORS.primary },
+                  ]}
+                  onPress={() => actualizarRespuesta(item.codigo, opcion)}
+                >
+                  <Text
+                    style={[
+                      styles.opcionText,
+                      valor === opcion && styles.opcionTextActiva,
+                    ]}
+                  >
+                    {opcion}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        );
+
+      case 'CHECKBOX_BLOQUEO':
+        // Este tipo ya está integrado dentro de DANOS_LISTA, no renderizar separado
+        return null;
+
+      case 'DANOS_LISTA':
+        // Constantes para los selects
+        const ubicaciones = item.config?.ubicaciones || ['Derecho', 'Izquierdo', 'Frente', 'Atrás', 'Arriba', 'Abajo'];
+        const clasificaciones = item.config?.clasificaciones || ['Golpe', 'Rayón', 'Pieza rota', 'Falta algo'];
+
+        return (
+          <View style={styles.danosContainer} key={item.codigo}>
+            {/* Checkbox Sin Daños */}
+            <View style={[styles.itemRow, sinDanos && styles.bloqueoRow]}>
+              <View style={styles.itemInfo}>
+                <Text style={[styles.itemDescripcion, { fontWeight: 'bold' }]}>
+                  ✓ Sin daños
+                </Text>
+                <Text style={{ fontSize: 11, color: COLORS.text.secondary }}>
+                  Marcar si no hay daños que reportar
+                </Text>
+              </View>
+              <Switch
+                value={sinDanos}
+                onValueChange={(v) => {
+                  setSinDanos(v);
+                  if (v) setDanos([]); // Limpiar daños si marca "Sin daños"
+                }}
+                trackColor={{ false: '#ccc', true: COLORS.success + '80' }}
+                thumbColor={sinDanos ? COLORS.success : '#f4f3f4'}
+              />
+            </View>
+
+            {/* Lista de daños */}
+            {!sinDanos && (
+              <>
+                {danos.map((dano, index) => (
+                  <View key={dano.id} style={styles.danoCard}>
+                    <View style={styles.danoHeader}>
+                      <Text style={styles.danoNumero}>Daño #{index + 1}</Text>
+                      <TouchableOpacity
+                        onPress={() => eliminarDano(dano.id)}
+                        style={styles.danoEliminar}
+                      >
+                        <Text style={{ color: COLORS.danger, fontWeight: '600' }}>✕ Eliminar</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Descripción */}
+                    <Text style={styles.danoLabel}>Descripción del daño:</Text>
+                    <TextInput
+                      style={[styles.input, styles.textArea]}
+                      value={dano.descripcion}
+                      onChangeText={(text) => actualizarDano(dano.id, 'descripcion', text)}
+                      placeholder="Ej: Abolladura en puerta trasera, lado derecho"
+                      multiline
+                      numberOfLines={2}
+                    />
+
+                    {/* Ubicación */}
+                    <Text style={styles.danoLabel}>Ubicación del daño:</Text>
+                    <View style={styles.danoSelectContainer}>
+                      {ubicaciones.map((ubi: string) => (
+                        <TouchableOpacity
+                          key={ubi}
+                          style={[
+                            styles.danoSelectBtn,
+                            dano.ubicacion === ubi && styles.danoSelectBtnActivo,
+                          ]}
+                          onPress={() => actualizarDano(dano.id, 'ubicacion', ubi)}
+                        >
+                          <Text style={[
+                            styles.danoSelectText,
+                            dano.ubicacion === ubi && styles.danoSelectTextActivo,
+                          ]}>{ubi}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+
+                    {/* Clasificación */}
+                    <Text style={styles.danoLabel}>Clasificación:</Text>
+                    <View style={styles.danoSelectContainer}>
+                      {clasificaciones.map((clas: string) => (
+                        <TouchableOpacity
+                          key={clas}
+                          style={[
+                            styles.danoSelectBtn,
+                            dano.clasificacion === clas && styles.danoSelectBtnActivo,
+                          ]}
+                          onPress={() => actualizarDano(dano.id, 'clasificacion', clas)}
+                        >
+                          <Text style={[
+                            styles.danoSelectText,
+                            dano.clasificacion === clas && styles.danoSelectTextActivo,
+                          ]}>{clas}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+
+                    {/* Fotos del daño */}
+                    <Text style={styles.danoLabel}>Fotos del daño (máx. 3):</Text>
+                    <View style={styles.danoFotosContainer}>
+                      {dano.fotos.map((foto, fotoIdx) => (
+                        <View key={fotoIdx} style={styles.danoFotoWrapper}>
+                          <Image source={{ uri: foto }} style={styles.danoFoto} />
+                          <TouchableOpacity
+                            style={styles.danoFotoEliminar}
+                            onPress={() => eliminarFotoDano(dano.id, fotoIdx)}
+                          >
+                            <Text style={{ color: '#fff', fontSize: 12 }}>✕</Text>
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                      {dano.fotos.length < 3 && (
+                        <FotoCaptura
+                          onFotoCapturada={(uri) => agregarFotoDano(dano.id, uri)}
+                          titulo="+ Foto"
+                          descripcion=""
+                        />
+                      )}
+                    </View>
+                  </View>
+                ))}
+
+                {/* Botón agregar daño */}
+                <TouchableOpacity
+                  style={styles.agregarDanoBtn}
+                  onPress={agregarDano}
+                >
+                  <Text style={styles.agregarDanoBtnText}>+ Agregar Daño</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        );
+
       default:
         return null;
     }
@@ -386,10 +679,18 @@ export default function Inspeccion360Screen() {
   const seccionActual = plantilla.secciones[seccionActiva];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: 50 }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Inspección 360</Text>
+        <View style={styles.headerTitleRow}>
+          <TouchableOpacity
+            style={styles.backArrow}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backArrowText}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Inspección 360</Text>
+        </View>
         <Text style={styles.headerSubtitle}>
           Unidad: {unidadCodigo} ({tipoUnidad})
         </Text>
@@ -444,20 +745,9 @@ export default function Inspeccion360Screen() {
 
         {seccionActual.items.map(renderItem)}
 
-        {/* Observaciones generales y firma en la última sección */}
+        {/* Firma del inspector en la última sección */}
         {seccionActiva === seccionesCount - 1 && (
           <>
-            <View style={styles.observacionesContainer}>
-              <Text style={styles.observacionesLabel}>Observaciones Generales</Text>
-              <TextInput
-                style={[styles.input, styles.textAreaLarge]}
-                value={observacionesGenerales}
-                onChangeText={setObservacionesGenerales}
-                placeholder="Observaciones adicionales sobre el estado del vehículo..."
-                multiline
-                numberOfLines={4}
-              />
-            </View>
 
             {/* Firma del inspector */}
             <View style={styles.firmaContainer}>
@@ -535,19 +825,32 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    padding: 20,
+    padding: 16,
     paddingTop: 16,
   },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  backArrow: {
+    paddingRight: 4,
+  },
+  backArrowText: {
+    color: COLORS.white,
+    fontSize: 32,
+  },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: COLORS.white,
-    marginBottom: 4,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: COLORS.white,
     opacity: 0.9,
+    marginTop: 2,
+    marginLeft: 36,
   },
   tabsContainer: {
     backgroundColor: COLORS.white,
@@ -790,5 +1093,127 @@ const styles = StyleSheet.create({
     color: COLORS.warning,
     marginLeft: 8,
     flex: 1,
+  },
+  observacionInput: {
+    marginTop: 12,
+    backgroundColor: COLORS.gray[50],
+    borderColor: COLORS.gray[200],
+  },
+  selectButton: {
+    borderColor: COLORS.primary,
+    flex: 1,
+    minWidth: 70,
+  },
+  bloqueoRow: {
+    backgroundColor: '#e0f2fe',
+    borderWidth: 1,
+    borderColor: COLORS.info,
+  },
+  // Estilos para sección de daños
+  danosContainer: {
+    marginBottom: 16,
+  },
+  danoCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  danoHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  danoNumero: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+  },
+  danoEliminar: {
+    padding: 4,
+  },
+  danoLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: COLORS.text.secondary,
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  danoSelectContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  danoSelectBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
+  },
+  danoSelectBtnActivo: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  danoSelectText: {
+    fontSize: 13,
+    color: COLORS.text.primary,
+  },
+  danoSelectTextActivo: {
+    color: COLORS.white,
+  },
+  danoFotosContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  danoFotoWrapper: {
+    position: 'relative',
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  danoFoto: {
+    width: '100%',
+    height: '100%',
+  },
+  danoFotoEliminar: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(220, 38, 38, 0.8)',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  agregarDanoBtn: {
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+  },
+  agregarDanoBtnText: {
+    color: COLORS.primary,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

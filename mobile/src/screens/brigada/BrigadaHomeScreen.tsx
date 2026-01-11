@@ -22,6 +22,7 @@ export default function BrigadaHomeScreen() {
   const { situacionActiva, fetchMisSituacionesHoy, cerrarSituacion, isLoading } = useSituacionesStore();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [accesoInfo, setAccesoInfo] = useState<{ tiene_acceso: boolean; motivo_bloqueo: string | null } | null>(null);
   const [mostrarCambioRuta, setMostrarCambioRuta] = useState(false);
   const [nuevaRutaId, setNuevaRutaId] = useState<number | null>(null);
@@ -36,20 +37,19 @@ export default function BrigadaHomeScreen() {
 
   const loadData = async () => {
     try {
-      // Verificar acceso según grupo
-      const acceso = await verificarAcceso();
-      setAccesoInfo(acceso);
+      setInitialLoading(true);
 
-      // Refresh estado completo de brigada (asignación, salida, ingreso, sede)
-      await refreshEstadoBrigada();
-
-      // Fetch situaciones del día
-      await fetchMisSituacionesHoy();
-
-      // Obtener asignación del día (turno operacional)
-      await loadAsignacionDia();
+      // Cargar todo en paralelo para mayor velocidad
+      await Promise.all([
+        verificarAcceso().then(acceso => setAccesoInfo(acceso)),
+        refreshEstadoBrigada(),
+        fetchMisSituacionesHoy(),
+        loadAsignacionDia()
+      ]);
     } catch (error) {
       console.error('Error al cargar datos:', error);
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -220,622 +220,649 @@ export default function BrigadaHomeScreen() {
     }
   };
 
-  return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-      }
-    >
-      {/* Header con información del usuario */}
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.welcomeText}>Bienvenido,</Text>
-            <Text style={styles.userName}>
-              {usuario?.chapa || usuario?.username} - {usuario?.nombre?.split(' ')[0] || ''}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={() => {
-              Alert.alert(
-                'Cerrar Sesión',
-                '¿Estás seguro que deseas cerrar sesión?',
-                [
-                  { text: 'Cancelar', style: 'cancel' },
-                  {
-                    text: 'Salir',
-                    style: 'destructive',
-                    onPress: async () => {
-                      await useAuthStore.getState().logout();
-                    },
-                  },
-                ]
-              );
-            }}
-          >
-            <Text style={styles.logoutButtonText}>Salir</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Indicador de acceso */}
-        {accesoInfo && (
-          <View style={[
-            styles.accesoIndicator,
-            { backgroundColor: accesoInfo.tiene_acceso ? COLORS.success : COLORS.warning }
-          ]}>
-            <Text style={styles.accesoText}>
-              {accesoInfo.tiene_acceso
-                ? '✓ Acceso permitido hoy'
-                : `⚠ ${accesoInfo.motivo_bloqueo}`}
-            </Text>
-          </View>
-        )}
+  // Mostrar pantalla de carga mientras se cargan los datos iniciales
+  if (initialLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Cargando información...</Text>
       </View>
+    );
+  }
 
-      {/* Card de Asignación Unificada - Solo mostrar si NO hay salida activa */}
-      {!salidaActiva && loadingAsignacionDia ? (
-        <View style={styles.card}>
-          <ActivityIndicator size="small" color={COLORS.primary} />
-          <Text style={{ textAlign: 'center', color: COLORS.text.secondary, marginTop: 8 }}>
-            Cargando información de asignación...
-          </Text>
-        </View>
-      ) : !salidaActiva && (asignacion?.unidad_codigo || asignacionDia?.unidad_codigo) ? (
-        <View style={[styles.card, styles.asignacionCard]}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Mi Asignación</Text>
-            {asignacionDia && typeof asignacionDia.dias_para_salida === 'number' && (
-              <View style={[styles.tipoBadge, {
-                backgroundColor: asignacionDia.dias_para_salida === 0 ? COLORS.success : COLORS.info
-              }]}>
-                <Text style={styles.tipoBadgeText}>
-                  {asignacionDia.dias_para_salida === 0
-                    ? 'HOY'
-                    : asignacionDia.dias_para_salida === 1
-                      ? 'MAÑANA'
-                      : `EN ${asignacionDia.dias_para_salida} DÍAS`}
-                </Text>
-              </View>
-            )}
-          </View>
-          <View style={styles.cardContent}>
-            {/* Fecha de la asignación */}
-            {asignacionDia?.fecha && asignacionDia.dias_para_salida > 0 && (
-              <View style={[styles.asignacionFullRow, { marginBottom: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border }]}>
-                <Text style={styles.asignacionItemLabel}>Fecha de Salida</Text>
-                <Text style={[styles.asignacionItemValue, { color: COLORS.primary }]}>
-                  {formatFechaAsignacion(asignacionDia.fecha)}
-                </Text>
-              </View>
-            )}
-
-            {/* Unidad y Tipo */}
-            <View style={styles.asignacionGrid}>
-              <View style={styles.asignacionItem}>
-                <Text style={styles.asignacionItemLabel}>Unidad</Text>
-                <Text style={styles.asignacionItemValue}>
-                  {asignacionDia?.unidad_codigo || asignacion?.unidad_codigo || 'Sin asignar'}
-                </Text>
-                {(asignacionDia?.tipo_unidad || asignacion?.tipo_unidad) && (
-                  <Text style={styles.asignacionItemSubtext}>{asignacionDia?.tipo_unidad || asignacion?.tipo_unidad}</Text>
-                )}
-              </View>
-              <View style={styles.asignacionItem}>
-                <Text style={styles.asignacionItemLabel}>Mi Rol</Text>
-                <Text style={styles.asignacionItemValue}>
-                  {asignacionDia?.mi_rol || asignacion?.rol_tripulacion || 'Sin asignar'}
-                </Text>
-              </View>
-            </View>
-
-            {/* Ruta y Hora de Salida */}
-            {(asignacionDia?.ruta_codigo || asignacionDia?.hora_salida) && (
-              <View style={styles.asignacionGrid}>
-                {asignacionDia?.ruta_codigo && (
-                  <View style={styles.asignacionItem}>
-                    <Text style={styles.asignacionItemLabel}>Ruta Asignada</Text>
-                    <Text style={styles.asignacionItemValue}>{asignacionDia.ruta_codigo}</Text>
-                    {asignacionDia.sentido && (
-                      <Text style={styles.asignacionItemSubtext}>{asignacionDia.sentido}</Text>
-                    )}
-                  </View>
-                )}
-                {asignacionDia?.hora_salida && (
-                  <View style={styles.asignacionItem}>
-                    <Text style={styles.asignacionItemLabel}>Hora Salida</Text>
-                    <Text style={styles.asignacionItemValue}>{asignacionDia.hora_salida}</Text>
-                  </View>
-                )}
-              </View>
-            )}
-
-            {/* Recorrido Permitido */}
-            {asignacionDia?.recorrido_permitido && (
-              <View style={styles.asignacionFullRow}>
-                <Text style={styles.asignacionItemLabel}>Recorrido Permitido</Text>
-                <Text style={styles.asignacionItemValue}>{asignacionDia.recorrido_permitido}</Text>
-              </View>
-            )}
-
-            {/* Acciones a Realizar */}
-            {asignacionDia?.acciones && (
-              <View style={styles.asignacionFullRow}>
-                <Text style={styles.asignacionItemLabel}>Acciones a Realizar</Text>
-                <Text style={styles.descripcionText}>{asignacionDia.acciones}</Text>
-              </View>
-            )}
-
-            {/* Compañeros de Brigada */}
-            {asignacionDia?.companeros && asignacionDia.companeros.length > 0 && (
-              <View style={styles.asignacionFullRow}>
-                <Text style={styles.asignacionItemLabel}>Compañeros de Brigada</Text>
-                <View style={styles.companerosList}>
-                  {asignacionDia.companeros.map((c: any, idx: number) => (
-                    <View key={idx} style={styles.companeroItem}>
-                      <Text style={styles.companeroNombre}>{c.nombre}</Text>
-                      <Text style={styles.companeroRol}>{c.rol}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-          </View>
-        </View>
-      ) : !salidaActiva && !salidaHoy?.jornada_finalizada ? (
-        <View style={[styles.card, styles.noAsignacionCard]}>
-          <Text style={styles.noAsignacionIcon}>📋</Text>
-          <Text style={styles.noAsignacionTitle}>Sin Asignación</Text>
-          <Text style={styles.noAsignacionText}>
-            No tienes una unidad asignada actualmente. Contacta a Operaciones para que te asignen a un turno o unidad.
-          </Text>
-        </View>
-      ) : null}
-
-      {/* Card de Salida Activa */}
-      {salidaActiva ? (
-        <TouchableOpacity
-          style={[styles.card, styles.situacionActivaCard]}
-          onPress={() => navigation.navigate('Bitacora' as never)}
-        >
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Jornada Activa 👆</Text>
-            <View style={[styles.tipoBadge, { backgroundColor: COLORS.success }]}>
-              <Text style={styles.tipoBadgeText}>{salidaActiva.estado}</Text>
-            </View>
-          </View>
-          <View style={styles.cardContent}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Inicio:</Text>
-              <Text style={styles.infoValue}>
-                {formatFecha(salidaActiva.fecha_hora_salida)}
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Unidad:</Text>
-              <Text style={styles.infoValue}>{salidaActiva.unidad_codigo}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Ruta:</Text>
-              <Text style={styles.infoValue}>
-                {salidaActiva.ruta_codigo || 'Sin ruta asignada'}
-              </Text>
-            </View>
-            <Text style={{ textAlign: 'center', color: COLORS.primary, marginTop: 8, fontSize: 12 }}>
-              Toca para ver detalles en Bitácora
-            </Text>
-          </View>
-        </TouchableOpacity>
-      ) : salidaHoy?.jornada_finalizada ? (
-        /* Card de Jornada Finalizada */
-        <TouchableOpacity
-          style={[styles.card, { borderLeftWidth: 4, borderLeftColor: COLORS.info }]}
-          onPress={() => navigation.navigate('Bitacora' as never)}
-        >
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Jornada Finalizada ✅</Text>
-            <View style={[styles.tipoBadge, { backgroundColor: COLORS.info }]}>
-              <Text style={styles.tipoBadgeText}>COMPLETA</Text>
-            </View>
-          </View>
-          <View style={styles.cardContent}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Unidad:</Text>
-              <Text style={styles.infoValue}>{salidaHoy.unidad_codigo}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Inicio:</Text>
-              <Text style={styles.infoValue}>
-                {formatFecha(salidaHoy.fecha_hora_salida)}
-              </Text>
-            </View>
-            {salidaHoy.fecha_hora_regreso && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Fin:</Text>
-                <Text style={styles.infoValue}>
-                  {formatFecha(salidaHoy.fecha_hora_regreso)}
-                </Text>
-              </View>
-            )}
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Horas Trabajadas:</Text>
-              <Text style={styles.infoValue}>
-                {salidaHoy.resumen?.horas_trabajadas?.toFixed(1) || '0'} hrs
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Situaciones:</Text>
-              <Text style={styles.infoValue}>
-                {salidaHoy.resumen?.total_situaciones || 0}
-              </Text>
-            </View>
-            {salidaHoy.resumen?.km_recorridos > 0 && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Km Recorridos:</Text>
-                <Text style={styles.infoValue}>{salidaHoy.resumen.km_recorridos} km</Text>
-              </View>
-            )}
-            <Text style={{ textAlign: 'center', color: COLORS.info, marginTop: 12, fontSize: 12 }}>
-              Toca para ver el resumen completo en Bitácora
-            </Text>
-          </View>
-        </TouchableOpacity>
-      ) : (asignacion?.unidad_codigo || asignacionDia?.unidad_codigo) ? (
-        <View style={[styles.card, styles.warningCard]}>
-          <Text style={styles.warningText}>
-            No has iniciado salida hoy
-          </Text>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.primaryButton, { marginHorizontal: 16, marginTop: 12 }]}
-            onPress={() => navigation.navigate('IniciarSalida' as never)}
-          >
-            <Text style={styles.actionButtonText}>🚗 Iniciar Salida</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
-
-      {/* Card de Ingreso Activo */}
-      {ingresoActivo && !ingresoActivo.es_ingreso_final && (
-        <View style={[styles.card, {
-          borderLeftWidth: 4,
-          borderLeftColor: ingresoActivo.tipo_ingreso === 'FINALIZACION_JORNADA' ? COLORS.danger : COLORS.warning
-        }]}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>
-              {ingresoActivo.tipo_ingreso === 'FINALIZACION_JORNADA' ? 'Finalizando Jornada' : 'En Sede'}
-            </Text>
-            <View style={[styles.tipoBadge, {
-              backgroundColor: ingresoActivo.tipo_ingreso === 'FINALIZACION_JORNADA' ? COLORS.danger : COLORS.warning
-            }]}>
-              <Text style={styles.tipoBadgeText}>
-                {ingresoActivo.tipo_ingreso?.replace(/_/g, ' ')}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.cardContent}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Sede:</Text>
-              <Text style={styles.infoValue}>{ingresoActivo.sede_nombre}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Ingreso:</Text>
-              <Text style={styles.infoValue}>
-                {formatFecha(ingresoActivo.fecha_hora_ingreso)}
-              </Text>
-            </View>
-            {ingresoActivo.km_ingreso && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Km Final:</Text>
-                <Text style={styles.infoValue}>{ingresoActivo.km_ingreso} km</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Botones según tipo de ingreso */}
-          {ingresoActivo.tipo_ingreso === 'FINALIZACION_JORNADA' ? (
-            <View style={{ gap: 8 }}>
-              <TouchableOpacity
-                style={[styles.cerrarButton, { backgroundColor: COLORS.danger }]}
-                onPress={handleFinalizarJornada}
-                disabled={finalizandoJornada}
-              >
-                {finalizandoJornada ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.cerrarButtonText}>🏁 Finalizar Jornada</Text>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.cerrarButton, { backgroundColor: COLORS.primary }]}
-                onPress={() => navigation.navigate('Bitacora' as never)}
-              >
-                <Text style={styles.cerrarButtonText}>📋 Ver Bitácora</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.cerrarButton, { backgroundColor: COLORS.gray[500] }]}
-                onPress={() => navigation.navigate('SalidaDeSede' as never)}
-              >
-                <Text style={styles.cerrarButtonText}>↩️ Salir de Sede (Cancelar)</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={[styles.cerrarButton, { backgroundColor: COLORS.success }]}
-              onPress={() => navigation.navigate('SalidaDeSede' as never)}
-            >
-              <Text style={styles.cerrarButtonText}>Salir de Sede</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
-
-      {/* Card de Situación Activa */}
-      {situacionActiva && situacionActiva.evento_persistente_id ? (
-        // Card de Evento Persistente
-        <View style={[styles.card, styles.situacionActivaCard, { borderLeftColor: COLORS.purple, backgroundColor: '#faf5ff' }]}>
-          <View style={styles.cardHeader}>
+  return (
+    <View style={{ flex: 1, paddingBottom: 50 }}>
+      <ScrollView
+        style={styles.container}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
+        {/* Header con información del usuario */}
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
             <View>
-              <Text style={[styles.cardTitle, { color: COLORS.purple }]}>Asignado a Evento</Text>
-              <Text style={{ fontSize: 12, color: COLORS.text.secondary }}>{situacionActiva.evento_tipo}</Text>
-            </View>
-            <View style={[styles.tipoBadge, { backgroundColor: COLORS.purple }]}>
-              <Text style={styles.tipoBadgeText}>{situacionActiva.estado}</Text>
-            </View>
-          </View>
-
-          <View style={styles.cardContent}>
-            <Text style={[styles.infoValue, { fontSize: 16, marginBottom: 8 }]}>
-              {situacionActiva.evento_titulo}
-            </Text>
-            {situacionActiva.descripcion && (
-              <Text style={[styles.descripcionText, { marginBottom: 12 }]}>
-                {situacionActiva.descripcion}
-              </Text>
-            )}
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Ubicación:</Text>
-              <Text style={styles.infoValue}>
-                {situacionActiva.ruta_codigo} Km {situacionActiva.km}
+              <Text style={styles.welcomeText}>Bienvenido,</Text>
+              <Text style={styles.userName}>
+                {usuario?.chapa || usuario?.username} - {usuario?.nombre?.split(' ')[0] || ''}
               </Text>
             </View>
-
             <TouchableOpacity
-              style={[styles.actionButton, styles.primaryButton, { marginTop: 12, backgroundColor: COLORS.purple }]}
+              style={styles.logoutButton}
               onPress={() => {
-                Alert.alert('Reportar', 'Funcionalidad de reporte rápido en desarrollo');
-                // navigation.navigate('ReportarEvento', { eventoId: situacionActiva.evento_persistente_id });
+                Alert.alert(
+                  'Cerrar Sesión',
+                  '¿Estás seguro que deseas cerrar sesión?',
+                  [
+                    { text: 'Cancelar', style: 'cancel' },
+                    {
+                      text: 'Salir',
+                      style: 'destructive',
+                      onPress: async () => {
+                        await useAuthStore.getState().logout();
+                      },
+                    },
+                  ]
+                );
               }}
             >
-              <Text style={styles.actionButtonText}>📝 Reportar Novedad</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{ marginTop: 12, padding: 8, alignItems: 'center' }}
-              onPress={handleCerrarSituacion}
-            >
-              <Text style={{ color: COLORS.danger }}>Finalizar Participación</Text>
+              <Text style={styles.logoutButtonText}>Salir</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      ) : situacionActiva ? (
-        <View style={[styles.card, styles.situacionActivaCard]}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Situación Activa</Text>
+
+          {/* Indicador de acceso */}
+          {accesoInfo && (
             <View style={[
-              styles.tipoBadge,
-              { backgroundColor: getTipoSituacionColor(situacionActiva.tipo_situacion) }
+              styles.accesoIndicator,
+              { backgroundColor: accesoInfo.tiene_acceso ? COLORS.success : COLORS.warning }
             ]}>
-              <Text style={styles.tipoBadgeText}>{situacionActiva.tipo_situacion}</Text>
-            </View>
-          </View>
-          <View style={styles.cardContent}>
-            {situacionActiva.numero_situacion && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>No. Situación:</Text>
-                <Text style={styles.infoValue}>{situacionActiva.numero_situacion}</Text>
-              </View>
-            )}
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Inicio:</Text>
-              <Text style={styles.infoValue}>
-                {formatFecha(situacionActiva.created_at)}
+              <Text style={styles.accesoText}>
+                {accesoInfo.tiene_acceso
+                  ? '✓ Acceso permitido hoy'
+                  : `⚠ ${accesoInfo.motivo_bloqueo}`}
               </Text>
             </View>
-            {situacionActiva.ruta_codigo && (
+          )}
+        </View>
+
+        {/* Card de Asignación Unificada - Solo mostrar si NO hay salida activa */}
+        {!salidaActiva && loadingAsignacionDia ? (
+          <View style={styles.card}>
+            <ActivityIndicator size="small" color={COLORS.primary} />
+            <Text style={{ textAlign: 'center', color: COLORS.text.secondary, marginTop: 8 }}>
+              Cargando información de asignación...
+            </Text>
+          </View>
+        ) : !salidaActiva && (asignacion?.unidad_codigo || asignacionDia?.unidad_codigo) ? (
+          <View style={[styles.card, styles.asignacionCard]}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Mi Asignación</Text>
+              {asignacionDia && typeof asignacionDia.dias_para_salida === 'number' && (
+                <View style={[styles.tipoBadge, {
+                  backgroundColor: asignacionDia.dias_para_salida === 0 ? COLORS.success : COLORS.info
+                }]}>
+                  <Text style={styles.tipoBadgeText}>
+                    {asignacionDia.dias_para_salida === 0
+                      ? 'HOY'
+                      : asignacionDia.dias_para_salida === 1
+                        ? 'MAÑANA'
+                        : `EN ${asignacionDia.dias_para_salida} DÍAS`}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.cardContent}>
+              {/* Fecha de la asignación */}
+              {asignacionDia?.fecha && asignacionDia.dias_para_salida > 0 && (
+                <View style={[styles.asignacionFullRow, { marginBottom: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border }]}>
+                  <Text style={styles.asignacionItemLabel}>Fecha de Salida</Text>
+                  <Text style={[styles.asignacionItemValue, { color: COLORS.primary }]}>
+                    {formatFechaAsignacion(asignacionDia.fecha)}
+                  </Text>
+                </View>
+              )}
+
+              {/* Unidad y Tipo */}
+              <View style={styles.asignacionGrid}>
+                <View style={styles.asignacionItem}>
+                  <Text style={styles.asignacionItemLabel}>Unidad</Text>
+                  <Text style={styles.asignacionItemValue}>
+                    {asignacionDia?.unidad_codigo || asignacion?.unidad_codigo || 'Sin asignar'}
+                  </Text>
+                  {(asignacionDia?.tipo_unidad || asignacion?.tipo_unidad) && (
+                    <Text style={styles.asignacionItemSubtext}>{asignacionDia?.tipo_unidad || asignacion?.tipo_unidad}</Text>
+                  )}
+                </View>
+                <View style={styles.asignacionItem}>
+                  <Text style={styles.asignacionItemLabel}>Mi Rol</Text>
+                  <Text style={styles.asignacionItemValue}>
+                    {asignacionDia?.mi_rol || asignacion?.rol_tripulacion || 'Sin asignar'}
+                    {asignacionDia?.es_comandante && ' ⭐'}
+                  </Text>
+                  {asignacionDia?.es_comandante && (
+                    <Text style={{ fontSize: 11, color: COLORS.warning, fontWeight: '600' }}>COMANDANTE</Text>
+                  )}
+                </View>
+              </View>
+
+              {/* Ruta y Hora de Salida */}
+              {(asignacionDia?.ruta_codigo || asignacionDia?.hora_salida) && (
+                <View style={styles.asignacionGrid}>
+                  {asignacionDia?.ruta_codigo && (
+                    <View style={styles.asignacionItem}>
+                      <Text style={styles.asignacionItemLabel}>Ruta Asignada</Text>
+                      <Text style={styles.asignacionItemValue}>{asignacionDia.ruta_codigo}</Text>
+                      {asignacionDia.sentido && (
+                        <Text style={styles.asignacionItemSubtext}>{asignacionDia.sentido}</Text>
+                      )}
+                    </View>
+                  )}
+                  {asignacionDia?.hora_salida && (
+                    <View style={styles.asignacionItem}>
+                      <Text style={styles.asignacionItemLabel}>Hora Salida</Text>
+                      <Text style={styles.asignacionItemValue}>{asignacionDia.hora_salida}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {/* Recorrido Permitido */}
+              {asignacionDia?.recorrido_permitido && (
+                <View style={styles.asignacionFullRow}>
+                  <Text style={styles.asignacionItemLabel}>Recorrido Permitido</Text>
+                  <Text style={styles.asignacionItemValue}>{asignacionDia.recorrido_permitido}</Text>
+                </View>
+              )}
+
+              {/* Acciones a Realizar */}
+              {asignacionDia?.acciones && (
+                <View style={styles.asignacionFullRow}>
+                  <Text style={styles.asignacionItemLabel}>Acciones a Realizar</Text>
+                  <Text style={styles.descripcionText}>{asignacionDia.acciones}</Text>
+                </View>
+              )}
+
+              {/* Tripulación Completa */}
+              {asignacionDia?.tripulacion && asignacionDia.tripulacion.length > 0 && (
+                <View style={styles.asignacionFullRow}>
+                  <Text style={styles.asignacionItemLabel}>Tripulación ({asignacionDia.tripulacion.length})</Text>
+                  <View style={styles.companerosList}>
+                    {asignacionDia.tripulacion.map((t: any, idx: number) => (
+                      <View key={idx} style={[styles.companeroItem, t.es_comandante && { borderLeftWidth: 3, borderLeftColor: COLORS.warning, paddingLeft: 8 }]}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Text style={[styles.companeroNombre, { flex: 1 }]} numberOfLines={1}>
+                            {t.nombre}{t.usuario_id === usuario?.id && ' (Tú)'}
+                          </Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <Text style={styles.companeroRol}>{t.rol}</Text>
+                            {t.es_comandante && <Text style={{ fontSize: 12 }}>⭐</Text>}
+                          </View>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </View>
+          </View>
+        ) : !salidaActiva && !salidaHoy?.jornada_finalizada ? (
+          <View style={[styles.card, styles.noAsignacionCard]}>
+            <Text style={styles.noAsignacionIcon}>📋</Text>
+            <Text style={styles.noAsignacionTitle}>Sin Asignación</Text>
+            <Text style={styles.noAsignacionText}>
+              No tienes una unidad asignada actualmente. Contacta a Operaciones para que te asignen a un turno o unidad.
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Card de Salida Activa */}
+        {salidaActiva ? (
+          <TouchableOpacity
+            style={[styles.card, styles.situacionActivaCard]}
+            onPress={() => navigation.navigate('Bitacora' as never)}
+          >
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Jornada Activa 👆</Text>
+              <View style={[styles.tipoBadge, { backgroundColor: COLORS.success }]}>
+                <Text style={styles.tipoBadgeText}>{salidaActiva.estado}</Text>
+              </View>
+            </View>
+            <View style={styles.cardContent}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Inicio:</Text>
+                <Text style={styles.infoValue}>
+                  {formatFecha(salidaActiva.fecha_hora_salida)}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Unidad:</Text>
+                <Text style={styles.infoValue}>{salidaActiva.unidad_codigo}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Ruta:</Text>
+                <Text style={styles.infoValue}>
+                  {salidaActiva.ruta_codigo || 'Sin ruta asignada'}
+                </Text>
+              </View>
+              <Text style={{ textAlign: 'center', color: COLORS.primary, marginTop: 8, fontSize: 12 }}>
+                Toca para ver detalles en Bitácora
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ) : salidaHoy?.jornada_finalizada ? (
+          /* Card de Jornada Finalizada */
+          <TouchableOpacity
+            style={[styles.card, { borderLeftWidth: 4, borderLeftColor: COLORS.info }]}
+            onPress={() => navigation.navigate('Bitacora' as never)}
+          >
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Jornada Finalizada ✅</Text>
+              <View style={[styles.tipoBadge, { backgroundColor: COLORS.info }]}>
+                <Text style={styles.tipoBadgeText}>COMPLETA</Text>
+              </View>
+            </View>
+            <View style={styles.cardContent}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Unidad:</Text>
+                <Text style={styles.infoValue}>{salidaHoy.unidad_codigo}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Inicio:</Text>
+                <Text style={styles.infoValue}>
+                  {formatFecha(salidaHoy.fecha_hora_salida)}
+                </Text>
+              </View>
+              {salidaHoy.fecha_hora_regreso && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Fin:</Text>
+                  <Text style={styles.infoValue}>
+                    {formatFecha(salidaHoy.fecha_hora_regreso)}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Horas Trabajadas:</Text>
+                <Text style={styles.infoValue}>
+                  {salidaHoy.resumen?.horas_trabajadas?.toFixed(1) || '0'} hrs
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Situaciones:</Text>
+                <Text style={styles.infoValue}>
+                  {salidaHoy.resumen?.total_situaciones || 0}
+                </Text>
+              </View>
+              {salidaHoy.resumen?.km_recorridos > 0 && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Km Recorridos:</Text>
+                  <Text style={styles.infoValue}>{salidaHoy.resumen.km_recorridos} km</Text>
+                </View>
+              )}
+              <Text style={{ textAlign: 'center', color: COLORS.info, marginTop: 12, fontSize: 12 }}>
+                Toca para ver el resumen completo en Bitácora
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ) : (asignacion?.unidad_codigo || asignacionDia?.unidad_codigo) ? (
+          <View style={[styles.card, styles.warningCard]}>
+            <Text style={styles.warningText}>
+              No has iniciado salida hoy
+            </Text>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.primaryButton, { marginHorizontal: 16, marginTop: 12 }]}
+              onPress={() => navigation.navigate('IniciarSalida' as never)}
+            >
+              <Text style={styles.actionButtonText}>🚗 Iniciar Salida</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {/* Card de Ingreso Activo */}
+        {ingresoActivo && !ingresoActivo.es_ingreso_final && (
+          <View style={[styles.card, {
+            borderLeftWidth: 4,
+            borderLeftColor: ingresoActivo.tipo_ingreso === 'FINALIZACION_JORNADA' ? COLORS.danger : COLORS.warning
+          }]}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>
+                {ingresoActivo.tipo_ingreso === 'FINALIZACION_JORNADA' ? 'Finalizando Jornada' : 'En Sede'}
+              </Text>
+              <View style={[styles.tipoBadge, {
+                backgroundColor: ingresoActivo.tipo_ingreso === 'FINALIZACION_JORNADA' ? COLORS.danger : COLORS.warning
+              }]}>
+                <Text style={styles.tipoBadgeText}>
+                  {ingresoActivo.tipo_ingreso?.replace(/_/g, ' ')}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.cardContent}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Sede:</Text>
+                <Text style={styles.infoValue}>{ingresoActivo.sede_nombre}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Ingreso:</Text>
+                <Text style={styles.infoValue}>
+                  {formatFecha(ingresoActivo.fecha_hora_ingreso)}
+                </Text>
+              </View>
+              {ingresoActivo.km_ingreso && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Km Final:</Text>
+                  <Text style={styles.infoValue}>{ingresoActivo.km_ingreso} km</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Botones según tipo de ingreso */}
+            {ingresoActivo.tipo_ingreso === 'FINALIZACION_JORNADA' ? (
+              <View style={{ gap: 8 }}>
+                <TouchableOpacity
+                  style={[styles.cerrarButton, { backgroundColor: COLORS.danger }]}
+                  onPress={handleFinalizarJornada}
+                  disabled={finalizandoJornada}
+                >
+                  {finalizandoJornada ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.cerrarButtonText}>🏁 Finalizar Jornada</Text>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.cerrarButton, { backgroundColor: COLORS.primary }]}
+                  onPress={() => navigation.navigate('Bitacora' as never)}
+                >
+                  <Text style={styles.cerrarButtonText}>📋 Ver Bitácora</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.cerrarButton, { backgroundColor: COLORS.gray[500] }]}
+                  onPress={() => navigation.navigate('SalidaDeSede' as never)}
+                >
+                  <Text style={styles.cerrarButtonText}>↩️ Salir de Sede (Cancelar)</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.cerrarButton, { backgroundColor: COLORS.success }]}
+                onPress={() => navigation.navigate('SalidaDeSede' as never)}
+              >
+                <Text style={styles.cerrarButtonText}>Salir de Sede</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* Card de Situación Activa */}
+        {situacionActiva && situacionActiva.evento_persistente_id ? (
+          // Card de Evento Persistente
+          <View style={[styles.card, styles.situacionActivaCard, { borderLeftColor: COLORS.purple, backgroundColor: '#faf5ff' }]}>
+            <View style={styles.cardHeader}>
+              <View>
+                <Text style={[styles.cardTitle, { color: COLORS.purple }]}>Asignado a Evento</Text>
+                <Text style={{ fontSize: 12, color: COLORS.text.secondary }}>{situacionActiva.evento_tipo}</Text>
+              </View>
+              <View style={[styles.tipoBadge, { backgroundColor: COLORS.purple }]}>
+                <Text style={styles.tipoBadgeText}>{situacionActiva.estado}</Text>
+              </View>
+            </View>
+
+            <View style={styles.cardContent}>
+              <Text style={[styles.infoValue, { fontSize: 16, marginBottom: 8 }]}>
+                {situacionActiva.evento_titulo}
+              </Text>
+              {situacionActiva.descripcion && (
+                <Text style={[styles.descripcionText, { marginBottom: 12 }]}>
+                  {situacionActiva.descripcion}
+                </Text>
+              )}
+
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Ubicación:</Text>
                 <Text style={styles.infoValue}>
-                  {situacionActiva.ruta_codigo} Km {situacionActiva.km || '-'}
+                  {situacionActiva.ruta_codigo} Km {situacionActiva.km}
                 </Text>
               </View>
-            )}
-            {situacionActiva.descripcion && (
-              <View style={styles.descriptionRow}>
-                <Text style={styles.infoLabel}>Descripción:</Text>
-                <Text style={styles.descripcionText}>{situacionActiva.descripcion}</Text>
-              </View>
-            )}
-          </View>
-          <TouchableOpacity
-            style={styles.cerrarButton}
-            onPress={handleCerrarSituacion}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.cerrarButtonText}>Cerrar Situación</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View style={styles.card}>
-          <Text style={styles.noSituacionText}>
-            No hay situación activa
-          </Text>
-        </View>
-      )}
 
-      {/* Botones de acción */}
-      {salidaActiva && !ingresoActivo && (
-        <View style={styles.actionsContainer}>
-          <Text style={styles.actionsTitle}>Reportar Situación</Text>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.incidenteButton]}
-            onPress={() => navigation.navigate('Incidente' as never)}
-            disabled={!accesoInfo?.tiene_acceso}
-          >
-            <Text style={styles.actionButtonIcon}>🚗💥</Text>
-            <Text style={styles.actionButtonText}>Hecho de Tránsito</Text>
-            <Text style={styles.actionButtonSubtext}>Colisión, vuelco, atropello</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.asistenciaButton]}
-            onPress={() => navigation.navigate('Asistencia' as never)}
-            disabled={!accesoInfo?.tiene_acceso}
-          >
-            <Text style={styles.actionButtonIcon}>🔧</Text>
-            <Text style={styles.actionButtonText}>Asistencia Vial</Text>
-            <Text style={styles.actionButtonSubtext}>Pinchazo, desperfectos, varado</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.emergenciaButton]}
-            onPress={() => navigation.navigate('Emergencia' as never)}
-            disabled={!accesoInfo?.tiene_acceso}
-          >
-            <Text style={styles.actionButtonIcon}>⚠️</Text>
-            <Text style={styles.actionButtonText}>Emergencia Vial</Text>
-            <Text style={styles.actionButtonSubtext}>Derrumbe, inundación, caída</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.secondaryButton]}
-            onPress={() => navigation.navigate('NuevaSituacion' as never)}
-            disabled={!accesoInfo?.tiene_acceso}
-          >
-            <Text style={styles.secondaryButtonText}>+ Otra Situación</Text>
-          </TouchableOpacity>
-
-          <View style={styles.separator} />
-
-          <Text style={styles.actionsTitle}>Gestión de Jornada</Text>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.secondaryButton]}
-            onPress={() => navigation.navigate('IngresoSede' as never)}
-          >
-            <Text style={styles.secondaryButtonText}>🏢 Ingresar a Sede</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.secondaryButton]}
-            onPress={() => setMostrarCambioRuta(true)}
-          >
-            <Text style={styles.secondaryButtonText}>🔄 Cambio de Ruta</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.secondaryButton]}
-            onPress={() => navigation.navigate('Relevo' as never)}
-          >
-            <Text style={styles.secondaryButtonText}>⚡ Registrar Relevo</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.secondaryButton]}
-            onPress={() => navigation.navigate('Bitacora' as never)}
-          >
-            <Text style={styles.secondaryButtonText}>📋 Ver Bitácora</Text>
-          </TouchableOpacity>
-
-          <View style={styles.separator} />
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.secondaryButton, { borderColor: '#f97316' }]}
-            onPress={() => navigation.navigate('ConfiguracionPruebas' as never)}
-          >
-            <Text style={[styles.secondaryButtonText, { color: '#f97316' }]}>🧪 Modo de Pruebas</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-
-      {/* Modal de cambio de ruta */}
-      {mostrarCambioRuta && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Cambiar Ruta</Text>
-            <Text style={styles.modalSubtitle}>
-              Ruta actual: {salidaActiva?.ruta_codigo || 'Sin ruta asignada'}
-            </Text>
-
-            <RutaSelector
-              value={nuevaRutaId || undefined}
-              onChange={(rutaId) => setNuevaRutaId(rutaId)}
-              label="Nueva Ruta"
-              required
-              showSearch
-            />
-
-            <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel]}
+                style={[styles.actionButton, styles.primaryButton, { marginTop: 12, backgroundColor: COLORS.purple }]}
                 onPress={() => {
-                  setMostrarCambioRuta(false);
-                  setNuevaRutaId(null);
+                  Alert.alert('Reportar', 'Funcionalidad de reporte rápido en desarrollo');
+                  // navigation.navigate('ReportarEvento', { eventoId: situacionActiva.evento_persistente_id });
                 }}
-                disabled={cambiandoRuta}
               >
-                <Text style={styles.modalButtonTextCancel}>Cancelar</Text>
+                <Text style={styles.actionButtonText}>📝 Reportar Novedad</Text>
               </TouchableOpacity>
-
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
-                onPress={handleCambiarRuta}
-                disabled={!nuevaRutaId || cambiandoRuta}
+                style={{ marginTop: 12, padding: 8, alignItems: 'center' }}
+                onPress={handleCerrarSituacion}
               >
-                {cambiandoRuta ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.modalButtonTextConfirm}>Confirmar</Text>
-                )}
+                <Text style={{ color: COLORS.danger }}>Finalizar Participación</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      )}
+        ) : situacionActiva ? (
+          <View style={[styles.card, styles.situacionActivaCard]}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Situación Activa</Text>
+              <View style={[
+                styles.tipoBadge,
+                { backgroundColor: getTipoSituacionColor(situacionActiva.tipo_situacion) }
+              ]}>
+                <Text style={styles.tipoBadgeText}>{situacionActiva.tipo_situacion}</Text>
+              </View>
+            </View>
+            <View style={styles.cardContent}>
+              {situacionActiva.numero_situacion && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>No. Situación:</Text>
+                  <Text style={styles.infoValue}>{situacionActiva.numero_situacion}</Text>
+                </View>
+              )}
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Inicio:</Text>
+                <Text style={styles.infoValue}>
+                  {formatFecha(situacionActiva.created_at)}
+                </Text>
+              </View>
+              {situacionActiva.ruta_codigo && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Ubicación:</Text>
+                  <Text style={styles.infoValue}>
+                    {situacionActiva.ruta_codigo} Km {situacionActiva.km || '-'}
+                  </Text>
+                </View>
+              )}
+              {situacionActiva.descripcion && (
+                <View style={styles.descriptionRow}>
+                  <Text style={styles.infoLabel}>Descripción:</Text>
+                  <Text style={styles.descripcionText}>{situacionActiva.descripcion}</Text>
+                </View>
+              )}
+            </View>
+            <TouchableOpacity
+              style={styles.cerrarButton}
+              onPress={handleCerrarSituacion}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.cerrarButtonText}>Cerrar Situación</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.card}>
+            <Text style={styles.noSituacionText}>
+              No hay situación activa
+            </Text>
+          </View>
+        )}
 
-      {/* Mensaje de ayuda */}
-      {(asignacion?.unidad_codigo || asignacionDia?.unidad_codigo) && !salidaActiva && !salidaHoy?.jornada_finalizada && (
-        <View style={styles.helpBox}>
-          <Text style={styles.helpText}>
-            Debes iniciar una salida para poder reportar situaciones y comenzar tu jornada laboral.
-          </Text>
-        </View>
-      )}
-      {salidaHoy?.jornada_finalizada && (
-        <View style={[styles.helpBox, { borderLeftColor: COLORS.success }]}>
-          <Text style={styles.helpText}>
-            Tu jornada de hoy ha sido completada. Revisa el resumen de tus actividades tocando el card de arriba.
-          </Text>
-        </View>
-      )}
-      {ingresoActivo && !ingresoActivo.es_ingreso_final && (
-        <View style={styles.helpBox}>
-          <Text style={styles.helpText}>
-            Estas en sede. No puedes reportar situaciones hasta que registres la salida de sede.
-          </Text>
-        </View>
-      )}
-    </ScrollView>
+        {/* Botones de acción */}
+        {salidaActiva && !ingresoActivo && (
+          <View style={styles.actionsContainer}>
+            <Text style={styles.actionsTitle}>Reportar Situación</Text>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.incidenteButton]}
+              onPress={() => navigation.navigate('Incidente' as never)}
+              disabled={!accesoInfo?.tiene_acceso}
+            >
+              <Text style={styles.actionButtonIcon}>🚗💥</Text>
+              <Text style={styles.actionButtonText}>Hecho de Tránsito</Text>
+              <Text style={styles.actionButtonSubtext}>Colisión, vuelco, atropello</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.asistenciaButton]}
+              onPress={() => navigation.navigate('Asistencia' as never)}
+              disabled={!accesoInfo?.tiene_acceso}
+            >
+              <Text style={styles.actionButtonIcon}>🔧</Text>
+              <Text style={styles.actionButtonText}>Asistencia Vial</Text>
+              <Text style={styles.actionButtonSubtext}>Pinchazo, desperfectos, varado</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.emergenciaButton]}
+              onPress={() => navigation.navigate('Emergencia' as never)}
+              disabled={!accesoInfo?.tiene_acceso}
+            >
+              <Text style={styles.actionButtonIcon}>⚠️</Text>
+              <Text style={styles.actionButtonText}>Emergencia Vial</Text>
+              <Text style={styles.actionButtonSubtext}>Derrumbe, inundación, caída</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.secondaryButton]}
+              onPress={() => navigation.navigate('NuevaSituacion' as never)}
+              disabled={!accesoInfo?.tiene_acceso}
+            >
+              <Text style={styles.secondaryButtonText}>+ Otra Situación</Text>
+            </TouchableOpacity>
+
+            <View style={styles.separator} />
+
+            <Text style={styles.actionsTitle}>Gestión de Jornada</Text>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.secondaryButton]}
+              onPress={() => navigation.navigate('IngresoSede' as never)}
+            >
+              <Text style={styles.secondaryButtonText}>🏢 Ingresar a Sede</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.secondaryButton]}
+              onPress={() => setMostrarCambioRuta(true)}
+            >
+              <Text style={styles.secondaryButtonText}>🔄 Cambio de Ruta</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.secondaryButton]}
+              onPress={() => navigation.navigate('Relevo' as never)}
+            >
+              <Text style={styles.secondaryButtonText}>⚡ Registrar Relevo</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.secondaryButton]}
+              onPress={() => navigation.navigate('Bitacora' as never)}
+            >
+              <Text style={styles.secondaryButtonText}>📋 Ver Bitácora</Text>
+            </TouchableOpacity>
+
+            <View style={styles.separator} />
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.secondaryButton, { borderColor: '#f97316' }]}
+              onPress={() => navigation.navigate('ConfiguracionPruebas' as never)}
+            >
+              <Text style={[styles.secondaryButtonText, { color: '#f97316' }]}>🧪 Modo de Pruebas</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+
+        {/* Modal de cambio de ruta */}
+        {mostrarCambioRuta && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Cambiar Ruta</Text>
+              <Text style={styles.modalSubtitle}>
+                Ruta actual: {salidaActiva?.ruta_codigo || 'Sin ruta asignada'}
+              </Text>
+
+              <RutaSelector
+                value={nuevaRutaId || undefined}
+                onChange={(rutaId) => setNuevaRutaId(rutaId)}
+                label="Nueva Ruta"
+                required
+                showSearch
+              />
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setMostrarCambioRuta(false);
+                    setNuevaRutaId(null);
+                  }}
+                  disabled={cambiandoRuta}
+                >
+                  <Text style={styles.modalButtonTextCancel}>Cancelar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  onPress={handleCambiarRuta}
+                  disabled={!nuevaRutaId || cambiandoRuta}
+                >
+                  {cambiandoRuta ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.modalButtonTextConfirm}>Confirmar</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+
+
+        {salidaHoy?.jornada_finalizada && (
+          <View style={[styles.helpBox, { borderLeftColor: COLORS.success }]}>
+            <Text style={styles.helpText}>
+              Tu jornada de hoy ha sido completada. Revisa el resumen de tus actividades tocando el card de arriba.
+            </Text>
+          </View>
+        )}
+        {ingresoActivo && !ingresoActivo.es_ingreso_final && (
+          <View style={styles.helpBox}>
+            <Text style={styles.helpText}>
+              Estas en sede. No puedes reportar situaciones hasta que registres la salida de sede.
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: COLORS.text.secondary,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,

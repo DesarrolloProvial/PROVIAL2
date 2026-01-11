@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
 import { COLORS } from '../../constants/colors';
 import { useNavigation, useRoute, CommonActions, RouteProp } from '@react-navigation/native';
@@ -42,6 +43,7 @@ type IniciarSalidaScreenRouteProp = RouteProp<{
 export default function IniciarSalidaScreen() {
   const navigation = useNavigation();
   const route = useRoute<IniciarSalidaScreenRouteProp>();
+  const insets = useSafeAreaInsets();
   const { editMode, salidaData } = route.params || {};
 
   const { asignacion, salidaActiva, refreshEstadoBrigada, refreshSalidaActiva } = useAuthStore();
@@ -67,7 +69,7 @@ export default function IniciarSalidaScreen() {
     queryFn: async () => {
       const unidadId = asignacionTurno?.unidad_id || asignacion?.unidad_id;
       if (!unidadId) throw new Error('No hay unidad asignada');
-      const response = await api.get(`/inspeccion360/verificar-salida/${unidadId}`);
+      const response = await api.get(`/inspeccion360/verificar-unidad/${unidadId}`);
       return response.data;
     },
     enabled: !editMode && !loadingAsignacion && !!(asignacionTurno?.unidad_id || asignacion?.unidad_id),
@@ -288,252 +290,260 @@ export default function IniciarSalidaScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={[styles.header, editMode && { backgroundColor: COLORS.warning }]}>
-        <Text style={styles.headerTitle}>
-          {editMode ? 'Editar Salida' : 'Iniciar Salida'}
-        </Text>
-        <Text style={styles.headerSubtitle}>
-          {editMode
-            ? 'Modifica los datos de tu salida de unidad'
-            : 'Registra el inicio de tu jornada laboral'
-          }
-        </Text>
-      </View>
+    <View style={{ flex: 1, paddingBottom: 50 }}>
+      <ScrollView style={styles.container}>
+        {/* Header con botón de regresar */}
+        <View style={[styles.header, editMode && { backgroundColor: COLORS.warning }]}>
+          <View style={styles.headerTitleRow}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.backButtonText}>←</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>
+              {editMode ? 'Editar Salida' : 'Iniciar Salida'}
+            </Text>
+          </View>
+          <Text style={styles.headerSubtitle}>
+            {editMode
+              ? 'Modifica los datos de tu salida de unidad'
+              : 'Registra el inicio de tu jornada laboral'
+            }
+          </Text>
+        </View>
 
-      {/* Card de Unidad Asignada (en modo edición mostramos datos de la salida) */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>
-          {editMode ? 'Datos de la Salida' : 'Tu Unidad Asignada'}
-        </Text>
-        {/* Indicador si es asignacion de turno (solo en modo creación) */}
-        {!editMode && asignacionTurno && (
-          <View style={[styles.tipoBadge, { backgroundColor: asignacionTurno.dias_para_salida === 0 ? COLORS.success : COLORS.info }]}>
-            <Text style={styles.tipoBadgeText}>
-              {asignacionTurno.dias_para_salida === 0 ? 'TURNO DE HOY' : asignacionTurno.dias_para_salida === 1 ? 'TURNO DE MANANA' : `EN ${asignacionTurno.dias_para_salida} DIAS`}
+        {/* Card de Unidad Asignada (en modo edición mostramos datos de la salida) */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>
+            {editMode ? 'Datos de la Salida' : 'Tu Unidad Asignada'}
+          </Text>
+          {/* Indicador si es asignacion de turno (solo en modo creación) */}
+          {!editMode && asignacionTurno && (
+            <View style={[styles.tipoBadge, { backgroundColor: asignacionTurno.dias_para_salida === 0 ? COLORS.success : COLORS.info }]}>
+              <Text style={styles.tipoBadgeText}>
+                {asignacionTurno.dias_para_salida === 0 ? 'TURNO DE HOY' : asignacionTurno.dias_para_salida === 1 ? 'TURNO DE MANANA' : `EN ${asignacionTurno.dias_para_salida} DIAS`}
+              </Text>
+            </View>
+          )}
+          <View style={styles.unidadInfo}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Unidad:</Text>
+              <Text style={styles.infoValue}>
+                {editMode
+                  ? (salidaData?.unidad_codigo || '-')
+                  : (asignacionEfectiva?.unidad_codigo || asignacionEfectiva?.codigo || '-')
+                }
+              </Text>
+            </View>
+            {!editMode && (
+              <>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Tipo:</Text>
+                  <Text style={styles.infoValue}>
+                    {asignacionEfectiva?.tipo_unidad || 'N/A'}
+                  </Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Tu Rol:</Text>
+                  <Text style={styles.infoValue}>
+                    {asignacionEfectiva?.mi_rol || asignacionEfectiva?.rol_tripulacion || 'N/A'}
+                  </Text>
+                </View>
+                {asignacionTurno?.ruta_codigo && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Ruta:</Text>
+                    <Text style={styles.infoValue}>{asignacionTurno.ruta_codigo}</Text>
+                  </View>
+                )}
+              </>
+            )}
+            {editMode && salidaData?.mi_rol && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Tu Rol:</Text>
+                <Text style={styles.infoValue}>{salidaData.mi_rol}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Verificacion de Inspeccion 360 (solo en modo creacion) */}
+        {!editMode && !loadingInspeccion360 && inspeccion360Estado && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Inspeccion 360</Text>
+
+            {/* Caso 1: No tiene inspeccion - debe crearla */}
+            {!inspeccion360Estado.tiene_inspeccion && (
+              <View style={[styles.alertBox, { backgroundColor: COLORS.warning + '20', borderLeftColor: COLORS.warning }]}>
+                <Text style={styles.alertTitle}>Inspeccion 360 Requerida</Text>
+                <Text style={styles.alertText}>
+                  Debes completar la inspeccion vehicular 360 antes de iniciar la salida.
+                </Text>
+                <TouchableOpacity
+                  style={[styles.alertButton, { backgroundColor: COLORS.warning }]}
+                  onPress={() => {
+                    const unidadId = asignacionTurno?.unidad_id || asignacion?.unidad_id;
+                    const tipoUnidad = asignacionTurno?.tipo_unidad || asignacion?.tipo_unidad;
+                    (navigation as any).navigate('Inspeccion360', { unidadId, tipoUnidad });
+                  }}
+                >
+                  <Text style={styles.alertButtonText}>Iniciar Inspeccion 360</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Caso 2: Tiene inspeccion PENDIENTE */}
+            {inspeccion360Estado.tiene_inspeccion && inspeccion360Estado.inspeccion?.estado === 'PENDIENTE' && (
+              <View style={[styles.alertBox, { backgroundColor: COLORS.info + '20', borderLeftColor: COLORS.info }]}>
+                <Text style={styles.alertTitle}>Inspeccion Pendiente de Aprobacion</Text>
+                <Text style={styles.alertText}>
+                  La inspeccion 360 esta pendiente de aprobacion por el comandante.
+                </Text>
+                {inspeccion360Estado.es_comandante ? (
+                  <TouchableOpacity
+                    style={[styles.alertButton, { backgroundColor: COLORS.info }]}
+                    onPress={() => {
+                      (navigation as any).navigate('AprobarInspeccion360', {
+                        inspeccionId: inspeccion360Estado.inspeccion?.id,
+                      });
+                    }}
+                  >
+                    <Text style={styles.alertButtonText}>Revisar y Aprobar</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Text style={[styles.alertText, { fontStyle: 'italic', marginTop: 8 }]}>
+                    Esperando al comandante...
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {/* Caso 3: Tiene inspeccion RECHAZADA */}
+            {inspeccion360Estado.tiene_inspeccion && inspeccion360Estado.inspeccion?.estado === 'RECHAZADA' && (
+              <View style={[styles.alertBox, { backgroundColor: COLORS.danger + '20', borderLeftColor: COLORS.danger }]}>
+                <Text style={styles.alertTitle}>Inspeccion Rechazada</Text>
+                <Text style={styles.alertText}>
+                  {inspeccion360Estado.inspeccion?.motivo_rechazo || 'Debes corregir y enviar una nueva inspeccion.'}
+                </Text>
+                <TouchableOpacity
+                  style={[styles.alertButton, { backgroundColor: COLORS.danger }]}
+                  onPress={() => {
+                    const unidadId = asignacionTurno?.unidad_id || asignacion?.unidad_id;
+                    const tipoUnidad = asignacionTurno?.tipo_unidad || asignacion?.tipo_unidad;
+                    (navigation as any).navigate('Inspeccion360', { unidadId, tipoUnidad });
+                  }}
+                >
+                  <Text style={styles.alertButtonText}>Nueva Inspeccion 360</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Caso 4: Tiene inspeccion APROBADA */}
+            {inspeccion360Estado.tiene_inspeccion && inspeccion360Estado.inspeccion?.estado === 'APROBADA' && (
+              <View style={[styles.alertBox, { backgroundColor: COLORS.success + '20', borderLeftColor: COLORS.success }]}>
+                <Text style={[styles.alertTitle, { color: COLORS.success }]}>Inspeccion Aprobada</Text>
+                <Text style={styles.alertText}>
+                  La inspeccion 360 fue aprobada. Puedes iniciar la salida.
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Formulario */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Datos de Salida</Text>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>
+              Kilometraje de Salida <Text style={styles.required}>*</Text>
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={kmSalida}
+              onChangeText={(text) => setKmSalida(text.replace(/[^0-9]/g, ''))}
+              placeholder="Ej: 125000"
+              keyboardType="number-pad"
+              editable={!loading}
+            />
+            <Text style={styles.hint}>Kilometraje actual del odómetro</Text>
+          </View>
+
+          <View style={styles.formGroup}>
+            <FuelSelector
+              value={combustibleFraccion}
+              onChange={handleCombustibleChange}
+              label="Nivel de Combustible"
+              required
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Observaciones (Opcional)</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={observaciones}
+              onChangeText={setObservaciones}
+              placeholder="Cualquier observación sobre el estado de la unidad..."
+              multiline
+              numberOfLines={3}
+              editable={!loading}
+            />
+          </View>
+        </View>
+
+        {/* Instrucciones (solo en modo creación) */}
+        {!editMode && (
+          <View style={styles.instructionsCard}>
+            <Text style={styles.instructionsTitle}>📋 Importante</Text>
+            <Text style={styles.instructionsText}>
+              • Verifica el kilometraje y combustible antes de iniciar{'\n'}
+              • Una vez iniciada la salida, podrás reportar situaciones{'\n'}
+              • Puedes ingresar a sedes durante tu jornada{'\n'}
+              • Al finalizar el día, debes registrar el ingreso final
             </Text>
           </View>
         )}
-        <View style={styles.unidadInfo}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Unidad:</Text>
-            <Text style={styles.infoValue}>
-              {editMode
-                ? (salidaData?.unidad_codigo || '-')
-                : (asignacionEfectiva?.unidad_codigo || asignacionEfectiva?.codigo || '-')
-              }
-            </Text>
-          </View>
-          {!editMode && (
-            <>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Tipo:</Text>
-                <Text style={styles.infoValue}>
-                  {asignacionEfectiva?.tipo_unidad || 'N/A'}
-                </Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Tu Rol:</Text>
-                <Text style={styles.infoValue}>
-                  {asignacionEfectiva?.mi_rol || asignacionEfectiva?.rol_tripulacion || 'N/A'}
-                </Text>
-              </View>
-              {asignacionTurno?.ruta_codigo && (
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Ruta:</Text>
-                  <Text style={styles.infoValue}>{asignacionTurno.ruta_codigo}</Text>
-                </View>
-              )}
-            </>
-          )}
-          {editMode && salidaData?.mi_rol && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Tu Rol:</Text>
-              <Text style={styles.infoValue}>{salidaData.mi_rol}</Text>
-            </View>
-          )}
-        </View>
-      </View>
 
-      {/* Verificacion de Inspeccion 360 (solo en modo creacion) */}
-      {!editMode && !loadingInspeccion360 && inspeccion360Estado && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Inspeccion 360</Text>
+        {/* Botones */}
+        <View style={styles.buttonsContainer}>
+          <TouchableOpacity
+            style={[styles.button, styles.cancelButton]}
+            onPress={() => navigation.goBack()}
+            disabled={loading}
+          >
+            <Text style={styles.cancelButtonText}>Cancelar</Text>
+          </TouchableOpacity>
 
-          {/* Caso 1: No tiene inspeccion - debe crearla */}
-          {!inspeccion360Estado.tiene_inspeccion && (
-            <View style={[styles.alertBox, { backgroundColor: COLORS.warning + '20', borderLeftColor: COLORS.warning }]}>
-              <Text style={styles.alertTitle}>Inspeccion 360 Requerida</Text>
-              <Text style={styles.alertText}>
-                Debes completar la inspeccion vehicular 360 antes de iniciar la salida.
-              </Text>
+          {(() => {
+            // Verificar si el 360 esta aprobado (solo en modo creacion)
+            const inspeccion360Aprobada = editMode || (inspeccion360Estado?.tiene_inspeccion && inspeccion360Estado.inspeccion?.estado === 'APROBADA');
+            const botonDeshabilitado = loading || (!editMode && !inspeccion360Aprobada);
+
+            return (
               <TouchableOpacity
-                style={[styles.alertButton, { backgroundColor: COLORS.warning }]}
-                onPress={() => {
-                  const unidadId = asignacionTurno?.unidad_id || asignacion?.unidad_id;
-                  const tipoUnidad = asignacionTurno?.tipo_unidad || asignacion?.tipo_unidad;
-                  (navigation as any).navigate('Inspeccion360', { unidadId, tipoUnidad });
-                }}
+                style={[
+                  styles.button,
+                  styles.confirmButton,
+                  editMode && { backgroundColor: COLORS.warning },
+                  botonDeshabilitado && !loading && { backgroundColor: COLORS.text.secondary, opacity: 0.5 },
+                ]}
+                onPress={handleIniciarSalida}
+                disabled={botonDeshabilitado}
               >
-                <Text style={styles.alertButtonText}>Iniciar Inspeccion 360</Text>
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.confirmButtonText}>
+                    {editMode ? 'Guardar Cambios' : 'Iniciar Salida'}
+                  </Text>
+                )}
               </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Caso 2: Tiene inspeccion PENDIENTE */}
-          {inspeccion360Estado.tiene_inspeccion && inspeccion360Estado.inspeccion?.estado === 'PENDIENTE' && (
-            <View style={[styles.alertBox, { backgroundColor: COLORS.info + '20', borderLeftColor: COLORS.info }]}>
-              <Text style={styles.alertTitle}>Inspeccion Pendiente de Aprobacion</Text>
-              <Text style={styles.alertText}>
-                La inspeccion 360 esta pendiente de aprobacion por el comandante.
-              </Text>
-              {inspeccion360Estado.es_comandante ? (
-                <TouchableOpacity
-                  style={[styles.alertButton, { backgroundColor: COLORS.info }]}
-                  onPress={() => {
-                    (navigation as any).navigate('AprobarInspeccion360', {
-                      inspeccionId: inspeccion360Estado.inspeccion?.id,
-                    });
-                  }}
-                >
-                  <Text style={styles.alertButtonText}>Revisar y Aprobar</Text>
-                </TouchableOpacity>
-              ) : (
-                <Text style={[styles.alertText, { fontStyle: 'italic', marginTop: 8 }]}>
-                  Esperando al comandante...
-                </Text>
-              )}
-            </View>
-          )}
-
-          {/* Caso 3: Tiene inspeccion RECHAZADA */}
-          {inspeccion360Estado.tiene_inspeccion && inspeccion360Estado.inspeccion?.estado === 'RECHAZADA' && (
-            <View style={[styles.alertBox, { backgroundColor: COLORS.danger + '20', borderLeftColor: COLORS.danger }]}>
-              <Text style={styles.alertTitle}>Inspeccion Rechazada</Text>
-              <Text style={styles.alertText}>
-                {inspeccion360Estado.inspeccion?.motivo_rechazo || 'Debes corregir y enviar una nueva inspeccion.'}
-              </Text>
-              <TouchableOpacity
-                style={[styles.alertButton, { backgroundColor: COLORS.danger }]}
-                onPress={() => {
-                  const unidadId = asignacionTurno?.unidad_id || asignacion?.unidad_id;
-                  const tipoUnidad = asignacionTurno?.tipo_unidad || asignacion?.tipo_unidad;
-                  (navigation as any).navigate('Inspeccion360', { unidadId, tipoUnidad });
-                }}
-              >
-                <Text style={styles.alertButtonText}>Nueva Inspeccion 360</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Caso 4: Tiene inspeccion APROBADA */}
-          {inspeccion360Estado.tiene_inspeccion && inspeccion360Estado.inspeccion?.estado === 'APROBADA' && (
-            <View style={[styles.alertBox, { backgroundColor: COLORS.success + '20', borderLeftColor: COLORS.success }]}>
-              <Text style={[styles.alertTitle, { color: COLORS.success }]}>Inspeccion Aprobada</Text>
-              <Text style={styles.alertText}>
-                La inspeccion 360 fue aprobada. Puedes iniciar la salida.
-              </Text>
-            </View>
-          )}
+            );
+          })()}
         </View>
-      )}
-
-      {/* Formulario */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Datos de Salida</Text>
-
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            Kilometraje de Salida <Text style={styles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={styles.input}
-            value={kmSalida}
-            onChangeText={(text) => setKmSalida(text.replace(/[^0-9]/g, ''))}
-            placeholder="Ej: 125000"
-            keyboardType="number-pad"
-            editable={!loading}
-          />
-          <Text style={styles.hint}>Kilometraje actual del odómetro</Text>
-        </View>
-
-        <View style={styles.formGroup}>
-          <FuelSelector
-            value={combustibleFraccion}
-            onChange={handleCombustibleChange}
-            label="Nivel de Combustible"
-            required
-          />
-        </View>
-
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Observaciones (Opcional)</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={observaciones}
-            onChangeText={setObservaciones}
-            placeholder="Cualquier observación sobre el estado de la unidad..."
-            multiline
-            numberOfLines={3}
-            editable={!loading}
-          />
-        </View>
-      </View>
-
-      {/* Instrucciones (solo en modo creación) */}
-      {!editMode && (
-        <View style={styles.instructionsCard}>
-          <Text style={styles.instructionsTitle}>📋 Importante</Text>
-          <Text style={styles.instructionsText}>
-            • Verifica el kilometraje y combustible antes de iniciar{'\n'}
-            • Una vez iniciada la salida, podrás reportar situaciones{'\n'}
-            • Puedes ingresar a sedes durante tu jornada{'\n'}
-            • Al finalizar el día, debes registrar el ingreso final
-          </Text>
-        </View>
-      )}
-
-      {/* Botones */}
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity
-          style={[styles.button, styles.cancelButton]}
-          onPress={() => navigation.goBack()}
-          disabled={loading}
-        >
-          <Text style={styles.cancelButtonText}>Cancelar</Text>
-        </TouchableOpacity>
-
-        {(() => {
-          // Verificar si el 360 esta aprobado (solo en modo creacion)
-          const inspeccion360Aprobada = editMode || (inspeccion360Estado?.tiene_inspeccion && inspeccion360Estado.inspeccion?.estado === 'APROBADA');
-          const botonDeshabilitado = loading || (!editMode && !inspeccion360Aprobada);
-
-          return (
-            <TouchableOpacity
-              style={[
-                styles.button,
-                styles.confirmButton,
-                editMode && { backgroundColor: COLORS.warning },
-                botonDeshabilitado && !loading && { backgroundColor: COLORS.text.secondary, opacity: 0.5 },
-              ]}
-              onPress={handleIniciarSalida}
-              disabled={botonDeshabilitado}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.confirmButtonText}>
-                  {editMode ? 'Guardar Cambios' : 'Iniciar Salida'}
-                </Text>
-              )}
-            </TouchableOpacity>
-          );
-        })()}
-      </View>
-
-      <View style={{ height: 80 }} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -544,19 +554,32 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    padding: 20,
+    padding: 16,
     paddingTop: 16,
   },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  backButton: {
+    paddingRight: 4,
+  },
+  backButtonText: {
+    color: COLORS.white,
+    fontSize: 32,
+  },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: COLORS.white,
-    marginBottom: 4,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: COLORS.white,
     opacity: 0.9,
+    marginTop: 2,
+    marginLeft: 36,
   },
   card: {
     backgroundColor: COLORS.white,
@@ -700,17 +723,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 20,
-  },
-  backButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  backButtonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: '600',
   },
   tipoBadge: {
     paddingVertical: 6,

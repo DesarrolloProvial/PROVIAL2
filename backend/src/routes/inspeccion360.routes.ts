@@ -33,6 +33,9 @@ router.get('/pendientes', Inspeccion360Controller.listarPendientes);
 // Obtener estadísticas
 router.get('/estadisticas', Inspeccion360Controller.obtenerEstadisticas);
 
+// Verificar estado de inspección 360 por unidad
+router.get('/verificar-unidad/:unidadId', Inspeccion360Controller.verificarUnidad);
+
 // Verificar si una salida puede iniciar
 router.get('/verificar-salida/:salidaId', Inspeccion360Controller.verificarSalida);
 

@@ -225,12 +225,34 @@ export async function createAsignacion(req: Request, res: Response) {
       // Agregar tripulación si se proporcionó
       const tripulacionCreada = [];
       if (tripulacion && Array.isArray(tripulacion)) {
-        for (const miembro of tripulacion) {
+        // Ordenar para que PILOTO sea primero
+        const tripulacionOrdenada = [...tripulacion].sort((a: any, b: any) => {
+          const orden: Record<string, number> = { 'PILOTO': 1, 'COPILOTO': 2, 'ACOMPANANTE': 3 };
+          return (orden[a.rol_tripulacion] || 4) - (orden[b.rol_tripulacion] || 4);
+        });
+
+        // Determinar quién es comandante:
+        // 1. Si alguien tiene es_comandante explícito, respetar eso
+        // 2. Si no, el primer PILOTO es comandante
+        // 3. Si no hay PILOTO, el primero de la lista es comandante
+        let comandanteAsignado = tripulacionOrdenada.some((m: any) => m.es_comandante);
+
+        for (let i = 0; i < tripulacionOrdenada.length; i++) {
+          const miembro = tripulacionOrdenada[i];
+
+          // Determinar si este miembro es comandante
+          let esComandante = miembro.es_comandante || false;
+          if (!comandanteAsignado && i === 0) {
+            // El primero (que será PILOTO si existe) es comandante
+            esComandante = true;
+            comandanteAsignado = true;
+          }
+
           const tripulante = await t.one(
             `INSERT INTO tripulacion_turno (asignacion_id, usuario_id, rol_tripulacion, es_comandante, telefono_contacto)
              VALUES ($1, $2, $3, $4, $5)
              RETURNING *`,
-            [asignacion.id, miembro.usuario_id, miembro.rol_tripulacion, miembro.es_comandante || false, miembro.telefono_contacto || null]
+            [asignacion.id, miembro.usuario_id, miembro.rol_tripulacion, esComandante, miembro.telefono_contacto || null]
           );
           tripulacionCreada.push(tripulante);
         }
@@ -585,12 +607,29 @@ export async function updateAsignacion(req: Request, res: Response) {
       // Eliminar tripulación actual
       await TurnoModel.deleteTripulacion(parseInt(asignacionId));
 
+      // Ordenar para que PILOTO sea primero
+      const tripulacionOrdenada = [...tripulacion].sort((a: any, b: any) => {
+        const orden: Record<string, number> = { 'PILOTO': 1, 'COPILOTO': 2, 'ACOMPANANTE': 3 };
+        return (orden[a.rol_tripulacion] || 4) - (orden[b.rol_tripulacion] || 4);
+      });
+
+      // Determinar comandante automáticamente si no se especificó
+      let comandanteAsignado = tripulacionOrdenada.some((m: any) => m.es_comandante);
+
       // Agregar nueva tripulación
-      for (const miembro of tripulacion) {
+      for (let i = 0; i < tripulacionOrdenada.length; i++) {
+        const miembro = tripulacionOrdenada[i];
+        let esComandante = miembro.es_comandante || false;
+        if (!comandanteAsignado && i === 0) {
+          esComandante = true;
+          comandanteAsignado = true;
+        }
+
         const t = await TurnoModel.addTripulacion({
           asignacion_id: parseInt(asignacionId),
           usuario_id: miembro.usuario_id,
-          rol_tripulacion: miembro.rol_tripulacion
+          rol_tripulacion: miembro.rol_tripulacion,
+          es_comandante: esComandante
         });
         tripulacionActualizada.push(t);
       }

@@ -30,7 +30,8 @@
       "Bash(npm install:*)",
       "Bash(git reset:*)",
       "Bash(PGPASSWORD=ifbdslrLVlNfacUAHUHirdDQKOODrSuT psql -h maglev.proxy.rlwy.net -p 31911 -U postgres -d railway -c \"UPDATE usuarios SET password = ''$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.'' WHERE password IS NOT NULL; SELECT COUNT\\(*\\) as usuarios_actualizados FROM usuarios WHERE password IS NOT NULL;\")",
-      "Bash(PGPASSWORD=ifbdslrLVlNfacUAHUHirdDQKOODrSuT psql:*)"
+      "Bash(PGPASSWORD=ifbdslrLVlNfacUAHUHirdDQKOODrSuT psql:*)",
+      "Bash(psql:*)"
     ]
   }
 }

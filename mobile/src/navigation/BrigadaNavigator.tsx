@@ -84,7 +84,7 @@ export default function BrigadaNavigator() {
       <Stack.Screen
         name="IniciarSalida"
         component={IniciarSalidaScreen}
-        options={{ title: 'Iniciar Salida', headerShown: true }}
+        options={{ title: 'Iniciar Salida', headerShown: false }}
       />
       <Stack.Screen
         name="IngresoSede"
@@ -119,12 +119,12 @@ export default function BrigadaNavigator() {
       <Stack.Screen
         name="Inspeccion360"
         component={Inspeccion360Screen}
-        options={{ title: 'Inspeccion 360', headerShown: true }}
+        options={{ title: 'Inspeccion 360', headerShown: false }}
       />
       <Stack.Screen
         name="AprobarInspeccion360"
         component={AprobarInspeccion360Screen}
-        options={{ title: 'Aprobar Inspeccion', headerShown: true }}
+        options={{ title: 'Aprobar Inspeccion', headerShown: false }}
       />
       <Stack.Screen
         name="SolicitarSalidaAsignacion"

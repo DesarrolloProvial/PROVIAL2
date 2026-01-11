@@ -153,6 +153,18 @@ export const Inspeccion360Controller = {
         });
       }
 
+      // Verificar si ya existe una inspección pendiente para esta unidad hoy
+      const existePendiente = await Inspeccion360Model.obtenerInspeccionPendienteUnidad(unidad_id);
+      if (existePendiente) {
+        return res.status(400).json({
+          error: 'Ya existe una inspección pendiente para esta unidad',
+          inspeccion_id: existePendiente.id
+        });
+      }
+
+      // Verificar si el usuario es comandante de la unidad (auto-aprobación)
+      const esComandante = await Inspeccion360Model.esComandante(userId, unidad_id);
+
       const inspeccion = await Inspeccion360Model.crearInspeccion({
         salida_id,
         unidad_id,
@@ -163,6 +175,19 @@ export const Inspeccion360Controller = {
         firma_inspector,
         fotos
       });
+
+      // Si el usuario es comandante, auto-aprobar
+      // Si el usuario es comandante, auto-aprobar
+      if (esComandante) {
+        await Inspeccion360Model.aprobarInspeccion(
+          inspeccion.id,
+          userId,
+          firma_inspector, // Usar la misma firma
+          'Auto-aprobada (realizada por comandante)'
+        );
+        (inspeccion as any).estado = 'APROBADA';
+        (inspeccion as any).mensaje = 'Inspección aprobada automáticamente (comandante)';
+      }
 
       res.status(201).json(inspeccion);
     } catch (error: any) {
@@ -419,6 +444,62 @@ export const Inspeccion360Controller = {
     } catch (error: any) {
       console.error('Error al establecer comandante:', error);
       res.status(500).json({ error: 'Error al establecer comandante' });
+    }
+  },
+
+  /**
+   * GET /api/inspeccion360/verificar-unidad/:unidadId
+   * Verificar estado de inspección 360 de una unidad
+   */
+  async verificarUnidad(req: Request, res: Response) {
+    try {
+      const { unidadId } = req.params;
+      const userId = (req as any).user?.userId;
+
+      // Buscar inspección pendiente o aprobada del día
+      const inspeccion = await db.oneOrNone(`
+        SELECT i.id, i.estado, i.fecha_realizacion, i.motivo_rechazo,
+               u.nombre_completo as inspector_nombre
+        FROM inspeccion_360 i
+        JOIN usuario u ON i.realizado_por = u.id
+        WHERE i.unidad_id = $1
+          AND i.salida_id IS NULL
+          AND i.fecha_realizacion > NOW() - INTERVAL '24 hours'
+        ORDER BY 
+          CASE i.estado 
+            WHEN 'APROBADA' THEN 1 
+            WHEN 'PENDIENTE' THEN 2 
+            ELSE 3 
+          END,
+          i.created_at DESC
+        LIMIT 1
+      `, [unidadId]);
+
+      // Verificar si el usuario es comandante
+      const esComandante = await Inspeccion360Model.esComandante(userId, parseInt(unidadId));
+
+      if (!inspeccion) {
+        return res.json({
+          tiene_inspeccion: false,
+          es_comandante: esComandante,
+          mensaje: 'No hay inspección 360 del día'
+        });
+      }
+
+      res.json({
+        tiene_inspeccion: true,
+        es_comandante: esComandante,
+        inspeccion: {
+          id: inspeccion.id,
+          estado: inspeccion.estado,
+          fecha: inspeccion.fecha_realizacion,
+          inspector: inspeccion.inspector_nombre,
+          motivo_rechazo: inspeccion.motivo_rechazo
+        }
+      });
+    } catch (error: any) {
+      console.error('Error al verificar unidad:', error);
+      res.status(500).json({ error: 'Error al verificar estado de inspección' });
     }
   },
 

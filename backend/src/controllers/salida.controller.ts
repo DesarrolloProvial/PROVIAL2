@@ -359,8 +359,12 @@ export async function iniciarSalida(req: Request, res: Response) {
         }
 
         await TurnoModel.marcarSalida(asignacionTurno.asignacion_id);
+
+        // Cambiar estado del turno a ACTIVO cuando se inicia la salida
+        await TurnoModel.updateEstado(asignacionTurno.turno_id, 'ACTIVO');
+        console.log(`[SALIDA] Turno ${asignacionTurno.turno_id} cambiado a estado ACTIVO`);
       } catch (e) {
-        console.log('No se pudo marcar salida/actualizar ruta en turno:', e);
+        console.log('No se pudo marcar salida/actualizar ruta/estado en turno:', e);
       }
     }
 
@@ -564,6 +568,20 @@ export async function finalizarJornadaCompleta(req: Request, res: Response) {
       observaciones: ingresoActivo.observaciones_ingreso || 'Jornada finalizada',
       finalizada_por: req.user.userId
     });
+
+    // Cambiar estado del turno a CERRADO al finalizar la jornada
+    if (miSalida.tipo_asignacion === 'TURNO') {
+      try {
+        // Obtener el turno_id de la salida para actualizarlo
+        const asignacionTurno = await TurnoModel.getMiAsignacionHoy(req.user.userId);
+        if (asignacionTurno) {
+          await TurnoModel.updateEstado(asignacionTurno.turno_id, 'CERRADO');
+          console.log(`[JORNADA] Turno ${asignacionTurno.turno_id} cambiado a estado CERRADO`);
+        }
+      } catch (e) {
+        console.log('No se pudo actualizar estado del turno a CERRADO:', e);
+      }
+    }
 
     return res.json({
       message: 'Jornada finalizada exitosamente',

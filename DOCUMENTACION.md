@@ -47,7 +47,115 @@ PROVIAL es un sistema integral para la gestión de patrullaje vial en Guatemala,
 
 ---
 
+## 🔄 Estados de una Asignación
+
+### Diagrama de Estados
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                           MÁQUINA DE ESTADOS - ASIGNACIONES                             │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                         │
+│  TURNO (turno.estado)                    NÓMINA (asignacion_unidad.estado_nomina)       │
+│  ═══════════════════                     ════════════════════════════════════════       │
+│                                                                                         │
+│  ┌──────────────┐                        ┌──────────────┐                               │
+│  │ PLANIFICADO  │ ◄── Crear asignación   │  BORRADOR    │ ◄── Crear asignación          │
+│  └──────┬───────┘                        └──────┬───────┘                               │
+│         │                                       │                                       │
+│         │ ❌ NO IMPLEMENTADO                    │ liberarNomina()                       │
+│         ▼                                       ▼                                       │
+│  ┌──────────────┐                        ┌──────────────┐                               │
+│  │    ACTIVO    │ ── Iniciar salida?     │  LIBERADA    │ ── Brigada ve asignación      │
+│  └──────┬───────┘                        └──────────────┘                               │
+│         │                                                                               │
+│         │ ❌ NO IMPLEMENTADO                                                            │
+│         ▼                                                                               │
+│  ┌──────────────┐                                                                       │
+│  │   CERRADO    │ ── Finalizar jornada?                                                 │
+│  └──────────────┘                                                                       │
+│                                                                                         │
+│  PUBLICACIÓN (turno.publicado)           SALIDA (salida_unidad.estado)                  │
+│  ══════════════════════════════          ══════════════════════════════                 │
+│                                                                                         │
+│  ┌──────────────┐                        ┌──────────────┐                               │
+│  │    false     │ ◄── Por defecto        │  EN_SALIDA   │ ◄── iniciarSalida()           │
+│  └──────┬───────┘                        └──────┬───────┘                               │
+│         │                                       │                                       │
+│         │ publicarTurno()                       │ finalizarSalida()                     │
+│         ▼                                       ▼                                       │
+│  ┌──────────────┐                        ┌──────────────┐                               │
+│  │    true      │                        │ FINALIZADA   │                               │
+│  └──────────────┘                        └──────────────┘                               │
+│                                                                                         │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Estados por Tabla
+
+#### 1. `turno.estado` (CHECK constraint)
+| Estado | Descripción | Cuándo se establece | Donde se usa |
+|--------|-------------|---------------------|--------------|
+| `PLANIFICADO` | Turno creado, listo para ejecutar | Al crear asignación | App móvil (UI), vistas SQL, validaciones |
+| `ACTIVO` | Turno en ejecución | ✅ Al iniciar salida (`iniciarSalida()`) | Filtros en vistas y salidas |
+| `CERRADO` | Turno finalizado | ✅ Al finalizar jornada (`finalizarJornadaCompleta()`) | - |
+
+#### 2. `asignacion_unidad.estado_nomina` (CHECK constraint)
+| Estado | Descripción | Cuándo se establece |
+|--------|-------------|---------------------|
+| `BORRADOR` | No visible para brigadas | Al crear asignación (default) |
+| `LIBERADA` | Visible para brigadas en app | Al liberar nómina |
+
+#### 3. `turno.publicado` (boolean)
+| Estado | Descripción | Cuándo se establece |
+|--------|-------------|---------------------|
+| `false` | No publicado | Por defecto |
+| `true` | Publicado | Al publicar turno |
+
+#### 4. `salida_unidad.estado` (CHECK constraint)
+| Estado | Descripción | Cuándo se establece |
+|--------|-------------|---------------------|
+| `EN_SALIDA` | Unidad en servicio | Al iniciar salida |
+| `FINALIZADA` | Jornada terminada | Al finalizar salida |
+| `CANCELADA` | Salida cancelada | Manualmente |
+
+### Dónde se usa `turno.estado`
+
+| Archivo | Línea | Uso |
+|---------|-------|-----|
+| `salida.model.ts` | 302 | `t.estado IN ('ACTIVO', 'PLANIFICADO')` - obtener salidas |
+| `asignacionesController.ts` | 108 | Validar que no haya duplicados |
+| `MiAsignacionScreen.tsx` | 136,343,350,364 | UI: botones, colores, instrucciones |
+| `v_mi_asignacion_hoy` | - | Filtro `t.estado IN (...)` |
+| `v_asignaciones_pendientes` | - | Mostrar estado en listado |
+
+### Código que Modifica Estados
+
+| Acción | Archivo | Función | Cambio |
+|--------|---------|---------|--------|
+| **Crear asignación** | `asignacionesController.ts` | `crearAsignacionProgramada()` | `turno.estado='PLANIFICADO'`, `estado_nomina='BORRADOR'` |
+| **Publicar turno** | `asignacionAvanzada.model.ts` | `publicarTurno()` | `turno.publicado=true` |
+| **Despublicar turno** | `asignacionAvanzada.model.ts` | `despublicarTurno()` | `turno.publicado=false` |
+| **Liberar nómina** | `turno.model.ts` | `liberarNomina()` | `estado_nomina='LIBERADA'` |
+| **Iniciar salida** | `salida.controller.ts` | `iniciarSalida()` | `salida_unidad.estado='EN_SALIDA'` + `turno.estado='ACTIVO'` |
+| **Finalizar salida** | `salida.model.ts` | `finalizarSalida()` | `salida_unidad.estado='FINALIZADA'` |
+| **Finalizar jornada** | `salida.controller.ts` | `finalizarJornadaCompleta()` | `turno.estado='CERRADO'` |
+| **Marcar hora salida** | `turno.model.ts` | `marcarSalida()` | `asignacion.hora_salida_real=NOW()` |
+
+### Endpoints de Transición
+
+| Endpoint | Rol | Efecto |
+|----------|-----|--------|
+| `POST /api/asignaciones` | OPERACIONES | Crea turno PLANIFICADO + asignación BORRADOR |
+| `POST /api/asignaciones-avanzadas/turno/:id/publicar` | OPERACIONES | `publicado = true` |
+| `POST /api/turnos/:id/liberar-nomina` | ENCARGADO_NOMINAS | `estado_nomina = 'LIBERADA'` |
+| `POST /api/salidas/iniciar` | BRIGADA | Crea salida EN_SALIDA + turno ACTIVO |
+| `POST /api/salidas/finalizar-jornada` | BRIGADA | turno→CERRADO + salida→FINALIZADA |
+
+---
+
 ## App Móvil - Pantallas
+
 
 ### 📁 `mobile/src/screens/brigada/` (23 pantallas)
 

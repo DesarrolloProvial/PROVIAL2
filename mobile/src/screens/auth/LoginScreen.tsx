@@ -73,10 +73,14 @@ export default function LoginScreen() {
     >
       <View style={styles.header}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logoIcon}>🚓</Text>
+          <Image
+            source={require('../../../assets/logo_login.jpeg')}
+            style={styles.logoImage}
+            resizeMode="cover"
+          />
         </View>
         <Text style={styles.title}>PROVIAL</Text>
-        <Text style={styles.subtitle}>Brigadas de Carretera</Text>
+        <Text style={styles.subtitle}>Proteger y Servir</Text>
       </View>
 
       <View style={styles.form}>
@@ -111,12 +115,6 @@ export default function LoginScreen() {
             <Text style={styles.buttonText}>Iniciar Sesión</Text>
           )}
         </TouchableOpacity>
-
-        <View style={styles.demoUsers}>
-          <Text style={styles.demoTitle}>Usuarios de prueba:</Text>
-          <Text style={styles.demoText}>brigada01 / password123</Text>
-          <Text style={styles.demoText}>brigada02 / password123</Text>
-        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -134,16 +132,20 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   logoContainer: {
-    width: 100,
-    height: 100,
+    width: 140,
+    height: 140,
     backgroundColor: '#fff',
-    borderRadius: 50,
+    borderRadius: 70,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    overflow: 'hidden',
+    padding: 10,
   },
-  logoIcon: {
-    fontSize: 50,
+  logoImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
   },
   title: {
     fontSize: 42,
