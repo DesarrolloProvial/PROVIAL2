@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from './store/authStore';
 import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
 import OperacionesPage from './pages/OperacionesPage';
 import CrearAsignacionPage from './pages/CrearAsignacionPage';
 import GeneradorTurnosPage from './pages/GeneradorTurnosPage';
@@ -58,13 +57,13 @@ function OperacionesRoute({ children }: { children: React.ReactNode }) {
 
   // ENCARGADO_NOMINAS puede acceder en modo lectura
   if (user?.rol !== 'OPERACIONES' && user?.rol !== 'ADMIN' && user?.rol !== 'SUPER_ADMIN' && user?.rol !== 'ENCARGADO_NOMINAS') {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;
 }
 
-// Componente para rutas de COP (COP, BRIGADA con sub_rol_cop OPERADOR, ADMIN, SUPER_ADMIN)
+// Componente para rutas de COP (solo COP, ADMIN, SUPER_ADMIN)
 function COPRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user } = useAuthStore();
 
@@ -72,15 +71,14 @@ function COPRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Permitir acceso a: COP, ADMIN, SUPER_ADMIN, o BRIGADA (temporalmente todos para debug)
+  // Permitir acceso solo a: COP, ADMIN, SUPER_ADMIN
   const hasAccess =
     user?.rol === 'COP' ||
     user?.rol === 'ADMIN' ||
-    user?.rol === 'SUPER_ADMIN' ||
-    user?.rol === 'BRIGADA'; // TODO: Refinar después con sub_rol_cop
+    user?.rol === 'SUPER_ADMIN';
 
   if (!hasAccess) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;
@@ -119,9 +117,9 @@ function RoleBasedRedirect() {
     return <Navigate to="/operaciones" replace />;
   }
 
-  // Admin puede elegir, por defecto va al Dashboard COP
+  // Admin va a su panel de administración
   if (user?.rol === 'ADMIN') {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/super-admin" replace />;
   }
 
   // Mandos van al Dashboard Ejecutivo
@@ -134,18 +132,18 @@ function RoleBasedRedirect() {
     return <Navigate to="/dashboard-ejecutivo" replace />;
   }
 
-  // COP va al dashboard de monitoreo
+  // COP va al mapa de monitoreo
   if (user?.rol === 'COP') {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/cop/mapa" replace />;
   }
 
-  // Brigadas no deberían acceder al panel web normalmente
+  // Brigadas solo pueden usar la app móvil, no tienen acceso al panel web
   if (user?.rol === 'BRIGADA') {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/login" replace />;
   }
 
-  // Todos los demás van al Dashboard COP
-  return <Navigate to="/dashboard" replace />;
+  // Usuarios sin rol definido regresan al login
+  return <Navigate to="/login" replace />;
 }
 
 function App() {
@@ -161,14 +159,6 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
           <Route
             path="/bitacora/:unidadId"
             element={
