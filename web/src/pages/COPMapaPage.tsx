@@ -211,11 +211,23 @@ export default function COPMapaPage() {
 
         {/* Marcadores de Incidentes */}
         {filteredIncidentes.map((incidente: any) => {
-          if (!incidente.latitud || !incidente.longitud) return null;
+          const lat = incidente.latitud != null ? Number(incidente.latitud) : null;
+          const lng = incidente.longitud != null ? Number(incidente.longitud) : null;
+
+          if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+            console.log('❌ Incidente sin coordenadas:', {
+              id: incidente.id,
+              numero: incidente.numero_reporte,
+              latitud_raw: incidente.latitud,
+              longitud_raw: incidente.longitud
+            });
+            return null;
+          }
+
           return (
             <Marker
               key={`incidente-${incidente.id}`}
-              position={[incidente.latitud, incidente.longitud]}
+              position={[lat, lng]}
               icon={getIncidenteIcon(incidente.estado)}
             >
               <Popup>
@@ -242,11 +254,21 @@ export default function COPMapaPage() {
 
         {/* Marcadores de Situaciones */}
         {filteredSituaciones.map((situacion: any) => {
-          // Parse coordinates from string to number if needed
-          const lat = typeof situacion.latitud === 'string' ? parseFloat(situacion.latitud) : situacion.latitud;
-          const lng = typeof situacion.longitud === 'string' ? parseFloat(situacion.longitud) : situacion.longitud;
+          // Parse coordinates - conversión robusta
+          const lat = situacion.latitud != null ? Number(situacion.latitud) : null;
+          const lng = situacion.longitud != null ? Number(situacion.longitud) : null;
 
-          if (!lat || !lng || isNaN(lat) || isNaN(lng)) return null;
+          // Debug individual
+          if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+            console.log('❌ Coordenadas inválidas:', {
+              unidad: situacion.unidad_codigo,
+              latitud_raw: situacion.latitud,
+              longitud_raw: situacion.longitud,
+              lat_parsed: lat,
+              lng_parsed: lng
+            });
+            return null;
+          }
 
           return (
             <Marker
@@ -295,11 +317,23 @@ export default function COPMapaPage() {
 
         {/* Marcadores de Situaciones Persistentes */}
         {filteredPersistentes.map((sp: any) => {
-          if (!sp.latitud || !sp.longitud) return null;
+          const lat = sp.latitud != null ? Number(sp.latitud) : null;
+          const lng = sp.longitud != null ? Number(sp.longitud) : null;
+
+          if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+            console.log('❌ Situación Persistente sin coordenadas:', {
+              id: sp.id,
+              tipo: sp.tipo_situacion,
+              latitud_raw: sp.latitud,
+              longitud_raw: sp.longitud
+            });
+            return null;
+          }
+
           return (
             <Marker
               key={`persistente-${sp.id}`}
-              position={[sp.latitud, sp.longitud]}
+              position={[lat, lng]}
               icon={persistenteIcon}
             >
               <Popup>
