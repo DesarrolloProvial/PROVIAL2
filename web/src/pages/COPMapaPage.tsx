@@ -92,6 +92,8 @@ function MapController({ center, zoom }: { center: LatLngExpression; zoom?: numb
 }
 
 export default function COPMapaPage() {
+  console.log('🗺️ COPMapaPage montado/renderizado');
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -107,6 +109,8 @@ export default function COPMapaPage() {
 
   const { isConnected: socketConnected, lastUpdate } = useDashboardSocket(queryClient);
   const defaultCenter: LatLngExpression = [14.6407, -90.5133];
+
+  console.log('📊 Filters estado:', filters);
 
   // Queries
   const { data: incidentes = [], refetch: refetchIncidentes } = useQuery({
@@ -187,12 +191,28 @@ export default function COPMapaPage() {
 
   // DEBUG: Ver datos recibidos (después de calcular variables filtradas)
   console.log('=== DEBUG COPMapaPage ===');
-  console.log('Situaciones recibidas:', situaciones);
-  console.log('Cantidad:', situaciones.length);
-  console.log('Filtros activos:', filters);
-  console.log('Situaciones filtradas:', filteredSituaciones);
-  console.log('Incidentes filtrados:', filteredIncidentes);
-  console.log('Persistentes filtrados:', filteredPersistentes);
+  console.log('📥 Datos RAW:');
+  console.log('  - Situaciones recibidas:', situaciones?.length || 0, situaciones);
+  console.log('  - Incidentes recibidos:', incidentes?.length || 0);
+  console.log('  - Persistentes recibidos:', situacionesPersistentes?.length || 0);
+  console.log('');
+  console.log('🎛️ Filtros activos:', filters);
+  console.log('');
+  console.log('✅ Datos FILTRADOS:');
+  console.log('  - Situaciones filtradas:', filteredSituaciones?.length || 0, filteredSituaciones);
+  console.log('  - Incidentes filtrados:', filteredIncidentes?.length || 0);
+  console.log('  - Persistentes filtrados:', filteredPersistentes?.length || 0);
+
+  // Mostrar primera situación con coordenadas
+  if (situaciones && situaciones.length > 0) {
+    const primera = situaciones[0];
+    console.log('');
+    console.log('📍 Primera situación (ejemplo):');
+    console.log('  - Unidad:', primera.unidad_codigo);
+    console.log('  - Latitud (raw):', primera.latitud, typeof primera.latitud);
+    console.log('  - Longitud (raw):', primera.longitud, typeof primera.longitud);
+    console.log('  - Sede ID:', primera.sede_id);
+  }
   console.log('========================');
 
   return (
