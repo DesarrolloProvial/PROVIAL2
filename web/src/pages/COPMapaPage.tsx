@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { incidentesAPI, situacionesAPI } from '../services/api';
 import { situacionesPersistentesAPI } from '../services/movimientos.service';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, ArrowLeft, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut } from 'lucide-react';
+import { RefreshCw, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut } from 'lucide-react';
 import { useDashboardSocket } from '../hooks/useSocket';
 import ResumenUnidadesTable from '../components/ResumenUnidadesTable';
 import { useAuthStore } from '../store/authStore';
