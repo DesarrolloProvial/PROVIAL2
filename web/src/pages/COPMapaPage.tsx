@@ -121,6 +121,14 @@ export default function COPMapaPage() {
     refetchInterval: socketConnected ? false : 30000,
   });
 
+  // DEBUG: Ver datos recibidos
+  console.log('=== DEBUG COPMapaPage ===');
+  console.log('Situaciones recibidas:', situaciones);
+  console.log('Cantidad:', situaciones.length);
+  console.log('Filtros activos:', filters);
+  console.log('Situaciones filtradas:', filteredSituaciones);
+  console.log('========================');
+
 
 
   const { data: situacionesPersistentes = [] } = useQuery({
@@ -236,11 +244,16 @@ export default function COPMapaPage() {
 
         {/* Marcadores de Situaciones */}
         {filteredSituaciones.map((situacion: any) => {
-          if (!situacion.latitud || !situacion.longitud) return null;
+          // Parse coordinates from string to number if needed
+          const lat = typeof situacion.latitud === 'string' ? parseFloat(situacion.latitud) : situacion.latitud;
+          const lng = typeof situacion.longitud === 'string' ? parseFloat(situacion.longitud) : situacion.longitud;
+
+          if (!lat || !lng || isNaN(lat) || isNaN(lng)) return null;
+
           return (
             <Marker
-              key={`situacion-${situacion.id}`}
-              position={[situacion.latitud, situacion.longitud]}
+              key={`situacion-${situacion.unidad_id || situacion.id}`}
+              position={[lat, lng]}
               icon={getIconBySede(situacion.sede_id)}
             >
               <Popup>

@@ -64,6 +64,28 @@ function OperacionesRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Componente para rutas de COP (COP, BRIGADA con sub_rol_cop OPERADOR, ADMIN, SUPER_ADMIN)
+function COPRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, user } = useAuthStore();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Permitir acceso a: COP, ADMIN, SUPER_ADMIN, o BRIGADA con sub_rol_cop
+  const hasAccess =
+    user?.rol === 'COP' ||
+    user?.rol === 'ADMIN' ||
+    user?.rol === 'SUPER_ADMIN' ||
+    (user?.rol === 'BRIGADA' && (user as any)?.subRolCop?.codigo);
+
+  if (!hasAccess) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 // Componente para rutas de Super Admin (SUPER_ADMIN y ADMIN)
 function SuperAdminRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user } = useAuthStore();
@@ -302,17 +324,17 @@ function App() {
           <Route
             path="/cop/mapa"
             element={
-              <ProtectedRoute>
+              <COPRoute>
                 <COPMapaPage />
-              </ProtectedRoute>
+              </COPRoute>
             }
           />
           <Route
             path="/cop/situaciones"
             element={
-              <ProtectedRoute>
+              <COPRoute>
                 <COPSituacionesPage />
-              </ProtectedRoute>
+              </COPRoute>
             }
           />
           <Route
