@@ -217,6 +217,19 @@ export default function COPMapaPage() {
 
   return (
     <div className="h-screen w-full relative">
+      {/* DEBUG PANEL - Visible on page */}
+      <div className="absolute top-4 right-4 z-[1000] bg-black bg-opacity-75 text-white p-3 rounded-lg text-xs font-mono">
+        <div className="font-bold mb-1">🐛 DEBUG MARKERS</div>
+        <div>Situaciones RAW: {situaciones?.length || 0}</div>
+        <div>Situaciones FILTRADAS: {filteredSituaciones?.length || 0}</div>
+        <div>Incidentes FILTRADOS: {filteredIncidentes?.length || 0}</div>
+        <div>Persistentes FILTRADOS: {filteredPersistentes?.length || 0}</div>
+        <div className="mt-1 pt-1 border-t border-gray-500">
+          <div>Filter situaciones: {filters.situaciones ? '✓' : '✗'}</div>
+          <div>Filter sedes: [{filters.sedes.join(', ') || 'vacío'}]</div>
+        </div>
+      </div>
+
       {/* Mapa */}
       <MapContainer
         center={defaultCenter}
@@ -273,14 +286,27 @@ export default function COPMapaPage() {
         })}
 
         {/* Marcadores de Situaciones */}
-        {filteredSituaciones.map((situacion: any) => {
+        {filteredSituaciones.map((situacion: any, index: number) => {
           // Parse coordinates - conversión robusta
           const lat = situacion.latitud != null ? Number(situacion.latitud) : null;
           const lng = situacion.longitud != null ? Number(situacion.longitud) : null;
 
+          console.log(`🎯 Procesando situación #${index}:`, {
+            unidad: situacion.unidad_codigo,
+            latitud_raw: situacion.latitud,
+            latitud_tipo: typeof situacion.latitud,
+            longitud_raw: situacion.longitud,
+            longitud_tipo: typeof situacion.longitud,
+            lat_parsed: lat,
+            lng_parsed: lng,
+            lat_isNaN: isNaN(lat),
+            lng_isNaN: isNaN(lng),
+            sede_id: situacion.sede_id
+          });
+
           // Debug individual
           if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-            console.log('❌ Coordenadas inválidas:', {
+            console.log('❌ Coordenadas inválidas - MARCADOR NO RENDERIZADO:', {
               unidad: situacion.unidad_codigo,
               latitud_raw: situacion.latitud,
               longitud_raw: situacion.longitud,
@@ -289,6 +315,8 @@ export default function COPMapaPage() {
             });
             return null;
           }
+
+          console.log(`✅ Creando marcador para ${situacion.unidad_codigo} en [${lat}, ${lng}]`);
 
           return (
             <Marker
