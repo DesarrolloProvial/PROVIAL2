@@ -206,18 +206,236 @@ export default function COPMapaPage() {
 
 
   return (
-    <div className="h-screen w-full relative">
-      {/* Mapa */}
-      <MapContainer
-        center={defaultCenter}
-        zoom={11}
-        style={{ height: '100%', width: '100%' }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <MapController center={defaultCenter} />
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
+      <div className="w-96 bg-white shadow-lg flex flex-col">
+        {/* Header */}
+        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
+          <div className="flex items-center justify-between mb-1">
+            <h1 className="text-2xl font-bold text-white">PROVIAL COP</h1>
+            <div className="flex items-center gap-2">
+              {/* Indicador de WebSocket */}
+              <div
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${
+                  socketConnected
+                    ? 'bg-green-500/20 text-green-100'
+                    : 'bg-red-500/20 text-red-100'
+                }`}
+              >
+                {socketConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                <span>{socketConnected ? 'En vivo' : 'Polling'}</span>
+              </div>
+              {/* Botón de Logout */}
+              <button
+                onClick={handleLogout}
+                className="p-2 hover:bg-white/10 rounded-lg transition"
+                title="Cerrar sesión"
+              >
+                <LogOut className="w-5 h-5 text-white" />
+              </button>
+            </div>
+          </div>
+          <p className="text-sm text-blue-100">
+            Actualizado: {formatLastUpdate()}
+          </p>
+        </div>
+
+        {/* Toggle Mapa/Tabla */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setModoVista('mapa')}
+              className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
+                modoVista === 'mapa'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Mapa
+            </button>
+            <button
+              onClick={() => setModoVista('tabla')}
+              className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
+                modoVista === 'tabla'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Tabla
+            </button>
+          </div>
+        </div>
+
+        {/* Accesos Rápidos */}
+        <div className="p-3 border-b border-gray-200 bg-gray-50">
+          <p className="text-xs text-gray-500 mb-2 font-medium">Accesos Rápidos</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => navigate('/movimientos-brigadas')}
+              className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-medium transition flex items-center gap-1"
+            >
+              <span>Movimientos</span>
+            </button>
+            <button
+              onClick={() => navigate('/situaciones-persistentes')}
+              className="px-3 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg text-xs font-medium transition flex items-center gap-1"
+            >
+              <span>Persistentes</span>
+            </button>
+            <button
+              onClick={() => navigate('/cop/situaciones')}
+              className="px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg text-xs font-medium transition flex items-center gap-1"
+            >
+              <span>Situaciones</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Lista de Incidentes y Situaciones */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold text-gray-800">
+              Situación General
+            </h2>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="p-2 hover:bg-gray-100 rounded-lg transition disabled:opacity-50"
+              title="Actualizar"
+            >
+              <RefreshCw className={`w-5 h-5 text-gray-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+
+          {isLoading && (
+            <div className="text-center py-8 text-gray-500">
+              Cargando datos...
+            </div>
+          )}
+
+          {hasError && !isLoading && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <span className="text-red-500 text-xl">⚠️</span>
+                <div>
+                  <h3 className="font-semibold text-red-800">Error al cargar datos</h3>
+                  <p className="text-sm text-red-600 mt-1">
+                    No se pudieron obtener algunos datos del servidor.
+                  </p>
+                  <button
+                    onClick={handleRefresh}
+                    className="mt-2 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition"
+                  >
+                    Reintentar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!isLoading && !hasError && incidentes.length === 0 && situacionesActivas.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              No hay elementos activos
+            </div>
+          )}
+
+          {/* Mostrar Incidentes */}
+          {incidentes.map((incidente: any) => (
+            <div
+              key={incidente.id}
+              onClick={() => {
+                setSelectedIncidente(incidente);
+                setSelectedSituacion(null);
+              }}
+              className={`bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition cursor-pointer border-l-4 ${
+                selectedIncidente?.id === incidente.id
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200'
+              }`}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <span className="font-semibold text-gray-800">
+                  {incidente.numero_reporte || `#${incidente.id}`}
+                </span>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${getEstadoBadgeColor(
+                    incidente.estado
+                  )}`}
+                >
+                  {incidente.estado}
+                </span>
+              </div>
+
+              <p className="text-sm font-medium text-gray-700 mb-1">
+                {incidente.tipo_hecho}
+              </p>
+
+              <div className="text-xs text-gray-600 space-y-1">
+                <p>
+                  📍 {incidente.ruta_codigo} Km {incidente.km}
+                  {incidente.sentido && ` (${incidente.sentido})`}
+                </p>
+                {incidente.unidad_codigo && (
+                  <p>🚓 {incidente.unidad_codigo}</p>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {/* Mostrar Situaciones Activas */}
+          {situacionesActivas.map((situacion: any) => (
+            <div
+              key={`situacion-${situacion.id}`}
+              onClick={() => {
+                setSelectedSituacion(situacion);
+                setSelectedIncidente(null);
+              }}
+              className={`bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition cursor-pointer border-l-4 ${
+                selectedSituacion?.id === situacion.id
+                  ? 'border-purple-500 bg-purple-50'
+                  : 'border-purple-200'
+              }`}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <span className="font-semibold text-gray-800">
+                  🚓 {situacion.unidad_codigo || `Unidad #${situacion.unidad_id}`}
+                </span>
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  {situacion.tipo_situacion?.replace(/_/g, ' ')}
+                </span>
+              </div>
+
+              <p className="text-sm font-medium text-purple-700 mb-1">
+                {situacion.descripcion || 'Sin descripción'}
+              </p>
+
+              <div className="text-xs text-gray-600 space-y-1">
+                {situacion.ruta_codigo && (
+                  <p>
+                    📍 {situacion.ruta_codigo} Km {situacion.km}
+                    {situacion.sentido && ` (${situacion.sentido})`}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Área principal: Mapa o Tabla */}
+      <div className="flex-1 relative">
+        {modoVista === 'mapa' ? (
+          <>
+            <MapContainer
+              center={defaultCenter}
+              zoom={11}
+              style={{ height: '100%', width: '100%' }}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <MapController center={defaultCenter} />
 
         {/* Marcadores de Incidentes */}
         {filteredIncidentes.map((incidente: any) => {
@@ -381,208 +599,195 @@ export default function COPMapaPage() {
             </Marker>
           );
         })}
-      </MapContainer>
+            </MapContainer>
 
-      {/* Header flotante */}
-      <div className="absolute top-4 left-4 z-[1000] flex items-center gap-2">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-3 bg-white rounded-lg shadow-lg hover:bg-gray-50 transition"
-        >
-          <ArrowLeft className="w-5 h-5 text-gray-700" />
-        </button>
-        <div className="bg-white rounded-lg shadow-lg px-4 py-2">
-          <h1 className="text-lg font-bold text-gray-800">COP - Mapa en Tiempo Real</h1>
-          <p className="text-xs text-gray-500">
-            Actualizado: {formatLastUpdate()}
-            {socketConnected ? (
-              <span className="ml-2 text-green-600 inline-flex items-center gap-1">
-                <Wifi className="w-3 h-3" /> En vivo
-              </span>
-            ) : (
-              <span className="ml-2 text-orange-600 inline-flex items-center gap-1">
-                <WifiOff className="w-3 h-3" /> Polling
-              </span>
-            )}
-          </p>
-        </div>
-      </div>
+            {/* Controles flotantes del mapa */}
+            <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="p-3 bg-white rounded-lg shadow-lg hover:bg-gray-50 transition disabled:opacity-50"
+                title="Actualizar"
+              >
+                <RefreshCw className={`w-5 h-5 text-gray-700 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`p-3 rounded-lg shadow-lg transition ${showFilters ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                title="Filtros"
+              >
+                <Filter className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setShowLegend(!showLegend)}
+                className={`p-3 rounded-lg shadow-lg transition ${showLegend ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                title="Leyenda"
+              >
+                <Layers className="w-5 h-5" />
+              </button>
+            </div>
 
-      {/* Controles flotantes */}
-      <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
-        <button
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="p-3 bg-white rounded-lg shadow-lg hover:bg-gray-50 transition disabled:opacity-50"
-          title="Actualizar"
-        >
-          <RefreshCw className={`w-5 h-5 text-gray-700 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </button>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={`p-3 rounded-lg shadow-lg transition ${showFilters ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-          title="Filtros"
-        >
-          <Filter className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => setShowLegend(!showLegend)}
-          className={`p-3 rounded-lg shadow-lg transition ${showLegend ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-          title="Leyenda"
-        >
-          <Layers className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Panel de Filtros */}
-      {showFilters && (
-        <div className="absolute top-20 right-4 z-[1000] bg-white rounded-lg shadow-lg p-4 w-64">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-gray-800">Filtros</h3>
-            <button onClick={() => setShowFilters(false)} className="p-1 hover:bg-gray-100 rounded">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.incidentes}
-                onChange={(e) => setFilters(prev => ({ ...prev, incidentes: e.target.checked }))}
-                className="rounded text-blue-600"
-              />
-              <span className="text-sm">Incidentes ({incidentes.length})</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.situaciones}
-                onChange={(e) => setFilters(prev => ({ ...prev, situaciones: e.target.checked }))}
-                className="rounded text-blue-600"
-              />
-              <span className="text-sm">Situaciones ({situaciones.length})</span>
-            </label>
-
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.persistentes}
-                onChange={(e) => setFilters(prev => ({ ...prev, persistentes: e.target.checked }))}
-                className="rounded text-blue-600"
-              />
-              <span className="text-sm">Persistentes ({situacionesPersistentes.length})</span>
-            </label>
-
-            <div className="border-t pt-3 mt-3">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-medium text-gray-500">Filtrar por sede:</p>
-                {filters.sedes.length > 0 ? (
-                  <button
-                    onClick={() => setFilters(prev => ({ ...prev, sedes: [] }))}
-                    className="text-xs text-blue-600 hover:underline"
-                  >
-                    Ver todas
+            {/* Panel de Filtros */}
+            {showFilters && (
+              <div className="absolute top-20 right-4 z-[1000] bg-white rounded-lg shadow-lg p-4 w-64">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-gray-800">Filtros</h3>
+                  <button onClick={() => setShowFilters(false)} className="p-1 hover:bg-gray-100 rounded">
+                    <X className="w-4 h-4" />
                   </button>
-                ) : (
-                  <span className="text-xs text-green-600">Todas visibles</span>
-                )}
-              </div>
-              <div className="space-y-1 max-h-40 overflow-y-auto">
-                {Object.entries(SEDES_NOMBRES).map(([id, nombre]) => {
-                  const sedeId = Number(id);
-                  const isActive = filters.sedes.length === 0 || filters.sedes.includes(sedeId);
-                  return (
-                    <button
-                      key={id}
-                      onClick={() => {
-                        if (filters.sedes.length === 0) {
-                          // Si todas están visibles, al hacer clic solo muestra esa
-                          setFilters(prev => ({ ...prev, sedes: [sedeId] }));
-                        } else if (filters.sedes.includes(sedeId)) {
-                          // Si está seleccionada, quitarla
-                          const newSedes = filters.sedes.filter(s => s !== sedeId);
-                          setFilters(prev => ({ ...prev, sedes: newSedes }));
-                        } else {
-                          // Si no está seleccionada, agregarla
-                          setFilters(prev => ({ ...prev, sedes: [...prev.sedes, sedeId] }));
-                        }
-                      }}
-                      className={`flex items-center gap-2 w-full text-left text-sm px-2 py-1 rounded transition ${isActive ? 'bg-gray-100' : 'opacity-50'
-                        }`}
-                    >
-                      <div
-                        className={`w-3 h-3 rounded-full ${isActive ? '' : 'opacity-30'}`}
-                        style={{ backgroundColor: COLORES_SEDE[sedeId] }}
-                      />
-                      <span className={isActive ? '' : 'line-through'}>{nombre}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Leyenda */}
-      {showLegend && (
-        <div className="absolute bottom-4 left-4 z-[1000] bg-white rounded-lg shadow-lg p-3 max-h-64 overflow-y-auto">
-          <h4 className="text-xs font-bold text-gray-600 mb-2 uppercase">Leyenda</h4>
-
-          <div className="mb-3">
-            <p className="text-xs font-semibold text-gray-500 mb-1">Estados Incidente:</p>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <span className="text-xs">Reportado</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <span className="text-xs">En Atención</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500" />
-                <span className="text-xs">Regulación</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="text-xs">Cerrado</span>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <p className="text-xs font-semibold text-gray-500 mb-1">Sedes:</p>
-            <div className="space-y-1">
-              {Object.entries(COLORES_SEDE).map(([sedeId, color]) => (
-                <div key={sedeId} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                  <span className="text-xs text-gray-700">{SEDES_NOMBRES[parseInt(sedeId)]}</span>
                 </div>
-              ))}
+
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={filters.incidentes}
+                      onChange={(e) => setFilters(prev => ({ ...prev, incidentes: e.target.checked }))}
+                      className="rounded text-blue-600"
+                    />
+                    <span className="text-sm">Incidentes ({incidentes.length})</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={filters.situaciones}
+                      onChange={(e) => setFilters(prev => ({ ...prev, situaciones: e.target.checked }))}
+                      className="rounded text-blue-600"
+                    />
+                    <span className="text-sm">Unidades ({resumenUnidades.length})</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={filters.persistentes}
+                      onChange={(e) => setFilters(prev => ({ ...prev, persistentes: e.target.checked }))}
+                      className="rounded text-blue-600"
+                    />
+                    <span className="text-sm">Persistentes ({situacionesPersistentes.length})</span>
+                  </label>
+
+                  <div className="border-t pt-3 mt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-medium text-gray-500">Filtrar por sede:</p>
+                      {filters.sedes.length > 0 ? (
+                        <button
+                          onClick={() => setFilters(prev => ({ ...prev, sedes: [] }))}
+                          className="text-xs text-blue-600 hover:underline"
+                        >
+                          Ver todas
+                        </button>
+                      ) : (
+                        <span className="text-xs text-green-600">Todas visibles</span>
+                      )}
+                    </div>
+                    <div className="space-y-1 max-h-40 overflow-y-auto">
+                      {Object.entries(SEDES_NOMBRES).map(([id, nombre]) => {
+                        const sedeId = Number(id);
+                        const isActive = filters.sedes.length === 0 || filters.sedes.includes(sedeId);
+                        return (
+                          <button
+                            key={id}
+                            onClick={() => {
+                              if (filters.sedes.length === 0) {
+                                setFilters(prev => ({ ...prev, sedes: [sedeId] }));
+                              } else if (filters.sedes.includes(sedeId)) {
+                                const newSedes = filters.sedes.filter(s => s !== sedeId);
+                                setFilters(prev => ({ ...prev, sedes: newSedes }));
+                              } else {
+                                setFilters(prev => ({ ...prev, sedes: [...prev.sedes, sedeId] }));
+                              }
+                            }}
+                            className={`flex items-center gap-2 w-full text-left text-sm px-2 py-1 rounded transition ${isActive ? 'bg-gray-100' : 'opacity-50'}`}
+                          >
+                            <div
+                              className={`w-3 h-3 rounded-full ${isActive ? '' : 'opacity-30'}`}
+                              style={{ backgroundColor: COLORES_SEDE[sedeId] }}
+                            />
+                            <span className={isActive ? '' : 'line-through'}>{nombre}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Leyenda */}
+            {showLegend && (
+              <div className="absolute bottom-4 left-4 z-[1000] bg-white rounded-lg shadow-lg p-3 max-h-64 overflow-y-auto">
+                <h4 className="text-xs font-bold text-gray-600 mb-2 uppercase">Leyenda</h4>
+
+                <div className="mb-3">
+                  <p className="text-xs font-semibold text-gray-500 mb-1">Estados Incidente:</p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-500" />
+                      <span className="text-xs">Reportado</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                      <span className="text-xs">En Atención</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-blue-500" />
+                      <span className="text-xs">Regulación</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-green-500" />
+                      <span className="text-xs">Cerrado</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-1">Sedes:</p>
+                  <div className="space-y-1">
+                    {Object.entries(COLORES_SEDE).map(([sedeId, color]) => (
+                      <div key={sedeId} className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                        <span className="text-xs text-gray-700">{SEDES_NOMBRES[parseInt(sedeId)]}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Stats flotantes */}
+            <div className="absolute bottom-4 right-4 z-[1000] bg-white/90 backdrop-blur rounded-lg shadow-lg p-3">
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <p className="text-xs text-gray-500">Incidentes</p>
+                  <p className="text-lg font-bold text-red-600">{filteredIncidentes.length}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Unidades</p>
+                  <p className="text-lg font-bold text-purple-600">{filteredSituaciones.length}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Persistentes</p>
+                  <p className="text-lg font-bold text-orange-600">{filteredPersistentes.length}</p>
+                </div>
+              </div>
             </div>
+          </>
+        ) : (
+          <div className="h-full overflow-auto">
+            <ResumenUnidadesTable
+              resumen={resumenUnidades}
+              onSelectUnidad={(unidadId) => {
+                // Cambiar a vista de mapa y seleccionar la unidad
+                setModoVista('mapa');
+                const unidad = resumenUnidades.find((u: any) => u.unidad_id === unidadId);
+                if (unidad) {
+                  setSelectedSituacion(unidad);
+                }
+              }}
+            />
           </div>
-        </div>
-      )}
-
-      {/* Stats flotantes */}
-      <div className="absolute bottom-4 right-4 z-[1000] bg-white/90 backdrop-blur rounded-lg shadow-lg p-3">
-        <div className="grid grid-cols-4 gap-3 text-center">
-          <div>
-            <p className="text-xs text-gray-500">Incidentes</p>
-            <p className="text-lg font-bold text-red-600">{filteredIncidentes.length}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Unidades</p>
-            <p className="text-lg font-bold text-purple-600">{filteredSituaciones.length}</p>
-          </div>
-
-          <div>
-            <p className="text-xs text-gray-500">Persistentes</p>
-            <p className="text-lg font-bold text-orange-600">{filteredPersistentes.length}</p>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
