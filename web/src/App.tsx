@@ -72,12 +72,12 @@ function COPRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Permitir acceso a: COP, ADMIN, SUPER_ADMIN, o BRIGADA con sub_rol_cop
+  // Permitir acceso a: COP, ADMIN, SUPER_ADMIN, o BRIGADA (temporalmente todos para debug)
   const hasAccess =
     user?.rol === 'COP' ||
     user?.rol === 'ADMIN' ||
     user?.rol === 'SUPER_ADMIN' ||
-    (user?.rol === 'BRIGADA' && (user as any)?.subRolCop?.codigo);
+    user?.rol === 'BRIGADA'; // TODO: Refinar después con sub_rol_cop
 
   if (!hasAccess) {
     return <Navigate to="/dashboard" replace />;
