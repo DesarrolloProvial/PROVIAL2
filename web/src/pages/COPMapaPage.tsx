@@ -215,6 +215,9 @@ export default function COPMapaPage() {
   }
   console.log('========================');
 
+  // ALERT VISIBLE para debugging (temporal)
+  console.warn(`🔍 RENDER: ${filteredSituaciones?.length || 0} marcadores de situaciones a renderizar`);
+
   return (
     <div className="h-screen w-full relative">
       {/* DEBUG PANEL - Visible on page */}
