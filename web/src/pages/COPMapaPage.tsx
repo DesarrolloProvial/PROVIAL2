@@ -299,13 +299,13 @@ export default function COPMapaPage() {
             longitud_tipo: typeof situacion.longitud,
             lat_parsed: lat,
             lng_parsed: lng,
-            lat_isNaN: isNaN(lat),
-            lng_isNaN: isNaN(lng),
+            lat_isNaN: lat === null ? 'null' : isNaN(lat),
+            lng_isNaN: lng === null ? 'null' : isNaN(lng),
             sede_id: situacion.sede_id
           });
 
           // Debug individual
-          if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+          if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
             console.log('❌ Coordenadas inválidas - MARCADOR NO RENDERIZADO:', {
               unidad: situacion.unidad_codigo,
               latitud_raw: situacion.latitud,
