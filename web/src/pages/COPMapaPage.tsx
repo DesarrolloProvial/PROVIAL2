@@ -121,16 +121,6 @@ export default function COPMapaPage() {
     refetchInterval: socketConnected ? false : 30000,
   });
 
-  // DEBUG: Ver datos recibidos
-  console.log('=== DEBUG COPMapaPage ===');
-  console.log('Situaciones recibidas:', situaciones);
-  console.log('Cantidad:', situaciones.length);
-  console.log('Filtros activos:', filters);
-  console.log('Situaciones filtradas:', filteredSituaciones);
-  console.log('========================');
-
-
-
   const { data: situacionesPersistentes = [] } = useQuery({
     queryKey: ['situaciones-persistentes-mapa'],
     queryFn: situacionesPersistentesAPI.getActivas,
@@ -195,7 +185,15 @@ export default function COPMapaPage() {
     ) // Asumiendo que persistentes también tienen sede_id, si no, se mostrarán solo si no hay filtro de sede o se añade lógica extra
     : [];
 
-
+  // DEBUG: Ver datos recibidos (después de calcular variables filtradas)
+  console.log('=== DEBUG COPMapaPage ===');
+  console.log('Situaciones recibidas:', situaciones);
+  console.log('Cantidad:', situaciones.length);
+  console.log('Filtros activos:', filters);
+  console.log('Situaciones filtradas:', filteredSituaciones);
+  console.log('Incidentes filtrados:', filteredIncidentes);
+  console.log('Persistentes filtrados:', filteredPersistentes);
+  console.log('========================');
 
   return (
     <div className="h-screen w-full relative">
