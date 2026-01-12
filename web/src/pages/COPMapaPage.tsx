@@ -5,8 +5,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { incidentesAPI, situacionesAPI } from '../services/api';
 import { situacionesPersistentesAPI } from '../services/movimientos.service';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, ArrowLeft, Wifi, WifiOff, AlertTriangle, Layers, Filter, X } from 'lucide-react';
+import { RefreshCw, ArrowLeft, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut } from 'lucide-react';
 import { useDashboardSocket } from '../hooks/useSocket';
+import ResumenUnidadesTable from '../components/ResumenUnidadesTable';
+import { useAuthStore } from '../store/authStore';
 
 // Fix para iconos de Leaflet
 const createCustomIcon = (color: string) => {
@@ -94,13 +96,16 @@ function MapController({ center, zoom }: { center: LatLngExpression; zoom?: numb
 export default function COPMapaPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { logout } = useAuthStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showLegend, setShowLegend] = useState(true);
+  const [modoVista, setModoVista] = useState<'mapa' | 'tabla'>('mapa');
+  const [selectedIncidente, setSelectedIncidente] = useState<any | null>(null);
+  const [selectedSituacion, setSelectedSituacion] = useState<any | null>(null);
   const [filters, setFilters] = useState({
     incidentes: true,
     situaciones: true,
-
     persistentes: true,
     sedes: [] as number[],
   });
@@ -109,15 +114,21 @@ export default function COPMapaPage() {
   const defaultCenter: LatLngExpression = [14.6407, -90.5133];
 
   // Queries
-  const { data: incidentes = [], refetch: refetchIncidentes } = useQuery({
+  const { data: incidentes = [], refetch: refetchIncidentes, isLoading: loadingIncidentes, isError: errorIncidentes } = useQuery({
     queryKey: ['incidentes-activos'],
     queryFn: incidentesAPI.getActivos,
     refetchInterval: socketConnected ? false : 30000,
   });
 
-  const { data: situaciones = [], refetch: refetchSituaciones } = useQuery({
+  const { data: resumenUnidades = [], refetch: refetchResumen, isLoading: loadingResumen, isError: errorResumen } = useQuery({
     queryKey: ['resumen-unidades'],
     queryFn: situacionesAPI.getResumenUnidades,
+    refetchInterval: socketConnected ? false : 30000,
+  });
+
+  const { data: situacionesActivas = [], refetch: refetchSituacionesActivas } = useQuery({
+    queryKey: ['situaciones-activas'],
+    queryFn: situacionesAPI.getActivas,
     refetchInterval: socketConnected ? false : 30000,
   });
 
@@ -130,11 +141,19 @@ export default function COPMapaPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([refetchIncidentes(), refetchSituaciones()]);
+      await Promise.all([refetchIncidentes(), refetchResumen(), refetchSituacionesActivas()]);
     } finally {
       setIsRefreshing(false);
     }
   };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const isLoading = loadingIncidentes || loadingResumen;
+  const hasError = errorIncidentes || errorResumen;
 
   const formatLastUpdate = () => {
     return lastUpdate.toLocaleTimeString('es-GT', {
@@ -172,8 +191,8 @@ export default function COPMapaPage() {
     : [];
 
   const filteredSituaciones = filters.situaciones
-    ? situaciones.filter((s: any) =>
-      filters.sedes.length === 0 || (s.sede_id && filters.sedes.includes(s.sede_id))
+    ? resumenUnidades.filter((u: any) =>
+      filters.sedes.length === 0 || (u.sede_id && filters.sedes.includes(u.sede_id))
     )
     : [];
 
