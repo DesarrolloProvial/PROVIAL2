@@ -220,6 +220,29 @@ export default function COPMapaPage() {
 
   return (
     <div className="h-screen w-full relative">
+      {/* MEGA TEST - PANTALLA ROJA COMPLETA */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'red',
+        zIndex: 99999,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexDirection: 'column',
+        color: 'white',
+        fontSize: '48px',
+        fontWeight: 'bold'
+      }}>
+        <div>🗺️ HOLA - COPMapaPage CARGANDO</div>
+        <div style={{ fontSize: '24px', marginTop: '20px' }}>
+          Situaciones: {situaciones?.length || 0} | Filtradas: {filteredSituaciones?.length || 0}
+        </div>
+      </div>
+
       {/* DEBUG PANEL - Visible on page - SUPERIOR CENTRO */}
       <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-[1001] bg-red-600 bg-opacity-90 text-white p-4 rounded-lg text-sm font-mono shadow-2xl border-4 border-yellow-400">
         <div className="font-bold mb-2 text-center text-lg">🐛 DEBUG MARKERS</div>
