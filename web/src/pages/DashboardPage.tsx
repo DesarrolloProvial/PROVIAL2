@@ -539,18 +539,22 @@ export default function DashboardPage() {
                 );
               })}
 
-              {/* Marcadores de Situaciones */}
-              {situaciones.map((situacion: any) => {
-                if (!situacion.latitud || !situacion.longitud) return null;
+              {/* Marcadores de Unidades (Resumen) - Muestra todas las unidades EN_SALIDA */}
+              {resumenUnidades.map((unidad: any) => {
+                // Convertir coordenadas de string a número
+                const lat = unidad.latitud != null ? Number(unidad.latitud) : null;
+                const lng = unidad.longitud != null ? Number(unidad.longitud) : null;
+
+                if (!lat || !lng || isNaN(lat) || isNaN(lng)) return null;
 
                 return (
                   <Marker
-                    key={`situacion-${situacion.id}`}
-                    position={[situacion.latitud, situacion.longitud]}
-                    icon={getIconBySede(situacion.sede_id)}
+                    key={`unidad-${unidad.unidad_id}`}
+                    position={[lat, lng]}
+                    icon={getIconBySede(unidad.sede_id)}
                     eventHandlers={{
                       click: () => {
-                        setSelectedSituacion(situacion);
+                        setSelectedSituacion(unidad);
                         setSelectedIncidente(null);
                       },
                     }}
@@ -560,46 +564,49 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-2 mb-2">
                           <div
                             className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: COLORES_SEDE[situacion.sede_id] || '#6B7280' }}
+                            style={{ backgroundColor: COLORES_SEDE[unidad.sede_id] || '#6B7280' }}
                           />
-                          <h3 className="font-bold text-lg" style={{ color: COLORES_SEDE[situacion.sede_id] || '#6B7280' }}>
-                            🚓 {situacion.unidad_codigo || `Unidad #${situacion.unidad_id}`}
+                          <h3 className="font-bold text-lg" style={{ color: COLORES_SEDE[unidad.sede_id] || '#6B7280' }}>
+                            🚓 {unidad.unidad_codigo || `Unidad #${unidad.unidad_id}`}
                           </h3>
                         </div>
-                        {situacion.sede_nombre && (
+                        {unidad.sede_nombre && (
                           <p className="text-xs text-gray-500 mb-2">
-                            📍 Sede: {situacion.sede_nombre}
+                            📍 Sede: {unidad.sede_nombre}
                           </p>
                         )}
-                        <p className="font-semibold text-gray-700 mb-2">
-                          {situacion.tipo_situacion?.replace(/_/g, ' ')}
-                        </p>
-                        <div className="text-sm space-y-1">
-                          {situacion.ruta_codigo && (
-                            <p>
-                              🛣️ {situacion.ruta_codigo} Km {situacion.km}
-                              {situacion.sentido && ` (${situacion.sentido})`}
-                            </p>
-                          )}
-                          <p>
-                            Estado:{' '}
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                              {situacion.estado || 'ACTIVA'}
-                            </span>
+                        {unidad.tipo_situacion && (
+                          <p className="font-semibold text-gray-700 mb-2">
+                            {unidad.tipo_situacion?.replace(/_/g, ' ')}
                           </p>
-                          {situacion.descripcion && (
-                            <p className="mt-2 text-gray-700">
-                              {situacion.descripcion}
+                        )}
+                        <div className="text-sm space-y-1">
+                          {unidad.ruta_codigo && (
+                            <p>
+                              🛣️ {unidad.ruta_codigo} Km {unidad.km}
+                              {unidad.sentido && ` (${unidad.sentido})`}
                             </p>
                           )}
-                          {situacion.observaciones && (
-                            <p className="mt-1 text-gray-600 text-xs italic">
-                              {situacion.observaciones}
+                          {unidad.situacion_estado && (
+                            <p>
+                              Estado Situación:{' '}
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                unidad.situacion_estado === 'ACTIVA'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {unidad.situacion_estado}
+                              </span>
+                            </p>
+                          )}
+                          {unidad.situacion_descripcion && (
+                            <p className="mt-2 text-gray-700">
+                              {unidad.situacion_descripcion}
                             </p>
                           )}
                           <div className="mt-3 pt-2 border-t border-gray-100">
                             <button
-                              onClick={() => navigate(`/bitacora/${situacion.unidad_id}`)}
+                              onClick={() => navigate(`/bitacora/${unidad.unidad_id}`)}
                               className="w-full flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold py-1.5 px-3 rounded text-sm transition"
                             >
                               📄 Ver Bitácora
