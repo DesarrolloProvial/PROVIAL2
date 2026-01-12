@@ -220,16 +220,18 @@ export default function COPMapaPage() {
 
   return (
     <div className="h-screen w-full relative">
-      {/* DEBUG PANEL - Visible on page */}
-      <div className="absolute top-4 right-4 z-[1000] bg-black bg-opacity-75 text-white p-3 rounded-lg text-xs font-mono">
-        <div className="font-bold mb-1">🐛 DEBUG MARKERS</div>
-        <div>Situaciones RAW: {situaciones?.length || 0}</div>
-        <div>Situaciones FILTRADAS: {filteredSituaciones?.length || 0}</div>
-        <div>Incidentes FILTRADOS: {filteredIncidentes?.length || 0}</div>
-        <div>Persistentes FILTRADOS: {filteredPersistentes?.length || 0}</div>
-        <div className="mt-1 pt-1 border-t border-gray-500">
-          <div>Filter situaciones: {filters.situaciones ? '✓' : '✗'}</div>
-          <div>Filter sedes: [{filters.sedes.join(', ') || 'vacío'}]</div>
+      {/* DEBUG PANEL - Visible on page - SUPERIOR CENTRO */}
+      <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-[1001] bg-red-600 bg-opacity-90 text-white p-4 rounded-lg text-sm font-mono shadow-2xl border-4 border-yellow-400">
+        <div className="font-bold mb-2 text-center text-lg">🐛 DEBUG MARKERS</div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          <div>Situaciones RAW:</div><div className="font-bold">{situaciones?.length || 0}</div>
+          <div>Situaciones FILTRADAS:</div><div className="font-bold text-yellow-300">{filteredSituaciones?.length || 0}</div>
+          <div>Incidentes FILTRADOS:</div><div className="font-bold">{filteredIncidentes?.length || 0}</div>
+          <div>Persistentes FILTRADOS:</div><div className="font-bold">{filteredPersistentes?.length || 0}</div>
+        </div>
+        <div className="mt-2 pt-2 border-t border-white">
+          <div>Filter situaciones: <span className="font-bold">{filters.situaciones ? '✓ SI' : '✗ NO'}</span></div>
+          <div>Filter sedes: <span className="font-bold">[{filters.sedes.join(', ') || 'TODAS'}]</span></div>
         </div>
       </div>
 
