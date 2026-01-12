@@ -92,8 +92,6 @@ function MapController({ center, zoom }: { center: LatLngExpression; zoom?: numb
 }
 
 export default function COPMapaPage() {
-  console.log('🗺️ COPMapaPage montado/renderizado');
-
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -109,8 +107,6 @@ export default function COPMapaPage() {
 
   const { isConnected: socketConnected, lastUpdate } = useDashboardSocket(queryClient);
   const defaultCenter: LatLngExpression = [14.6407, -90.5133];
-
-  console.log('📊 Filters estado:', filters);
 
   // Queries
   const { data: incidentes = [], refetch: refetchIncidentes } = useQuery({
@@ -189,75 +185,9 @@ export default function COPMapaPage() {
     ) // Asumiendo que persistentes también tienen sede_id, si no, se mostrarán solo si no hay filtro de sede o se añade lógica extra
     : [];
 
-  // DEBUG: Ver datos recibidos (después de calcular variables filtradas)
-  console.log('=== DEBUG COPMapaPage ===');
-  console.log('📥 Datos RAW:');
-  console.log('  - Situaciones recibidas:', situaciones?.length || 0, situaciones);
-  console.log('  - Incidentes recibidos:', incidentes?.length || 0);
-  console.log('  - Persistentes recibidos:', situacionesPersistentes?.length || 0);
-  console.log('');
-  console.log('🎛️ Filtros activos:', filters);
-  console.log('');
-  console.log('✅ Datos FILTRADOS:');
-  console.log('  - Situaciones filtradas:', filteredSituaciones?.length || 0, filteredSituaciones);
-  console.log('  - Incidentes filtrados:', filteredIncidentes?.length || 0);
-  console.log('  - Persistentes filtrados:', filteredPersistentes?.length || 0);
-
-  // Mostrar primera situación con coordenadas
-  if (situaciones && situaciones.length > 0) {
-    const primera = situaciones[0];
-    console.log('');
-    console.log('📍 Primera situación (ejemplo):');
-    console.log('  - Unidad:', primera.unidad_codigo);
-    console.log('  - Latitud (raw):', primera.latitud, typeof primera.latitud);
-    console.log('  - Longitud (raw):', primera.longitud, typeof primera.longitud);
-    console.log('  - Sede ID:', primera.sede_id);
-  }
-  console.log('========================');
-
-  // ALERT VISIBLE para debugging (temporal)
-  console.warn(`🔍 RENDER: ${filteredSituaciones?.length || 0} marcadores de situaciones a renderizar`);
 
   return (
     <div className="h-screen w-full relative">
-      {/* MEGA TEST - PANTALLA ROJA COMPLETA */}
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        backgroundColor: 'red',
-        zIndex: 99999,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        flexDirection: 'column',
-        color: 'white',
-        fontSize: '48px',
-        fontWeight: 'bold'
-      }}>
-        <div>🗺️ HOLA - COPMapaPage CARGANDO</div>
-        <div style={{ fontSize: '24px', marginTop: '20px' }}>
-          Situaciones: {situaciones?.length || 0} | Filtradas: {filteredSituaciones?.length || 0}
-        </div>
-      </div>
-
-      {/* DEBUG PANEL - Visible on page - SUPERIOR CENTRO */}
-      <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-[1001] bg-red-600 bg-opacity-90 text-white p-4 rounded-lg text-sm font-mono shadow-2xl border-4 border-yellow-400">
-        <div className="font-bold mb-2 text-center text-lg">🐛 DEBUG MARKERS</div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-          <div>Situaciones RAW:</div><div className="font-bold">{situaciones?.length || 0}</div>
-          <div>Situaciones FILTRADAS:</div><div className="font-bold text-yellow-300">{filteredSituaciones?.length || 0}</div>
-          <div>Incidentes FILTRADOS:</div><div className="font-bold">{filteredIncidentes?.length || 0}</div>
-          <div>Persistentes FILTRADOS:</div><div className="font-bold">{filteredPersistentes?.length || 0}</div>
-        </div>
-        <div className="mt-2 pt-2 border-t border-white">
-          <div>Filter situaciones: <span className="font-bold">{filters.situaciones ? '✓ SI' : '✗ NO'}</span></div>
-          <div>Filter sedes: <span className="font-bold">[{filters.sedes.join(', ') || 'TODAS'}]</span></div>
-        </div>
-      </div>
-
       {/* Mapa */}
       <MapContainer
         center={defaultCenter}
@@ -313,70 +243,62 @@ export default function COPMapaPage() {
           );
         })}
 
-        {/* Marcadores de Situaciones */}
-        {filteredSituaciones.map((situacion: any, index: number) => {
-          // Parse coordinates - conversión robusta
-          const lat = situacion.latitud != null ? Number(situacion.latitud) : null;
-          const lng = situacion.longitud != null ? Number(situacion.longitud) : null;
+        {/* Marcadores de Unidades (Resumen) */}
+        {filteredSituaciones.map((unidad: any) => {
+          // Convertir coordenadas de string a número
+          const lat = unidad.latitud != null ? Number(unidad.latitud) : null;
+          const lng = unidad.longitud != null ? Number(unidad.longitud) : null;
 
-          console.log(`🎯 Procesando situación #${index}:`, {
-            unidad: situacion.unidad_codigo,
-            latitud_raw: situacion.latitud,
-            latitud_tipo: typeof situacion.latitud,
-            longitud_raw: situacion.longitud,
-            longitud_tipo: typeof situacion.longitud,
-            lat_parsed: lat,
-            lng_parsed: lng,
-            lat_isNaN: lat === null ? 'null' : isNaN(lat),
-            lng_isNaN: lng === null ? 'null' : isNaN(lng),
-            sede_id: situacion.sede_id
-          });
-
-          // Debug individual
+          // Validar coordenadas
           if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
-            console.log('❌ Coordenadas inválidas - MARCADOR NO RENDERIZADO:', {
-              unidad: situacion.unidad_codigo,
-              latitud_raw: situacion.latitud,
-              longitud_raw: situacion.longitud,
-              lat_parsed: lat,
-              lng_parsed: lng
-            });
             return null;
           }
 
-          console.log(`✅ Creando marcador para ${situacion.unidad_codigo} en [${lat}, ${lng}]`);
-
           return (
             <Marker
-              key={`situacion-${situacion.unidad_id || situacion.id}`}
+              key={`unidad-${unidad.unidad_id}`}
               position={[lat, lng]}
-              icon={getIconBySede(situacion.sede_id)}
+              icon={getIconBySede(unidad.sede_id)}
             >
               <Popup>
                 <div className="p-2 min-w-[220px]">
                   <div className="flex items-center gap-2 mb-2">
                     <div
                       className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: COLORES_SEDE[situacion.sede_id] || '#6B7280' }}
+                      style={{ backgroundColor: COLORES_SEDE[unidad.sede_id] || '#6B7280' }}
                     />
-                    <h3 className="font-bold text-lg" style={{ color: COLORES_SEDE[situacion.sede_id] || '#6B7280' }}>
-                      🚓 {situacion.unidad_codigo || `Unidad #${situacion.unidad_id}`}
+                    <h3 className="font-bold text-lg" style={{ color: COLORES_SEDE[unidad.sede_id] || '#6B7280' }}>
+                      🚓 {unidad.unidad_codigo || `Unidad #${unidad.unidad_id}`}
                     </h3>
                   </div>
-                  {situacion.sede_nombre && (
-                    <p className="text-xs text-gray-500 mb-2">📍 Sede: {situacion.sede_nombre}</p>
+                  {unidad.sede_nombre && (
+                    <p className="text-xs text-gray-500 mb-2">📍 Sede: {unidad.sede_nombre}</p>
                   )}
-                  <p className="font-semibold text-gray-700 mb-2">
-                    {situacion.tipo_situacion?.replace(/_/g, ' ')}
-                  </p>
+                  {unidad.tipo_situacion && (
+                    <p className="font-semibold text-gray-700 mb-2">
+                      {unidad.tipo_situacion?.replace(/_/g, ' ')}
+                    </p>
+                  )}
                   <div className="text-sm space-y-1">
-                    {situacion.ruta_codigo && (
-                      <p>🛣️ {situacion.ruta_codigo} Km {situacion.km} {situacion.sentido && `(${situacion.sentido})`}</p>
+                    {unidad.ruta_codigo && (
+                      <p>🛣️ {unidad.ruta_codigo} Km {unidad.km} {unidad.sentido && `(${unidad.sentido})`}</p>
                     )}
-                    {situacion.descripcion && <p className="mt-2 text-gray-700">{situacion.descripcion}</p>}
+                    {unidad.situacion_estado && (
+                      <p>
+                        Estado:{' '}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          unidad.situacion_estado === 'ACTIVA'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {unidad.situacion_estado}
+                        </span>
+                      </p>
+                    )}
+                    {unidad.situacion_descripcion && <p className="mt-2 text-gray-700">{unidad.situacion_descripcion}</p>}
                     <div className="mt-3 pt-2 border-t border-gray-100">
                       <button
-                        onClick={() => navigate(`/bitacora/${situacion.unidad_id}`)}
+                        onClick={() => navigate(`/bitacora/${unidad.unidad_id}`)}
                         className="w-full flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold py-1.5 px-3 rounded text-sm transition"
                       >
                         📄 Ver Bitácora
