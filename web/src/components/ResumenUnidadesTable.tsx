@@ -265,10 +265,10 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
 
                 {/* Ruta Activa */}
                 <td className="px-4 py-4 whitespace-nowrap">
-                  {unidad.ruta_activa_codigo ? (
+                  {unidad.ruta_activa_codigo || unidad.ruta_codigo ? (
                     <div className="text-sm">
                       <div className="font-medium text-gray-900">
-                        {unidad.ruta_activa_codigo}
+                        {unidad.ruta_activa_codigo || unidad.ruta_codigo}
                       </div>
                     </div>
                   ) : (
@@ -291,15 +291,14 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
                     <div className="text-xs space-y-0.5">
                       {unidad.tripulacion.map((t, idx) => (
                         <div key={idx} className="text-gray-700 flex items-center gap-1">
-                          {t.es_comandante && (
+                          {t.rol_tripulacion === 'COMANDANTE' && (
                             <span title="Comandante">
                               <Crown className="w-3 h-3 text-amber-500" />
                             </span>
                           )}
-                          <span className="font-medium">
-                            {t.rol_tripulacion}:
-                          </span>{' '}
-                          {t.nombre_completo}
+                          <span>
+                            {t.nombre_completo}
+                          </span>
                         </div>
                       ))}
                     </div>
