@@ -5,6 +5,7 @@ import { situacionesAPI } from '../services/api';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import FormularioPatrullaje from '../components/FormularioPatrullaje';
 import FormularioOtros from '../components/FormularioOtros';
+import FormularioHechoTransito from '../components/FormularioHechoTransito';
 
 export default function EditarSituacionPage() {
     const { id } = useParams<{ id: string }>();
@@ -133,8 +134,8 @@ export default function EditarSituacionPage() {
                             <div>
                                 <span className="font-medium text-gray-600">Estado:</span>
                                 <span className={`ml-2 px-2 py-1 rounded-full text-xs ${situacion.estado === 'ACTIVA'
-                                        ? 'bg-green-100 text-green-800'
-                                        : 'bg-gray-100 text-gray-800'
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-gray-100 text-gray-800'
                                     }`}>
                                     {situacion.estado}
                                 </span>
@@ -166,13 +167,17 @@ export default function EditarSituacionPage() {
                             <FormularioOtros situacion={situacion} onDataChange={setFormData} />
                         )}
 
-                        {(tipoFormulario === 'HECHO_TRANSITO' || tipoFormulario === 'ASISTENCIA_VIAL' || tipoFormulario === 'EMERGENCIA') && (
+                        {(tipoFormulario === 'HECHO_TRANSITO' || tipoFormulario === 'ASISTENCIA_VIAL') && (
+                            <FormularioHechoTransito situacion={situacion} onDataChange={setFormData} />
+                        )}
+
+                        {tipoFormulario === 'EMERGENCIA' && (
                             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                                 <p className="text-sm text-yellow-800">
-                                    <strong>Formulario complejo:</strong> {tipoFormulario}
+                                    <strong>Formulario de Emergencia:</strong> En desarrollo
                                 </p>
                                 <p className="text-sm text-yellow-700 mt-2">
-                                    Este formulario está en desarrollo. Incluirá todas las secciones del móvil.
+                                    Este formulario incluirá campos para emergencias y obstáculos.
                                 </p>
                             </div>
                         )}
