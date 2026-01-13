@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Crown } from 'lucide-react';
+
 
 interface ResumenUnidad {
   unidad_id: number;
@@ -20,11 +20,6 @@ interface ResumenUnidad {
   combustible_fraccion: string | null;
   situacion_descripcion: string | null;
   situacion_fecha: string | null;
-  tripulacion: Array<{
-    nombre_completo: string;
-    rol_tripulacion: string;
-    es_comandante?: boolean;
-  }>;
 }
 
 // Colores por sede (mismo que en DashboardPage)
@@ -168,9 +163,6 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
                 Ruta Activa
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tripulación
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Última Hora
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -267,37 +259,7 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
                   )}
                 </td>
 
-                {/* Tripulación */}
-                <td className="px-4 py-4">
-                  {(() => {
-                    console.log('👥 [TABLE] Tripulación para unidad', unidad.unidad_codigo, ':', {
-                      tripulacion: unidad.tripulacion,
-                      length: unidad.tripulacion?.length,
-                      isArray: Array.isArray(unidad.tripulacion)
-                    });
 
-                    if (unidad.tripulacion && Array.isArray(unidad.tripulacion) && unidad.tripulacion.length > 0) {
-                      return (
-                        <div className="text-xs space-y-0.5">
-                          {unidad.tripulacion.map((t, idx) => (
-                            <div key={idx} className="text-gray-700 flex items-center gap-1">
-                              {t.rol_tripulacion === 'COMANDANTE' && (
-                                <span title="Comandante">
-                                  <Crown className="w-3 h-3 text-amber-500" />
-                                </span>
-                              )}
-                              <span>
-                                {t.nombre_completo}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    }
-
-                    return <span className="text-sm text-gray-400">Sin tripulación</span>;
-                  })()}
-                </td>
 
                 {/* Última Hora */}
                 <td className="px-4 py-4 whitespace-nowrap">

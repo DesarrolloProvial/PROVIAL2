@@ -982,20 +982,6 @@ export async function getResumenUnidades(req: Request, res: Response) {
     const unidadesPermitidas = await getUnidadesPermitidas(req.user!.userId, req.user!.rol);
 
     const query = `
-      WITH tripulacion_data AS (
-        SELECT
-          tt.asignacion_id,
-          json_agg(
-            json_build_object(
-              'usuario_id', u_trip.id,
-              'nombre_completo', u_trip.nombre_completo,
-              'rol_tripulacion', tt.rol_tripulacion
-            ) ORDER BY tt.rol_tripulacion
-          ) as tripulacion
-        FROM tripulacion_turno tt
-        JOIN usuario u_trip ON tt.usuario_id = u_trip.id
-        GROUP BY tt.asignacion_id
-      )
       SELECT
         u.id as unidad_id,
         u.codigo as unidad_codigo,
@@ -1032,10 +1018,7 @@ export async function getResumenUnidades(req: Request, res: Response) {
         t.fecha as turno_fecha,
         t.estado as turno_estado,
         au.hora_salida_real,
-        au.hora_entrada_real,
-
-        -- Tripulación desde CTE
-        COALESCE(td.tripulacion, '[]'::json) as tripulacion
+        au.hora_entrada_real
 
       FROM unidad u
       JOIN salida_unidad sal ON u.id = sal.unidad_id AND sal.estado = 'EN_SALIDA'
@@ -1045,7 +1028,6 @@ export async function getResumenUnidades(req: Request, res: Response) {
         AND au.turno_id IN (SELECT id FROM turno WHERE fecha = CURRENT_DATE)
       LEFT JOIN turno t ON au.turno_id = t.id
       LEFT JOIN ruta ra ON au.ruta_activa_id = ra.id
-      LEFT JOIN tripulacion_data td ON au.id = td.asignacion_id
       WHERE u.activa = true
         ${unidadesPermitidas !== null ? 'AND u.id = ANY($1::int[])' : ''}
       ORDER BY u.codigo
@@ -1054,17 +1036,7 @@ export async function getResumenUnidades(req: Request, res: Response) {
     const params = unidadesPermitidas !== null ? [unidadesPermitidas] : [];
     const resumen = await db.manyOrNone(query, params);
 
-    // DEBUG: Log tripulación data
-    console.log('🔍 [RESUMEN] Total unidades:', resumen.length);
-    resumen.forEach((u: any) => {
-      console.log(`🔍 [RESUMEN] Unidad ${u.unidad_codigo}:`, {
-        turno_id: u.turno_id,
-        turno_fecha: u.turno_fecha,
-        tripulacion: u.tripulacion,
-        tripulacion_type: typeof u.tripulacion,
-        tripulacion_length: Array.isArray(u.tripulacion) ? u.tripulacion.length : 'not array'
-      });
-    });
+
 
     return res.json({
       resumen,
