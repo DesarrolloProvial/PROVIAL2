@@ -82,7 +82,7 @@ export async function getSignature(req: Request, res: Response) {
  * GET /api/cloudinary/status
  * Verificar si Cloudinary está configurado
  */
-export async function getStatus(req: Request, res: Response) {
+export async function getStatus(_req: Request, res: Response) {
   try {
     const configured = isCloudinaryConfigured();
 
