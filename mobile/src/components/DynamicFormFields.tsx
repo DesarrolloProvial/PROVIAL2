@@ -178,7 +178,7 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
     }
 
     // 6. OPERATIVOS (General)
-    if (situacionNombre.includes('Operativo') || situacionNombre === 'Consignación') {
+    if (situacionNombre.includes('Operativo') || situacionNombre === 'Consignación' || situacionNombre === 'Puesto de Control') {
         return (
             <View style={styles.section}>
                 <Text style={styles.title}>Datos Operativos</Text>
@@ -204,6 +204,16 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
                 <TextInput style={styles.input} placeholder="Institución / Encargado" value={detalles.institucion} onChangeText={t => handleChange('institucion', t)} />
                 <TextInput style={styles.input} placeholder="Punto Inicio" value={detalles.punto_inicio} onChangeText={t => handleChange('punto_inicio', t)} />
                 <TextInput style={styles.input} placeholder="Punto Finalización" value={detalles.punto_fin} onChangeText={t => handleChange('punto_fin', t)} />
+            </View>
+        )
+    }
+
+    // 10. REGULACION
+    if (situacionNombre === 'Regulación de Tráfico' || situacionNombre.includes('Reversible')) {
+        return (
+            <View style={styles.section}>
+                <Text style={styles.title}>Regulación de Tráfico</Text>
+                <TextInput style={styles.input} placeholder="Instrucción / Motivo" value={detalles.motivo} onChangeText={t => handleChange('motivo', t)} />
             </View>
         )
     }
