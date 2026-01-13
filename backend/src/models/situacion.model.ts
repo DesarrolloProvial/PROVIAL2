@@ -40,6 +40,10 @@ export interface Situacion {
   numero_situacion: string | null;
   tipo_situacion: TipoSituacion;
   tipo_situacion_id?: number | null;
+  clima?: string | null;
+  carga_vehicular?: string | null;
+  departamento_id?: number | null;
+  municipio_id?: number | null;
   estado: EstadoSituacion;
   asignacion_id: number | null;
   unidad_id: number;
@@ -73,6 +77,9 @@ export interface SituacionCompleta extends Situacion {
   creado_por_nombre: string;
   actualizado_por_nombre: string | null;
   detalles?: DetalleSituacion[];
+  departamento_nombre?: string | null;
+  municipio_nombre?: string | null;
+  subtipo_nombre?: string | null;
 }
 
 export interface DetalleSituacion {
@@ -135,15 +142,21 @@ export const SituacionModel = {
     incidente_id?: number;
     creado_por: number;
     tipo_situacion_id?: number;
+    clima?: string;
+    carga_vehicular?: string;
+    departamento_id?: number;
+    municipio_id?: number;
   }): Promise<Situacion> {
     const query = `
       INSERT INTO situacion (
         tipo_situacion, unidad_id, salida_unidad_id, turno_id, asignacion_id,
         ruta_id, km, sentido, latitud, longitud, ubicacion_manual,
         combustible, combustible_fraccion, kilometraje_unidad, tripulacion_confirmada,
-        descripcion, observaciones, incidente_id, creado_por, tipo_situacion_id
+        descripcion, observaciones, incidente_id, creado_por, tipo_situacion_id,
+        clima, carga_vehicular, departamento_id, municipio_id
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+        $21, $22, $23, $24
       ) RETURNING *
     `;
 
@@ -167,7 +180,11 @@ export const SituacionModel = {
       data.observaciones || null,
       data.incidente_id || null,
       data.creado_por,
-      data.tipo_situacion_id || null
+      data.tipo_situacion_id || null,
+      data.clima || null,
+      data.carga_vehicular || null,
+      data.departamento_id || null,
+      data.municipio_id || null
     ]);
   },
 
@@ -389,6 +406,10 @@ export const SituacionModel = {
       descripcion?: string;
       observaciones?: string;
       actualizado_por: number;
+      clima?: string | null;
+      carga_vehicular?: string | null;
+      departamento_id?: number | null;
+      municipio_id?: number | null;
     }
   ): Promise<Situacion> {
     const setClauses: string[] = ['actualizado_por = $1', 'updated_at = NOW()'];
@@ -453,6 +474,26 @@ export const SituacionModel = {
     if (data.observaciones !== undefined) {
       setClauses.push(`observaciones = $${paramIndex++}`);
       params.push(data.observaciones);
+    }
+
+    if (data.clima !== undefined) {
+      setClauses.push(`clima = $${paramIndex++}`);
+      params.push(data.clima);
+    }
+
+    if (data.carga_vehicular !== undefined) {
+      setClauses.push(`carga_vehicular = $${paramIndex++}`);
+      params.push(data.carga_vehicular);
+    }
+
+    if (data.departamento_id !== undefined) {
+      setClauses.push(`departamento_id = $${paramIndex++}`);
+      params.push(data.departamento_id);
+    }
+
+    if (data.municipio_id !== undefined) {
+      setClauses.push(`municipio_id = $${paramIndex++}`);
+      params.push(data.municipio_id);
     }
 
     const query = `
