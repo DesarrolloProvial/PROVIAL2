@@ -1,6 +1,6 @@
--- 096_update_view_situaciones_catalogo.sql (CORREGIDO)
+-- 096_update_view_situaciones_catalogo.sql (CORREGIDO V3)
 -- Actualiza la visión para incluir campos del catálogo dinámico
--- Recrea dependencias para evitar error DROP
+-- Corrige error de columnas duplicadas listando campos explícitamente
 
 BEGIN;
 
@@ -8,10 +8,39 @@ BEGIN;
 DROP VIEW IF EXISTS v_situaciones_completas CASCADE;
 -- Nota: Esto elimina v_bitacora_unidad automáticamente
 
--- 2. Crear v_situaciones_completas actualizada
+-- 2. Crear v_situaciones_completas actualizada (CAMPOS EXPLICITOS)
 CREATE OR REPLACE VIEW v_situaciones_completas AS
 SELECT 
-    s.*,
+    -- Campos de Situacion (s.* expandido para evitar duplicados)
+    s.id,
+    s.uuid,
+    s.numero_situacion,
+    s.tipo_situacion,
+    s.estado,
+    s.salida_unidad_id,
+    s.ruta_id,
+    s.km,
+    s.sentido,
+    s.latitud,
+    s.longitud,
+    s.ubicacion_manual,
+    s.combustible,
+    s.kilometraje_unidad,
+    s.descripcion,
+    s.observaciones,
+    s.tripulacion_confirmada,
+    s.unidad_id,
+    s.turno_id,
+    s.asignacion_id,
+    s.incidente_id,
+    s.evento_persistente_id,
+    s.creado_por,
+    s.actualizado_por,
+    s.created_at,
+    s.updated_at,
+    s.tipo_situacion_id,
+    
+    -- Campos de Relaciones
     u.codigo as unidad_codigo,
     u.tipo_unidad as tipo_unidad,
     r.codigo as ruta_codigo,
@@ -20,16 +49,19 @@ SELECT
     i.numero_reporte as incidente_numero,
     uc.nombre_completo as creado_por_nombre,
     ua.nombre_completo as actualizado_por_nombre,
-    ep.id as evento_persistente_id,
+    
+    -- Campos de Evento Persistente
     ep.titulo as evento_titulo,
     ep.tipo as evento_tipo,
-    -- Nuevos campos
+    
+    -- Campos de Catálogo
     cts.nombre as subtipo_nombre,
     cts.icono as subtipo_icono,
     ccs.nombre as categoria_nombre,
     ccs.codigo as categoria_codigo,
     ccs.icono as categoria_icono,
-    -- Detalles JSON (importante mantener esto para v_bitacora_unidad)
+    
+    -- Detalles JSON
     (SELECT json_agg(json_build_object(
         'id', d.id,
         'tipo_detalle', d.tipo_detalle,
@@ -52,7 +84,7 @@ ORDER BY s.created_at DESC;
 
 COMMENT ON VIEW v_situaciones_completas IS 'Vista completa de situaciones con todos los datos relacionados, incluyendo catálogo dinámico';
 
--- 3. Recrear v_bitacora_unidad (DEPENDIENTE)
+-- 3. Recrear v_bitacora_unidad (Dependiente)
 CREATE OR REPLACE VIEW v_bitacora_unidad AS
 SELECT
     s.id,
@@ -91,10 +123,11 @@ SELECT
             GROUP BY d.tipo_detalle
         ) AS detalles_count
     ) AS resumen_detalles,
-    -- Campos adicionales útiles del catálogo
+    -- Campos agregados del catálogo
     s.subtipo_nombre,
     s.categoria_codigo
 FROM v_situaciones_completas s
+JOIN unidad u ON s.unidad_id = u.id
 ORDER BY s.unidad_id, s.created_at DESC;
 
 COMMENT ON VIEW v_bitacora_unidad IS 'Bitácora completa de situaciones por unidad con datos de eventos y catálogo';
