@@ -557,25 +557,6 @@ export default function COPMapaPage() {
                       </p>
                     )}
 
-                    {/* Tripulación */}
-                    {unidad.tripulacion && Array.isArray(unidad.tripulacion) && unidad.tripulacion.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-gray-200">
-                        <p className="text-xs font-semibold text-gray-600 mb-1">👥 Tripulación:</p>
-                        <div className="space-y-0.5">
-                          {unidad.tripulacion.map((t: any, idx: number) => (
-                            <p key={idx} className="text-xs text-gray-700">
-                              • {t.nombre_completo}
-                              {t.rol_tripulacion && (
-                                <span className="ml-1 text-gray-500">
-                                  ({t.rol_tripulacion === 'COMANDANTE' ? '⭐' : ''}{t.rol_tripulacion})
-                                </span>
-                              )}
-                            </p>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
                     {unidad.situacion_descripcion && <p className="mt-2 text-gray-700">{unidad.situacion_descripcion}</p>}
                     <div className="mt-3 pt-2 border-t border-gray-100">
                       <button
