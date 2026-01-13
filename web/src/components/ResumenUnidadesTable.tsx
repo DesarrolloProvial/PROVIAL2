@@ -139,11 +139,10 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
           {/* Toggle para mostrar solo activas */}
           <button
             onClick={() => setSoloActivas(!soloActivas)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              soloActivas
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${soloActivas
                 ? 'bg-green-600 text-white hover:bg-green-700'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
             title={soloActivas ? 'Mostrando solo activas' : 'Mostrando todas'}
           >
             {soloActivas ? 'Solo Activas' : 'Ver Todas'}
@@ -270,6 +269,7 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
 
                 {/* Tripulación */}
                 <td className="px-4 py-4">
+                  <div style={{ color: 'red', fontWeight: 'bold', fontSize: '18px' }}>HOLA</div>
                   {(() => {
                     console.log('👥 [TABLE] Tripulación para unidad', unidad.unidad_codigo, ':', {
                       tripulacion: unidad.tripulacion,

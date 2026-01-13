@@ -227,10 +227,13 @@ export default function BitacoraPage() {
                                         }`}></div>
 
                                     {/* Content Card */}
-                                    <div className={`rounded-lg p-4 border ${item.estado === 'ACTIVA'
-                                        ? 'bg-green-50 border-green-200'
-                                        : 'bg-gray-50 border-gray-200'
-                                        }`}>
+                                    <div
+                                        className={`rounded-lg p-4 border cursor-pointer hover:shadow-md transition-shadow ${item.estado === 'ACTIVA'
+                                            ? 'bg-green-50 border-green-200'
+                                            : 'bg-gray-50 border-gray-200'
+                                            }`}
+                                        onClick={() => handleEditClick(item)}
+                                    >
                                         {/* Header */}
                                         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                                             <div className="flex items-center gap-2">
@@ -249,16 +252,6 @@ export default function BitacoraPage() {
                                             <div className="flex items-center gap-2 text-sm text-gray-500">
                                                 <Clock className="w-4 h-4" />
                                                 {formatDate(item.created_at)}
-                                                {/* Permitir editar mientras la jornada no esté finalizada */}
-                                                {item.salida_estado !== 'FINALIZADA' && (
-                                                    <button
-                                                        onClick={() => handleEditClick(item)}
-                                                        className="ml-2 p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg"
-                                                        title="Editar"
-                                                    >
-                                                        <Edit2 className="w-4 h-4" />
-                                                    </button>
-                                                )}
                                             </div>
                                         </div>
 
