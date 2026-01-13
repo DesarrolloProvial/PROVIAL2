@@ -808,17 +808,26 @@ export default function COPMapaPage() {
           </>
         ) : (
           <div className="h-full overflow-auto">
-            <ResumenUnidadesTable
-              resumen={resumenUnidades}
-              onSelectUnidad={(unidadId) => {
-                // Cambiar a vista de mapa y seleccionar la unidad
-                setModoVista('mapa');
-                const unidad = resumenUnidades.find((u: any) => u.unidad_id === unidadId);
-                if (unidad) {
-                  setSelectedSituacion(unidad);
-                }
-              }}
-            />
+            {(() => {
+              console.log('📊 [COP] Pasando a tabla:', {
+                resumenUnidades,
+                length: resumenUnidades?.length,
+                isArray: Array.isArray(resumenUnidades)
+              });
+              return (
+                <ResumenUnidadesTable
+                  resumen={resumenUnidades}
+                  onSelectUnidad={(unidadId) => {
+                    // Cambiar a vista de mapa y seleccionar la unidad
+                    setModoVista('mapa');
+                    const unidad = resumenUnidades.find((u: any) => u.unidad_id === unidadId);
+                    if (unidad) {
+                      setSelectedSituacion(unidad);
+                    }
+                  }}
+                />
+              );
+            })()}
           </div>
         )}
       </div>

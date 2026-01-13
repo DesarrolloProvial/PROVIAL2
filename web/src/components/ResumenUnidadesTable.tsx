@@ -69,6 +69,13 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
   const [soloActivas, setSoloActivas] = useState(true); // Por defecto, solo mostrar activas
   const navigate = useNavigate();
 
+  // Debug: Log cuando cambian los datos
+  console.log('📊 [TABLE] Resumen recibido:', {
+    length: resumen?.length || 0,
+    isArray: Array.isArray(resumen),
+    firstItem: resumen?.[0]
+  });
+
   const formatHora = (fecha: string | null) => {
     if (!fecha) return '-';
     const date = new Date(fecha);
@@ -113,6 +120,13 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
       return matchesSearch && isActiva;
     }
     return matchesSearch;
+  });
+
+  console.log('📊 [TABLE] Filtrado:', {
+    total: resumen?.length || 0,
+    filtered: filteredResumen.length,
+    soloActivas,
+    search
   });
 
   // Contar unidades activas para el contador
