@@ -13,7 +13,7 @@ CREATE OR REPLACE VIEW v_situaciones_completas AS
 SELECT 
     s.*,
     u.codigo as unidad_codigo,
-    u.tipo_vehiculo as tipo_unidad,
+    u.tipo_unidad as tipo_unidad,
     r.codigo as ruta_codigo,
     r.nombre as ruta_nombre,
     t.fecha as turno_fecha,
