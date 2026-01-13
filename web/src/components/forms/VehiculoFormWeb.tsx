@@ -51,6 +51,14 @@ interface Vehiculo {
   sancion_articulo: string;
   sancion_descripcion: string;
   sancion_monto: number;
+  // Campos de documentos consignados
+  doc_consignado_licencia: boolean;
+  doc_consignado_tarjeta: boolean;
+  doc_consignado_tarjeta_circulacion: boolean;
+  doc_consignado_licencia_transporte: boolean;
+  doc_consignado_tarjeta_operaciones: boolean;
+  doc_consignado_poliza: boolean;
+  doc_consignado_por: string;
 }
 
 interface VehiculoFormWebProps {
@@ -76,6 +84,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove }:
     contenedor: false,
     bus: false,
     sancion: false,
+    documentos: false,
   });
 
   const handleChange = (field: string, value: any) => {
@@ -343,11 +352,10 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove }:
                     key={tipo}
                     type="button"
                     onClick={() => handleChange('licencia_tipo', tipo)}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium ${
-                      vehiculo.licencia_tipo === tipo
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium ${vehiculo.licencia_tipo === tipo
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
                   >
                     {tipo}
                   </button>
@@ -620,6 +628,92 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove }:
             </div>
           )}
         </>
+      )}
+
+      {/* Sección 8: Documentos Consignados */}
+      <SectionHeader section="documentos" title="Documentos Consignados" color="emerald" />
+      {expandedSections.documentos && (
+        <div className="mb-4 px-1">
+          <p className="text-sm text-gray-500 italic mb-3">
+            Marque los documentos que fueron consignados a la autoridad
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+            <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
+              <input
+                type="checkbox"
+                checked={vehiculo.doc_consignado_licencia || false}
+                onChange={(e) => handleChange('doc_consignado_licencia', e.target.checked)}
+                className="h-4 w-4 text-emerald-600 rounded"
+              />
+              <span className="text-sm text-gray-700">Licencia de conducir</span>
+            </label>
+            <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
+              <input
+                type="checkbox"
+                checked={vehiculo.doc_consignado_tarjeta_circulacion || false}
+                onChange={(e) => handleChange('doc_consignado_tarjeta_circulacion', e.target.checked)}
+                className="h-4 w-4 text-emerald-600 rounded"
+              />
+              <span className="text-sm text-gray-700">Tarjeta de circulación</span>
+            </label>
+            <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
+              <input
+                type="checkbox"
+                checked={vehiculo.doc_consignado_tarjeta || false}
+                onChange={(e) => handleChange('doc_consignado_tarjeta', e.target.checked)}
+                className="h-4 w-4 text-emerald-600 rounded"
+              />
+              <span className="text-sm text-gray-700">Tarjeta de propiedad</span>
+            </label>
+            <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
+              <input
+                type="checkbox"
+                checked={vehiculo.doc_consignado_licencia_transporte || false}
+                onChange={(e) => handleChange('doc_consignado_licencia_transporte', e.target.checked)}
+                className="h-4 w-4 text-emerald-600 rounded"
+              />
+              <span className="text-sm text-gray-700">Licencia de transporte</span>
+            </label>
+            <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
+              <input
+                type="checkbox"
+                checked={vehiculo.doc_consignado_tarjeta_operaciones || false}
+                onChange={(e) => handleChange('doc_consignado_tarjeta_operaciones', e.target.checked)}
+                className="h-4 w-4 text-emerald-600 rounded"
+              />
+              <span className="text-sm text-gray-700">Tarjeta de operaciones</span>
+            </label>
+            <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
+              <input
+                type="checkbox"
+                checked={vehiculo.doc_consignado_poliza || false}
+                onChange={(e) => handleChange('doc_consignado_poliza', e.target.checked)}
+                className="h-4 w-4 text-emerald-600 rounded"
+              />
+              <span className="text-sm text-gray-700">Póliza de seguro</span>
+            </label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Consignado por (autoridad)
+            </label>
+            <div className="flex gap-2">
+              {['PNC', 'PMT', 'MP'].map((autoridad) => (
+                <button
+                  key={autoridad}
+                  type="button"
+                  onClick={() => handleChange('doc_consignado_por', autoridad)}
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${vehiculo.doc_consignado_por === autoridad
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                >
+                  {autoridad}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Observaciones */}

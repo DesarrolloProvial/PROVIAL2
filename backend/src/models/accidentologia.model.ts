@@ -7,6 +7,7 @@ import { db } from '../config/database';
 export interface HojaAccidentologia {
   id?: number;
   situacion_id: number;
+  incidente_id?: number; // Relación 1:1 con incidente
   tipo_accidente: string;
   descripcion_accidente?: string;
   condiciones_climaticas?: string;
@@ -32,6 +33,15 @@ export interface HojaAccidentologia {
   elaborado_por?: number;
   revisado_por?: number;
   estado?: string;
+  // Nuevos campos boleta (migración 094)
+  area?: string;
+  material_via?: string;
+  no_grupo_operativo?: string;
+  // Campos de vía (migración 091)
+  estado_via_id?: number;
+  topografia_id?: number;
+  geometria_via_id?: number;
+  numero_carriles?: number;
 }
 
 export interface VehiculoAccidente {
@@ -64,6 +74,15 @@ export interface VehiculoAccidente {
   aseguradora?: string;
   numero_poliza?: string;
   fotos?: string[];
+  // Nuevos campos documentos consignados (migración 094)
+  doc_consignado_licencia?: boolean;
+  doc_consignado_tarjeta?: boolean;
+  doc_consignado_tarjeta_circulacion?: boolean;
+  doc_consignado_licencia_transporte?: boolean;
+  doc_consignado_tarjeta_operaciones?: boolean;
+  doc_consignado_poliza?: boolean;
+  consignado_por?: string;
+  tipo_servicio?: string;
 }
 
 export interface PersonaAccidente {
@@ -99,27 +118,32 @@ export const AccidentologiaModel = {
   async crear(data: HojaAccidentologia): Promise<number> {
     const result = await db.one(`
       INSERT INTO hoja_accidentologia (
-        situacion_id, tipo_accidente, descripcion_accidente,
+        situacion_id, incidente_id, tipo_accidente, descripcion_accidente,
         condiciones_climaticas, condiciones_via, iluminacion, visibilidad,
         kilometro, referencia_ubicacion, sentido_via, tipo_zona,
         causa_principal, causas_contribuyentes,
         pnc_presente, pnc_agente, bomberos_presente, bomberos_unidad,
         mp_presente, mp_fiscal, otras_autoridades,
         requiere_peritaje, numero_caso_pnc, numero_caso_mp,
-        elaborado_por, estado
+        elaborado_por, estado,
+        area, material_via, no_grupo_operativo,
+        estado_via_id, topografia_id, geometria_via_id, numero_carriles
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-        $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
+        $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26,
+        $27, $28, $29, $30, $31, $32, $33
       ) RETURNING id
     `, [
-      data.situacion_id, data.tipo_accidente, data.descripcion_accidente,
+      data.situacion_id, data.incidente_id, data.tipo_accidente, data.descripcion_accidente,
       data.condiciones_climaticas, data.condiciones_via, data.iluminacion, data.visibilidad,
       data.kilometro, data.referencia_ubicacion, data.sentido_via, data.tipo_zona,
       data.causa_principal, data.causas_contribuyentes,
       data.pnc_presente || false, data.pnc_agente, data.bomberos_presente || false, data.bomberos_unidad,
       data.mp_presente || false, data.mp_fiscal, data.otras_autoridades,
       data.requiere_peritaje || false, data.numero_caso_pnc, data.numero_caso_mp,
-      data.elaborado_por, data.estado || 'BORRADOR'
+      data.elaborado_por, data.estado || 'BORRADOR',
+      data.area, data.material_via, data.no_grupo_operativo,
+      data.estado_via_id, data.topografia_id, data.geometria_via_id, data.numero_carriles
     ]);
     return result.id;
   },
@@ -138,7 +162,11 @@ export const AccidentologiaModel = {
       'referencia_ubicacion', 'sentido_via', 'tipo_zona', 'causa_principal',
       'causas_contribuyentes', 'pnc_presente', 'pnc_agente', 'bomberos_presente',
       'bomberos_unidad', 'mp_presente', 'mp_fiscal', 'otras_autoridades',
-      'requiere_peritaje', 'numero_caso_pnc', 'numero_caso_mp', 'revisado_por', 'estado'
+      'requiere_peritaje', 'numero_caso_pnc', 'numero_caso_mp', 'revisado_por', 'estado',
+      // Nuevos campos boleta
+      'area', 'material_via', 'no_grupo_operativo',
+      'estado_via_id', 'topografia_id', 'geometria_via_id', 'numero_carriles',
+      'incidente_id'
     ];
 
     for (const campo of camposPermitidos) {
@@ -267,10 +295,14 @@ export const AccidentologiaModel = {
         propietario_nombre, propietario_dpi, propietario_telefono, propietario_direccion,
         conductor_nombre, conductor_dpi, conductor_licencia_tipo, conductor_licencia_numero,
         conductor_telefono, conductor_direccion, conductor_estado,
-        tiene_seguro, aseguradora, numero_poliza, fotos
+        tiene_seguro, aseguradora, numero_poliza, fotos,
+        doc_consignado_licencia, doc_consignado_tarjeta, doc_consignado_tarjeta_circulacion,
+        doc_consignado_licencia_transporte, doc_consignado_tarjeta_operaciones, doc_consignado_poliza,
+        consignado_por, tipo_servicio
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-        $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28
+        $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, 
+        $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36
       ) RETURNING id
     `, [
       data.hoja_accidentologia_id, data.numero_vehiculo, data.tipo_vehiculo,
@@ -281,7 +313,11 @@ export const AccidentologiaModel = {
       data.conductor_nombre, data.conductor_dpi, data.conductor_licencia_tipo,
       data.conductor_licencia_numero, data.conductor_telefono, data.conductor_direccion,
       data.conductor_estado, data.tiene_seguro || false, data.aseguradora,
-      data.numero_poliza, data.fotos || []
+      data.numero_poliza, data.fotos || [],
+      data.doc_consignado_licencia || false, data.doc_consignado_tarjeta || false,
+      data.doc_consignado_tarjeta_circulacion || false, data.doc_consignado_licencia_transporte || false,
+      data.doc_consignado_tarjeta_operaciones || false, data.doc_consignado_poliza || false,
+      data.consignado_por, data.tipo_servicio
     ]);
     return result.id;
   },
@@ -300,7 +336,11 @@ export const AccidentologiaModel = {
       'posicion_final', 'propietario_nombre', 'propietario_dpi', 'propietario_telefono',
       'propietario_direccion', 'conductor_nombre', 'conductor_dpi', 'conductor_licencia_tipo',
       'conductor_licencia_numero', 'conductor_telefono', 'conductor_direccion',
-      'conductor_estado', 'tiene_seguro', 'aseguradora', 'numero_poliza', 'fotos'
+      'conductor_estado', 'tiene_seguro', 'aseguradora', 'numero_poliza', 'fotos',
+      // Nuevos campos documentos consignados
+      'doc_consignado_licencia', 'doc_consignado_tarjeta', 'doc_consignado_tarjeta_circulacion',
+      'doc_consignado_licencia_transporte', 'doc_consignado_tarjeta_operaciones', 'doc_consignado_poliza',
+      'consignado_por', 'tipo_servicio'
     ];
 
     for (const campo of camposPermitidos) {
@@ -478,6 +518,61 @@ export const AccidentologiaModel = {
     `, params);
 
     return result;
+  },
+
+  /**
+   * Obtener datos completos para PDF/reportes usando la vista v_accidentologia_completa
+   */
+  async obtenerCompleto(incidenteId: number): Promise<any> {
+    const data = await db.oneOrNone(`
+      SELECT * FROM v_accidentologia_completa WHERE incidente_id = $1
+    `, [incidenteId]);
+
+    if (!data) return null;
+
+    // Obtener vehículos del incidente
+    const vehiculos = await db.any(`
+      SELECT va.*,
+             tv.nombre AS tipo_vehiculo_nombre,
+             m.nombre AS marca_nombre
+      FROM vehiculo_accidente va
+      LEFT JOIN tipo_vehiculo tv ON va.tipo_vehiculo_id = tv.id
+      LEFT JOIN marca_vehiculo m ON va.marca_id = m.id
+      WHERE va.hoja_accidentologia_id = $1
+      ORDER BY va.numero_vehiculo
+    `, [data.hoja_id]);
+
+    // Obtener personas del incidente
+    const personas = await db.any(`
+      SELECT pa.*
+      FROM persona_accidente pa
+      WHERE pa.hoja_accidentologia_id = $1
+      ORDER BY pa.id
+    `, [data.hoja_id]);
+
+    // Obtener causas del incidente
+    const causas = await db.any(`
+      SELECT ic.*, cc.nombre AS causa_nombre, cc.codigo AS causa_codigo
+      FROM incidente_causa ic
+      JOIN catalogo_causa cc ON ic.causa_id = cc.id
+      WHERE ic.incidente_id = $1
+    `, [incidenteId]);
+
+    return {
+      ...data,
+      vehiculos,
+      personas,
+      causas
+    };
+  },
+
+  /**
+   * Obtener por incidente_id (relación 1:1)
+   */
+  async obtenerPorIncidente(incidenteId: number): Promise<any> {
+    return db.oneOrNone(`
+      SELECT * FROM hoja_accidentologia WHERE incidente_id = $1
+    `, [incidenteId]);
   }
 };
 

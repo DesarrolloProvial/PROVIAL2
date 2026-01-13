@@ -310,3 +310,94 @@ export const NIVELES_DANO = [
   'Pérdida Total',
 ];
 
+// ========================================
+// CONSTANTES PARA ACCIDENTOLOGÍA (Boleta UAV-205-13)
+// ========================================
+
+// Área del incidente
+export const AREAS = [
+  { value: 'URBANA', label: 'Urbana' },
+  { value: 'RURAL', label: 'Rural' },
+];
+
+// Material de la vía
+export const MATERIALES_VIA = [
+  { value: 'ASFALTO', label: 'Asfalto' },
+  { value: 'PAVIMENTO', label: 'Pavimento/Concreto' },
+  { value: 'ADOQUIN', label: 'Adoquín' },
+  { value: 'TERRACERIA', label: 'Terracería' },
+  { value: 'EMPEDRADO', label: 'Empedrado' },
+  { value: 'BALASTRO', label: 'Balastro' },
+];
+
+// Documentos que pueden ser consignados
+export const DOCUMENTOS_CONSIGNADOS = [
+  { id: 'licencia', label: 'Licencia de conducir' },
+  { id: 'tarjeta_circulacion', label: 'Tarjeta de circulación' },
+  { id: 'tarjeta', label: 'Tarjeta de propiedad' },
+  { id: 'licencia_transporte', label: 'Licencia de transporte' },
+  { id: 'tarjeta_operaciones', label: 'Tarjeta de operaciones' },
+  { id: 'poliza', label: 'Póliza de seguro' },
+];
+
+// Tipos de servicio de vehículo
+export const TIPOS_SERVICIO_VEHICULO = [
+  { value: 'PARTICULAR', label: 'Particular' },
+  { value: 'COMERCIAL', label: 'Comercial' },
+  { value: 'OFICIAL', label: 'Oficial' },
+  { value: 'DIPLOMATICO', label: 'Diplomático' },
+  { value: 'EMERGENCIA', label: 'Emergencia' },
+  { value: 'TRANSPORTE_PUBLICO', label: 'Transporte Público' },
+  { value: 'CARGA', label: 'Carga' },
+];
+
+// Estado de la vía
+export const ESTADOS_VIA = [
+  { value: 'OPTIMO', label: 'Óptimo' },
+  { value: 'BUENO', label: 'Bueno' },
+  { value: 'REGULAR', label: 'Regular' },
+  { value: 'MALO', label: 'Malo' },
+];
+
+// Topografía de la vía
+export const TOPOGRAFIAS_VIA = [
+  { value: 'PLANA', label: 'Plana' },
+  { value: 'SUBIDA', label: 'Subida' },
+  { value: 'BAJADA', label: 'Bajada' },
+];
+
+// Geometría de la vía
+export const GEOMETRIAS_VIA = [
+  { value: 'RECTA', label: 'Recta' },
+  { value: 'CURVA_SUAVE', label: 'Curva Suave' },
+  { value: 'CURVA_CERRADA', label: 'Curva Cerrada' },
+  { value: 'INTERSECCION', label: 'Intersección' },
+  { value: 'ROTONDA', label: 'Rotonda' },
+  { value: 'PERALTE', label: 'Peralte' },
+  { value: 'PUENTE', label: 'Puente' },
+];
+
+// Condiciones climáticas
+export const CONDICIONES_CLIMATICAS = [
+  { value: 'DESPEJADO', label: 'Despejado' },
+  { value: 'NUBLADO', label: 'Nublado' },
+  { value: 'LLUVIA_LEVE', label: 'Lluvia Leve' },
+  { value: 'LLUVIA_FUERTE', label: 'Lluvia Fuerte' },
+  { value: 'NEBLINA', label: 'Neblina' },
+  { value: 'VIENTO_FUERTE', label: 'Viento Fuerte' },
+];
+
+// Condiciones de iluminación
+export const ILUMINACIONES = [
+  { value: 'DIURNA', label: 'Diurna (día)' },
+  { value: 'NOCTURNA_ILUMINADA', label: 'Nocturna con iluminación' },
+  { value: 'NOCTURNA_OSCURA', label: 'Nocturna sin iluminación' },
+  { value: 'CREPUSCULO', label: 'Crepúsculo/Amanecer' },
+];
+
+// Consignado por (autoridad)
+export const CONSIGNADO_POR = [
+  { value: 'PNC', label: 'PNC' },
+  { value: 'PMT', label: 'PMT' },
+  { value: 'MP', label: 'Ministerio Público' },
+];

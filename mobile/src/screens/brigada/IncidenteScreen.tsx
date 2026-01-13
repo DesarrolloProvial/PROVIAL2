@@ -18,6 +18,8 @@ import { COLORS } from '../../constants/colors';
 import {
     TIPOS_HECHO_TRANSITO,
     SENTIDOS,
+    AREAS,
+    MATERIALES_VIA,
 } from '../../constants/situacionTypes';
 import { useAuthStore } from '../../store/authStore';
 import { useTestMode } from '../../context/TestModeContext';
@@ -97,6 +99,10 @@ export default function IncidenteScreen() {
             municipio_id: null as number | null,
             direccion_detallada: '',
             coordenadas: null,
+            // Campos accidentología (boleta)
+            area: '' as string,
+            material_via: '' as string,
+            no_grupo_operativo: '' as string,
         }
     });
 
@@ -527,6 +533,56 @@ export default function IncidenteScreen() {
                                         onChangeText={onChange}
                                         style={styles.input}
                                         placeholder="Ej: Km 45.5, frente a gasolinera..."
+                                    />
+                                )}
+                            />
+
+                            {/* ============================================ */}
+                            {/* CAMPOS DE ACCIDENTOLOGÍA (Boleta) */}
+                            {/* ============================================ */}
+                            <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Datos de Boleta</Text>
+
+                            {/* Área (Urbana/Rural) */}
+                            <Controller
+                                control={control}
+                                name="area"
+                                render={({ field: { onChange, value } }) => (
+                                    <View style={styles.pickerContainer}>
+                                        <Text>Área</Text>
+                                        <Picker selectedValue={value || ''} onValueChange={onChange}>
+                                            <Picker.Item label="Seleccionar..." value="" />
+                                            {AREAS.map(a => <Picker.Item key={a.value} label={a.label} value={a.value} />)}
+                                        </Picker>
+                                    </View>
+                                )}
+                            />
+
+                            {/* Material de vía */}
+                            <Controller
+                                control={control}
+                                name="material_via"
+                                render={({ field: { onChange, value } }) => (
+                                    <View style={styles.pickerContainer}>
+                                        <Text>Material de la Vía</Text>
+                                        <Picker selectedValue={value || ''} onValueChange={onChange}>
+                                            <Picker.Item label="Seleccionar..." value="" />
+                                            {MATERIALES_VIA.map(m => <Picker.Item key={m.value} label={m.label} value={m.value} />)}
+                                        </Picker>
+                                    </View>
+                                )}
+                            />
+
+                            {/* Grupo Operativo */}
+                            <Controller
+                                control={control}
+                                name="no_grupo_operativo"
+                                render={({ field: { onChange, value } }) => (
+                                    <PaperInput
+                                        label="No. Grupo Operativo"
+                                        value={value || ''}
+                                        onChangeText={onChange}
+                                        style={styles.input}
+                                        placeholder="Ej: G-1, G-2..."
                                     />
                                 )}
                             />

@@ -3,6 +3,8 @@ import { Plus } from 'lucide-react';
 import {
   TIPOS_HECHO_TRANSITO,
   SENTIDOS,
+  AREAS,
+  MATERIALES_VIA,
 } from '../../constants/situacionTypes';
 import VehiculoFormWeb from './VehiculoFormWeb';
 import GruaFormWeb from './GruaFormWeb';
@@ -103,6 +105,10 @@ export default function IncidenteFormModal({
     detallesAutoridades: {} as Record<string, any>,
     socorroSeleccionados: [] as string[],
     detallesSocorro: {} as Record<string, any>,
+    // Campos accidentología (boleta)
+    area: '',
+    material_via: '',
+    no_grupo_operativo: '',
   });
 
   const [vehiculos, setVehiculos] = useState<Partial<Vehiculo>[]>([]);
@@ -137,6 +143,10 @@ export default function IncidenteFormModal({
           detallesAutoridades: autoridadesSocorro.detalles_autoridades || situacion.detalles_autoridades || {},
           socorroSeleccionados: autoridadesSocorro.socorro || situacion.unidades_socorro || [],
           detallesSocorro: autoridadesSocorro.detalles_socorro || situacion.detalles_socorro || {},
+          // Campos accidentología
+          area: detalles.area || situacion.area || '',
+          material_via: detalles.material_via || situacion.material_via || '',
+          no_grupo_operativo: detalles.no_grupo_operativo || situacion.no_grupo_operativo || '',
         });
         // Cargar vehículos, grúas y ajustadores desde detalles o directamente
         setVehiculos(detalles.vehiculos || situacion.vehiculos || []);
@@ -211,6 +221,10 @@ export default function IncidenteFormModal({
       detallesAutoridades: {},
       socorroSeleccionados: [],
       detallesSocorro: {},
+      // Campos accidentología
+      area: '',
+      material_via: '',
+      no_grupo_operativo: '',
     });
     setVehiculos([]);
     setGruas([]);
@@ -402,11 +416,10 @@ export default function IncidenteFormModal({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-white text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.id
+                ? 'bg-white text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
             >
               {tab.label}
               {tab.id === 'vehiculos' && vehiculos.length > 0 && (
@@ -534,6 +547,58 @@ export default function IncidenteFormModal({
                   placeholder="Ej: Frente a gasolinera Shell..."
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              {/* Datos de Boleta (Accidentología) */}
+              <h3 className="text-lg font-semibold text-gray-700 mt-6 mb-4">Datos de Boleta</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Área */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Área
+                  </label>
+                  <select
+                    value={formData.area}
+                    onChange={(e) => handleChange('area', e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Seleccionar...</option>
+                    {AREAS.map((a) => (
+                      <option key={a.value} value={a.value}>{a.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Material de vía */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Material de la Vía
+                  </label>
+                  <select
+                    value={formData.material_via}
+                    onChange={(e) => handleChange('material_via', e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Seleccionar...</option>
+                    {MATERIALES_VIA.map((m) => (
+                      <option key={m.value} value={m.value}>{m.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Grupo Operativo */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    No. Grupo Operativo
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.no_grupo_operativo}
+                    onChange={(e) => handleChange('no_grupo_operativo', e.target.value)}
+                    placeholder="Ej: G-1, G-2..."
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
               {/* Obstrucción */}

@@ -27,6 +27,12 @@ router.put('/:id/estado', AccidentologiaController.cambiarEstado);
 // Obtener por situación
 router.get('/situacion/:situacionId', AccidentologiaController.obtenerPorSituacion);
 
+// Obtener por incidente (relación 1:1)
+router.get('/incidente/:incidenteId', AccidentologiaController.obtenerPorIncidente);
+
+// Obtener datos completos para PDF/reporte
+router.get('/completo/:incidenteId', AccidentologiaController.obtenerCompleto);
+
 // ============================================
 // RUTAS DE VEHÍCULOS
 // ============================================

@@ -404,6 +404,49 @@ export const AccidentologiaController = {
       console.error('Error obteniendo tipos:', error);
       res.status(500).json({ error: 'Error al obtener tipos' });
     }
+  },
+
+  /**
+   * Obtener datos completos de accidentología para PDF/reporte
+   * GET /api/accidentologia/completo/:incidenteId
+   */
+  async obtenerCompleto(req: Request, res: Response) {
+    try {
+      const incidenteId = parseInt(req.params.incidenteId);
+      const data = await AccidentologiaModel.obtenerCompleto(incidenteId);
+
+      if (!data) {
+        return res.status(404).json({
+          error: 'No se encontró información de accidentología para este incidente'
+        });
+      }
+
+      res.json(data);
+    } catch (error) {
+      console.error('Error obteniendo datos completos:', error);
+      res.status(500).json({ error: 'Error al obtener datos completos' });
+    }
+  },
+
+  /**
+   * Obtener hoja por incidente_id
+   * GET /api/accidentologia/incidente/:incidenteId
+   */
+  async obtenerPorIncidente(req: Request, res: Response) {
+    try {
+      const incidenteId = parseInt(req.params.incidenteId);
+      const hoja = await AccidentologiaModel.obtenerPorIncidente(incidenteId);
+
+      if (!hoja) {
+        return res.json(null);
+      }
+
+      const completa = await AccidentologiaModel.obtenerHojaCompleta(hoja.id);
+      res.json(completa);
+    } catch (error) {
+      console.error('Error obteniendo hoja por incidente:', error);
+      res.status(500).json({ error: 'Error al obtener hoja' });
+    }
   }
 };
 

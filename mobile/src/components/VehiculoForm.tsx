@@ -29,6 +29,7 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
         contenedor: false,
         bus: false,
         sancion: false,
+        documentos: false, // Documentos consignados
     });
 
     // State para date pickers
@@ -641,6 +642,114 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                     </View>
                 </List.Accordion>
             )}
+
+            {/* ============================================ */}
+            {/* SECCIÓN 8: DOCUMENTOS CONSIGNADOS */}
+            {/* ============================================ */}
+            <List.Accordion
+                title="Documentos Consignados"
+                expanded={expandedSections.documentos}
+                onPress={() => toggleSection('documentos')}
+                style={styles.accordion}
+                titleStyle={styles.accordionTitle}
+            >
+                <View style={styles.section}>
+                    <Text style={styles.sectionInfo}>
+                        Marque los documentos que fueron consignados a la autoridad
+                    </Text>
+
+                    {/* Licencia de conducir */}
+                    <View style={styles.switchRow}>
+                        <Text>Licencia de conducir</Text>
+                        <Controller
+                            control={control}
+                            name={`vehiculos.${index}.doc_consignado_licencia`}
+                            render={({ field: { onChange, value } }) => (
+                                <Switch value={value || false} onValueChange={onChange} />
+                            )}
+                        />
+                    </View>
+
+                    {/* Tarjeta de circulación */}
+                    <View style={styles.switchRow}>
+                        <Text>Tarjeta de circulación</Text>
+                        <Controller
+                            control={control}
+                            name={`vehiculos.${index}.doc_consignado_tarjeta_circulacion`}
+                            render={({ field: { onChange, value } }) => (
+                                <Switch value={value || false} onValueChange={onChange} />
+                            )}
+                        />
+                    </View>
+
+                    {/* Tarjeta de propiedad */}
+                    <View style={styles.switchRow}>
+                        <Text>Tarjeta de propiedad</Text>
+                        <Controller
+                            control={control}
+                            name={`vehiculos.${index}.doc_consignado_tarjeta`}
+                            render={({ field: { onChange, value } }) => (
+                                <Switch value={value || false} onValueChange={onChange} />
+                            )}
+                        />
+                    </View>
+
+                    {/* Licencia de transporte */}
+                    <View style={styles.switchRow}>
+                        <Text>Licencia de transporte</Text>
+                        <Controller
+                            control={control}
+                            name={`vehiculos.${index}.doc_consignado_licencia_transporte`}
+                            render={({ field: { onChange, value } }) => (
+                                <Switch value={value || false} onValueChange={onChange} />
+                            )}
+                        />
+                    </View>
+
+                    {/* Tarjeta de operaciones */}
+                    <View style={styles.switchRow}>
+                        <Text>Tarjeta de operaciones</Text>
+                        <Controller
+                            control={control}
+                            name={`vehiculos.${index}.doc_consignado_tarjeta_operaciones`}
+                            render={({ field: { onChange, value } }) => (
+                                <Switch value={value || false} onValueChange={onChange} />
+                            )}
+                        />
+                    </View>
+
+                    {/* Póliza de seguro */}
+                    <View style={styles.switchRow}>
+                        <Text>Póliza de seguro</Text>
+                        <Controller
+                            control={control}
+                            name={`vehiculos.${index}.doc_consignado_poliza`}
+                            render={({ field: { onChange, value } }) => (
+                                <Switch value={value || false} onValueChange={onChange} />
+                            )}
+                        />
+                    </View>
+
+                    {/* Consignado por (autoridad) */}
+                    <Text style={[styles.label, { marginTop: 10 }]}>Consignado por (autoridad)</Text>
+                    <Controller
+                        control={control}
+                        name={`vehiculos.${index}.doc_consignado_por`}
+                        render={({ field: { onChange, value } }) => (
+                            <SegmentedButtons
+                                value={value || ''}
+                                onValueChange={onChange}
+                                buttons={[
+                                    { value: 'PNC', label: 'PNC' },
+                                    { value: 'PMT', label: 'PMT' },
+                                    { value: 'MP', label: 'MP' },
+                                ]}
+                                style={styles.segmentedButtons}
+                            />
+                        )}
+                    />
+                </View>
+            </List.Accordion>
         </View>
     );
 };
@@ -719,5 +828,11 @@ const styles = StyleSheet.create({
     },
     segmentedButtons: {
         marginBottom: 5,
+    },
+    sectionInfo: {
+        fontSize: 13,
+        color: '#666',
+        marginBottom: 12,
+        fontStyle: 'italic',
     },
 });
