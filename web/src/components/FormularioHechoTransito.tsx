@@ -153,8 +153,8 @@ export default function FormularioHechoTransito({ situacion, incidente, onDataCh
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             className={`px-4 py-2 font-medium text-sm whitespace-nowrap border-b-2 transition ${activeTab === tab
-                                    ? 'border-blue-600 text-blue-600'
-                                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                                ? 'border-blue-600 text-blue-600'
+                                : 'border-transparent text-gray-600 hover:text-gray-900'
                                 }`}
                         >
                             {tab === 'general' && 'General'}
@@ -450,15 +450,174 @@ export default function FormularioHechoTransito({ situacion, incidente, onDataCh
 
             {/* Tab Recursos */}
             {activeTab === 'recursos' && (
-                <div className="space-y-4">
-                    <p className="text-sm text-gray-600">
-                        Gestión de grúas, ajustadores, autoridades y servicios de socorro.
-                    </p>
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p className="text-sm text-blue-800">
-                            Esta sección permite agregar recursos que participaron en el incidente.
-                            La funcionalidad completa se agregará en la próxima iteración.
-                        </p>
+                <div className="space-y-6">
+                    {/* Grúas */}
+                    <div>
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-md font-semibold text-gray-800">Grúas</h3>
+                            <button
+                                onClick={() => setFormData(prev => ({
+                                    ...prev,
+                                    gruas: [...prev.gruas, { nombre: '', telefono: '' }]
+                                }))}
+                                className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1"
+                            >
+                                <Plus className="w-3 h-3" />
+                                Agregar
+                            </button>
+                        </div>
+                        {formData.gruas.length === 0 ? (
+                            <p className="text-sm text-gray-500">No hay grúas registradas</p>
+                        ) : (
+                            <div className="space-y-2">
+                                {formData.gruas.map((grua: any, index: number) => (
+                                    <div key={index} className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={grua.nombre}
+                                            onChange={(e) => {
+                                                const newGruas = [...formData.gruas];
+                                                newGruas[index].nombre = e.target.value;
+                                                handleChange('gruas', newGruas);
+                                            }}
+                                            placeholder="Nombre de grúa"
+                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                        />
+                                        <input
+                                            type="tel"
+                                            value={grua.telefono}
+                                            onChange={(e) => {
+                                                const newGruas = [...formData.gruas];
+                                                newGruas[index].telefono = e.target.value;
+                                                handleChange('gruas', newGruas);
+                                            }}
+                                            placeholder="Teléfono"
+                                            className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                        />
+                                        <button
+                                            onClick={() => handleChange('gruas', formData.gruas.filter((_: any, i: number) => i !== index))}
+                                            className="p-2 text-red-600 hover:bg-red-50 rounded"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Ajustadores */}
+                    <div>
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-md font-semibold text-gray-800">Ajustadores</h3>
+                            <button
+                                onClick={() => setFormData(prev => ({
+                                    ...prev,
+                                    ajustadores: [...prev.ajustadores, { nombre: '', telefono: '', aseguradora: '' }]
+                                }))}
+                                className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1"
+                            >
+                                <Plus className="w-3 h-3" />
+                                Agregar
+                            </button>
+                        </div>
+                        {formData.ajustadores.length === 0 ? (
+                            <p className="text-sm text-gray-500">No hay ajustadores registrados</p>
+                        ) : (
+                            <div className="space-y-2">
+                                {formData.ajustadores.map((ajustador: any, index: number) => (
+                                    <div key={index} className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={ajustador.nombre}
+                                            onChange={(e) => {
+                                                const newAjustadores = [...formData.ajustadores];
+                                                newAjustadores[index].nombre = e.target.value;
+                                                handleChange('ajustadores', newAjustadores);
+                                            }}
+                                            placeholder="Nombre"
+                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={ajustador.aseguradora}
+                                            onChange={(e) => {
+                                                const newAjustadores = [...formData.ajustadores];
+                                                newAjustadores[index].aseguradora = e.target.value;
+                                                handleChange('ajustadores', newAjustadores);
+                                            }}
+                                            placeholder="Aseguradora"
+                                            className="w-40 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                        />
+                                        <input
+                                            type="tel"
+                                            value={ajustador.telefono}
+                                            onChange={(e) => {
+                                                const newAjustadores = [...formData.ajustadores];
+                                                newAjustadores[index].telefono = e.target.value;
+                                                handleChange('ajustadores', newAjustadores);
+                                            }}
+                                            placeholder="Teléfono"
+                                            className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                        />
+                                        <button
+                                            onClick={() => handleChange('ajustadores', formData.ajustadores.filter((_: any, i: number) => i !== index))}
+                                            className="p-2 text-red-600 hover:bg-red-50 rounded"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Autoridades */}
+                    <div>
+                        <h3 className="text-md font-semibold text-gray-800 mb-3">Autoridades</h3>
+                        <div className="grid grid-cols-2 gap-2">
+                            {['PNC', 'PMT', 'MP', 'Bomberos'].map(autoridad => (
+                                <label key={autoridad} className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.autoridades.includes(autoridad)}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                handleChange('autoridades', [...formData.autoridades, autoridad]);
+                                            } else {
+                                                handleChange('autoridades', formData.autoridades.filter((a: string) => a !== autoridad));
+                                            }
+                                        }}
+                                        className="w-4 h-4"
+                                    />
+                                    <span className="text-sm">{autoridad}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Socorro */}
+                    <div>
+                        <h3 className="text-md font-semibold text-gray-800 mb-3">Servicios de Socorro</h3>
+                        <div className="grid grid-cols-2 gap-2">
+                            {['Ambulancia', 'Cruz Roja', 'Bomberos Voluntarios', 'Bomberos Municipales'].map(socorro => (
+                                <label key={socorro} className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.socorro.includes(socorro)}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                handleChange('socorro', [...formData.socorro, socorro]);
+                                            } else {
+                                                handleChange('socorro', formData.socorro.filter((s: string) => s !== socorro));
+                                            }
+                                        }}
+                                        className="w-4 h-4"
+                                    />
+                                    <span className="text-sm">{socorro}</span>
+                                </label>
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}

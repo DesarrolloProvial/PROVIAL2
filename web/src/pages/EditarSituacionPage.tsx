@@ -6,6 +6,7 @@ import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import FormularioPatrullaje from '../components/FormularioPatrullaje';
 import FormularioOtros from '../components/FormularioOtros';
 import FormularioHechoTransito from '../components/FormularioHechoTransito';
+import FormularioEmergencia from '../components/FormularioEmergencia';
 
 export default function EditarSituacionPage() {
     const { id } = useParams<{ id: string }>();
@@ -172,14 +173,7 @@ export default function EditarSituacionPage() {
                         )}
 
                         {tipoFormulario === 'EMERGENCIA' && (
-                            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                <p className="text-sm text-yellow-800">
-                                    <strong>Formulario de Emergencia:</strong> En desarrollo
-                                </p>
-                                <p className="text-sm text-yellow-700 mt-2">
-                                    Este formulario incluirá campos para emergencias y obstáculos.
-                                </p>
-                            </div>
+                            <FormularioEmergencia situacion={situacion} onDataChange={setFormData} />
                         )}
                     </div>
 
