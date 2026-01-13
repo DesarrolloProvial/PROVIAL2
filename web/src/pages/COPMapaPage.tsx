@@ -122,7 +122,15 @@ export default function COPMapaPage() {
 
   const { data: resumenUnidades = [], refetch: refetchResumen, isLoading: loadingResumen, isError: errorResumen } = useQuery({
     queryKey: ['resumen-unidades'],
-    queryFn: situacionesAPI.getResumenUnidades,
+    queryFn: async () => {
+      const data = await situacionesAPI.getResumenUnidades() as any;
+      console.log('📊 [COP] Resumen unidades recibido:', data);
+      if (data && data.resumen && data.resumen.length > 0) {
+        console.log('📊 [COP] Primera unidad ejemplo:', data.resumen[0]);
+      }
+      // Retornar solo el array de resumen, no el objeto completo
+      return data?.resumen || [];
+    },
     refetchInterval: socketConnected ? false : 30000,
   });
 
@@ -498,7 +506,7 @@ export default function COPMapaPage() {
               icon={getIconBySede(unidad.sede_id)}
             >
               <Popup>
-                <div className="p-2 min-w-[220px]">
+                <div className="p-2 min-w-[250px]">
                   <div className="flex items-center gap-2 mb-2">
                     <div
                       className="w-3 h-3 rounded-full"
@@ -517,8 +525,13 @@ export default function COPMapaPage() {
                     </p>
                   )}
                   <div className="text-sm space-y-1">
-                    {unidad.ruta_codigo && (
-                      <p>🛣️ {unidad.ruta_codigo} Km {unidad.km} {unidad.sentido && `(${unidad.sentido})`}</p>
+                    {/* Ruta activa o ruta de situación */}
+                    {(unidad.ruta_activa_codigo || unidad.ruta_codigo) && (
+                      <p>
+                        🛣️ {unidad.ruta_activa_codigo || unidad.ruta_codigo}{' '}
+                        {unidad.km && `Km ${unidad.km}`}{' '}
+                        {unidad.sentido && `(${unidad.sentido})`}
+                      </p>
                     )}
                     {unidad.situacion_estado && (
                       <p>
@@ -532,6 +545,26 @@ export default function COPMapaPage() {
                         </span>
                       </p>
                     )}
+
+                    {/* Tripulación */}
+                    {unidad.tripulacion && Array.isArray(unidad.tripulacion) && unidad.tripulacion.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-gray-200">
+                        <p className="text-xs font-semibold text-gray-600 mb-1">👥 Tripulación:</p>
+                        <div className="space-y-0.5">
+                          {unidad.tripulacion.map((t: any, idx: number) => (
+                            <p key={idx} className="text-xs text-gray-700">
+                              • {t.nombre_completo}
+                              {t.rol_tripulacion && (
+                                <span className="ml-1 text-gray-500">
+                                  ({t.rol_tripulacion === 'COMANDANTE' ? '⭐' : ''}{t.rol_tripulacion})
+                                </span>
+                              )}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {unidad.situacion_descripcion && <p className="mt-2 text-gray-700">{unidad.situacion_descripcion}</p>}
                     <div className="mt-3 pt-2 border-t border-gray-100">
                       <button
