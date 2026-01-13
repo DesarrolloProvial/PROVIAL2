@@ -169,30 +169,30 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
       // Lista de tipos a ELIMINAR del menú (se reportan en pantallas dedicadas o están prohibidos)
       const tiposProhibidos = [
         // Incidentes (van en pantalla dedicada)
-        'Accidente de Tránsito', 'Accidente', 'Asistencia Vial', 'Asistencia vial',
-        'Asistencia Vehicular', 'Emergencia / Obstáculo', 'Emergencia', 'Obstáculo',
+        'accidente de tránsito', 'accidente', 'asistencia vial',
+        'asistencia vehicular', 'emergencia / obstáculo', 'emergencia', 'obstáculo',
         // Tipos de accidente específicos (van en select de Hecho de Tránsito)
-        'Colisión', 'Choque', 'Salida de pista', 'Derrape', 'Caída de carga',
-        'Desprendimiento de carga', 'Desbalance de carga', 'Desprendimiento de neumático',
-        'Desprendimiento de eje', 'Vehículo incendiado', 'Ataque armado', 'Vuelco',
-        'Atropello', 'Persona Fallecida',
+        'colisión', 'choque', 'salida de pista', 'derrape', 'caída de carga',
+        'desprendimiento de carga', 'desbalance de carga', 'desprendimiento de neumático',
+        'desprendimiento de eje', 'vehículo incendiado', 'ataque armado', 'vuelco',
+        'atropello', 'persona fallecida',
         // Tipos de emergencia específicos (van en select de Emergencia)
-        'Derrame de combustible', 'Vehículo abandonado', 'Detención de vehículo',
-        'Caída de árbol', 'Desprendimiento de rocas', 'Derrumbe', 'Deslave',
-        'Deslizamiento de tierra', 'Hundimiento', 'Socavamiento',
-        'Desbordamiento de rio', 'Inundación', 'Acumulación de agua', 'Erupción volcánica',
+        'derrame de combustible', 'vehículo abandonado', 'detención de vehículo',
+        'caída de árbol', 'desprendimiento de rocas', 'derrumbe', 'deslave',
+        'deslizamiento de tierra', 'hundimiento', 'socavamiento',
+        'desbordamiento de rio', 'inundación', 'acumulación de agua', 'erupción volcánica',
         // Situaciones prohibidas
-        'Intercambio de tripulantes', 'Salida de Unidad', 'Entrada de unidad',
-        'Cambio de Ruta', 'Cambio de Tripulación', 'Retirando señalización',
-        'Regulación en aeropuerto', 'Denuncia de usuario', 'Apoyo a báscula',
-        'Escoltando Autoridades', 'Bloqueo', 'Manifestación', 'Orden del Día'
+        'intercambio de tripulantes', 'salida de unidad', 'entrada de unidad',
+        'cambio de ruta', 'cambio de tripulación', 'retirando señalización',
+        'regulación en aeropuerto', 'denuncia de usuario', 'apoyo a báscula',
+        'escoltando autoridades', 'bloqueo', 'manifestación', 'orden del día'
       ];
 
-      // Filtrar el catálogo
+      // Filtrar el catálogo (case-insensitive)
       const catalogoFiltrado = catalogoRaw.map((categoria: any) => ({
         ...categoria,
         tipos: categoria.tipos?.filter((tipo: any) =>
-          !tiposProhibidos.includes(tipo.nombre)
+          !tiposProhibidos.includes(tipo.nombre?.toLowerCase())
         ) || []
       })).filter((cat: any) => cat.tipos.length > 0); // Remover categorías vacías
 
