@@ -3,6 +3,14 @@
 
 BEGIN;
 
+-- 0. CREAR TABLAS SI NO EXISTEN
+CREATE TABLE IF NOT EXISTS public.tipo_asistencia_vial (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- 1. ELIMINAR tipos de incidentes del menú "Otra Situación"
 --    (Se reportan desde pantallas dedicadas: Hecho de Tránsito, Asistencia, Emergencia)
 UPDATE catalogo_tipo_situacion SET activo = false 
@@ -83,15 +91,19 @@ BEGIN
 END$$;
 
 -- 5. ASEGURAR tipos de emergencia (sin Manifestación ni Bloqueo)
--- Ya están en migración 098, solo actualizar activos
-UPDATE tipo_emergencia_vial SET activo = true 
-WHERE codigo IN (
-    'DERRAME', 'ABANDONADO', 'DETENCION', 'ARBOL', 'ROCAS', 
-    'DERRUMBE', 'DESLAVE', 'DESLIZAMIENTO', 'HUNDIMIENTO', 
-    'SOCAVAMIENTO', 'DESBORDAMIENTO', 'INUNDACION', 'AGUA', 'ERUPCION'
-);
-
--- Asegurar que Manifestación y Bloqueo estén desactivados
-UPDATE tipo_emergencia_vial SET activo = false WHERE codigo IN ('MANIFESTACION', 'BLOQUEO');
+-- Verificar que la tabla existe
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'tipo_emergencia_vial') THEN
+        UPDATE tipo_emergencia_vial SET activo = true 
+        WHERE codigo IN (
+            'DERRAME', 'ABANDONADO', 'DETENCION', 'ARBOL', 'ROCAS', 
+            'DERRUMBE', 'DESLAVE', 'DESLIZAMIENTO', 'HUNDIMIENTO', 
+            'SOCAVAMIENTO', 'DESBORDAMIENTO', 'INUNDACION', 'AGUA', 'ERUPCION'
+        );
+        
+        UPDATE tipo_emergencia_vial SET activo = false WHERE codigo IN ('MANIFESTACION', 'BLOQUEO');
+    END IF;
+END$$;
 
 COMMIT;
