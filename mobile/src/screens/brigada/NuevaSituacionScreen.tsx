@@ -26,7 +26,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 
 // Componentes
-import RutaSelector from '../../components/RutaSelector';
 import ClimaCargaSelector from '../../components/ClimaCargaSelector';
 import JurisdiccionSelector from '../../components/JurisdiccionSelector';
 import DynamicFormFields from '../../components/DynamicFormFields';
@@ -87,8 +86,7 @@ export default function NuevaSituacionScreen() {
   const [muniId, setMuniId] = useState<number | null>(null);
   const [detallesDinamicos, setDetallesDinamicos] = useState({});
 
-  // Ruta
-  const [rutaSeleccionada, setRutaSeleccionada] = useState<number | null>(null);
+  // Ruta se toma automáticamente de la asignación (salidaActiva.ruta_id)
 
   // Coordenadas GPS
   const [latitud, setLatitud] = useState('14.6349');
@@ -140,7 +138,7 @@ export default function NuevaSituacionScreen() {
       if (situacionData.combustible) setCombustibleInput(situacionData.combustible.toString());
       if (situacionData.kilometraje_unidad) setKilometraje(situacionData.kilometraje_unidad.toString());
       if (situacionData.observaciones) setObservaciones(situacionData.observaciones);
-      if (situacionData.ruta_id) setRutaSeleccionada(situacionData.ruta_id);
+      // La ruta se toma automáticamente de la asignación
 
       // Nuevos campos en edit mode (asumiendo que backend devuelva en situacionData)
       if (situacionData.clima) setClima(situacionData.clima);
@@ -309,12 +307,6 @@ export default function NuevaSituacionScreen() {
             {/* UBICACION */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Ubicación</Text>
-
-              <RutaSelector
-                value={rutaSeleccionada || undefined}
-                onChange={setRutaSeleccionada}
-                showSearch
-              />
 
               <View style={[styles.row, { zIndex: 100 }]}>
                 <View style={{ flex: 1 }}>
