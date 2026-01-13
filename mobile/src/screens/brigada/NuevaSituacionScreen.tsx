@@ -52,7 +52,15 @@ export default function NuevaSituacionScreen() {
   const navigation = useNavigation();
   const route = useRoute<NuevaSituacionRouteProp>();
   const { salidaActiva } = useAuthStore();
-  const { createSituacion, fetchMisSituacionesHoy, isLoading, fetchCatalogo, catalogo } = useSituacionesStore();
+  const {
+    createSituacion,
+    fetchMisSituacionesHoy,
+    isLoading,
+    fetchCatalogo,
+    catalogo,
+    fetchCatalogosAuxiliares,
+    catalogosAuxiliares
+  } = useSituacionesStore();
   const { testModeEnabled } = useTestMode();
 
   // Parámetros de edición
@@ -91,6 +99,7 @@ export default function NuevaSituacionScreen() {
   // Cargar catálogo al inicio
   useEffect(() => {
     fetchCatalogo();
+    fetchCatalogosAuxiliares();
   }, []);
 
   // Reset al cambiar tipo
@@ -164,7 +173,7 @@ export default function NuevaSituacionScreen() {
     switch (tipo.formulario_tipo) {
       case 'INCIDENTE': tipoMacro = 'INCIDENTE'; break;
       case 'ASISTENCIA': tipoMacro = 'ASISTENCIA_VEHICULAR'; break;
-      case 'OBSTACULO': tipoMacro = 'INCIDENTE'; break;
+      case 'OBSTACULO': tipoMacro = 'OBSTACULO'; break;
       case 'ACTIVIDAD': tipoMacro = 'PATRULLAJE'; break;
       case 'NOVEDAD': tipoMacro = 'PARADA_ESTRATEGICA'; break;
       default: tipoMacro = 'OTROS';
@@ -352,8 +361,10 @@ export default function NuevaSituacionScreen() {
             <View style={styles.card}>
               <DynamicFormFields
                 situacionNombre={nombreTipoSeleccionado}
+                formularioTipo={tipoSeleccionado || ''}
                 detalles={detallesDinamicos}
                 setDetalles={setDetallesDinamicos}
+                auxiliares={catalogosAuxiliares}
               />
             </View>
 

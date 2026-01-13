@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import axios from 'axios';
+import api from '../services/api';
 import { API_URL } from '../constants/config';
 import { TipoSituacion, EstadoSituacion, TipoDetalle } from '../constants/situacionTypes';
 
@@ -52,6 +52,11 @@ interface SituacionesState {
   situacionesHoy: SituacionCompleta[];
   situacionActiva: SituacionCompleta | null;
   catalogo: any[];
+  catalogosAuxiliares: {
+    tipos_hecho: any[];
+    tipos_asistencia: any[];
+    tipos_emergencia: any[];
+  };
   isLoading: boolean;
   error: string | null;
   lastUpdate: Date | null;
@@ -59,6 +64,7 @@ interface SituacionesState {
   // Actions
   fetchMisSituacionesHoy: () => Promise<void>;
   fetchCatalogo: () => Promise<void>;
+  fetchCatalogosAuxiliares: () => Promise<void>;
   createSituacion: (data: CreateSituacionData) => Promise<SituacionCompleta>;
   updateSituacion: (id: number, data: UpdateSituacionData) => Promise<void>;
   cerrarSituacion: (id: number, observaciones_finales?: string) => Promise<void>;
@@ -113,6 +119,7 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
   situacionesHoy: [],
   situacionActiva: null,
   catalogo: [],
+  catalogosAuxiliares: { tipos_hecho: [], tipos_asistencia: [], tipos_emergencia: [] },
   isLoading: false,
   error: null,
   lastUpdate: null,
@@ -124,7 +131,7 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await axios.get(`${API_URL}/situaciones/mi-unidad/hoy`);
+      const response = await api.get('/situaciones/mi-unidad/hoy');
       const situaciones = response.data.situaciones || [];
 
       // Buscar situación activa (la más reciente con estado ACTIVA)
@@ -156,16 +163,26 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await axios.get(`${API_URL}/situaciones/catalogo`);
-      // El backend retorna un array de categorias con sus tipos
+      const response = await api.get('/situaciones/catalogo');
       set({
         catalogo: response.data || [],
         isLoading: false,
       });
     } catch (error: any) {
       console.error('Error al obtener catálogo:', error);
-      // No bloqueamos por error de catálogo, usaremos defaults si falla
       set({ isLoading: false });
+    }
+  },
+
+  // ========================================
+  // FETCH CATALOGOS AUXILIARES
+  // ========================================
+  fetchCatalogosAuxiliares: async () => {
+    try {
+      const response = await api.get('/situaciones/auxiliares');
+      set({ catalogosAuxiliares: response.data });
+    } catch (error) {
+      console.error('Error al cargar catálogos auxiliares', error);
     }
   },
 

@@ -1139,3 +1139,33 @@ export async function getCatalogo(_req: Request, res: Response) {
     res.status(500).json({ message: 'Error al obtener catálogo' });
   }
 }
+
+export async function getCatalogosAuxiliares(_req: Request, res: Response) {
+  try {
+    const tipos_hecho = await db.any('SELECT id, nombre FROM tipo_hecho WHERE activo = true ORDER BY nombre');
+
+    let tipos_asistencia: any[] = [];
+    try {
+      // Usamos nombre exacto de la tabla creada en migración 098
+      tipos_asistencia = await db.any('SELECT id, nombre FROM tipo_asistencia_vial WHERE activo = true ORDER BY nombre');
+    } catch (e) {
+      console.warn('Tabla tipo_asistencia_vial aun no existe o error', e);
+    }
+
+    let tipos_emergencia: any[] = [];
+    try {
+      tipos_emergencia = await db.any('SELECT id, codigo, nombre FROM tipo_emergencia_vial WHERE activo = true ORDER BY nombre');
+    } catch (e) {
+      console.warn('Tabla tipo_emergencia_vial aun no existe o error', e);
+    }
+
+    return res.json({
+      tipos_hecho,
+      tipos_asistencia,
+      tipos_emergencia
+    });
+  } catch (error) {
+    console.error('Error al obtener catalogos auxiliares:', error);
+    return res.status(500).json({ msg: 'Error al obtener catálogos auxiliares' });
+  }
+}

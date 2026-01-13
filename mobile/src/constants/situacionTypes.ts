@@ -10,6 +10,7 @@ export type TipoSituacion =
   | 'INCIDENTE'
   | 'REGULACION_TRAFICO'
   | 'ASISTENCIA_VEHICULAR'
+  | 'OBSTACULO'
   | 'OTROS';
 
 export type EstadoSituacion = 'ACTIVA' | 'CERRADA' | 'CANCELADA';
@@ -99,6 +100,12 @@ export const SITUACIONES_CONFIG: Record<
     descripcion: 'Asistencia a vehículo varado',
     color: '#14b8a6',
     icono: 'wrench',
+  },
+  OBSTACULO: {
+    label: 'Obstáculo / Emergencia',
+    descripcion: 'Obstáculo en vía o emergencia vial',
+    color: '#d97706',
+    icono: 'alert-triangle',
   },
   OTROS: {
     label: 'Otros',

@@ -18,6 +18,7 @@ import {
   getResumenUnidades,
   cambiarTipoSituacion,
   getCatalogo,
+  getCatalogosAuxiliares
 } from '../controllers/situacion.controller';
 import { authenticate, authorize, canEditSituacion } from '../middlewares/auth';
 
@@ -44,6 +45,9 @@ router.get('/tipos', authenticate, getTiposSituacion);
 
 // Catálogo completo de situaciones (nuevo catálogo dinámico)
 router.get('/catalogo', authenticate, getCatalogo);
+
+// Catálogos Auxiliares (Tipos Hecho, Asistencia, etc)
+router.get('/auxiliares', authenticate, getCatalogosAuxiliares);
 
 // Situaciones activas
 router.get('/activas', authenticate, listSituacionesActivas);

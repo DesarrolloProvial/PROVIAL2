@@ -5,17 +5,69 @@ import { COLORS } from '../constants/colors';
 
 interface Props {
     situacionNombre: string;
+    formularioTipo?: string;
     detalles: any;
     setDetalles: (d: any) => void;
+    auxiliares?: {
+        tipos_hecho: any[];
+        tipos_asistencia: any[];
+        tipos_emergencia: any[];
+    };
 }
 
 const TIPOS_VEHICULO = ['Automóvil', 'Pickup', 'Camioneta', 'Bus', 'Camión C-2', 'Camión C-3', 'Trailer', 'Moto'];
 
-export default function DynamicFormFields({ situacionNombre, detalles, setDetalles }: Props) {
+export default function DynamicFormFields({ situacionNombre, formularioTipo, detalles, setDetalles, auxiliares }: Props) {
 
     const handleChange = (field: string, value: any) => {
         setDetalles({ ...detalles, [field]: value });
     };
+
+    // 0. SELECTS ESPECIALES (Accidente, Asistencia, Emergencia)
+    if (formularioTipo === 'INCIDENTE') {
+        const lista = auxiliares?.tipos_hecho || [];
+        return (
+            <View style={styles.section}>
+                <Text style={styles.title}>Tipo de Accidente</Text>
+                <View style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8 }}>
+                    <Picker selectedValue={detalles.tipo_hecho_id} onValueChange={(v) => handleChange('tipo_hecho_id', v)}>
+                        <Picker.Item label="Seleccione..." value="" />
+                        {lista.map((item: any) => <Picker.Item key={item.id} label={item.nombre} value={item.id} />)}
+                    </Picker>
+                </View>
+            </View>
+        );
+    }
+
+    if (formularioTipo === 'ASISTENCIA_VEHICULAR') {
+        const lista = auxiliares?.tipos_asistencia || [];
+        return (
+            <View style={styles.section}>
+                <Text style={styles.title}>Tipo de Asistencia</Text>
+                <View style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8 }}>
+                    <Picker selectedValue={detalles.tipo_asistencia_id} onValueChange={(v) => handleChange('tipo_asistencia_id', v)}>
+                        <Picker.Item label="Seleccione..." value="" />
+                        {lista.map((item: any) => <Picker.Item key={item.id} label={item.nombre} value={item.id} />)}
+                    </Picker>
+                </View>
+            </View>
+        );
+    }
+
+    if (formularioTipo === 'OBSTACULO') {
+        const lista = auxiliares?.tipos_emergencia || [];
+        return (
+            <View style={styles.section}>
+                <Text style={styles.title}>Tipo de Emergencia / Obstáculo</Text>
+                <View style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8 }}>
+                    <Picker selectedValue={detalles.tipo_emergencia_id} onValueChange={(v) => handleChange('tipo_emergencia_id', v)}>
+                        <Picker.Item label="Seleccione..." value="" />
+                        {lista.map((item: any) => <Picker.Item key={item.id} label={item.nombre} value={item.id} />)}
+                    </Picker>
+                </View>
+            </View>
+        );
+    }
 
     // 1. CONTEO VEHICULAR
     if (situacionNombre === 'Conteo vehicular') {
