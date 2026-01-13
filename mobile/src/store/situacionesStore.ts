@@ -195,16 +195,35 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
         });
       });
 
-      // Filtrar el catálogo (case-insensitive)
+      // Filtrar el catálogo (case-insensitive + sin acentos)
       const catalogoFiltrado = catalogoRaw.map((categoria: any) => ({
         ...categoria,
         tipos: categoria.tipos?.filter((tipo: any) => {
-          const normalizado = tipo.nombre?.toLowerCase();
-          const filtrado = !tiposProhibidos.includes(normalizado);
-          if (!filtrado) {
+          const normalizado = tipo.nombre?.toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Quita acentos
+
+          // Lista de palabras clave a bloquear
+          const bloqueadas = [
+            'accidente', 'asistencia', 'emergencia', 'obstaculo',
+            'colision', 'choque', 'salida de pista', 'derrape', 'caida de carga',
+            'desprendimiento', 'desbalance', 'neumatico', 'incendiado', 'ataque armado',
+            'vuelco', 'atropello', 'persona fallecida',
+            'derrame', 'abandonado', 'detencion de vehiculo',
+            'caida de arbol', 'rocas', 'derrumbe', 'deslave',
+            'deslizamiento', 'hundimiento', 'socavamiento',
+            'desbordamiento', 'inundacion', 'acumulacion de agua', 'erupcion',
+            'intercambio de tripulantes', 'salida de unidad', 'entrada de unidad',
+            'cambio de ruta', 'cambio de tripulacion', 'retirando senalizacion',
+            'aeropuerto', 'denuncia', 'bascula', // Sin tilde para capturar báscula
+            'escoltando autoridades', 'bloqueo', 'manifestacion', 'orden del dia'
+          ];
+
+          const bloqueado = bloqueadas.some(palabra => normalizado?.includes(palabra));
+
+          if (bloqueado) {
             console.log('FILTRADO:', tipo.nombre);
           }
-          return filtrado;
+          return !bloqueado;
         }) || []
       })).filter((cat: any) => cat.tipos.length > 0); // Remover categorías vacías
 
