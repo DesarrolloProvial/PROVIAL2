@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { situacionesAPI, api } from '../services/api';
+import { situacionesAPI } from '../services/api';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import FormularioPatrullaje from '../components/FormularioPatrullaje';
+import FormularioOtros from '../components/FormularioOtros';
 
 export default function EditarSituacionPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const [guardando, setGuardando] = useState(false);
+    const [formData, setFormData] = useState<any>({});
 
     // Cargar situación
     const { data: situacion, isLoading, error } = useQuery({
@@ -19,6 +21,26 @@ export default function EditarSituacionPage() {
         },
         enabled: !!id,
     });
+
+    // Mutation para guardar
+    const saveMutation = useMutation({
+        mutationFn: async (data: any) => {
+            return await situacionesAPI.update(Number(id), data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['situacion', id] });
+            queryClient.invalidateQueries({ queryKey: ['bitacora-unidad'] });
+            alert('Situación actualizada correctamente');
+            navigate(-1);
+        },
+        onError: (error: any) => {
+            alert('Error al guardar: ' + (error.response?.data?.error || error.message));
+        }
+    });
+
+    const handleSave = () => {
+        saveMutation.mutate(formData);
+    };
 
     if (isLoading) {
         return (
@@ -136,22 +158,24 @@ export default function EditarSituacionPage() {
                             Detalles de {situacion.tipo_situacion?.replace(/_/g, ' ')}
                         </h2>
 
-                        {/* TODO: Renderizar formulario según tipoFormulario */}
-                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <p className="text-sm text-yellow-800">
-                                <strong>Tipo de formulario detectado:</strong> {tipoFormulario}
-                            </p>
-                            <p className="text-sm text-yellow-700 mt-2">
-                                Los formularios específicos se están desarrollando. Por ahora puedes ver los datos cargados.
-                            </p>
+                        {tipoFormulario === 'PATRULLAJE' && (
+                            <FormularioPatrullaje situacion={situacion} onDataChange={setFormData} />
+                        )}
 
-                            {/* Mostrar datos crudos temporalmente */}
-                            <div className="mt-4 p-3 bg-white rounded border border-yellow-300">
-                                <pre className="text-xs overflow-auto max-h-96">
-                                    {JSON.stringify(situacion, null, 2)}
-                                </pre>
+                        {tipoFormulario === 'OTROS' && (
+                            <FormularioOtros situacion={situacion} onDataChange={setFormData} />
+                        )}
+
+                        {(tipoFormulario === 'HECHO_TRANSITO' || tipoFormulario === 'ASISTENCIA_VIAL' || tipoFormulario === 'EMERGENCIA') && (
+                            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <p className="text-sm text-yellow-800">
+                                    <strong>Formulario complejo:</strong> {tipoFormulario}
+                                </p>
+                                <p className="text-sm text-yellow-700 mt-2">
+                                    Este formulario está en desarrollo. Incluirá todas las secciones del móvil.
+                                </p>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Botones de acción */}
@@ -163,10 +187,11 @@ export default function EditarSituacionPage() {
                             Cancelar
                         </button>
                         <button
-                            disabled={guardando}
+                            onClick={handleSave}
+                            disabled={saveMutation.isPending}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
                         >
-                            {guardando ? (
+                            {saveMutation.isPending ? (
                                 <>
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                     Guardando...
