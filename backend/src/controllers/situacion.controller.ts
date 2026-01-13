@@ -1082,3 +1082,60 @@ export async function listSituacionesActivas(req: Request, res: Response) {
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
+// ========================================
+// CATALOGO
+// ========================================
+
+export async function getCatalogo(req: Request, res: Response) {
+  try {
+    const catalogo = await db.any(`
+      SELECT 
+        ts.id, 
+        ts.nombre, 
+        ts.descripcion, 
+        ts.icono, 
+        ts.formulario_tipo,
+        ts.requiere_formulario,
+        ts.orden as tipo_orden,
+        cs.id as categoria_id,
+        cs.nombre as categoria_nombre,
+        cs.codigo as categoria_codigo,
+        cs.icono as categoria_icono,
+        cs.orden as categoria_orden
+      FROM catalogo_tipo_situacion ts
+      JOIN catalogo_categoria_situacion cs ON ts.categoria_id = cs.id
+      WHERE ts.activo = true
+      ORDER BY cs.orden, ts.orden, ts.nombre
+    `);
+
+    // Agrupar por categoría
+    const categoriasMap = new Map();
+
+    catalogo.forEach(item => {
+      if (!categoriasMap.has(item.categoria_id)) {
+        categoriasMap.set(item.categoria_id, {
+          id: item.categoria_id,
+          nombre: item.categoria_nombre,
+          codigo: item.categoria_codigo,
+          icono: item.categoria_icono,
+          orden: item.categoria_orden,
+          tipos: []
+        });
+      }
+      categoriasMap.get(item.categoria_id).tipos.push({
+        id: item.id,
+        nombre: item.nombre,
+        descripcion: item.descripcion,
+        icono: item.icono,
+        formulario_tipo: item.formulario_tipo,
+        requiere_formulario: item.requiere_formulario
+      });
+    });
+
+    const resultado = Array.from(categoriasMap.values());
+    res.json(resultado);
+  } catch (error) {
+    console.error('Error al obtener catálogo de situaciones:', error);
+    res.status(500).json({ message: 'Error al obtener catálogo' });
+  }
+}

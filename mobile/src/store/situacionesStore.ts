@@ -51,12 +51,14 @@ interface SituacionesState {
   // State
   situacionesHoy: SituacionCompleta[];
   situacionActiva: SituacionCompleta | null;
+  catalogo: any[];
   isLoading: boolean;
   error: string | null;
   lastUpdate: Date | null;
 
   // Actions
   fetchMisSituacionesHoy: () => Promise<void>;
+  fetchCatalogo: () => Promise<void>;
   createSituacion: (data: CreateSituacionData) => Promise<SituacionCompleta>;
   updateSituacion: (id: number, data: UpdateSituacionData) => Promise<void>;
   cerrarSituacion: (id: number, observaciones_finales?: string) => Promise<void>;
@@ -67,6 +69,7 @@ interface SituacionesState {
 
 export interface CreateSituacionData {
   tipo_situacion: TipoSituacion;
+  tipo_situacion_id?: number; // Referencia al catalogo
   unidad_id?: number;
   turno_id?: number;
   asignacion_id?: number;
@@ -109,6 +112,7 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
   // Initial state
   situacionesHoy: [],
   situacionActiva: null,
+  catalogo: [],
   isLoading: false,
   error: null,
   lastUpdate: null,
@@ -142,6 +146,26 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
       });
 
       console.error('Error al obtener situaciones:', error);
+    }
+  },
+
+  // ========================================
+  // FETCH CATALOGO
+  // ========================================
+  fetchCatalogo: async () => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await axios.get(`${API_URL}/situaciones/catalogo`);
+      // El backend retorna un array de categorias con sus tipos
+      set({
+        catalogo: response.data || [],
+        isLoading: false,
+      });
+    } catch (error: any) {
+      console.error('Error al obtener catálogo:', error);
+      // No bloqueamos por error de catálogo, usaremos defaults si falla
+      set({ isLoading: false });
     }
   },
 

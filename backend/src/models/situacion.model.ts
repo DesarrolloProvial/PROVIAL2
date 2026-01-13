@@ -39,6 +39,7 @@ export interface Situacion {
   uuid: string;
   numero_situacion: string | null;
   tipo_situacion: TipoSituacion;
+  tipo_situacion_id?: number | null;
   estado: EstadoSituacion;
   asignacion_id: number | null;
   unidad_id: number;
@@ -133,15 +134,16 @@ export const SituacionModel = {
     observaciones?: string;
     incidente_id?: number;
     creado_por: number;
+    tipo_situacion_id?: number;
   }): Promise<Situacion> {
     const query = `
       INSERT INTO situacion (
         tipo_situacion, unidad_id, salida_unidad_id, turno_id, asignacion_id,
         ruta_id, km, sentido, latitud, longitud, ubicacion_manual,
         combustible, combustible_fraccion, kilometraje_unidad, tripulacion_confirmada,
-        descripcion, observaciones, incidente_id, creado_por
+        descripcion, observaciones, incidente_id, creado_por, tipo_situacion_id
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
       ) RETURNING *
     `;
 
@@ -165,6 +167,7 @@ export const SituacionModel = {
       data.observaciones || null,
       data.incidente_id || null,
       data.creado_por,
+      data.tipo_situacion_id || null
     ]);
   },
 
