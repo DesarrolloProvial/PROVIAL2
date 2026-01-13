@@ -47,6 +47,10 @@ async function getUnidadesPermitidas(userId: number, rol: string): Promise<numbe
 
 export async function createSituacion(req: Request, res: Response) {
   try {
+    console.log('📥 [CONTROLLER] Recibiendo solicitud de creación de situación');
+    console.log('📥 [CONTROLLER] Body completo:', JSON.stringify(req.body, null, 2));
+    console.log('📥 [CONTROLLER] Usuario:', req.user?.userId, req.user?.rol);
+
     const {
       tipo_situacion,
       unidad_id,
@@ -67,9 +71,16 @@ export async function createSituacion(req: Request, res: Response) {
       observaciones,
       incidente_id,
       detalles, // Array opcional de detalles
+      // Nuevos campos
+      tipo_situacion_id,
+      clima,
+      carga_vehicular,
+      departamento_id,
+      municipio_id,
     } = req.body;
 
     const userId = req.user!.userId;
+    console.log('📥 [CONTROLLER] Campos extraídos correctamente');
 
     // Si es un brigada, siempre buscar su asignación
     let unidadFinal = unidad_id;
@@ -236,7 +247,7 @@ export async function createSituacion(req: Request, res: Response) {
     }
 
     // Crear la situación
-    const situacion = await SituacionModel.create({
+    const dataToCreate = {
       tipo_situacion,
       unidad_id: unidadFinal,
       salida_unidad_id: salidaFinal,
@@ -256,7 +267,17 @@ export async function createSituacion(req: Request, res: Response) {
       observaciones,
       incidente_id,
       creado_por: userId,
-    });
+      // Nuevos campos
+      tipo_situacion_id,
+      clima,
+      carga_vehicular,
+      departamento_id,
+      municipio_id,
+    };
+
+    console.log('💾 [CONTROLLER] Datos para crear situación:', JSON.stringify(dataToCreate, null, 2));
+    const situacion = await SituacionModel.create(dataToCreate);
+    console.log('✅ [CONTROLLER] Situación creada exitosamente:', situacion.id);
 
     // Agregar detalles si fueron proporcionados
     if (detalles && Array.isArray(detalles)) {
@@ -297,11 +318,16 @@ export async function createSituacion(req: Request, res: Response) {
       situacion: situacionCompleta,
     });
   } catch (error: any) {
-    console.error('Error en createSituacion:', error);
+    console.error('❌ [CONTROLLER] Error en createSituacion:', error);
+    console.error('❌ [CONTROLLER] Error stack:', error.stack);
+    console.error('❌ [CONTROLLER] Error message:', error.message);
+    console.error('❌ [CONTROLLER] Error detail:', error.detail);
+    console.error('❌ [CONTROLLER] Error code:', error.code);
     return res.status(500).json({
       error: 'Error interno del servidor',
       message: error.message,
-      detail: error.detail || error.toString()
+      detail: error.detail || error.toString(),
+      code: error.code
     });
   }
 }
@@ -528,6 +554,12 @@ export async function updateSituacion(req: Request, res: Response) {
       danios,
       tipoIncidente,
       subtipo_situacion,
+      // Nuevos campos
+      tipo_situacion_id,
+      clima,
+      carga_vehicular,
+      departamento_id,
+      municipio_id,
     } = req.body;
 
     // Normalizar datos: soportar estructura nueva y legacy
@@ -554,6 +586,12 @@ export async function updateSituacion(req: Request, res: Response) {
       descripcion,
       observaciones,
       actualizado_por: userId,
+      // Nuevos campos
+      tipo_situacion_id,
+      clima,
+      carga_vehicular,
+      departamento_id,
+      municipio_id,
     });
 
     // Guardar detalles adicionales

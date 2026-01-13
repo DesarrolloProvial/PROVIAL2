@@ -27,7 +27,7 @@ import { Picker } from '@react-native-picker/picker';
 
 // Componentes
 import ClimaCargaSelector from '../../components/ClimaCargaSelector';
-import JurisdiccionSelector from '../../components/JurisdiccionSelector';
+import { DepartamentoMunicipioSelector } from '../../components/DepartamentoMunicipioSelector';
 import DynamicFormFields from '../../components/DynamicFormFields';
 
 type NuevaSituacionRouteProp = RouteProp<{
@@ -251,7 +251,18 @@ export default function NuevaSituacionScreen() {
 
       Alert.alert('Éxito', 'Situación guardada', [{ text: 'OK', onPress: () => navigation.goBack() }]);
     } catch (error: any) {
-      Alert.alert('Error', error.msg || 'Error al guardar');
+      console.error('❌ ERROR COMPLETO AL CREAR SITUACIÓN:', JSON.stringify(error, null, 2));
+      console.error('❌ ERROR RESPONSE:', error?.response?.data);
+      console.error('❌ ERROR MESSAGE:', error?.message);
+      console.error('❌ ERROR MSG:', error?.msg);
+
+      const errorMsg = error?.response?.data?.error
+        || error?.response?.data?.message
+        || error?.msg
+        || error?.message
+        || 'Error al guardar';
+
+      Alert.alert('Error al crear situación', errorMsg);
     }
   };
 
@@ -308,9 +319,11 @@ export default function NuevaSituacionScreen() {
             <View style={[styles.card, { zIndex: 100 }]}>
               <Text style={styles.cardTitle}>Ubicación</Text>
 
-              <JurisdiccionSelector
-                deptoId={deptoId} setDeptoId={setDeptoId}
-                muniId={muniId} setMuniId={setMuniId}
+              <DepartamentoMunicipioSelector
+                departamentoValue={deptoId || undefined}
+                municipioValue={muniId || undefined}
+                onDepartamentoChange={(id) => setDeptoId(id || null)}
+                onMunicipioChange={(id) => setMuniId(id || null)}
               />
 
               <View style={styles.row}>
@@ -356,44 +369,45 @@ export default function NuevaSituacionScreen() {
               </View>
             )}
 
-            {/* DINAMICOS */}
-            <View style={[styles.card, { zIndex: 40 }]}>
-              <DynamicFormFields
-                situacionNombre={nombreTipoSeleccionado}
-                formularioTipo={tipoSeleccionado || ''}
-                detalles={detallesDinamicos}
-                setDetalles={setDetallesDinamicos}
-                auxiliares={catalogosAuxiliares}
-                unidades={unidadesList}
-              />
-            </View>
+            {/* DINAMICOS (solo mostrar si el componente renderiza algo) */}
+            <DynamicFormFields
+              situacionNombre={nombreTipoSeleccionado}
+              formularioTipo={tipoSeleccionado || ''}
+              detalles={detallesDinamicos}
+              setDetalles={setDetallesDinamicos}
+              auxiliares={catalogosAuxiliares}
+              unidades={unidadesList}
+            />
 
-            {/* OBSERVACIONES Y DATOS UNIDAD (Si aplica) */}
+            {/* OBSERVACIONES */}
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Datos Adicionales</Text>
+              <Text style={styles.cardTitle}>Observaciones</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Observaciones"
+                placeholder="Observaciones adicionales..."
                 multiline
                 numberOfLines={3}
                 value={observaciones}
                 onChangeText={setObservaciones}
               />
+            </View>
 
-              {/* Opcional: Kilometraje y Combustible solo si aplica a la situacion? 
-                    El usuario no especifico reglas estrictas, pero siempre es bueno poder actualizar combustible.
-                */}
-              <View style={styles.row}>
-                <View style={styles.half}>
-                  <Text style={styles.label}>Combustible (Gal)</Text>
-                  <TextInput style={styles.input} value={combustibleInput} onChangeText={setCombustibleInput} keyboardType="numeric" />
-                </View>
-                <View style={styles.half}>
-                  <Text style={styles.label}>Odómetro</Text>
-                  <TextInput style={styles.input} value={kilometraje} onChangeText={setKilometraje} keyboardType="numeric" />
+            {/* COMBUSTIBLE Y ODOMETRO (solo para Abastecimiento) */}
+            {nombreTipoSeleccionado === 'Abastecimiento' && (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Datos de Unidad</Text>
+                <View style={styles.row}>
+                  <View style={styles.half}>
+                    <Text style={styles.label}>Combustible (Gal)</Text>
+                    <TextInput style={styles.input} value={combustibleInput} onChangeText={setCombustibleInput} keyboardType="numeric" placeholder="0.0" />
+                  </View>
+                  <View style={styles.half}>
+                    <Text style={styles.label}>Odómetro</Text>
+                    <TextInput style={styles.input} value={kilometraje} onChangeText={setKilometraje} keyboardType="numeric" placeholder="0" />
+                  </View>
                 </View>
               </View>
-            </View>
+            )}
 
             <TouchableOpacity
               style={styles.saveButton}

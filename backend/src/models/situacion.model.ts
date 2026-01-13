@@ -423,6 +423,7 @@ export const SituacionModel = {
       descripcion?: string;
       observaciones?: string;
       actualizado_por: number;
+      tipo_situacion_id?: number | null;
       clima?: string | null;
       carga_vehicular?: string | null;
       departamento_id?: number | null;
@@ -491,6 +492,11 @@ export const SituacionModel = {
     if (data.observaciones !== undefined) {
       setClauses.push(`observaciones = $${paramIndex++}`);
       params.push(data.observaciones);
+    }
+
+    if (data.tipo_situacion_id !== undefined) {
+      setClauses.push(`tipo_situacion_id = $${paramIndex++}`);
+      params.push(data.tipo_situacion_id);
     }
 
     if (data.clima !== undefined) {

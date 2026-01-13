@@ -256,7 +256,9 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
+      console.log('🚀 [STORE] Enviando situación:', JSON.stringify(data, null, 2));
       const response = await axios.post(`${API_URL}/situaciones`, data);
+      console.log('✅ [STORE] Respuesta exitosa:', response.data);
       const nuevaSituacion = response.data.situacion;
 
       // Actualizar lista local
@@ -270,6 +272,11 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
 
       return nuevaSituacion;
     } catch (error: any) {
+      console.error('❌ [STORE] Error al crear situación:', error);
+      console.error('❌ [STORE] Error response:', error?.response);
+      console.error('❌ [STORE] Error response data:', error?.response?.data);
+      console.error('❌ [STORE] Error status:', error?.response?.status);
+
       const errorMessage =
         error.response?.data?.error || error.message || 'Error al crear situación';
 
