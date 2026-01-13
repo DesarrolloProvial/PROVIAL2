@@ -146,46 +146,63 @@ export const SituacionModel = {
     carga_vehicular?: string;
     departamento_id?: number;
     municipio_id?: number;
+    detalles?: Array<{ tipo_detalle: string; datos: any }>;
   }): Promise<Situacion> {
-    const query = `
-      INSERT INTO situacion (
-        tipo_situacion, unidad_id, salida_unidad_id, turno_id, asignacion_id,
-        ruta_id, km, sentido, latitud, longitud, ubicacion_manual,
-        combustible, combustible_fraccion, kilometraje_unidad, tripulacion_confirmada,
-        descripcion, observaciones, incidente_id, creado_por, tipo_situacion_id,
-        clima, carga_vehicular, departamento_id, municipio_id
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-        $21, $22, $23, $24
-      ) RETURNING *
-    `;
+    return db.tx(async (t) => {
+      // 1. Insertar Situación
+      const qSituacion = `
+        INSERT INTO situacion (
+          tipo_situacion, unidad_id, salida_unidad_id, turno_id, asignacion_id,
+          ruta_id, km, sentido, latitud, longitud, ubicacion_manual,
+          combustible, combustible_fraccion, kilometraje_unidad, tripulacion_confirmada,
+          descripcion, observaciones, incidente_id, creado_por, tipo_situacion_id,
+          clima, carga_vehicular, departamento_id, municipio_id
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+          $21, $22, $23, $24
+        ) RETURNING *
+      `;
 
-    return db.one(query, [
-      data.tipo_situacion,
-      data.unidad_id,
-      data.salida_unidad_id || null,
-      data.turno_id || null,
-      data.asignacion_id || null,
-      data.ruta_id || null,
-      data.km || null,
-      data.sentido || null,
-      data.latitud || null,
-      data.longitud || null,
-      data.ubicacion_manual || false,
-      data.combustible || null,
-      data.combustible_fraccion || null,
-      data.kilometraje_unidad || null,
-      data.tripulacion_confirmada || null,
-      data.descripcion || null,
-      data.observaciones || null,
-      data.incidente_id || null,
-      data.creado_por,
-      data.tipo_situacion_id || null,
-      data.clima || null,
-      data.carga_vehicular || null,
-      data.departamento_id || null,
-      data.municipio_id || null
-    ]);
+      const situacion = await t.one(qSituacion, [
+        data.tipo_situacion,
+        data.unidad_id,
+        data.salida_unidad_id || null,
+        data.turno_id || null,
+        data.asignacion_id || null,
+        data.ruta_id || null,
+        data.km || null,
+        data.sentido || null,
+        data.latitud || null,
+        data.longitud || null,
+        data.ubicacion_manual || false,
+        data.combustible || null,
+        data.combustible_fraccion || null,
+        data.kilometraje_unidad || null,
+        data.tripulacion_confirmada || null,
+        data.descripcion || null,
+        data.observaciones || null,
+        data.incidente_id || null,
+        data.creado_por,
+        data.tipo_situacion_id || null,
+        data.clima || null,
+        data.carga_vehicular || null,
+        data.departamento_id || null,
+        data.municipio_id || null
+      ]);
+
+      // 2. Insertar Detalles (si existen)
+      if (data.detalles && data.detalles.length > 0) {
+        const qDetalle = `
+          INSERT INTO detalle_situacion (situacion_id, tipo_detalle, datos, creado_por)
+          VALUES ($1, $2, $3, $4)
+        `;
+        for (const det of data.detalles) {
+          await t.none(qDetalle, [situacion.id, det.tipo_detalle, det.datos, data.creado_por]);
+        }
+      }
+
+      return situacion;
+    });
   },
 
   /**

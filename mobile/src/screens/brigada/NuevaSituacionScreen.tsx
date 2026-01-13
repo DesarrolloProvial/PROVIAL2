@@ -19,13 +19,17 @@ import { COLORS } from '../../constants/colors';
 import {
   TipoSituacion,
   SITUACIONES_CONFIG,
-  SENTIDOS,
 } from '../../constants/situacionTypes';
-import FuelSelector from '../../components/FuelSelector';
-import RutaSelector from '../../components/RutaSelector';
 import * as Location from 'expo-location';
 import api from '../../services/api';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
+
+// Componentes
+import RutaSelector from '../../components/RutaSelector';
+import ClimaCargaSelector from '../../components/ClimaCargaSelector';
+import JurisdiccionSelector from '../../components/JurisdiccionSelector';
+import DynamicFormFields from '../../components/DynamicFormFields';
 
 type NuevaSituacionRouteProp = RouteProp<{
   NuevaSituacion: {
@@ -63,10 +67,20 @@ export default function NuevaSituacionScreen() {
 
   const [km, setKm] = useState('');
   const [sentido, setSentido] = useState('');
-  const [combustibleFraccion, setCombustibleFraccion] = useState<string | null>(null);
-  const [combustibleDecimal, setCombustibleDecimal] = useState<number>(0);
+  const [combustibleDecimal, setCombustibleDecimal] = useState<number>(0); // Simplificado input decimal
+  const [combustibleInput, setCombustibleInput] = useState(''); // Input texto
   const [kilometraje, setKilometraje] = useState('');
   const [observaciones, setObservaciones] = useState('');
+
+  // Nuevos Estados
+  const [clima, setClima] = useState('');
+  const [carga, setCarga] = useState('');
+  const [deptoId, setDeptoId] = useState<number | null>(null);
+  const [muniId, setMuniId] = useState<number | null>(null);
+  const [detallesDinamicos, setDetallesDinamicos] = useState({});
+
+  // Ruta
+  const [rutaSeleccionada, setRutaSeleccionada] = useState<number | null>(null);
 
   // Coordenadas GPS
   const [latitud, setLatitud] = useState('14.6349');
@@ -79,6 +93,17 @@ export default function NuevaSituacionScreen() {
     fetchCatalogo();
   }, []);
 
+  // Reset al cambiar tipo
+  useEffect(() => {
+    if (!editMode) {
+      setDetallesDinamicos({});
+      setClima('');
+      setCarga('');
+      setDeptoId(null);
+      setMuniId(null);
+    }
+  }, [tipoSituacionId]);
+
   // Obtener ubicacion GPS
   useEffect(() => {
     if (!testModeEnabled && !editMode) {
@@ -89,24 +114,26 @@ export default function NuevaSituacionScreen() {
   // Pre-llenar en modo edición
   useEffect(() => {
     if (editMode && situacionData) {
-      if (situacionData.tipo_situacion) {
-        setTipoSeleccionado(situacionData.tipo_situacion as TipoSituacion);
-        // Si hay ID de subtipo, deberia venir en situacionData (si el backend lo manda)
-        if (situacionData.tipo_situacion_id) {
-          setTipoSituacionId(situacionData.tipo_situacion_id);
-        }
+      if (situacionData.tipo_situacion) setTipoSeleccionado(situacionData.tipo_situacion as TipoSituacion);
+      if (situacionData.tipo_situacion_id) {
+        setTipoSituacionId(situacionData.tipo_situacion_id);
+        setNombreTipoSeleccionado(situacionData.subtipo_nombre || '');
       }
+
       if (situacionData.km) setKm(situacionData.km.toString());
       if (situacionData.sentido) setSentido(situacionData.sentido);
       if (situacionData.latitud) setLatitud(situacionData.latitud.toString());
       if (situacionData.longitud) setLongitud(situacionData.longitud.toString());
-      if (situacionData.combustible) {
-        setCombustibleDecimal(situacionData.combustible);
-        // Lógica de fracción omitida por brevedad, se mantiene igual
-      }
+      if (situacionData.combustible) setCombustibleInput(situacionData.combustible.toString());
       if (situacionData.kilometraje_unidad) setKilometraje(situacionData.kilometraje_unidad.toString());
       if (situacionData.observaciones) setObservaciones(situacionData.observaciones);
       if (situacionData.ruta_id) setRutaSeleccionada(situacionData.ruta_id);
+
+      // Nuevos campos en edit mode (asumiendo que backend devuelva en situacionData)
+      if (situacionData.clima) setClima(situacionData.clima);
+      if (situacionData.carga_vehicular) setCarga(situacionData.carga_vehicular);
+      if (situacionData.departamento_id) setDeptoId(situacionData.departamento_id);
+      if (situacionData.municipio_id) setMuniId(situacionData.municipio_id);
     }
   }, [editMode, situacionData]);
 
@@ -129,34 +156,19 @@ export default function NuevaSituacionScreen() {
     }
   };
 
-  const [rutaSeleccionada, setRutaSeleccionada] = useState<number | null>(null);
-
-  const handleCombustibleChange = (fraccion: string, decimal: number) => {
-    setCombustibleFraccion(fraccion);
-    setCombustibleDecimal(decimal);
-  };
-
   const seleccionarTipoDesdeCatalogo = (tipo: any, categoriaCodigo: string) => {
     setTipoSituacionId(tipo.id);
     setNombreTipoSeleccionado(tipo.nombre);
 
-    // Mapear formulario_tipo del backend a TipoSituacion del frontend
     let tipoMacro: TipoSituacion = 'OTROS';
-
     switch (tipo.formulario_tipo) {
       case 'INCIDENTE': tipoMacro = 'INCIDENTE'; break;
       case 'ASISTENCIA': tipoMacro = 'ASISTENCIA_VEHICULAR'; break;
-      case 'OBSTACULO': tipoMacro = 'INCIDENTE'; break; // Usamos form incidente simplificado?
-      case 'ACTIVIDAD': tipoMacro = 'PATRULLAJE'; break; // O PARADA_ESTRATEGICA
+      case 'OBSTACULO': tipoMacro = 'INCIDENTE'; break;
+      case 'ACTIVIDAD': tipoMacro = 'PATRULLAJE'; break;
       case 'NOVEDAD': tipoMacro = 'PARADA_ESTRATEGICA'; break;
       default: tipoMacro = 'OTROS';
     }
-
-    // Casos especiales por nombre (legacy compatibility)
-    if (tipo.nombre === 'Patrullaje de Ruta') tipoMacro = 'PATRULLAJE';
-    if (tipo.nombre === 'Parada estratégica') tipoMacro = 'PARADA_ESTRATEGICA';
-    if (tipo.nombre === 'Regulación de tránsito') tipoMacro = 'REGULACION_TRAFICO';
-
     setTipoSeleccionado(tipoMacro);
   };
 
@@ -166,31 +178,40 @@ export default function NuevaSituacionScreen() {
       return;
     }
 
-    // Validaciones basicas
-    if (!editMode) {
-      // Logica de validacion (simplificada para tipos dinamicos)
-      if (tipoSeleccionado === 'SALIDA_SEDE' && !rutaSeleccionada) {
-        Alert.alert('Error', 'Selecciona ruta'); return;
-      }
-    }
-
     try {
       if (editMode && situacionId) {
-        // Update logic... (omitted for brevity, same as before)
+        // EDICION
         const data = {
           km: km ? parseFloat(km) : undefined,
           sentido: sentido || undefined,
           latitud: latitud ? parseFloat(latitud) : undefined,
           longitud: longitud ? parseFloat(longitud) : undefined,
-          combustible: combustibleDecimal || undefined,
+          combustible: combustibleInput ? parseFloat(combustibleInput) : undefined,
           kilometraje_unidad: kilometraje ? parseInt(kilometraje, 10) : undefined,
           observaciones: observaciones || undefined,
+          clima: clima || undefined,
+          carga_vehicular: carga || undefined,
+          departamento_id: deptoId || undefined,
+          municipio_id: muniId || undefined,
         };
         await api.patch(`/situaciones/${situacionId}`, data);
       } else {
+        // Transformar detalles dinámicos a estructura del backend
+        const detallesArray: any[] = [];
+        if (Object.keys(detallesDinamicos).length > 0) {
+          if (nombreTipoSeleccionado === 'Conteo vehicular') {
+            if ((detallesDinamicos as any).conteos) detallesArray.push({ tipo_detalle: 'CONTEO', datos: (detallesDinamicos as any).conteos });
+          } else if (nombreTipoSeleccionado === 'Toma de velocidad') {
+            if ((detallesDinamicos as any).velocidades) detallesArray.push({ tipo_detalle: 'VELOCIDAD', datos: (detallesDinamicos as any).velocidades });
+          } else {
+            detallesArray.push({ tipo_detalle: 'INFO_EXTRA', datos: detallesDinamicos });
+          }
+        }
+
+        // CREACION
         const data = {
           tipo_situacion: tipoSeleccionado,
-          tipo_situacion_id: tipoSituacionId || undefined, // Nuevo campo!
+          tipo_situacion_id: tipoSituacionId || undefined,
           unidad_id: salidaActiva!.unidad_id,
           salida_unidad_id: salidaActiva!.salida_id,
           ruta_id: rutaSeleccionada || undefined,
@@ -198,11 +219,16 @@ export default function NuevaSituacionScreen() {
           sentido: sentido || undefined,
           latitud: latitud ? parseFloat(latitud) : undefined,
           longitud: longitud ? parseFloat(longitud) : undefined,
-          combustible: combustibleDecimal || undefined,
-          combustible_fraccion: combustibleFraccion || undefined,
+          combustible: combustibleInput ? parseFloat(combustibleInput) : undefined,
           kilometraje_unidad: kilometraje ? parseInt(kilometraje, 10) : undefined,
           observaciones: observaciones || undefined,
           ubicacion_manual: testModeEnabled,
+          // Nuevos campos
+          clima: clima || undefined,
+          carga_vehicular: carga || undefined,
+          departamento_id: deptoId || undefined,
+          municipio_id: muniId || undefined,
+          detalles: detallesArray.length > 0 ? detallesArray : undefined
         };
         await createSituacion(data);
       }
@@ -214,31 +240,8 @@ export default function NuevaSituacionScreen() {
   };
 
   const renderCatalogo = () => {
-    if (editMode) return null; // En edicion no mostramos catalogo
-
-    if (catalogo.length === 0) {
-      // Fallback si no hay catalogo cargado (o error)
-      // Mostramos botones legacy
-      const tiposLegacy = (Object.keys(SITUACIONES_CONFIG) as TipoSituacion[]).filter(
-        t => !['SALIDA_SEDE', 'CAMBIO_RUTA', 'ASISTENCIA_VEHICULAR', 'INCIDENTE'].includes(t)
-      );
-      return (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tipos Básicos</Text>
-          <View style={styles.tiposContainer}>
-            {tiposLegacy.map(tipo => (
-              <TouchableOpacity
-                key={tipo}
-                style={[styles.tipoButton, tipoSeleccionado === tipo && styles.tipoButtonSelected]}
-                onPress={() => setTipoSeleccionado(tipo)}
-              >
-                <Text>{SITUACIONES_CONFIG[tipo].label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      );
-    }
+    if (editMode) return null;
+    if (catalogo.length === 0) return <Text style={{ margin: 20 }}>Cargando catálogo...</Text>;
 
     return (
       <View style={styles.catalogoContainer}>
@@ -251,29 +254,18 @@ export default function NuevaSituacionScreen() {
               {cat.tipos.map((tipo: any) => {
                 const isSelected = tipoSituacionId === tipo.id;
                 const color = CATEGORIA_COLORS[cat.codigo] || COLORS.primary;
-
                 return (
                   <TouchableOpacity
                     key={tipo.id}
-                    style={[
-                      styles.tipoButton,
-                      { borderColor: color },
-                      isSelected && { backgroundColor: color }
-                    ]}
+                    style={[styles.tipoButton, { borderColor: color }, isSelected && { backgroundColor: color }]}
                     onPress={() => seleccionarTipoDesdeCatalogo(tipo, cat.codigo)}
                   >
                     <MaterialCommunityIcons
-                      name={tipo.icono || 'alert'}
-                      size={20}
+                      name={tipo.icono || 'alert-circle-outline'}
+                      size={24}
                       color={isSelected ? 'white' : color}
-                      style={{ marginBottom: 4 }}
                     />
-                    <Text style={[
-                      styles.tipoButtonText,
-                      isSelected && { color: 'white', fontWeight: 'bold' }
-                    ]}>
-                      {tipo.nombre}
-                    </Text>
+                    <Text style={[styles.tipoText, isSelected && { color: 'white' }]}>{tipo.nombre}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -285,92 +277,153 @@ export default function NuevaSituacionScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Header (omitido detalle) */}
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.container}>
+        {!editMode && <Text style={styles.headerTitle}>Nueva Situación</Text>}
+        {editMode && <Text style={styles.headerTitle}>Editar Situación</Text>}
 
-        {/* Seleccion de tipo */}
-        {tipoSeleccionado && !editMode && (
-          <View style={styles.selectedBanner}>
-            <Text style={styles.selectedText}>Seleccionado: {nombreTipoSeleccionado || SITUACIONES_CONFIG[tipoSeleccionado]?.label}</Text>
-            <TouchableOpacity onPress={() => { setTipoSeleccionado(null); setTipoSituacionId(null); }}>
-              <Text style={styles.changeLink}>Cambiar</Text>
+        {renderCatalogo()}
+
+        {(tipoSeleccionado || editMode) && (
+          <View style={styles.formContainer}>
+            <Text style={styles.selectedTitle}>Detalles: {nombreTipoSeleccionado}</Text>
+
+            {/* UBICACION */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Ubicación</Text>
+
+              <RutaSelector
+                value={rutaSeleccionada || undefined}
+                onChange={setRutaSeleccionada}
+                showSearch
+              />
+
+              <View style={[styles.row, { zIndex: 100 }]}>
+                <View style={{ flex: 1 }}>
+                  <JurisdiccionSelector
+                    deptoId={deptoId} setDeptoId={setDeptoId}
+                    muniId={muniId} setMuniId={setMuniId}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.row}>
+                <View style={styles.half}>
+                  <Text style={styles.label}>Kilómetro</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={km}
+                    onChangeText={setKm}
+                    keyboardType="numeric"
+                    placeholder="Ej. 52.5"
+                  />
+                </View>
+                <View style={styles.half}>
+                  <Text style={styles.label}>Sentido</Text>
+                  <View style={styles.pickerBox}>
+                    <Picker selectedValue={sentido} onValueChange={setSentido} style={styles.picker}>
+                      <Picker.Item label="Sel..." value="" />
+                      <Picker.Item label="Norte" value="NORTE" />
+                      <Picker.Item label="Sur" value="SUR" />
+                      <Picker.Item label="Oriente" value="ORIENTE" />
+                      <Picker.Item label="Occidente" value="OCCIDENTE" />
+                    </Picker>
+                  </View>
+                </View>
+              </View>
+
+              {/* GPS */}
+              <View style={styles.gpsContainer}>
+                <Text style={{ fontSize: 12, color: '#666' }}>GPS: {latitud}, {longitud}</Text>
+                {gpsLoading && <ActivityIndicator size="small" />}
+                {gpsError && <Text style={{ color: 'red', fontSize: 10 }}>{gpsError}</Text>}
+              </View>
+            </View>
+
+            {/* CLIMA Y CARGA */}
+            <View style={styles.card}>
+              <ClimaCargaSelector
+                clima={clima} setClima={setClima}
+                carga={carga} setCarga={setCarga}
+              />
+            </View>
+
+            {/* DINAMICOS */}
+            <View style={styles.card}>
+              <DynamicFormFields
+                situacionNombre={nombreTipoSeleccionado}
+                detalles={detallesDinamicos}
+                setDetalles={setDetallesDinamicos}
+              />
+            </View>
+
+            {/* OBSERVACIONES Y DATOS UNIDAD (Si aplica) */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Datos Adicionales</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Observaciones"
+                multiline
+                numberOfLines={3}
+                value={observaciones}
+                onChangeText={setObservaciones}
+              />
+
+              {/* Opcional: Kilometraje y Combustible solo si aplica a la situacion? 
+                    El usuario no especifico reglas estrictas, pero siempre es bueno poder actualizar combustible.
+                */}
+              <View style={styles.row}>
+                <View style={styles.half}>
+                  <Text style={styles.label}>Combustible (Gal)</Text>
+                  <TextInput style={styles.input} value={combustibleInput} onChangeText={setCombustibleInput} keyboardType="numeric" />
+                </View>
+                <View style={styles.half}>
+                  <Text style={styles.label}>Odómetro</Text>
+                  <TextInput style={styles.input} value={kilometraje} onChangeText={setKilometraje} keyboardType="numeric" />
+                </View>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleCrearSituacion}
+              disabled={isLoading}
+            >
+              {isLoading ? <ActivityIndicator color="white" /> : <Text style={styles.saveButtonText}>{editMode ? 'Actualizar' : 'Crear Situación'}</Text>}
             </TouchableOpacity>
+
           </View>
         )}
-
-        {!tipoSeleccionado && renderCatalogo()}
-
-        {tipoSeleccionado && (
-          <View>
-            {/* Formulario de siempre */}
-            {/* renderUbicacionFields() */}
-            {/* renderCamposAdicionales() */}
-            {/* renderDescripcionFields() */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Ubicación</Text>
-              <Text style={styles.label}>Kilómetro</Text>
-              <TextInput style={styles.input} value={km} onChangeText={setKm} keyboardType="numeric" placeholder="KM" />
-              {/* ... Resto de campos simplificados ... */}
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.label}>Observaciones</Text>
-              <TextInput style={[styles.input, styles.textArea]} value={observaciones} onChangeText={setObservaciones} multiline />
-            </View>
-          </View>
-        )}
+        <View style={{ height: 50 }} />
       </ScrollView>
-
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.createButton, (!tipoSeleccionado || isLoading) && styles.buttonDisabled]}
-          onPress={handleCrearSituacion}
-          disabled={!tipoSeleccionado || isLoading}
-        >
-          <Text style={styles.createButtonText}>
-            {editMode ? 'Actualizar' : 'Iniciar Situación'}
-          </Text>
-        </TouchableOpacity>
-      </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  scrollView: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 100 },
-  catalogoContainer: { gap: 16 },
+  container: { padding: 16, backgroundColor: '#f3f4f6' },
+  headerTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 16, color: COLORS.text.primary },
+  catalogoContainer: { marginBottom: 20 },
   catSection: { marginBottom: 16 },
-  catTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 8, textTransform: 'uppercase' },
+  catTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8, textTransform: 'uppercase' },
   tiposContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tipoButton: {
-    width: '31%',
-    aspectRatio: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-    borderWidth: 1,
-    backgroundColor: 'white',
-    padding: 4
+    width: '30%', aspectRatio: 1, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'white', borderRadius: 8, borderWidth: 1, padding: 4
   },
-  tipoButtonSelected: { backgroundColor: COLORS.primary },
-  tipoButtonText: { fontSize: 11, textAlign: 'center', color: COLORS.text.primary },
-  selectedBanner: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: COLORS.info + '20', padding: 12, borderRadius: 8, marginBottom: 16
-  },
-  selectedText: { fontWeight: 'bold', color: COLORS.info },
-  changeLink: { color: COLORS.primary, fontWeight: 'bold' },
-  section: { backgroundColor: 'white', padding: 16, borderRadius: 12, marginBottom: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 12 },
-  label: { fontSize: 14, fontWeight: '500', marginBottom: 8 },
-  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 16 },
+  tipoText: { fontSize: 10, textAlign: 'center', marginTop: 4, fontWeight: '500' },
+  formContainer: { gap: 16 },
+  selectedTitle: { fontSize: 20, fontWeight: 'bold', color: COLORS.primary, marginBottom: 8 },
+  card: { backgroundColor: 'white', borderRadius: 12, padding: 16, elevation: 2 },
+  cardTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12, color: '#444' },
+  label: { fontSize: 12, color: '#666', marginBottom: 4, fontWeight: '600' },
+  row: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  half: { flex: 1 },
+  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 10, fontSize: 16, backgroundColor: '#fafafa' },
+  pickerBox: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, overflow: 'hidden' },
+  picker: { height: 50, width: '100%' },
   textArea: { height: 80, textAlignVertical: 'top' },
-  footer: { padding: 16, backgroundColor: 'white', borderTopWidth: 1, borderColor: '#eee' },
-  createButton: { backgroundColor: COLORS.primary, padding: 16, borderRadius: 12, alignItems: 'center' },
-  buttonDisabled: { opacity: 0.5 },
-  createButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
-  headerCard: { backgroundColor: COLORS.primary, padding: 16, borderRadius: 12, marginBottom: 20 },
+  saveButton: { backgroundColor: COLORS.primary, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
+  saveButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+  gpsContainer: { marginTop: 4, flexDirection: 'row', justifyContent: 'space-between' }
 });
