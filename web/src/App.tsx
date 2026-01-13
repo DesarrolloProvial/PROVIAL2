@@ -25,6 +25,7 @@ import COPMapaPage from './pages/COPMapaPage';
 import COPSituacionesPage from './pages/COPSituacionesPage';
 import AdminHubPage from './pages/AdminHubPage';
 import DashboardEjecutivoPage from './pages/DashboardEjecutivoPage';
+import EditarSituacionPage from './pages/EditarSituacionPage';
 
 // Crear QueryClient
 const queryClient = new QueryClient({
@@ -164,6 +165,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <BitacoraPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/editar-situacion/:id"
+            element={
+              <ProtectedRoute>
+                <EditarSituacionPage />
               </ProtectedRoute>
             }
           />

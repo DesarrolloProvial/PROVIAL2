@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { situacionesAPI, api } from '../services/api';
 import { ArrowLeft, RefreshCw, MapPin, Users, Truck, Clock, Fuel } from 'lucide-react';
-import SituacionFormSelector from '../components/SituacionFormSelector';
 import Inspeccion360Historial from '../components/Inspeccion360Historial';
 
 // Tipos de situación para colores
@@ -31,9 +30,7 @@ export default function BitacoraPage() {
     // Estado para info de unidad
     const [unidadInfo, setUnidadInfo] = useState<any>(null);
 
-    // Estado para modal de edición
-    const [editModalOpen, setEditModalOpen] = useState(false);
-    const [situacionSeleccionada, setSituacionSeleccionada] = useState<any>(null);
+
 
     // Query de bitácora (debe ir antes de los useEffects que lo usan)
     const { data: bitacora = [], isLoading, refetch, isRefetching, error, isError } = useQuery({
@@ -68,18 +65,12 @@ export default function BitacoraPage() {
         }
     }, [bitacora, unidadInfo]);
 
-    // Abrir modal de edición
+    // Navegar a página de edición
     const handleEditClick = (situacion: any) => {
-        setSituacionSeleccionada(situacion);
-        setEditModalOpen(true);
+        navigate(`/editar-situacion/${situacion.id}`);
     };
 
-    // Callback cuando se guarda desde el formulario
-    const handleSaveSuccess = () => {
-        queryClient.invalidateQueries({ queryKey: ['bitacora-unidad', unidadId] });
-        setEditModalOpen(false);
-        setSituacionSeleccionada(null);
-    };
+
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleString('es-GT', {
