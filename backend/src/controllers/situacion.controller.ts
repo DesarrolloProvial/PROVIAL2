@@ -982,6 +982,22 @@ export async function getResumenUnidades(req: Request, res: Response) {
     const unidadesPermitidas = await getUnidadesPermitidas(req.user!.userId, req.user!.rol);
 
     const query = `
+      WITH tripulacion_data AS (
+        SELECT
+          tt.asignacion_id,
+          json_agg(
+            json_build_object(
+              'usuario_id', u_trip.id,
+              'nombre_completo', u_trip.nombre_completo,
+              'rol_tripulacion', tt.rol_tripulacion
+            ) ORDER BY tt.rol_tripulacion
+          ) as tripulacion
+        FROM tripulacion_turno tt
+        JOIN usuario u_trip ON tt.usuario_id = u_trip.id
+        JOIN asignacion_unidad au_trip ON tt.asignacion_id = au_trip.id
+        WHERE au_trip.turno_id IN (SELECT id FROM turno WHERE fecha = CURRENT_DATE)
+        GROUP BY tt.asignacion_id
+      )
       SELECT
         u.id as unidad_id,
         u.codigo as unidad_codigo,
@@ -1020,17 +1036,8 @@ export async function getResumenUnidades(req: Request, res: Response) {
         au.hora_salida_real,
         au.hora_entrada_real,
 
-        -- Tripulación
-        COALESCE(
-          json_agg(
-            json_build_object(
-              'usuario_id', tt_u.id,
-              'nombre_completo', tt_u.nombre_completo,
-              'rol_tripulacion', tt.rol_tripulacion
-            ) ORDER BY tt.rol_tripulacion
-          ) FILTER (WHERE tt.id IS NOT NULL),
-          '[]'
-        ) as tripulacion
+        -- Tripulación desde CTE
+        COALESCE(td.tripulacion, '[]'::json) as tripulacion
 
       FROM unidad u
       JOIN salida_unidad sal ON u.id = sal.unidad_id AND sal.estado = 'EN_SALIDA'
@@ -1040,18 +1047,9 @@ export async function getResumenUnidades(req: Request, res: Response) {
         AND au.turno_id IN (SELECT id FROM turno WHERE fecha = CURRENT_DATE)
       LEFT JOIN turno t ON au.turno_id = t.id
       LEFT JOIN ruta ra ON au.ruta_activa_id = ra.id
-      LEFT JOIN tripulacion_turno tt ON au.id = tt.asignacion_id
-      LEFT JOIN usuario tt_u ON tt.usuario_id = tt_u.id
+      LEFT JOIN tripulacion_data td ON au.id = td.asignacion_id
       WHERE u.activa = true
         ${unidadesPermitidas !== null ? 'AND u.id = ANY($1::int[])' : ''}
-      GROUP BY
-        u.id, u.codigo, u.tipo_unidad, u.placa, u.sede_id, s.nombre,
-        us.situacion_id, us.situacion_uuid, us.tipo_situacion, us.estado,
-        us.km, us.sentido, us.ruta_codigo, us.ruta_nombre, us.latitud, us.longitud,
-        us.combustible, us.combustible_fraccion, us.kilometraje_unidad,
-        us.descripcion, us.situacion_fecha,
-        au.ruta_activa_id, ra.codigo, ra.nombre, au.hora_ultima_actualizacion_ruta,
-        t.id, t.fecha, t.estado, au.hora_salida_real, au.hora_entrada_real
       ORDER BY u.codigo
     `;
 
