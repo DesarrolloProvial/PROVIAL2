@@ -191,6 +191,16 @@ export const geografiaAPI = {
     const { data } = await api.get(`/geografia/rutas/${id}`);
     return data.ruta;
   },
+
+  async getDepartamentos(): Promise<any[]> {
+    const { data } = await api.get('/geografia/departamentos');
+    return data.departamentos || [];
+  },
+
+  async getMunicipiosPorDepartamento(departamentoId: number): Promise<any[]> {
+    const { data } = await api.get(`/geografia/departamentos/${departamentoId}/municipios`);
+    return data.municipios || [];
+  },
 };
 
 // ============================================
