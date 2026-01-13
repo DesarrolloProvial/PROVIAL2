@@ -96,10 +96,14 @@ export default function NuevaSituacionScreen() {
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
 
-  // Cargar catálogo al inicio
+  // State para unidades (Supervisión)
+  const [unidadesList, setUnidadesList] = useState<any[]>([]);
+
+  // Cargar catálogo al inicio y unidades activas
   useEffect(() => {
     fetchCatalogo();
     fetchCatalogosAuxiliares();
+    api.get('/unidades/activas').then(r => setUnidadesList(r.data)).catch(console.error);
   }, []);
 
   // Reset al cambiar tipo
@@ -350,12 +354,14 @@ export default function NuevaSituacionScreen() {
             </View>
 
             {/* CLIMA Y CARGA */}
-            <View style={styles.card}>
-              <ClimaCargaSelector
-                clima={clima} setClima={setClima}
-                carga={carga} setCarga={setCarga}
-              />
-            </View>
+            {!['Dejando personal administrativo', 'Comisión', 'Abastecimiento'].includes(nombreTipoSeleccionado) && (
+              <View style={styles.card}>
+                <ClimaCargaSelector
+                  clima={clima} setClima={setClima}
+                  carga={carga} setCarga={setCarga}
+                />
+              </View>
+            )}
 
             {/* DINAMICOS */}
             <View style={styles.card}>
@@ -365,6 +371,7 @@ export default function NuevaSituacionScreen() {
                 detalles={detallesDinamicos}
                 setDetalles={setDetallesDinamicos}
                 auxiliares={catalogosAuxiliares}
+                unidades={unidadesList}
               />
             </View>
 

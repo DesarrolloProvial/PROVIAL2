@@ -27,7 +27,7 @@ router.get('/', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMIN
 router.get('/tipos', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), listarTiposUnidad);
 
 // Listar unidades activas
-router.get('/activas', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS', 'COP'), listarUnidadesActivas);
+router.get('/activas', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS', 'COP', 'BRIGADA'), listarUnidadesActivas);
 
 // Obtener unidad específica
 router.get('/:id', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), obtenerUnidad);
