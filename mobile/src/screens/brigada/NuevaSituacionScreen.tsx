@@ -305,7 +305,7 @@ export default function NuevaSituacionScreen() {
             <Text style={styles.selectedTitle}>Detalles: {nombreTipoSeleccionado}</Text>
 
             {/* UBICACION */}
-            <View style={[styles.card, { zIndex: 10 }]}>
+            <View style={[styles.card, { zIndex: 100 }]}>
               <Text style={styles.cardTitle}>Ubicación</Text>
 
               <JurisdiccionSelector
@@ -348,7 +348,7 @@ export default function NuevaSituacionScreen() {
 
             {/* CLIMA Y CARGA */}
             {!['Dejando personal administrativo', 'Comisión', 'Abastecimiento'].includes(nombreTipoSeleccionado) && (
-              <View style={styles.card}>
+              <View style={[styles.card, { zIndex: 50 }]}>
                 <ClimaCargaSelector
                   clima={clima} setClima={setClima}
                   carga={carga} setCarga={setCarga}
@@ -357,7 +357,7 @@ export default function NuevaSituacionScreen() {
             )}
 
             {/* DINAMICOS */}
-            <View style={styles.card}>
+            <View style={[styles.card, { zIndex: 40 }]}>
               <DynamicFormFields
                 situacionNombre={nombreTipoSeleccionado}
                 formularioTipo={tipoSeleccionado || ''}
