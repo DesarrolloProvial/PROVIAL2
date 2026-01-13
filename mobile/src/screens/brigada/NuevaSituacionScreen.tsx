@@ -222,12 +222,17 @@ export default function NuevaSituacionScreen() {
         }
 
         // CREACION
+        // Determinar ruta: Tomar de asignación EXCEPTO si es "Cambio de Ruta"
+        let rutaParaSituacion = salidaActiva?.ruta_id || undefined;
+        // Si es cambio de ruta y hay una ruta seleccionada manualmente, usar esa
+        // (futuro: agregar selector cuando nombreTipoSeleccionado === 'Cambio de Ruta')
+
         const data = {
           tipo_situacion: tipoSeleccionado,
           tipo_situacion_id: tipoSituacionId || undefined,
           unidad_id: salidaActiva!.unidad_id,
           salida_unidad_id: salidaActiva!.salida_id,
-          ruta_id: rutaSeleccionada || undefined,
+          ruta_id: rutaParaSituacion,
           km: km ? parseFloat(km) : undefined,
           sentido: sentido || undefined,
           latitud: latitud ? parseFloat(latitud) : undefined,
