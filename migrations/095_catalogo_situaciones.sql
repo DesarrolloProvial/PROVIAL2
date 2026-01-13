@@ -1,44 +1,48 @@
--- 095_catalogo_situaciones.sql
+-- 095_catalogo_situaciones.sql (CORREGIDO)
 -- Crea un catálogo unificado de situaciones y tipos de actividades
 -- Reemplaza/Complementa los tipos hardcodeados
 
 BEGIN;
 
--- 1. Crear tabla de categorías (para agrupar visualmente)
-CREATE TABLE catalogo_categoria_situacion (
+-- 1. Crear tabla de categorías
+CREATE TABLE IF NOT EXISTS catalogo_categoria_situacion (
     id SERIAL PRIMARY KEY,
-    codigo VARCHAR(50) UNIQUE NOT NULL, -- ACCIDENTE, ASISTENCIA, etc.
+    codigo VARCHAR(50) UNIQUE NOT NULL,
     nombre VARCHAR(100) NOT NULL,
     icono VARCHAR(50),
     orden INTEGER DEFAULT 0
 );
 
 -- 2. Crear tabla de tipos de situaciones
-CREATE TABLE catalogo_tipo_situacion (
+CREATE TABLE IF NOT EXISTS catalogo_tipo_situacion (
     id SERIAL PRIMARY KEY,
     categoria_id INTEGER REFERENCES catalogo_categoria_situacion(id),
     nombre VARCHAR(100) NOT NULL,
     descripcion TEXT,
     icono VARCHAR(50),
-    requiere_formulario BOOLEAN DEFAULT FALSE, -- Si true, abre form complejo. Si false, es solo timer/simple.
-    formulario_tipo VARCHAR(50), -- 'INCIDENTE', 'ASISTENCIA', 'OBSTACULO', 'NOVEDAD'
+    requiere_formulario BOOLEAN DEFAULT FALSE,
+    formulario_tipo VARCHAR(50),
     activo BOOLEAN DEFAULT TRUE,
     orden INTEGER DEFAULT 0
 );
 
--- 3. Insertar Categorías
+-- 3. Insertar Categorías (Usando ON CONFLICT para evitar errores si ya existen)
 INSERT INTO catalogo_categoria_situacion (codigo, nombre, icono, orden) VALUES
 ('ACCIDENTE', 'Accidentes de Tránsito', 'car-crash', 1),
 ('ASISTENCIA', 'Asistencia Vial', 'car-wrench', 2),
 ('EMERGENCIA', 'Emergencias y Obstáculos', 'alert', 3),
 ('OPERATIVO', 'Actividades Operativas', 'police-badge', 4),
 ('APOYO', 'Apoyo Interinstitucional', 'hand-shake', 5),
-('ADMINISTRATIVO', 'Novedades y Gestión', 'clipboard-list', 6);
+('ADMINISTRATIVO', 'Novedades y Gestión', 'clipboard-list', 6)
+ON CONFLICT (codigo) DO NOTHING;
 
--- 4. Insertar Tipos de Situaciones
+-- 4. Insertar Tipos de Situaciones (Sintaxis simplificada compatible)
+
 -- ACCIDENTES
 INSERT INTO catalogo_tipo_situacion (categoria_id, nombre, formulario_tipo, icono) 
-SELECT id, nombre, 'INCIDENTE', icono FROM catalogo_categoria_situacion WHERE codigo = 'ACCIDENTE' CROSS JOIN (VALUES
+SELECT c.id, t.nombre, 'INCIDENTE', t.icono 
+FROM catalogo_categoria_situacion c,
+(VALUES
     ('Colisión', 'car-crash'),
     ('Choque', 'car-impact'),
     ('Salida de pista', 'road-variant'),
@@ -53,15 +57,20 @@ SELECT id, nombre, 'INCIDENTE', icono FROM catalogo_categoria_situacion WHERE co
     ('Vuelco', 'car-side'),
     ('Atropello', 'account-injury'),
     ('Persona Fallecida', 'coffin')
-) AS t(nombre, icono);
+) AS t(nombre, icono)
+WHERE c.codigo = 'ACCIDENTE';
 
 -- ASISTENCIA
 INSERT INTO catalogo_tipo_situacion (categoria_id, nombre, formulario_tipo, icono)
-SELECT id, 'Asistencia vial', 'ASISTENCIA', 'tow-truck' FROM catalogo_categoria_situacion WHERE codigo = 'ASISTENCIA';
+SELECT c.id, 'Asistencia vial', 'ASISTENCIA', 'tow-truck' 
+FROM catalogo_categoria_situacion c 
+WHERE c.codigo = 'ASISTENCIA';
 
 -- EMERGENCIAS / OBSTACULOS
 INSERT INTO catalogo_tipo_situacion (categoria_id, nombre, formulario_tipo, icono)
-SELECT id, nombre, 'OBSTACULO', icono FROM catalogo_categoria_situacion WHERE codigo = 'EMERGENCIA' CROSS JOIN (VALUES
+SELECT c.id, t.nombre, 'OBSTACULO', t.icono
+FROM catalogo_categoria_situacion c,
+(VALUES
     ('Derrame de combustible', 'oil'),
     ('Vehículo abandonado', 'car-off'),
     ('Detención de vehículo', 'car-brake-alert'),
@@ -76,11 +85,14 @@ SELECT id, nombre, 'OBSTACULO', icono FROM catalogo_categoria_situacion WHERE co
     ('Inundación', 'home-flood'),
     ('Acumulación de agua', 'water-alert'),
     ('Erupción volcánica', 'volcano')
-) AS t(nombre, icono);
+) AS t(nombre, icono)
+WHERE c.codigo = 'EMERGENCIA';
 
 -- OPERATIVO
 INSERT INTO catalogo_tipo_situacion (categoria_id, nombre, formulario_tipo, icono)
-SELECT id, nombre, 'ACTIVIDAD', icono FROM catalogo_categoria_situacion WHERE codigo = 'OPERATIVO' CROSS JOIN (VALUES
+SELECT c.id, t.nombre, 'ACTIVIDAD', t.icono
+FROM catalogo_categoria_situacion c,
+(VALUES
     ('Puesto fijo', 'police-station'),
     ('Parada estratégica', 'map-marker-radius'),
     ('Señalizando', 'traffic-cone'),
@@ -106,11 +118,14 @@ SELECT id, nombre, 'ACTIVIDAD', icono FROM catalogo_categoria_situacion WHERE co
     ('Consignación', 'file-sign'),
     ('Parada Autorizada', 'stop-circle'),
     ('Intercambio de tripulantes', 'account-switch')
-) AS t(nombre, icono);
+) AS t(nombre, icono)
+WHERE c.codigo = 'OPERATIVO';
 
 -- APOYO
 INSERT INTO catalogo_tipo_situacion (categoria_id, nombre, formulario_tipo, icono)
-SELECT id, nombre, 'ACTIVIDAD', icono FROM catalogo_categoria_situacion WHERE codigo = 'APOYO' CROSS JOIN (VALUES
+SELECT c.id, t.nombre, 'ACTIVIDAD', t.icono
+FROM catalogo_categoria_situacion c,
+(VALUES
     ('Apoyo a Ministerio Público', 'gavel'),
     ('Apoyo a otra unidad', 'car-multiple'),
     ('Apoyo a trabajos en carretera', 'road-worker'),
@@ -120,11 +135,14 @@ SELECT id, nombre, 'ACTIVIDAD', icono FROM catalogo_categoria_situacion WHERE co
     ('Apoyo atletismo', 'run-fast'),
     ('Apoyo a antorcha', 'fire'),
     ('Apoyo a institución', 'bank')
-) AS t(nombre, icono);
+) AS t(nombre, icono)
+WHERE c.codigo = 'APOYO';
 
 -- ADMINISTRATIVO / NOVEDAD
 INSERT INTO catalogo_tipo_situacion (categoria_id, nombre, formulario_tipo, icono)
-SELECT id, nombre, 'NOVEDAD', icono FROM catalogo_categoria_situacion WHERE codigo = 'ADMINISTRATIVO' CROSS JOIN (VALUES
+SELECT c.id, t.nombre, 'NOVEDAD', t.icono
+FROM catalogo_categoria_situacion c,
+(VALUES
     ('Baño', 'toilet'),
     ('Cajero', 'atm'),
     ('Comida', 'food'),
@@ -139,9 +157,10 @@ SELECT id, nombre, 'NOVEDAD', icono FROM catalogo_categoria_situacion WHERE codi
     ('Abastecimiento', 'gas-station'),
     ('Cambio de Ruta', 'map-marker-path'),
     ('Cambio de Tripulación', 'account-sync')
-) AS t(nombre, icono);
+) AS t(nombre, icono)
+WHERE c.codigo = 'ADMINISTRATIVO';
 
--- 5. Agregar columna a tabla situacion
+-- 5. Agregar columna a tabla situacion (si no existe)
 ALTER TABLE situacion 
 ADD COLUMN IF NOT EXISTS tipo_situacion_id INTEGER REFERENCES catalogo_tipo_situacion(id);
 
