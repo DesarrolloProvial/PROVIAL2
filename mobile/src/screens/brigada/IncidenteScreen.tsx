@@ -97,8 +97,10 @@ export default function IncidenteScreen() {
             observaciones: '',
             departamento_id: null as number | null,
             municipio_id: null as number | null,
-            direccion_detallada: '',
             coordenadas: null,
+            // Nuevos campos
+            clima: '' as string,
+            carga_vehicular: '' as string,
             // Campos accidentología (boleta)
             area: '' as string,
             material_via: '' as string,
@@ -522,18 +524,40 @@ export default function IncidenteScreen() {
                                 )}
                             />
 
-                            {/* Dirección detallada */}
+                            {/* Clima y Carga Vehicular */}
+                            <Text style={[styles.sectionTitle, { marginTop: 15 }]}>Condiciones</Text>
+
                             <Controller
                                 control={control}
-                                name="direccion_detallada"
+                                name="clima"
                                 render={({ field: { onChange, value } }) => (
-                                    <PaperInput
-                                        label="Dirección o Referencia (opcional)"
-                                        value={value || ''}
-                                        onChangeText={onChange}
-                                        style={styles.input}
-                                        placeholder="Ej: Km 45.5, frente a gasolinera..."
-                                    />
+                                    <View style={styles.pickerContainer}>
+                                        <Text>Clima</Text>
+                                        <Picker selectedValue={value || ''} onValueChange={onChange}>
+                                            <Picker.Item label="Seleccionar..." value="" />
+                                            <Picker.Item label="Despejado" value="DESPEJADO" />
+                                            <Picker.Item label="Nublado" value="NUBLADO" />
+                                            <Picker.Item label="Lluvia" value="LLUVIA" />
+                                            <Picker.Item label="Neblina" value="NEBLINA" />
+                                        </Picker>
+                                    </View>
+                                )}
+                            />
+
+                            <Controller
+                                control={control}
+                                name="carga_vehicular"
+                                render={({ field: { onChange, value } }) => (
+                                    <View style={styles.pickerContainer}>
+                                        <Text>Carga Vehicular</Text>
+                                        <Picker selectedValue={value || ''} onValueChange={onChange}>
+                                            <Picker.Item label="Seleccionar..." value="" />
+                                            <Picker.Item label="Fluido" value="FLUIDO" />
+                                            <Picker.Item label="Moderado" value="MODERADO" />
+                                            <Picker.Item label="Denso" value="DENSO" />
+                                            <Picker.Item label="Congestionado" value="CONGESTIONADO" />
+                                        </Picker>
+                                    </View>
                                 )}
                             />
 
@@ -572,17 +596,18 @@ export default function IncidenteScreen() {
                                 )}
                             />
 
-                            {/* Grupo Operativo */}
+                            {/* Grupo Operativo - Auto asignado si el brigadista tiene grupo */}
                             <Controller
                                 control={control}
                                 name="no_grupo_operativo"
                                 render={({ field: { onChange, value } }) => (
                                     <PaperInput
                                         label="No. Grupo Operativo"
-                                        value={value || ''}
+                                        value={value || salidaActiva?.grupo_nombre || ''}
                                         onChangeText={onChange}
                                         style={styles.input}
-                                        placeholder="Ej: G-1, G-2..."
+                                        placeholder={salidaActiva?.grupo_nombre ? `Grupo: ${salidaActiva.grupo_nombre}` : "Ej: G-1, G-2..."}
+                                        disabled={!!salidaActiva?.grupo_nombre}
                                     />
                                 )}
                             />
