@@ -1086,7 +1086,7 @@ export async function listSituacionesActivas(req: Request, res: Response) {
 // CATALOGO
 // ========================================
 
-export async function getCatalogo(req: Request, res: Response) {
+export async function getCatalogo(_req: Request, res: Response) {
   try {
     const catalogo = await db.any(`
       SELECT 
