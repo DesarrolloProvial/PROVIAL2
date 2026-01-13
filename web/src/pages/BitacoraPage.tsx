@@ -223,21 +223,19 @@ export default function BitacoraPage() {
                             {bitacora.map((item: any) => (
                                 <div key={item.id} className="relative pl-8">
                                     {/* Dot */}
-                                    <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-white ${
-                                        item.estado === 'ACTIVA' ? 'bg-green-500' : 'bg-gray-400'
-                                    }`}></div>
+                                    <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-white ${item.estado === 'ACTIVA' ? 'bg-green-500' : 'bg-gray-400'
+                                        }`}></div>
 
                                     {/* Content Card */}
-                                    <div className={`rounded-lg p-4 border ${
-                                        item.estado === 'ACTIVA'
+                                    <div className={`rounded-lg p-4 border ${item.estado === 'ACTIVA'
                                             ? 'bg-green-50 border-green-200'
                                             : 'bg-gray-50 border-gray-200'
-                                    }`}>
+                                        }`}>
                                         {/* Header */}
                                         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                                             <div className="flex items-center gap-2">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${getTipoColor(item.tipo_situacion)}`}>
-                                                    {item.tipo_situacion.replace(/_/g, ' ')}
+                                                    {item.subtipo_nombre || item.tipo_situacion.replace(/_/g, ' ')}
                                                 </span>
                                                 <span className="text-sm font-medium text-gray-500">
                                                     #{item.numero_situacion || item.id}
