@@ -188,12 +188,24 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
         'escoltando autoridades', 'bloqueo', 'manifestación', 'orden del día'
       ];
 
+      // DEBUG: Ver qué nombres vienen del backend
+      catalogoRaw.forEach((cat: any) => {
+        cat.tipos?.forEach((tipo: any) => {
+          console.log('TIPO SITUACION:', tipo.nombre);
+        });
+      });
+
       // Filtrar el catálogo (case-insensitive)
       const catalogoFiltrado = catalogoRaw.map((categoria: any) => ({
         ...categoria,
-        tipos: categoria.tipos?.filter((tipo: any) =>
-          !tiposProhibidos.includes(tipo.nombre?.toLowerCase())
-        ) || []
+        tipos: categoria.tipos?.filter((tipo: any) => {
+          const normalizado = tipo.nombre?.toLowerCase();
+          const filtrado = !tiposProhibidos.includes(normalizado);
+          if (!filtrado) {
+            console.log('FILTRADO:', tipo.nombre);
+          }
+          return filtrado;
+        }) || []
       })).filter((cat: any) => cat.tipos.length > 0); // Remover categorías vacías
 
       set({
