@@ -125,11 +125,22 @@ export default function COPMapaPage() {
     queryFn: async () => {
       const data = await situacionesAPI.getResumenUnidades() as any;
       console.log('📊 [COP] Resumen unidades recibido:', data);
-      if (data && data.resumen && data.resumen.length > 0) {
-        console.log('📊 [COP] Primera unidad ejemplo:', data.resumen[0]);
+      console.log('📊 [COP] Tipo de data:', typeof data, 'Es array?', Array.isArray(data));
+
+      // Si data es un array directamente, retornarlo
+      if (Array.isArray(data)) {
+        console.log('📊 [COP] Data es array, retornando directamente');
+        return data;
       }
-      // Retornar solo el array de resumen, no el objeto completo
-      return data?.resumen || [];
+
+      // Si es un objeto con propiedad resumen, extraer el array
+      if (data && data.resumen && Array.isArray(data.resumen)) {
+        console.log('📊 [COP] Data tiene propiedad resumen, extrayendo array');
+        return data.resumen;
+      }
+
+      console.warn('⚠️ [COP] Data no tiene formato esperado:', data);
+      return [];
     },
     refetchInterval: socketConnected ? false : 30000,
   });
