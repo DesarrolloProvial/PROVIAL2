@@ -2,25 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Crown } from 'lucide-react';
 
-// Convertir decimal a fracción para mostrar combustible
-const decimalToFraccion = (decimal: number | null): string => {
-  if (decimal === null || decimal === undefined) return '-';
-
-  // Normalizar a 0-1 si viene como porcentaje (0-100)
-  const valor = decimal > 1 ? decimal / 100 : decimal;
-
-  if (valor <= 0) return 'Reserva';
-  if (valor >= 1) return 'Lleno';
-  if (valor <= 0.125) return '1/8';
-  if (valor <= 0.25) return '1/4';
-  if (valor <= 0.375) return '3/8';
-  if (valor <= 0.5) return '1/2';
-  if (valor <= 0.625) return '5/8';
-  if (valor <= 0.75) return '3/4';
-  if (valor <= 0.875) return '7/8';
-  return 'Lleno';
-};
-
 interface ResumenUnidad {
   unidad_id: number;
   unidad_codigo: string;
@@ -188,9 +169,6 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
                 Ruta Activa
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Combustible
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Tripulación
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -290,35 +268,36 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
                   )}
                 </td>
 
-                {/* Combustible */}
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm">
-                    <div className="font-medium text-gray-900">
-                      {unidad.combustible_fraccion || decimalToFraccion(unidad.combustible)}
-                    </div>
-                  </div>
-                </td>
-
                 {/* Tripulación */}
                 <td className="px-4 py-4">
-                  {unidad.tripulacion && unidad.tripulacion.length > 0 ? (
-                    <div className="text-xs space-y-0.5">
-                      {unidad.tripulacion.map((t, idx) => (
-                        <div key={idx} className="text-gray-700 flex items-center gap-1">
-                          {t.rol_tripulacion === 'COMANDANTE' && (
-                            <span title="Comandante">
-                              <Crown className="w-3 h-3 text-amber-500" />
-                            </span>
-                          )}
-                          <span>
-                            {t.nombre_completo}
-                          </span>
+                  {(() => {
+                    console.log('👥 [TABLE] Tripulación para unidad', unidad.unidad_codigo, ':', {
+                      tripulacion: unidad.tripulacion,
+                      length: unidad.tripulacion?.length,
+                      isArray: Array.isArray(unidad.tripulacion)
+                    });
+
+                    if (unidad.tripulacion && Array.isArray(unidad.tripulacion) && unidad.tripulacion.length > 0) {
+                      return (
+                        <div className="text-xs space-y-0.5">
+                          {unidad.tripulacion.map((t, idx) => (
+                            <div key={idx} className="text-gray-700 flex items-center gap-1">
+                              {t.rol_tripulacion === 'COMANDANTE' && (
+                                <span title="Comandante">
+                                  <Crown className="w-3 h-3 text-amber-500" />
+                                </span>
+                              )}
+                              <span>
+                                {t.nombre_completo}
+                              </span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-sm text-gray-400">Sin tripulación</span>
-                  )}
+                      );
+                    }
+
+                    return <span className="text-sm text-gray-400">Sin tripulación</span>;
+                  })()}
                 </td>
 
                 {/* Última Hora */}
