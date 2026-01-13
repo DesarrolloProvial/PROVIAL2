@@ -1056,6 +1056,18 @@ export async function getResumenUnidades(req: Request, res: Response) {
     const params = unidadesPermitidas !== null ? [unidadesPermitidas] : [];
     const resumen = await db.manyOrNone(query, params);
 
+    // DEBUG: Log tripulación data
+    console.log('🔍 [RESUMEN] Total unidades:', resumen.length);
+    resumen.forEach((u: any) => {
+      console.log(`🔍 [RESUMEN] Unidad ${u.unidad_codigo}:`, {
+        turno_id: u.turno_id,
+        turno_fecha: u.turno_fecha,
+        tripulacion: u.tripulacion,
+        tripulacion_type: typeof u.tripulacion,
+        tripulacion_length: Array.isArray(u.tripulacion) ? u.tripulacion.length : 'not array'
+      });
+    });
+
     return res.json({
       resumen,
       count: resumen.length,
