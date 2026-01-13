@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { situacionesAPI, api } from '../services/api';
-import { ArrowLeft, RefreshCw, MapPin, Edit2, Users, Truck, Clock, Fuel } from 'lucide-react';
+import { ArrowLeft, RefreshCw, MapPin, Users, Truck, Clock, Fuel } from 'lucide-react';
 import SituacionFormSelector from '../components/SituacionFormSelector';
 import Inspeccion360Historial from '../components/Inspeccion360Historial';
 
