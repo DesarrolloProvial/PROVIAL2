@@ -305,17 +305,13 @@ export default function NuevaSituacionScreen() {
             <Text style={styles.selectedTitle}>Detalles: {nombreTipoSeleccionado}</Text>
 
             {/* UBICACION */}
-            <View style={styles.card}>
+            <View style={[styles.card, { zIndex: 10 }]}>
               <Text style={styles.cardTitle}>Ubicación</Text>
 
-              <View style={[styles.row, { zIndex: 100 }]}>
-                <View style={{ flex: 1 }}>
-                  <JurisdiccionSelector
-                    deptoId={deptoId} setDeptoId={setDeptoId}
-                    muniId={muniId} setMuniId={setMuniId}
-                  />
-                </View>
-              </View>
+              <JurisdiccionSelector
+                deptoId={deptoId} setDeptoId={setDeptoId}
+                muniId={muniId} setMuniId={setMuniId}
+              />
 
               <View style={styles.row}>
                 <View style={styles.half}>
