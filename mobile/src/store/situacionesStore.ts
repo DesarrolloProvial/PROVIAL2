@@ -257,7 +257,7 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
 
     try {
       console.log('🚀 [STORE] Enviando situación:', JSON.stringify(data, null, 2));
-      const response = await axios.post(`${API_URL}/situaciones`, data);
+      const response = await api.post(`/situaciones`, data);
       console.log('✅ [STORE] Respuesta exitosa:', response.data);
       const nuevaSituacion = response.data.situacion;
 
@@ -296,7 +296,7 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await axios.patch(`${API_URL}/situaciones/${id}`, data);
+      const response = await api.patch(`/situaciones/${id}`, data);
       const situacionActualizada = response.data.situacion;
 
       // Actualizar en la lista local
@@ -331,7 +331,7 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await axios.patch(`${API_URL}/situaciones/${id}/cerrar`, {
+      const response = await api.patch(`/situaciones/${id}/cerrar`, {
         observaciones_finales,
       });
 
@@ -371,7 +371,7 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await axios.patch(`${API_URL}/situaciones/${id}/cambiar-tipo`, {
+      const response = await api.patch(`/situaciones/${id}/cambiar-tipo`, {
         nuevo_tipo: nuevoTipo,
         motivo,
       });
