@@ -4,16 +4,12 @@
 
 BEGIN;
 
+-- Usar los nombres EXACTOS de la migración 098
 UPDATE catalogo_tipo_situacion SET activo = false 
 WHERE nombre IN (
     'Accidente de Tránsito',
-    'Accidente',
     'Asistencia Vial',
-    'Asistencia vial',
-    'Asistencia Vehicular',
-    'Emergencia / Obstáculo',
-    'Emergencia',
-    'Obstáculo'
+    'Emergencia / Obstáculo'
 );
 
 COMMIT;
