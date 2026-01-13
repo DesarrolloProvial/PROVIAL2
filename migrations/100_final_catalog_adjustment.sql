@@ -16,7 +16,6 @@ DECLARE
     cat_operativo INT;
 BEGIN
     SELECT id INTO cat_operativo FROM catalogo_categoria_situacion WHERE codigo = 'OPERATIVO' LIMIT 1;
-    -- Si no existe categoria OPERATIVO, fallback a OTROS (id 1 usualmente) o alguna existente
     IF cat_operativo IS NULL THEN
          SELECT id INTO cat_operativo FROM catalogo_categoria_situacion LIMIT 1;
     END IF;
@@ -35,7 +34,7 @@ BEGIN
     -- Activar Apoyos
     UPDATE catalogo_tipo_situacion SET activo = true WHERE nombre LIKE 'Apoyo a %';
 
-    -- Insertar NUEVAS si no existen (Lógica segura sin ON CONFLICT)
+    -- Insertar NUEVAS si no existen
     IF NOT EXISTS (SELECT 1 FROM catalogo_tipo_situacion WHERE nombre = 'Regulación colonia') THEN
         INSERT INTO catalogo_tipo_situacion (nombre, categoria_id, activo, icono) 
         VALUES ('Regulación colonia', cat_operativo, true, 'traffic-light');
@@ -58,9 +57,9 @@ DO $$
 BEGIN
     -- Verificar si existe Caída de árbol en tipo_hecho
     IF EXISTS (SELECT 1 FROM tipo_hecho WHERE nombre = 'Caída de árbol') THEN
-        UPDATE tipo_hecho SET activo = true, es_accidente = true WHERE nombre = 'Caída de árbol';
+        UPDATE tipo_hecho SET activo = true WHERE nombre = 'Caída de árbol';
     ELSE
-        INSERT INTO tipo_hecho (nombre, activo, es_accidente) VALUES ('Caída de árbol', true, true);
+        INSERT INTO tipo_hecho (nombre, activo) VALUES ('Caída de árbol', true);
     END IF;
 END $$;
 
