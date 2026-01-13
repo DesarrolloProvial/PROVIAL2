@@ -84,4 +84,46 @@ export function isCloudinaryConfigured(): boolean {
   );
 }
 
+/**
+ * Generar signature para signed upload (cliente sube directo a Cloudinary)
+ * Esto es más seguro que exponer el API secret en el cliente
+ */
+export function generateSignedUploadParams(options: {
+  draftUuid: string;
+  fileType: 'image' | 'video';
+  resourceType?: 'image' | 'video' | 'raw' | 'auto';
+}) {
+  const timestamp = Math.round(Date.now() / 1000);
+  const folder = `provial/drafts/${options.draftUuid}`;
+  const publicId = `${options.draftUuid}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+  // Parámetros que se van a firmar
+  const paramsToSign: any = {
+    timestamp,
+    folder,
+    public_id: publicId,
+  };
+
+  // Agregar transformaciones según el tipo de archivo
+  if (options.fileType === 'image') {
+    paramsToSign.transformation = 'c_limit,w_1920,h_1080,q_auto';
+  }
+
+  // Generar signature usando el API secret
+  const signature = cloudinary.utils.api_sign_request(
+    paramsToSign,
+    process.env.CLOUDINARY_API_SECRET!
+  );
+
+  return {
+    signature,
+    timestamp,
+    apiKey: process.env.CLOUDINARY_API_KEY!,
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME!,
+    folder,
+    publicId,
+    uploadUrl: `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/${options.resourceType || 'auto'}/upload`,
+  };
+}
+
 export { cloudinary };

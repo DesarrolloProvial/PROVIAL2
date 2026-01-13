@@ -35,6 +35,8 @@ import accidentologiaRoutes from './accidentologia.routes';
 import comunicacionSocialRoutes from './comunicacionSocial.routes';
 import passwordResetRoutes from './passwordReset.routes';
 import rolesRoutes from './roles.routes';
+import cloudinaryRoutes from './cloudinary.routes';
+import draftsRoutes from './drafts.routes';
 
 
 const router = Router();
@@ -146,6 +148,12 @@ router.use('/', passwordResetRoutes);
 
 // Gestión de Roles y Permisos
 router.use('/roles', rolesRoutes);
+
+// Cloudinary signed uploads
+router.use('/cloudinary', cloudinaryRoutes);
+
+// Drafts offline-first
+router.use('/drafts', draftsRoutes);
 
 
 export default router;
