@@ -994,8 +994,6 @@ export async function getResumenUnidades(req: Request, res: Response) {
           ) as tripulacion
         FROM tripulacion_turno tt
         JOIN usuario u_trip ON tt.usuario_id = u_trip.id
-        JOIN asignacion_unidad au_trip ON tt.asignacion_id = au_trip.id
-        WHERE au_trip.turno_id IN (SELECT id FROM turno WHERE fecha = CURRENT_DATE)
         GROUP BY tt.asignacion_id
       )
       SELECT
