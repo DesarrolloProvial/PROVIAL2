@@ -81,7 +81,7 @@ export interface VehiculoAccidente {
   doc_consignado_licencia_transporte?: boolean;
   doc_consignado_tarjeta_operaciones?: boolean;
   doc_consignado_poliza?: boolean;
-  consignado_por?: string;
+  doc_consignado_por?: string;
   tipo_servicio?: string;
 }
 
@@ -298,7 +298,7 @@ export const AccidentologiaModel = {
         tiene_seguro, aseguradora, numero_poliza, fotos,
         doc_consignado_licencia, doc_consignado_tarjeta, doc_consignado_tarjeta_circulacion,
         doc_consignado_licencia_transporte, doc_consignado_tarjeta_operaciones, doc_consignado_poliza,
-        consignado_por, tipo_servicio
+        doc_consignado_por, tipo_servicio
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
         $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, 
@@ -317,7 +317,7 @@ export const AccidentologiaModel = {
       data.doc_consignado_licencia || false, data.doc_consignado_tarjeta || false,
       data.doc_consignado_tarjeta_circulacion || false, data.doc_consignado_licencia_transporte || false,
       data.doc_consignado_tarjeta_operaciones || false, data.doc_consignado_poliza || false,
-      data.consignado_por, data.tipo_servicio
+      data.doc_consignado_por, data.tipo_servicio
     ]);
     return result.id;
   },
@@ -340,7 +340,7 @@ export const AccidentologiaModel = {
       // Nuevos campos documentos consignados
       'doc_consignado_licencia', 'doc_consignado_tarjeta', 'doc_consignado_tarjeta_circulacion',
       'doc_consignado_licencia_transporte', 'doc_consignado_tarjeta_operaciones', 'doc_consignado_poliza',
-      'consignado_por', 'tipo_servicio'
+      'doc_consignado_por', 'tipo_servicio'
     ];
 
     for (const campo of camposPermitidos) {
