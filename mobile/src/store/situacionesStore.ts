@@ -164,8 +164,40 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
 
     try {
       const response = await api.get('/situaciones/catalogo');
+      const catalogoRaw = response.data || [];
+
+      // Lista de tipos a ELIMINAR del menú (se reportan en pantallas dedicadas o están prohibidos)
+      const tiposProhibidos = [
+        // Incidentes (van en pantalla dedicada)
+        'Accidente de Tránsito', 'Accidente', 'Asistencia Vial', 'Asistencia vial',
+        'Asistencia Vehicular', 'Emergencia / Obstáculo', 'Emergencia', 'Obstáculo',
+        // Tipos de accidente específicos (van en select de Hecho de Tránsito)
+        'Colisión', 'Choque', 'Salida de pista', 'Derrape', 'Caída de carga',
+        'Desprendimiento de carga', 'Desbalance de carga', 'Desprendimiento de neumático',
+        'Desprendimiento de eje', 'Vehículo incendiado', 'Ataque armado', 'Vuelco',
+        'Atropello', 'Persona Fallecida',
+        // Tipos de emergencia específicos (van en select de Emergencia)
+        'Derrame de combustible', 'Vehículo abandonado', 'Detención de vehículo',
+        'Caída de árbol', 'Desprendimiento de rocas', 'Derrumbe', 'Deslave',
+        'Deslizamiento de tierra', 'Hundimiento', 'Socavamiento',
+        'Desbordamiento de rio', 'Inundación', 'Acumulación de agua', 'Erupción volcánica',
+        // Situaciones prohibidas
+        'Intercambio de tripulantes', 'Salida de Unidad', 'Entrada de unidad',
+        'Cambio de Ruta', 'Cambio de Tripulación', 'Retirando señalización',
+        'Regulación en aeropuerto', 'Denuncia de usuario', 'Apoyo a báscula',
+        'Escoltando Autoridades', 'Bloqueo', 'Manifestación', 'Orden del Día'
+      ];
+
+      // Filtrar el catálogo
+      const catalogoFiltrado = catalogoRaw.map((categoria: any) => ({
+        ...categoria,
+        tipos: categoria.tipos?.filter((tipo: any) =>
+          !tiposProhibidos.includes(tipo.nombre)
+        ) || []
+      })).filter((cat: any) => cat.tipos.length > 0); // Remover categorías vacías
+
       set({
-        catalogo: response.data || [],
+        catalogo: catalogoFiltrado,
         isLoading: false,
       });
     } catch (error: any) {

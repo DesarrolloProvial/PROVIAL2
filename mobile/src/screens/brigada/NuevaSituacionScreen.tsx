@@ -263,7 +263,6 @@ export default function NuevaSituacionScreen() {
             <Text style={[styles.catTitle, { color: CATEGORIA_COLORS[cat.codigo] || COLORS.primary }]}>
               {cat.nombre}
             </Text>
-            <Text style={{ color: 'red', fontSize: 20, fontWeight: 'bold' }}>HOLA</Text>
             <View style={styles.tiposContainer}>
               {cat.tipos.map((tipo: any) => {
                 const isSelected = tipoSituacionId === tipo.id;
