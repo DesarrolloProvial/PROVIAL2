@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { situacionesAPI, api } from '../services/api';
 import { ArrowLeft, RefreshCw, MapPin, Users, Truck, Clock, Fuel } from 'lucide-react';
 import Inspeccion360Historial from '../components/Inspeccion360Historial';
@@ -24,7 +24,6 @@ interface Tripulante {
 export default function BitacoraPage() {
     const { unidadId } = useParams<{ unidadId: string }>();
     const navigate = useNavigate();
-    const queryClient = useQueryClient();
     const [limit, setLimit] = useState(50);
 
     // Estado para info de unidad
@@ -287,16 +286,6 @@ export default function BitacoraPage() {
                 </div>
             </div>
 
-            {/* Modal de Edición - Usa el formulario apropiado según tipo de situación */}
-            <SituacionFormSelector
-                isOpen={editModalOpen}
-                situacion={situacionSeleccionada}
-                onClose={() => {
-                    setEditModalOpen(false);
-                    setSituacionSeleccionada(null);
-                }}
-                onSave={handleSaveSuccess}
-            />
         </div>
     );
 }
