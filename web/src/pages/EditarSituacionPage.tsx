@@ -19,7 +19,10 @@ export default function EditarSituacionPage() {
         queryKey: ['situacion', id],
         queryFn: async () => {
             const response = await situacionesAPI.getById(Number(id));
-            return response.situacion;
+            if (!response) {
+                throw new Error('Situación no encontrada');
+            }
+            return response;
         },
         enabled: !!id,
     });

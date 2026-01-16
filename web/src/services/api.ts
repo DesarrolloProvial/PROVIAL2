@@ -146,8 +146,20 @@ export const situacionesAPI = {
   },
 
   async getById(id: number): Promise<any> {
-    const { data } = await api.get(`/situaciones/${id}`);
-    return data.situacion;
+    try {
+      const { data } = await api.get(`/situaciones/${id}`);
+      console.log('📥 [API] getById response:', data);
+
+      if (!data || !data.situacion) {
+        console.error('❌ [API] getById - Invalid response structure:', data);
+        throw new Error('Respuesta inválida del servidor');
+      }
+
+      return data.situacion;
+    } catch (error: any) {
+      console.error('❌ [API] getById error:', error.response?.data || error.message);
+      throw error;
+    }
   },
 
   async getResumenUnidades(): Promise<any[]> {
