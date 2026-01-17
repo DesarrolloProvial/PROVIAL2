@@ -221,6 +221,9 @@ export const SalidaModel = {
             'estado', sit.estado,
             'ruta_codigo', r2.codigo,
             'km', sit.km,
+            'sentido', sit.sentido,
+            'clima', sit.clima,
+            'carga_vehicular', sit.carga_vehicular,
             'created_at', sit.created_at
           ) ORDER BY sit.created_at)
           FROM situacion sit
@@ -276,6 +279,9 @@ export const SalidaModel = {
             'estado', sit.estado,
             'ruta_codigo', r2.codigo,
             'km', sit.km,
+            'sentido', sit.sentido,
+            'clima', sit.clima,
+            'carga_vehicular', sit.carga_vehicular,
             'created_at', sit.created_at
           ) ORDER BY sit.created_at)
           FROM situacion sit
