@@ -119,6 +119,17 @@ export interface UltimaSituacionUnidad {
 
 export const SituacionModel = {
   /**
+   * Buscar situacion por codigo_situacion (ID determinista)
+   * Usado para detectar duplicados en sistema offline-first
+   */
+  async findByCodigoSituacion(codigoSituacion: string): Promise<Situacion | null> {
+    return db.oneOrNone(
+      'SELECT * FROM situacion WHERE codigo_situacion = $1',
+      [codigoSituacion]
+    );
+  },
+
+  /**
    * Crear una nueva situación
    */
   async create(data: {
@@ -146,6 +157,7 @@ export const SituacionModel = {
     carga_vehicular?: string;
     departamento_id?: number;
     municipio_id?: number;
+    codigo_situacion?: string; // ID determinista para offline-first
     detalles?: Array<{ tipo_detalle: string; datos: any }>;
   }): Promise<Situacion> {
     return db.tx(async (t) => {
@@ -156,10 +168,10 @@ export const SituacionModel = {
           ruta_id, km, sentido, latitud, longitud, ubicacion_manual,
           combustible, combustible_fraccion, kilometraje_unidad, tripulacion_confirmada,
           descripcion, observaciones, incidente_id, creado_por, tipo_situacion_id,
-          clima, carga_vehicular, departamento_id, municipio_id
+          clima, carga_vehicular, departamento_id, municipio_id, codigo_situacion
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-          $21, $22, $23, $24
+          $21, $22, $23, $24, $25
         ) RETURNING *
       `;
 
@@ -187,7 +199,8 @@ export const SituacionModel = {
         data.clima || null,
         data.carga_vehicular || null,
         data.departamento_id || null,
-        data.municipio_id || null
+        data.municipio_id || null,
+        data.codigo_situacion || null
       ]);
 
       // 2. Insertar Detalles (si existen)
@@ -289,7 +302,10 @@ export const SituacionModel = {
     unidad_id?: number;
     turno_id?: number;
   }): Promise<SituacionCompleta[]> {
-    let whereConditions: string[] = ["sal.estado = 'EN_SALIDA'"];
+    let whereConditions: string[] = [
+      "sal.estado = 'EN_SALIDA'",
+      "s.estado = 'ACTIVA'"  // Solo situaciones activas, no cerradas/canceladas
+    ];
     let params: any[] = [];
     let paramIndex = 1;
 

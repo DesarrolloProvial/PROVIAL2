@@ -52,6 +52,7 @@ export async function createSituacion(req: Request, res: Response) {
     console.log('📥 [CONTROLLER] Usuario:', req.user?.userId, req.user?.rol);
 
     const {
+      id: codigo_situacion, // ID determinista del cliente (sistema offline-first)
       tipo_situacion,
       unidad_id,
       salida_unidad_id,
@@ -81,6 +82,66 @@ export async function createSituacion(req: Request, res: Response) {
 
     const userId = req.user!.userId;
     console.log('📥 [CONTROLLER] Campos extraídos correctamente');
+
+    // ========================================
+    // SISTEMA OFFLINE-FIRST: Detección de duplicados
+    // ========================================
+    if (codigo_situacion) {
+      console.log(`📥 [CONTROLLER] Verificando codigo_situacion: ${codigo_situacion}`);
+
+      const existente = await SituacionModel.findByCodigoSituacion(codigo_situacion);
+
+      if (existente) {
+        // Situación ya existe - verificar si es idempotencia o conflicto
+        const mismosDatos =
+          existente.km === km &&
+          existente.sentido === sentido &&
+          existente.tipo_situacion === tipo_situacion;
+
+        if (mismosDatos) {
+          // Idempotencia: mismos datos, retornar éxito sin crear
+          console.log(`📥 [CONTROLLER] Idempotencia detectada para ${codigo_situacion}`);
+          const situacionCompleta = await SituacionModel.getById(existente.id);
+          return res.status(200).json({
+            situacion: situacionCompleta,
+            situacion_id: existente.id,
+            numero_situacion: existente.numero_situacion,
+            message: 'Situación ya registrada (idempotente)',
+            idempotente: true
+          });
+        }
+
+        // Conflicto: mismo ID pero datos diferentes
+        console.log(`⚠️ [CONTROLLER] Conflicto detectado para ${codigo_situacion}`);
+
+        // Calcular diferencias
+        const diferencias: Array<{campo: string; local: any; servidor: any}> = [];
+        if (existente.km !== km) diferencias.push({ campo: 'km', local: km, servidor: existente.km });
+        if (existente.sentido !== sentido) diferencias.push({ campo: 'sentido', local: sentido, servidor: existente.sentido });
+        if (existente.tipo_situacion !== tipo_situacion) diferencias.push({ campo: 'tipo_situacion', local: tipo_situacion, servidor: existente.tipo_situacion });
+        if (existente.descripcion !== descripcion) diferencias.push({ campo: 'descripcion', local: descripcion, servidor: existente.descripcion });
+        if (existente.observaciones !== observaciones) diferencias.push({ campo: 'observaciones', local: observaciones, servidor: existente.observaciones });
+
+        return res.status(409).json({
+          error: 'DUPLICATE_SITUACION',
+          codigo: 'CONFLICTO_DUPLICADO',
+          codigo_situacion,
+          situacion_existente: {
+            id: existente.id,
+            numero_situacion: existente.numero_situacion,
+            tipo_situacion: existente.tipo_situacion,
+            km: existente.km,
+            sentido: existente.sentido,
+            descripcion: existente.descripcion,
+            observaciones: existente.observaciones,
+            created_at: existente.created_at
+          },
+          diferencias,
+          total_diferencias: diferencias.length,
+          message: 'Esta situación ya fue reportada con datos diferentes'
+        });
+      }
+    }
 
     // Si es un brigada, siempre buscar su asignación
     let unidadFinal = unidad_id;
@@ -273,6 +334,8 @@ export async function createSituacion(req: Request, res: Response) {
       carga_vehicular,
       departamento_id,
       municipio_id,
+      // Sistema offline-first
+      codigo_situacion,
     };
 
     console.log('💾 [CONTROLLER] Datos para crear situación:', JSON.stringify(dataToCreate, null, 2));

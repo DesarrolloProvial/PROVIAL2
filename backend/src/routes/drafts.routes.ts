@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import {
+  createOrUpdateSituacionDraft,
   createOrUpdateIncidenteDraft,
+  getSituacionDraft,
   getIncidenteDraft,
   getPendingDrafts,
   registerEvidencia,
@@ -13,14 +15,26 @@ import { idempotency } from '../middlewares/idempotency';
 const router = Router();
 
 /**
- * POST /api/drafts/incidente
- * Crear o actualizar borrador de incidente
- * Soporta idempotencia con header Idempotency-Key
+ * POST /api/drafts/situacion
+ * Crear o actualizar borrador de cualquier tipo de situación
+ * Body: { draftUuid, tipoSituacion, payload }
+ */
+router.post('/situacion', authenticate, idempotency, createOrUpdateSituacionDraft);
+
+/**
+ * GET /api/drafts/situacion/:uuid
+ * Obtener un borrador específico con sus evidencias
+ */
+router.get('/situacion/:uuid', authenticate, getSituacionDraft);
+
+/**
+ * POST /api/drafts/incidente (LEGACY - usa /situacion en su lugar)
+ * Mantener compatibilidad con código existente
  */
 router.post('/incidente', authenticate, idempotency, createOrUpdateIncidenteDraft);
 
 /**
- * GET /api/drafts/incidente/:uuid
+ * GET /api/drafts/incidente/:uuid (LEGACY)
  * Obtener un borrador específico con sus evidencias
  */
 router.get('/incidente/:uuid', authenticate, getIncidenteDraft);

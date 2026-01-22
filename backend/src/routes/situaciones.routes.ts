@@ -20,6 +20,13 @@ import {
   getCatalogo,
   getCatalogosAuxiliares
 } from '../controllers/situacion.controller';
+import {
+  registrarConflicto,
+  listarConflictos,
+  obtenerConflicto,
+  resolverConflicto,
+  misConflictos
+} from '../controllers/conflictos.controller';
 import { authenticate, authorize, canEditSituacion } from '../middlewares/auth';
 
 const router = Router();
@@ -51,6 +58,25 @@ router.get('/auxiliares', authenticate, getCatalogosAuxiliares);
 
 // Situaciones activas
 router.get('/activas', authenticate, listSituacionesActivas);
+
+// ========================================
+// CONFLICTOS (Sistema Offline-First)
+// ========================================
+
+// Mis conflictos (brigada)
+router.get('/conflictos/mis-conflictos', authenticate, misConflictos);
+
+// Listar conflictos pendientes (COP/Admin)
+router.get('/conflictos', authenticate, authorize('COP', 'OPERACIONES', 'ADMIN'), listarConflictos);
+
+// Registrar conflicto (brigada)
+router.post('/conflictos', authenticate, registrarConflicto);
+
+// Obtener conflicto por ID
+router.get('/conflictos/:id', authenticate, obtenerConflicto);
+
+// Resolver conflicto (COP/Admin)
+router.patch('/conflictos/:id/resolver', authenticate, authorize('COP', 'OPERACIONES', 'ADMIN'), resolverConflicto);
 
 // ========================================
 // RUTAS GENERALES CON PARAMETROS (DEBEN IR DESPUES DE LAS RUTAS ESPECIFICAS)

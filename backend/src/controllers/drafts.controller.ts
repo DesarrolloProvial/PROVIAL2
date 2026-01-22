@@ -1,31 +1,53 @@
 /**
  * Controlador de Drafts (Borradores Offline-First)
- * Maneja incidentes, emergencias y asistencias guardadas localmente
+ * Maneja TODOS los tipos de situaciones: HECHO_TRANSITO, ASISTENCIA_VEHICULAR, EMERGENCIA, etc.
  * que se sincronizan después
  */
 
 import { Request, Response } from 'express';
 import { db } from '../config/database';
 
+// Tipos de situación soportados
+const TIPOS_SITUACION_VALIDOS = [
+  'PATRULLAJE',
+  'HECHO_TRANSITO',        // Antes llamado INCIDENTE
+  'ASISTENCIA_VEHICULAR',
+  'EMERGENCIA',
+  'REGULACION_TRAFICO',
+  'PARADA_ESTRATEGICA',
+  'CAMBIO_RUTA',
+  'COMIDA',
+  'DESCANSO',
+  'OTROS'
+];
+
 /**
- * POST /api/drafts/incidente
- * Crear o actualizar borrador de incidente
+ * POST /api/drafts/situacion
+ * Crear o actualizar borrador de cualquier tipo de situación
  *
  * Body:
  * - draftUuid: UUID generado en cliente
+ * - tipoSituacion: Tipo de situación (HECHO_TRANSITO, ASISTENCIA_VEHICULAR, etc.)
  * - payload: JSON completo del formulario
  */
-export async function createOrUpdateIncidenteDraft(req: Request, res: Response) {
+export async function createOrUpdateSituacionDraft(req: Request, res: Response) {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'No autorizado' });
     }
 
-    const { draftUuid, payload } = req.body;
+    const { draftUuid, tipoSituacion, payload } = req.body;
 
     // Validar parámetros
     if (!draftUuid) {
       return res.status(400).json({ error: 'draftUuid es requerido' });
+    }
+
+    if (!tipoSituacion || !TIPOS_SITUACION_VALIDOS.includes(tipoSituacion)) {
+      return res.status(400).json({
+        error: 'tipoSituacion inválido',
+        message: `Debe ser uno de: ${TIPOS_SITUACION_VALIDOS.join(', ')}`
+      });
     }
 
     if (!payload || typeof payload !== 'object') {
@@ -34,7 +56,7 @@ export async function createOrUpdateIncidenteDraft(req: Request, res: Response) 
 
     // Verificar si ya existe (idempotencia manual adicional)
     const existing = await db.oneOrNone(
-      'SELECT draft_uuid, estado_sync FROM incidente_draft WHERE draft_uuid = $1',
+      'SELECT draft_uuid, estado_sync FROM situacion_draft WHERE draft_uuid = $1',
       [draftUuid]
     );
 
@@ -43,22 +65,23 @@ export async function createOrUpdateIncidenteDraft(req: Request, res: Response) 
       if (existing.estado_sync === 'SINCRONIZADO') {
         return res.status(409).json({
           error: 'Draft ya sincronizado',
-          message: 'Este borrador ya fue convertido a incidente final'
+          message: 'Este borrador ya fue convertido a situación final'
         });
       }
 
       // Actualizar draft existente
       await db.none(
-        `UPDATE incidente_draft
-         SET payload_json = $1, updated_at = NOW()
-         WHERE draft_uuid = $2`,
-        [payload, draftUuid]
+        `UPDATE situacion_draft
+         SET tipo_situacion = $1, payload_json = $2, updated_at = NOW()
+         WHERE draft_uuid = $3`,
+        [tipoSituacion, payload, draftUuid]
       );
 
-      console.log(`[DRAFTS] Draft actualizado: ${draftUuid} por usuario ${req.user.userId}`);
+      console.log(`[DRAFTS] Draft actualizado: ${draftUuid} (${tipoSituacion}) por usuario ${req.user.userId}`);
 
       return res.json({
         draftUuid,
+        tipoSituacion,
         status: 'updated',
         message: 'Borrador actualizado exitosamente'
       });
@@ -66,15 +89,16 @@ export async function createOrUpdateIncidenteDraft(req: Request, res: Response) 
 
     // Crear nuevo draft
     await db.none(
-      `INSERT INTO incidente_draft (draft_uuid, payload_json, usuario_id, estado_sync)
-       VALUES ($1, $2, $3, 'LOCAL')`,
-      [draftUuid, payload, req.user.userId]
+      `INSERT INTO situacion_draft (draft_uuid, tipo_situacion, payload_json, usuario_id, estado_sync)
+       VALUES ($1, $2, $3, $4, 'LOCAL')`,
+      [draftUuid, tipoSituacion, payload, req.user.userId]
     );
 
-    console.log(`[DRAFTS] Draft creado: ${draftUuid} por usuario ${req.user.userId}`);
+    console.log(`[DRAFTS] Draft creado: ${draftUuid} (${tipoSituacion}) por usuario ${req.user.userId}`);
 
     return res.status(201).json({
       draftUuid,
+      tipoSituacion,
       status: 'created',
       message: 'Borrador guardado exitosamente'
     });
@@ -88,10 +112,20 @@ export async function createOrUpdateIncidenteDraft(req: Request, res: Response) 
 }
 
 /**
- * GET /api/drafts/incidente/:uuid
+ * POST /api/drafts/incidente (LEGACY - redirige a situacion)
+ * Mantener compatibilidad con código existente
+ */
+export async function createOrUpdateIncidenteDraft(req: Request, res: Response) {
+  // Agregar tipoSituacion por defecto para compatibilidad
+  req.body.tipoSituacion = req.body.tipoSituacion || 'HECHO_TRANSITO';
+  return createOrUpdateSituacionDraft(req, res);
+}
+
+/**
+ * GET /api/drafts/situacion/:uuid
  * Obtener un borrador específico
  */
-export async function getIncidenteDraft(req: Request, res: Response) {
+export async function getSituacionDraft(req: Request, res: Response) {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'No autorizado' });
@@ -100,7 +134,7 @@ export async function getIncidenteDraft(req: Request, res: Response) {
     const { uuid } = req.params;
 
     const draft = await db.oneOrNone(
-      `SELECT * FROM incidente_draft WHERE draft_uuid = $1`,
+      `SELECT * FROM situacion_draft WHERE draft_uuid = $1`,
       [uuid]
     );
 
@@ -130,6 +164,9 @@ export async function getIncidenteDraft(req: Request, res: Response) {
   }
 }
 
+// Alias para compatibilidad
+export const getIncidenteDraft = getSituacionDraft;
+
 /**
  * GET /api/drafts/pending
  * Obtener todos los borradores pendientes del usuario
@@ -142,10 +179,9 @@ export async function getPendingDrafts(req: Request, res: Response) {
 
     const drafts = await db.any(
       `SELECT
-        'INCIDENTE' as tipo,
         d.*,
         (SELECT COUNT(*) FROM situacion_multimedia WHERE draft_uuid = d.draft_uuid) as evidencias_count
-       FROM incidente_draft d
+       FROM situacion_draft d
        WHERE usuario_id = $1 AND estado_sync IN ('LOCAL', 'ERROR')
        ORDER BY created_at DESC`,
       [req.user.userId]
@@ -204,7 +240,7 @@ export async function registerEvidencia(req: Request, res: Response) {
 
     // Verificar que el draft existe
     const draft = await db.oneOrNone(
-      'SELECT draft_uuid FROM incidente_draft WHERE draft_uuid = $1',
+      'SELECT draft_uuid FROM situacion_draft WHERE draft_uuid = $1',
       [uuid]
     );
 
@@ -331,15 +367,13 @@ export async function registerEvidencia(req: Request, res: Response) {
 
 /**
  * POST /api/drafts/:uuid/finalize
- * Finalizar draft: convertir a incidente real (TRANSACCIÓN ATÓMICA)
+ * Finalizar draft: convertir a situación real (TRANSACCIÓN ATÓMICA)
  *
- * Proceso:
- * 1. BEGIN
- * 2. Crear situación
- * 3. Crear incidente desde payload_json del draft
- * 4. Actualizar evidencias (asociarlas a situacion_id)
- * 5. Marcar draft como SINCRONIZADO
- * 6. COMMIT (si falla algo, ROLLBACK automático)
+ * Soporta todos los tipos:
+ * - HECHO_TRANSITO: Crea situación + registro en tabla incidente
+ * - ASISTENCIA_VEHICULAR: Crea solo situación
+ * - EMERGENCIA: Crea situación + alerta
+ * - Otros: Crea solo situación
  */
 export async function finalizeDraft(req: Request, res: Response) {
   try {
@@ -351,7 +385,7 @@ export async function finalizeDraft(req: Request, res: Response) {
 
     // Obtener draft
     const draft = await db.oneOrNone(
-      'SELECT * FROM incidente_draft WHERE draft_uuid = $1',
+      'SELECT * FROM situacion_draft WHERE draft_uuid = $1',
       [uuid]
     );
 
@@ -363,7 +397,6 @@ export async function finalizeDraft(req: Request, res: Response) {
     if (draft.estado_sync === 'SINCRONIZADO') {
       return res.status(409).json({
         error: 'Draft ya sincronizado',
-        incidente_id: draft.incidente_id,
         situacion_id: draft.situacion_id
       });
     }
@@ -374,15 +407,19 @@ export async function finalizeDraft(req: Request, res: Response) {
     }
 
     const payload = draft.payload_json;
+    const tipoSituacion = draft.tipo_situacion || payload.tipo_situacion || 'OTROS';
+
+    console.log(`[DRAFTS] Finalizando draft ${uuid} tipo: ${tipoSituacion}`);
 
     // TRANSACCIÓN ATÓMICA
     const result = await db.tx(async (t) => {
-      // 1. Crear situación
+      // 1. Crear situación (común para todos los tipos)
       const situacion = await t.one(
         `INSERT INTO situacion (
           uuid,
           tipo_situacion,
           estado,
+          salida_unidad_id,
           unidad_id,
           turno_id,
           asignacion_id,
@@ -393,17 +430,25 @@ export async function finalizeDraft(req: Request, res: Response) {
           longitud,
           ubicacion_manual,
           combustible,
+          combustible_fraccion,
           kilometraje_unidad,
+          clima,
+          carga_vehicular,
+          departamento_id,
+          municipio_id,
           descripcion,
+          observaciones,
           creado_por,
           actualizado_por
         ) VALUES (
           gen_random_uuid(),
-          'INCIDENTE',
+          $1,
           'ACTIVA',
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
-        ) RETURNING id, uuid`,
+          $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $21
+        ) RETURNING id, uuid, numero_situacion`,
         [
+          tipoSituacion,
+          payload.salida_unidad_id || null,
           payload.unidad_id || null,
           payload.turno_id || null,
           payload.asignacion_id || null,
@@ -414,54 +459,79 @@ export async function finalizeDraft(req: Request, res: Response) {
           payload.longitud || null,
           payload.ubicacion_manual || false,
           payload.combustible || null,
+          payload.combustible_fraccion || null,
           payload.kilometraje_unidad || null,
-          payload.descripcion || null,
-          req.user!.userId,
-          req.user!.userId
-        ]
-      );
-
-      // 2. Crear incidente
-      const incidente = await t.one(
-        `INSERT INTO incidente (
-          situacion_id,
-          tipo_hecho,
-          departamento_id,
-          municipio_id,
-          descripcion_hecho,
-          personas_lesionadas,
-          personas_fallecidas,
-          danos_materiales,
-          danos_infraestructura,
-          descripcion_danos_infra,
-          obstruye,
-          area,
-          material_via,
-          observaciones,
-          creado_por
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
-        ) RETURNING id`,
-        [
-          situacion.id,
-          payload.tipo_hecho || null,
+          payload.clima || null,
+          payload.carga_vehicular || null,
           payload.departamento_id || null,
           payload.municipio_id || null,
-          payload.descripcion_hecho || null,
-          payload.personas_lesionadas || 0,
-          payload.personas_fallecidas || 0,
-          payload.danos_materiales || false,
-          payload.danos_infraestructura || false,
-          payload.descripcion_danos_infra || null,
-          payload.obstruye || null,
-          payload.area || null,
-          payload.material_via || null,
+          payload.descripcion || null,
           payload.observaciones || null,
           req.user!.userId
         ]
       );
 
-      // 3. Actualizar evidencias (asociarlas a la situación)
+      let incidenteId = null;
+
+      // 2. Para HECHO_TRANSITO, crear también registro en tabla incidente
+      if (tipoSituacion === 'HECHO_TRANSITO' || tipoSituacion === 'INCIDENTE') {
+        const incidente = await t.one(
+          `INSERT INTO incidente (
+            situacion_id,
+            tipo_hecho,
+            departamento_id,
+            municipio_id,
+            descripcion_hecho,
+            personas_lesionadas,
+            personas_fallecidas,
+            danos_materiales,
+            danos_infraestructura,
+            descripcion_danos_infra,
+            obstruye,
+            area,
+            material_via,
+            observaciones,
+            creado_por
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+          ) RETURNING id`,
+          [
+            situacion.id,
+            payload.tipo_hecho || null,
+            payload.departamento_id || null,
+            payload.municipio_id || null,
+            payload.descripcion_hecho || payload.descripcion || null,
+            payload.personas_lesionadas || 0,
+            payload.personas_fallecidas || 0,
+            payload.danos_materiales || false,
+            payload.danos_infraestructura || false,
+            payload.descripcion_danos_infra || null,
+            payload.obstruye || null,
+            payload.area || null,
+            payload.material_via || null,
+            payload.observaciones || null,
+            req.user!.userId
+          ]
+        );
+        incidenteId = incidente.id;
+
+        // Actualizar situación con referencia al incidente
+        await t.none(
+          'UPDATE situacion SET incidente_id = $1 WHERE id = $2',
+          [incidenteId, situacion.id]
+        );
+      }
+
+      // 3. Para ASISTENCIA_VEHICULAR, crear detalle si hay datos del vehículo
+      if (tipoSituacion === 'ASISTENCIA_VEHICULAR' && payload.vehiculo) {
+        await t.none(
+          `INSERT INTO detalle_situacion (situacion_id, tipo_detalle, datos, creado_por)
+           VALUES ($1, 'VEHICULO', $2, $3)`,
+          [situacion.id, payload.vehiculo, req.user!.userId]
+        );
+      }
+
+      // 4. Actualizar evidencias (asociarlas a la situación)
       await t.none(
         `UPDATE situacion_multimedia
          SET situacion_id = $1, estado = 'REGISTRADA'
@@ -469,29 +539,30 @@ export async function finalizeDraft(req: Request, res: Response) {
         [situacion.id, uuid]
       );
 
-      // 4. Marcar draft como SINCRONIZADO
+      // 5. Marcar draft como SINCRONIZADO
       await t.none(
-        `UPDATE incidente_draft
+        `UPDATE situacion_draft
          SET estado_sync = 'SINCRONIZADO',
-             incidente_id = $1,
-             situacion_id = $2,
+             situacion_id = $1,
              synced_at = NOW()
-         WHERE draft_uuid = $3`,
-        [incidente.id, situacion.id, uuid]
+         WHERE draft_uuid = $2`,
+        [situacion.id, uuid]
       );
 
-      console.log(`[DRAFTS] Draft finalizado: ${uuid} → incidente ${incidente.id}, situación ${situacion.id}`);
+      console.log(`[DRAFTS] Draft finalizado: ${uuid} → situación ${situacion.id} (${tipoSituacion})${incidenteId ? `, incidente ${incidenteId}` : ''}`);
 
       return {
-        incidente_id: incidente.id,
         situacion_id: situacion.id,
-        situacion_uuid: situacion.uuid
+        situacion_uuid: situacion.uuid,
+        numero_situacion: situacion.numero_situacion,
+        tipo_situacion: tipoSituacion,
+        incidente_id: incidenteId
       };
     });
 
     return res.status(201).json({
       success: true,
-      message: 'Incidente creado exitosamente',
+      message: `${tipoSituacion.replace(/_/g, ' ')} creado exitosamente`,
       ...result
     });
   } catch (error: any) {
@@ -500,7 +571,7 @@ export async function finalizeDraft(req: Request, res: Response) {
     // Actualizar draft con error
     try {
       await db.none(
-        `UPDATE incidente_draft
+        `UPDATE situacion_draft
          SET estado_sync = 'ERROR',
              error_message = $1,
              last_sync_attempt = NOW(),
@@ -531,7 +602,7 @@ export async function updateDraftStatus(req: Request, res: Response) {
     }
 
     const { uuid } = req.params;
-    const { estado_sync, error_message, incidente_id, situacion_id } = req.body;
+    const { estado_sync, error_message, situacion_id } = req.body;
 
     const allowed_states = ['LOCAL', 'EN_PROCESO', 'SINCRONIZADO', 'ERROR'];
     if (estado_sync && !allowed_states.includes(estado_sync)) {
@@ -543,16 +614,15 @@ export async function updateDraftStatus(req: Request, res: Response) {
 
     // Actualizar draft
     await db.none(
-      `UPDATE incidente_draft
+      `UPDATE situacion_draft
        SET estado_sync = COALESCE($1, estado_sync),
            error_message = $2,
-           incidente_id = COALESCE($3, incidente_id),
-           situacion_id = COALESCE($4, situacion_id),
+           situacion_id = COALESCE($3, situacion_id),
            sync_attempts = sync_attempts + 1,
            last_sync_attempt = NOW(),
            synced_at = CASE WHEN $1 = 'SINCRONIZADO' THEN NOW() ELSE synced_at END
-       WHERE draft_uuid = $5`,
-      [estado_sync, error_message, incidente_id, situacion_id, uuid]
+       WHERE draft_uuid = $4`,
+      [estado_sync, error_message, situacion_id, uuid]
     );
 
     return res.json({ message: 'Estado actualizado' });

@@ -26,11 +26,18 @@ import api from '../../services/api';
 
 // New Imports
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
-import { Provider as PaperProvider, SegmentedButtons, TextInput as PaperInput, Button, Switch } from 'react-native-paper';
+import { Provider as PaperProvider, SegmentedButtons, TextInput as PaperInput, Button, Switch, Chip } from 'react-native-paper';
 import { VehiculoForm } from '../../components/VehiculoForm';
 import { GruaForm } from '../../components/GruaForm';
 import { AjustadorForm } from '../../components/AjustadorForm';
 import MultimediaCapture from '../../components/MultimediaCapture';
+import MultimediaCaptureOffline from '../../components/MultimediaCaptureOffline';
+
+// Offline-First Imports
+import { saveDraft, addToSyncQueue, type Draft } from '../../services/database';
+import { useSyncQueue } from '../../hooks/useSyncQueue';
+import 'react-native-get-random-values';
+import { v4 as uuidv4 } from 'uuid';
 
 type AsistenciaScreenRouteProp = RouteProp<{
     AsistenciaScreen: {
@@ -44,13 +51,17 @@ export default function AsistenciaScreen() {
     const navigation = useNavigation();
     const route = useRoute<AsistenciaScreenRouteProp>();
     const { editMode, situacionId: situacionIdParam, situacionData } = route.params || {};
-    const { salidaActiva } = useAuthStore();
+    const { salidaActiva, usuario } = useAuthStore();
 
     // Estado para situacionId (se obtiene del param o después de crear)
     const [situacionId, setSituacionId] = useState<number | null>(situacionIdParam || null);
     const [multimediaComplete, setMultimediaComplete] = useState(false);
     const [loadingData, setLoadingData] = useState(false);
     const { testModeEnabled } = useTestMode();
+
+    // OFFLINE-FIRST: UUID del draft y estado de sincronización
+    const [draftUuid] = useState<string>(() => editMode ? '' : uuidv4());
+    const { isOnline, isSyncing, pendingDrafts, forceSync } = useSyncQueue();
 
     // Coordenadas manuales para modo pruebas
     const [latitudManual, setLatitudManual] = useState('14.6349');
@@ -255,26 +266,53 @@ export default function AsistenciaScreen() {
                 await api.patch(`/situaciones/${situacionId}`, updateData);
                 Alert.alert('Éxito', 'Asistencia actualizada', [{ text: 'OK', onPress: () => navigation.goBack() }]);
             } else {
-                // Modo creación
+                // OFFLINE-FIRST: Guardar localmente primero
                 const asistenciaData = {
-                    ...data,
+                    tipoAsistencia: data.tipoAsistencia,
+                    km: parseFloat(data.km),
+                    sentido: data.sentido,
+                    jurisdiccion: data.jurisdiccion,
+                    direccion_detallada: data.direccion_detallada,
+                    servicioProporcionado: data.servicioProporcionado,
+                    observaciones: data.observaciones,
+                    obstruye: data.obstruye,
+                    vehiculos: data.vehiculos,
+                    gruas: data.gruas,
+                    ajustadores: data.ajustadores,
+                    autoridadesSeleccionadas: data.autoridadesSeleccionadas,
+                    detallesAutoridades: data.detallesAutoridades,
+                    socorroSeleccionado: data.socorroSeleccionado,
+                    detallesSocorro: data.detallesSocorro,
                     latitud: latFinal,
                     longitud: lonFinal,
                     ubicacion_manual: testModeEnabled,
                     unidad_id: salidaActiva!.unidad_id,
                     salida_unidad_id: salidaActiva!.salida_id,
                     tipo_situacion: 'ASISTENCIA_VEHICULAR',
-                    tipo_asistencia: data.tipoAsistencia,
                     ruta_id: salidaActiva!.ruta_codigo,
-                    km: parseFloat(data.km),
                 };
 
-                console.log('Enviando asistencia:', asistenciaData);
-                // TODO: Call API
-                // await api.post('/asistencias', asistenciaData);
+                // Crear draft local
+                const draft: Omit<Draft, 'created_at' | 'updated_at'> = {
+                    draft_uuid: draftUuid,
+                    tipo_situacion: 'ASISTENCIA_VEHICULAR',
+                    payload_json: JSON.stringify(asistenciaData),
+                    estado_sync: 'LOCAL',
+                    usuario_id: usuario?.id || 0,
+                    sync_attempts: 0
+                };
+
+                console.log('[ASISTENCIA-OFFLINE] Guardando draft local:', draftUuid);
+                await saveDraft(draft);
+                await addToSyncQueue(draftUuid, 'DRAFT');
 
                 await clearDraft();
-                Alert.alert('Éxito', 'Asistencia registrada', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+
+                const mensaje = isOnline
+                    ? 'Asistencia guardada. Sincronizando...'
+                    : 'Asistencia guardada localmente. Se sincronizará cuando haya conexión.';
+
+                Alert.alert('Éxito', mensaje, [{ text: 'OK', onPress: () => navigation.goBack() }]);
             }
         } catch (error: any) {
             Alert.alert('Error', error.response?.data?.error || error.message || 'No se pudo guardar');
@@ -295,9 +333,34 @@ export default function AsistenciaScreen() {
                             { value: 'vehiculos', label: 'Vehículos' },
                             { value: 'recursos', label: 'Recursos' },
                             { value: 'otros', label: 'Otros' },
-                            { value: 'evidencia', label: 'Evidencia', disabled: !situacionId },
+                            { value: 'evidencia', label: 'Evidencia' },
                         ]}
                     />
+                    {/* OFFLINE-FIRST: Indicadores de estado de sincronización */}
+                    <View style={styles.syncIndicators}>
+                        <Chip
+                            icon={isOnline ? 'wifi' : 'wifi-off'}
+                            style={[styles.syncChip, isOnline ? styles.onlineChip : styles.offlineChip]}
+                            textStyle={styles.chipText}
+                        >
+                            {isOnline ? 'Conectado' : 'Sin conexión'}
+                        </Chip>
+                        {isSyncing && (
+                            <Chip icon="sync" style={[styles.syncChip, styles.syncingChip]} textStyle={styles.chipText}>
+                                Sincronizando...
+                            </Chip>
+                        )}
+                        {pendingDrafts > 0 && (
+                            <Chip
+                                icon="cloud-upload"
+                                style={[styles.syncChip, styles.pendingChip]}
+                                textStyle={styles.chipText}
+                                onPress={forceSync}
+                            >
+                                {pendingDrafts} pendiente{pendingDrafts > 1 ? 's' : ''}
+                            </Chip>
+                        )}
+                    </View>
                 </View>
 
                 <ScrollView style={styles.content}>
@@ -494,29 +557,29 @@ export default function AsistenciaScreen() {
                         </View>
                     )}
 
-                    {activeTab === 'evidencia' && situacionId && (
+                    {activeTab === 'evidencia' && (
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>Evidencia Fotográfica y Video</Text>
                             <Text style={{ color: COLORS.gray[500], marginBottom: 12, fontSize: 13 }}>
                                 Se requieren 3 fotos y 1 video para completar la documentación.
                             </Text>
-                            <MultimediaCapture
-                                situacionId={situacionId}
-                                tipoSituacion="ASISTENCIA_VEHICULAR"
-                                onComplete={setMultimediaComplete}
-                                location={coordenadas ? { latitude: coordenadas.latitud, longitude: coordenadas.longitud } : undefined}
-                            />
-                        </View>
-                    )}
-
-                    {activeTab === 'evidencia' && !situacionId && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Evidencia Fotográfica y Video</Text>
-                            <View style={{ padding: 20, backgroundColor: COLORS.gray[100], borderRadius: 8, alignItems: 'center' }}>
-                                <Text style={{ color: COLORS.gray[600], textAlign: 'center' }}>
-                                    Primero guarda la asistencia para poder agregar fotos y video.
-                                </Text>
-                            </View>
+                            {editMode && situacionId ? (
+                                // Modo edición: usar MultimediaCapture con situacionId
+                                <MultimediaCapture
+                                    situacionId={situacionId}
+                                    tipoSituacion="ASISTENCIA_VEHICULAR"
+                                    onComplete={setMultimediaComplete}
+                                    location={coordenadas ? { latitude: coordenadas.latitud, longitude: coordenadas.longitud } : undefined}
+                                />
+                            ) : (
+                                // OFFLINE-FIRST: usar MultimediaCaptureOffline con draftUuid
+                                <MultimediaCaptureOffline
+                                    draftUuid={draftUuid}
+                                    tipoSituacion="ASISTENCIA_VEHICULAR"
+                                    onComplete={setMultimediaComplete}
+                                    location={coordenadas ? { latitude: coordenadas.latitud, longitude: coordenadas.longitud } : undefined}
+                                />
+                            )}
                         </View>
                     )}
 
@@ -562,4 +625,12 @@ const styles = StyleSheet.create({
     coordField: { flex: 1 },
     coordLabel: { fontSize: 12, fontWeight: '500', color: '#666', marginBottom: 4 },
     coordInput: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 6, padding: 10, fontSize: 14 },
+    // Sync indicators
+    syncIndicators: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8, paddingHorizontal: 4 },
+    syncChip: { height: 28 },
+    chipText: { fontSize: 11 },
+    onlineChip: { backgroundColor: '#e8f5e9' },
+    offlineChip: { backgroundColor: '#ffebee' },
+    syncingChip: { backgroundColor: '#e3f2fd' },
+    pendingChip: { backgroundColor: '#fff3e0' },
 });

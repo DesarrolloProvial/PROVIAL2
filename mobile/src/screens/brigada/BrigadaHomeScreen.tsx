@@ -231,7 +231,7 @@ export default function BrigadaHomeScreen() {
   }
 
   return (
-    <View style={{ flex: 1, paddingBottom: 50 }}>
+    <View style={{ flex: 1 }}>
       <ScrollView
         style={styles.container}
         refreshControl={

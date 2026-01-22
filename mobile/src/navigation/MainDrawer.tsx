@@ -3,12 +3,16 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import { MainDrawerParamList } from '../types/navigation';
 import { useAuthStore } from '../store/authStore';
 import BrigadaNavigator from './BrigadaNavigator';
-import COPNavigator from './COPNavigator';
-import SedeNavigator from './SedeNavigator';
 import { COLORS } from '../constants/colors';
 
 const Drawer = createDrawerNavigator<MainDrawerParamList>();
 
+/**
+ * MainDrawer - Navegación principal de la app
+ * SOLO para rol BRIGADA
+ *
+ * Otros roles (COP, OPERACIONES, ADMIN, ENCARGADO_SEDE) no tienen acceso a la app móvil.
+ */
 export default function MainDrawer() {
   const { usuario } = useAuthStore();
 
@@ -16,7 +20,10 @@ export default function MainDrawer() {
     return null;
   }
 
-  const rol = usuario.rol;
+  // Solo BRIGADA puede acceder a la app móvil
+  if (usuario.rol !== 'BRIGADA') {
+    return null;
+  }
 
   return (
     <Drawer.Navigator
@@ -30,41 +37,14 @@ export default function MainDrawer() {
         drawerInactiveTintColor: COLORS.text.secondary,
       }}
     >
-      {/* BRIGADA screens */}
-      {rol === 'BRIGADA' && (
-        <Drawer.Screen
-          name="BrigadaStack"
-          component={BrigadaNavigator}
-          options={{
-            title: 'Inicio',
-            drawerLabel: 'Inicio',
-          }}
-        />
-      )}
-
-      {/* COP screens */}
-      {(rol === 'COP' || rol === 'OPERACIONES' || rol === 'MANDOS' || rol === 'ADMIN') && (
-        <Drawer.Screen
-          name="COPStack"
-          component={COPNavigator}
-          options={{
-            title: 'Centro de Operaciones',
-            drawerLabel: 'COP',
-          }}
-        />
-      )}
-
-      {/* ENCARGADO_SEDE screens */}
-      {rol === 'ENCARGADO_SEDE' && (
-        <Drawer.Screen
-          name="SedeStack"
-          component={SedeNavigator}
-          options={{
-            title: 'Mi Sede',
-            drawerLabel: 'Inicio',
-          }}
-        />
-      )}
+      <Drawer.Screen
+        name="BrigadaStack"
+        component={BrigadaNavigator}
+        options={{
+          title: 'PROVIAL Móvil',
+          drawerLabel: 'Inicio',
+        }}
+      />
     </Drawer.Navigator>
   );
 }

@@ -13,7 +13,8 @@ import {
   asignarBrigadaUnidad,
   desasignarBrigadaUnidad,
   getTripulacionUnidad,
-  obtenerUltimaAsignacion
+  obtenerUltimaAsignacion,
+  reservarNumeroSalida
 } from '../controllers/unidades.controller';
 import { authenticate, authorize } from '../middlewares/auth';
 
@@ -28,6 +29,10 @@ router.get('/tipos', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_
 
 // Listar unidades activas
 router.get('/activas', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS', 'COP', 'BRIGADA'), listarUnidadesActivas);
+
+// Reservar numero de situacion para salida activa (sistema offline-first)
+// IMPORTANTE: Esta ruta debe ir ANTES de /:id para que no sea capturada como ID
+router.get('/:codigo/reservar-numero-salida', authenticate, authorize('BRIGADA'), reservarNumeroSalida);
 
 // Obtener unidad específica (COP puede ver para acceder a bitácora)
 router.get('/:id', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS', 'COP'), obtenerUnidad);

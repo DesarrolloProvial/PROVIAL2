@@ -299,7 +299,7 @@ export default function IniciarSalidaScreen() {
   }
 
   return (
-    <View style={{ flex: 1, paddingBottom: 50 }}>
+    <View style={{ flex: 1 }}>
       <ScrollView style={styles.container}>
         {/* Header con botón de regresar */}
         <View style={[styles.header, editMode && { backgroundColor: COLORS.warning }]}>

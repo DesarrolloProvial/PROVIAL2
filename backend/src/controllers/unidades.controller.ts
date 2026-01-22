@@ -442,3 +442,105 @@ export async function obtenerUltimaAsignacion(req: Request, res: Response) {
     return res.status(500).json({ error: 'Error al obtener última asignación' });
   }
 }
+
+/**
+ * GET /api/unidades/:codigo/reservar-numero-salida
+ * Reservar siguiente numero de situacion para la salida activa de una unidad
+ *
+ * Este endpoint es crucial para el sistema offline-first:
+ * - Retorna el siguiente numero secuencial de situacion para esta SALIDA
+ * - El numero es por SALIDA (jornada), no por dia
+ * - Permite generar ID determinista en el movil
+ *
+ * Response:
+ * {
+ *   num_situacion_salida: 4,      // Siguiente numero disponible
+ *   fecha: "2026-01-21",          // Fecha actual
+ *   sede_id: 1,                   // Sede de la unidad
+ *   unidad_id: 30,                // ID de la unidad
+ *   unidad_codigo: "030",         // Codigo de la unidad
+ *   salida_id: 123,               // ID de la salida activa
+ *   valido_hasta: "2026-01-21T23:59:59Z"  // Validez del numero
+ * }
+ */
+export async function reservarNumeroSalida(req: Request, res: Response) {
+  try {
+    const { codigo } = req.params;
+
+    // Buscar unidad por codigo
+    const unidad = await db.oneOrNone(`
+      SELECT u.id, u.codigo, u.sede_id, s.nombre as sede_nombre
+      FROM unidad u
+      JOIN sede s ON u.sede_id = s.id
+      WHERE u.codigo = $1 AND u.activa = true
+    `, [codigo]);
+
+    if (!unidad) {
+      return res.status(404).json({
+        error: 'Unidad no encontrada',
+        message: `No existe unidad activa con codigo ${codigo}`
+      });
+    }
+
+    // Buscar salida activa de esta unidad
+    // Una salida activa es aquella que:
+    // - Tiene ingreso (hora_salida_sede)
+    // - NO ha regresado (hora_llegada_sede IS NULL)
+    const salidaActiva = await db.oneOrNone(`
+      SELECT su.id as salida_id, su.asignacion_id,
+             au.unidad_id, au.sede_id, au.turno_id,
+             t.fecha as fecha_turno
+      FROM salida_unidad su
+      JOIN asignacion_unidad au ON su.asignacion_id = au.id
+      JOIN turno t ON au.turno_id = t.id
+      WHERE au.unidad_id = $1
+        AND su.hora_salida_sede IS NOT NULL
+        AND su.hora_llegada_sede IS NULL
+      ORDER BY su.hora_salida_sede DESC
+      LIMIT 1
+    `, [unidad.id]);
+
+    if (!salidaActiva) {
+      return res.status(400).json({
+        error: 'Sin salida activa',
+        message: 'La unidad no tiene una salida activa. Debe iniciar salida primero.'
+      });
+    }
+
+    // Contar situaciones existentes en esta salida
+    const countResult = await db.one(`
+      SELECT COUNT(*) as total
+      FROM situacion
+      WHERE salida_unidad_id = $1
+    `, [salidaActiva.salida_id]);
+
+    const siguienteNumero = parseInt(countResult.total) + 1;
+
+    // Fecha actual
+    const hoy = new Date();
+    const fechaISO = hoy.toISOString().split('T')[0];
+
+    // Validez hasta fin del dia
+    const validoHasta = new Date(hoy);
+    validoHasta.setHours(23, 59, 59, 999);
+
+    console.log(`[UNIDADES] Reservado numero ${siguienteNumero} para unidad ${codigo} (salida ${salidaActiva.salida_id})`);
+
+    return res.json({
+      num_situacion_salida: siguienteNumero,
+      fecha: fechaISO,
+      sede_id: unidad.sede_id,
+      unidad_id: unidad.id,
+      unidad_codigo: unidad.codigo,
+      salida_id: salidaActiva.salida_id,
+      valido_hasta: validoHasta.toISOString()
+    });
+
+  } catch (error: any) {
+    console.error('Error en reservarNumeroSalida:', error);
+    return res.status(500).json({
+      error: 'Error al reservar numero',
+      message: error.message
+    });
+  }
+}

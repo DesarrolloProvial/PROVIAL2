@@ -33,9 +33,9 @@ export const MUNICIPIOS_MOCK: Record<string, { id: number, nombre: string }[]> =
 };
 
 export const CLIMA_OPCIONES = [
-    'Soleado', 'Nublado', 'Lluvioso', 'Neblina', 'Tormenta', 'Granizo'
+    'DESPEJADO', 'NUBLADO', 'LLUVIA', 'NEBLINA', 'TORMENTA'
 ];
 
 export const CARGA_VEHICULAR_OPCIONES = [
-    'Leve', 'Moderada', 'Alta', 'Congestionada'
+    'FLUIDO', 'MODERADO', 'DENSO', 'CONGESTIONADO'
 ];

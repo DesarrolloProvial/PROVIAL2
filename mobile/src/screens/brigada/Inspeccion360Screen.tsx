@@ -692,7 +692,7 @@ export default function Inspeccion360Screen() {
   const seccionActual = plantilla.secciones[seccionActiva];
 
   return (
-    <View style={[styles.container, { paddingBottom: 50 }]}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTitleRow}>

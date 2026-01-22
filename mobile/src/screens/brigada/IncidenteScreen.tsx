@@ -28,11 +28,18 @@ import ObstruccionManager from '../../components/ObstruccionManager';
 
 // New Imports
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
-import { Provider as PaperProvider, SegmentedButtons, TextInput as PaperInput, Button, Switch } from 'react-native-paper';
+import { Provider as PaperProvider, SegmentedButtons, TextInput as PaperInput, Button, Switch, Badge, Chip } from 'react-native-paper';
 import { VehiculoForm } from '../../components/VehiculoForm';
 import { GruaForm } from '../../components/GruaForm';
 import { AjustadorForm } from '../../components/AjustadorForm';
 import MultimediaCapture from '../../components/MultimediaCapture';
+import MultimediaCaptureOffline from '../../components/MultimediaCaptureOffline';
+
+// Offline-First Imports
+import { saveDraft, addToSyncQueue, type Draft } from '../../services/database';
+import { useSyncQueue } from '../../hooks/useSyncQueue';
+import 'react-native-get-random-values'; // Required for uuid
+import { v4 as uuidv4 } from 'uuid';
 
 interface Departamento {
     id: number;
@@ -63,9 +70,13 @@ export default function IncidenteScreen() {
     const [situacionId, setSituacionId] = useState<number | null>(situacionIdParam || null);
     const [multimediaComplete, setMultimediaComplete] = useState(false);
 
-    const { salidaActiva } = useAuthStore();
+    const { salidaActiva, usuario } = useAuthStore();
     const { testModeEnabled } = useTestMode();
     const [loadingData, setLoadingData] = useState(false);
+
+    // OFFLINE-FIRST: UUID del draft y estado de sincronización
+    const [draftUuid] = useState<string>(() => editMode ? '' : uuidv4());
+    const { isOnline, isSyncing, pendingDrafts, forceSync } = useSyncQueue();
 
     // Coordenadas manuales para modo pruebas
     const [latitudManual, setLatitudManual] = useState('14.6349');
@@ -133,25 +144,31 @@ export default function IncidenteScreen() {
     // Cargar municipios cuando cambie el departamento
     useEffect(() => {
         const loadMunicipios = async () => {
-            if (departamentoId) {
+            console.log('[INCIDENTE] departamentoId cambió a:', departamentoId);
+            if (departamentoId && departamentoId !== null) {
                 setLoadingGeo(true);
+                setMunicipios([]); // Limpiar municipios mientras carga
                 try {
+                    console.log('[INCIDENTE] Cargando municipios para departamento:', departamentoId);
                     const data = await geografiaAPI.getMunicipiosPorDepartamento(departamentoId);
-                    setMunicipios(data);
+                    console.log('[INCIDENTE] Municipios cargados:', data?.length || 0);
+                    setMunicipios(data || []);
                 } catch (error) {
-                    console.error('Error cargando municipios:', error);
+                    console.error('[INCIDENTE] Error cargando municipios:', error);
                     setMunicipios([]);
                 } finally {
                     setLoadingGeo(false);
                 }
             } else {
+                console.log('[INCIDENTE] Sin departamento seleccionado, limpiando municipios');
                 setMunicipios([]);
+                setLoadingGeo(false);
             }
             // Limpiar municipio si cambia el departamento
             setValue('municipio_id', null);
         };
         loadMunicipios();
-    }, [departamentoId]);
+    }, [departamentoId, setValue]);
 
     const { fields: vehiculoFields, append: appendVehiculo, remove: removeVehiculo } = useFieldArray({
         control,
@@ -295,7 +312,6 @@ export default function IncidenteScreen() {
             Alert.alert('Error', 'No hay salida activa. Debes iniciar una salida primero.');
             return;
         }
-        // En edit mode, ruta puede venir de los datos cargados, no estrictamente salida activa
 
         if (!data.tipoIncidente || !data.km) {
             Alert.alert('Error', 'Complete los campos obligatorios (Tipo, Km)');
@@ -309,8 +325,6 @@ export default function IncidenteScreen() {
         // Determinar coordenadas
         let latFinal, lonFinal;
         if (editMode) {
-            // En edicion mantenemos las coordenadas originales a menos que se cambien explicitamente (TODO: UI para cambiar)
-            // Por ahora usamos las cargadas o manuales
             latFinal = coordenadas?.latitud;
             lonFinal = coordenadas?.longitud;
         } else {
@@ -343,28 +357,74 @@ export default function IncidenteScreen() {
                 latitud: latFinal,
                 longitud: lonFinal,
                 ubicacion_manual: testModeEnabled,
-                // Si es edicion, no necesitamos estos IDs si ya existen, pero el backend los puede ignorar
                 unidad_id: salidaActiva?.unidad_id,
                 salida_unidad_id: salidaActiva?.salida_id,
                 tipo_hecho_id: TIPO_HECHO_IDS[data.tipoIncidente] || 8,
                 ruta_id: salidaActiva?.ruta_id || data.rutaId,
                 km: parseFloat(data.km),
-                observaciones_iniciales: data.observaciones, // Map observaciones
+                observaciones_iniciales: data.observaciones,
             };
 
-            console.log(editMode ? 'Actualizando incidente:' : 'Enviando incidente:', incidenteData);
-
             if (editMode && incidenteId) {
+                // MODO EDICIÓN: Enviar directo al backend (legacy)
+                console.log('Actualizando incidente:', incidenteData);
                 await api.patch(`/incidentes/${incidenteId}`, incidenteData);
-                Alert.alert('Éxito', 'Incidente actualizado', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+                Alert.alert('Éxito', 'Incidente actualizado', [{
+                    text: 'OK',
+                    onPress: () => navigation.goBack()
+                }]);
             } else {
-                await api.post('/incidentes', incidenteData);
+                // MODO CREACIÓN: OFFLINE-FIRST
+                console.log('[OFFLINE-FIRST] Guardando draft local:', draftUuid);
+
+                // Guardar draft en SQLite
+                const draft: Omit<Draft, 'created_at' | 'updated_at'> = {
+                    draft_uuid: draftUuid,
+                    tipo_situacion: 'INCIDENTE',
+                    payload_json: JSON.stringify(incidenteData),
+                    estado_sync: 'LOCAL',
+                    usuario_id: usuario?.id || 0,
+                    sync_attempts: 0
+                };
+
+                await saveDraft(draft);
+
+                // Agregar a cola de sincronización
+                await addToSyncQueue(draftUuid, 'DRAFT');
+
+                // Limpiar draft de AsyncStorage (ya está en SQLite)
                 await clearDraft();
-                Alert.alert('Éxito', 'Incidente registrado', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+
+                Alert.alert(
+                    '✅ Guardado Localmente',
+                    isOnline
+                        ? 'El incidente se guardó localmente y se sincronizará automáticamente con el servidor.'
+                        : 'El incidente se guardó localmente y se sincronizará cuando haya conexión a internet.',
+                    [
+                        {
+                            text: 'Ver Pendientes',
+                            onPress: () => {
+                                Alert.alert(
+                                    'Sincronización',
+                                    `Incidentes pendientes: ${pendingDrafts}\nEstado: ${isOnline ? 'Online' : 'Offline'}${isSyncing ? '\nSincronizando...' : ''}`,
+                                    [
+                                        { text: 'Forzar Sync', onPress: () => forceSync() },
+                                        { text: 'Cerrar' }
+                                    ]
+                                );
+                            }
+                        },
+                        {
+                            text: 'OK',
+                            onPress: () => navigation.goBack(),
+                            style: 'default'
+                        }
+                    ]
+                );
             }
         } catch (error: any) {
-            console.error(error);
-            Alert.alert('Error', error.response?.data?.error || error.message || 'No se pudo guardar');
+            console.error('[OFFLINE-FIRST] Error:', error);
+            Alert.alert('Error', error.message || 'No se pudo guardar el incidente');
         } finally {
             setGuardando(false);
         }
@@ -382,9 +442,62 @@ export default function IncidenteScreen() {
                             { value: 'vehiculos', label: 'Vehículos' },
                             { value: 'recursos', label: 'Recursos' },
                             { value: 'otros', label: 'Otros' },
-                            { value: 'evidencia', label: 'Evidencia', disabled: !situacionId },
+                            {
+                                value: 'evidencia',
+                                label: 'Evidencia',
+                                disabled: editMode && !situacionId // Solo deshabilitado en modo edición sin situacionId
+                            },
                         ]}
                     />
+
+                    {/* INDICADOR DE SINCRONIZACIÓN */}
+                    {!editMode && (
+                        <View style={styles.syncIndicator}>
+                            <Chip
+                                icon={isOnline ? 'cloud-check' : 'cloud-off'}
+                                style={{
+                                    backgroundColor: isOnline
+                                        ? COLORS.success + '20'
+                                        : COLORS.gray[300]
+                                }}
+                                textStyle={{
+                                    color: isOnline ? COLORS.success : COLORS.gray[600],
+                                    fontSize: 12
+                                }}
+                            >
+                                {isOnline ? 'Online' : 'Offline'}
+                            </Chip>
+                            {isSyncing && (
+                                <Chip
+                                    icon="sync"
+                                    style={{ backgroundColor: COLORS.primary + '20', marginLeft: 8 }}
+                                    textStyle={{ color: COLORS.primary, fontSize: 12 }}
+                                >
+                                    Sincronizando...
+                                </Chip>
+                            )}
+                            {pendingDrafts > 0 && (
+                                <Chip
+                                    icon="clock-outline"
+                                    style={{ backgroundColor: COLORS.warning + '20', marginLeft: 8 }}
+                                    textStyle={{ color: COLORS.warning, fontSize: 12 }}
+                                    onPress={() => {
+                                        Alert.alert(
+                                            'Sincronización Pendiente',
+                                            `Hay ${pendingDrafts} incidente(s) pendiente(s) de sincronización.`,
+                                            [
+                                                { text: 'Forzar Sync', onPress: () => forceSync() },
+                                                { text: 'Cerrar' }
+                                            ]
+                                        );
+                                    }}
+                                >
+                                    {pendingDrafts} Pendiente{pendingDrafts > 1 ? 's' : ''}
+                                </Chip>
+                            )}
+                            <Text style={styles.draftUuidText}>ID: {draftUuid.substring(0, 8)}...</Text>
+                        </View>
+                    )}
                 </View>
 
                 <ScrollView style={styles.content}>
@@ -487,7 +600,10 @@ export default function IncidenteScreen() {
                                     <View style={styles.pickerContainer}>
                                         <Picker
                                             selectedValue={value}
-                                            onValueChange={onChange}
+                                            onValueChange={(val) => {
+                                                console.log('[INCIDENTE] Departamento seleccionado:', val, typeof val);
+                                                onChange(val);
+                                            }}
                                             style={styles.picker}
                                         >
                                             <Picker.Item label="Seleccione departamento" value={null} />
@@ -500,20 +616,23 @@ export default function IncidenteScreen() {
                             />
 
                             {/* Municipio */}
-                            <Text style={styles.label}>Municipio</Text>
+                            <Text style={styles.label}>Municipio {loadingGeo && '(Cargando...)'}</Text>
                             <Controller
                                 control={control}
                                 name="municipio_id"
                                 render={({ field: { onChange, value } }) => (
-                                    <View style={styles.pickerContainer}>
+                                    <View style={[styles.pickerContainer, (!departamentoId || loadingGeo) && { opacity: 0.5 }]}>
                                         <Picker
                                             selectedValue={value}
-                                            onValueChange={onChange}
+                                            onValueChange={(val) => {
+                                                console.log('[INCIDENTE] Municipio seleccionado:', val);
+                                                onChange(val);
+                                            }}
                                             style={styles.picker}
-                                            enabled={municipios.length > 0 && !loadingGeo}
+                                            enabled={!loadingGeo && municipios.length > 0}
                                         >
                                             <Picker.Item
-                                                label={loadingGeo ? "Cargando..." : (municipios.length === 0 ? "Seleccione departamento primero" : "Seleccione municipio")}
+                                                label={loadingGeo ? "Cargando municipios..." : (!departamentoId ? "Seleccione departamento primero" : (municipios.length === 0 ? "Sin municipios disponibles" : "Seleccione municipio"))}
                                                 value={null}
                                             />
                                             {municipios.map((mun) => (
@@ -738,29 +857,42 @@ export default function IncidenteScreen() {
                         </View>
                     )}
 
-                    {activeTab === 'evidencia' && situacionId && (
+                    {activeTab === 'evidencia' && (
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>Evidencia Fotográfica y Video</Text>
-                            <Text style={{ color: COLORS.gray[500], marginBottom: 12, fontSize: 13 }}>
-                                Se requieren 3 fotos y 1 video para completar la documentación del incidente.
-                            </Text>
-                            <MultimediaCapture
-                                situacionId={situacionId}
-                                tipoSituacion="INCIDENTE"
-                                onComplete={setMultimediaComplete}
-                                location={coordenadas ? { latitude: coordenadas.latitud, longitude: coordenadas.longitud } : undefined}
-                            />
-                        </View>
-                    )}
 
-                    {activeTab === 'evidencia' && !situacionId && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Evidencia Fotográfica y Video</Text>
-                            <View style={{ padding: 20, backgroundColor: COLORS.gray[100], borderRadius: 8, alignItems: 'center' }}>
-                                <Text style={{ color: COLORS.gray[600], textAlign: 'center' }}>
-                                    Primero guarda el incidente para poder agregar fotos y video.
-                                </Text>
-                            </View>
+                            {/* Modo offline-first: usar draftUuid */}
+                            {!editMode && (
+                                <MultimediaCaptureOffline
+                                    draftUuid={draftUuid}
+                                    tipoSituacion="INCIDENTE"
+                                    onComplete={setMultimediaComplete}
+                                    location={coordenadas ? { latitude: coordenadas.latitud, longitude: coordenadas.longitud } : undefined}
+                                />
+                            )}
+
+                            {/* Modo edición: usar situacionId (legacy) */}
+                            {editMode && situacionId && (
+                                <>
+                                    <Text style={{ color: COLORS.gray[500], marginBottom: 12, fontSize: 13 }}>
+                                        Se requieren 3 fotos y 1 video para completar la documentación del incidente.
+                                    </Text>
+                                    <MultimediaCapture
+                                        situacionId={situacionId}
+                                        tipoSituacion="INCIDENTE"
+                                        onComplete={setMultimediaComplete}
+                                        location={coordenadas ? { latitude: coordenadas.latitud, longitude: coordenadas.longitud } : undefined}
+                                    />
+                                </>
+                            )}
+
+                            {editMode && !situacionId && (
+                                <View style={{ padding: 20, backgroundColor: COLORS.gray[100], borderRadius: 8, alignItems: 'center' }}>
+                                    <Text style={{ color: COLORS.gray[600], textAlign: 'center' }}>
+                                        No se puede cargar evidencia sin situación asociada.
+                                    </Text>
+                                </View>
+                            )}
                         </View>
                     )}
 
@@ -780,6 +912,20 @@ export default function IncidenteScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.background },
     tabContainer: { padding: 10, backgroundColor: '#fff' },
+    syncIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingTop: 12,
+        paddingBottom: 4,
+        flexWrap: 'wrap',
+        gap: 8
+    },
+    draftUuidText: {
+        fontSize: 10,
+        color: COLORS.gray[500],
+        marginLeft: 8,
+        fontFamily: 'monospace'
+    },
     content: { padding: 16 },
     section: { marginBottom: 24 },
     sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12, color: COLORS.text.primary },

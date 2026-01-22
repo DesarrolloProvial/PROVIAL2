@@ -26,8 +26,15 @@ import ObstruccionManager from '../../components/ObstruccionManager';
 
 // New Imports
 import { useForm, Controller } from 'react-hook-form';
-import { Provider as PaperProvider, SegmentedButtons, TextInput as PaperInput, Button, Switch } from 'react-native-paper';
+import { Provider as PaperProvider, SegmentedButtons, TextInput as PaperInput, Button, Switch, Chip } from 'react-native-paper';
 import MultimediaCapture from '../../components/MultimediaCapture';
+import MultimediaCaptureOffline from '../../components/MultimediaCaptureOffline';
+
+// Offline-First Imports
+import { saveDraft, addToSyncQueue, type Draft } from '../../services/database';
+import { useSyncQueue } from '../../hooks/useSyncQueue';
+import 'react-native-get-random-values';
+import { v4 as uuidv4 } from 'uuid';
 
 // Route params type for edit mode
 type EmergenciaScreenRouteProp = RouteProp<{
@@ -43,8 +50,12 @@ export default function EmergenciaScreen() {
     const route = useRoute<EmergenciaScreenRouteProp>();
     const { editMode, situacionId: situacionIdParam, situacionData } = route.params || {};
 
-    const { salidaActiva } = useAuthStore();
+    const { salidaActiva, usuario } = useAuthStore();
     const { testModeEnabled } = useTestMode();
+
+    // OFFLINE-FIRST: UUID del draft y estado de sincronización
+    const [draftUuid] = useState<string>(() => editMode ? '' : uuidv4());
+    const { isOnline, isSyncing, pendingDrafts, forceSync } = useSyncQueue();
 
     // Estado para situacionId (se obtiene después de crear o desde params en editMode)
     const [situacionId, setSituacionId] = useState<number | null>(editMode && situacionIdParam ? situacionIdParam : null);
@@ -219,28 +230,50 @@ export default function EmergenciaScreen() {
                 await api.patch(`/situaciones/${situacionId}`, updateData);
                 Alert.alert('Éxito', 'Emergencia actualizada', [{ text: 'OK', onPress: () => navigation.goBack() }]);
             } else {
-                // Modo creación
+                // OFFLINE-FIRST: Guardar localmente primero
                 const emergenciaData = {
-                    ...data,
+                    tipoEmergencia: data.tipoEmergencia,
+                    kmInicio: parseFloat(data.kmInicio),
+                    kmFin: data.esRango ? parseFloat(data.kmFin) : null,
+                    esRango: data.esRango,
+                    sentido: data.sentido,
+                    jurisdiccion: data.jurisdiccion,
+                    obstruye: data.obstruye,
+                    observaciones: data.observaciones,
+                    autoridadesSeleccionadas: data.autoridadesSeleccionadas,
+                    detallesAutoridades: data.detallesAutoridades,
+                    socorroSeleccionado: data.socorroSeleccionado,
+                    detallesSocorro: data.detallesSocorro,
                     latitud: latFinal,
                     longitud: lonFinal,
                     ubicacion_manual: testModeEnabled,
                     unidad_id: salidaActiva!.unidad_id,
                     salida_unidad_id: salidaActiva!.salida_id,
                     tipo_situacion: 'OTROS',
-                    tipo_emergencia: data.tipoEmergencia,
                     ruta_id: salidaActiva!.ruta_codigo,
-                    km: parseFloat(data.kmInicio),
-                    km_fin: data.esRango ? parseFloat(data.kmFin) : null,
                 };
 
-                console.log('Creando emergencia:', emergenciaData);
-                // TODO: Implement API call for creating emergencia
-                // const response = await api.post('/emergencias', emergenciaData);
-                // setSituacionId(response.data.id);
+                // Crear draft local
+                const draft: Omit<Draft, 'created_at' | 'updated_at'> = {
+                    draft_uuid: draftUuid,
+                    tipo_situacion: 'EMERGENCIA',
+                    payload_json: JSON.stringify(emergenciaData),
+                    estado_sync: 'LOCAL',
+                    usuario_id: usuario?.id || 0,
+                    sync_attempts: 0
+                };
+
+                console.log('[EMERGENCIA-OFFLINE] Guardando draft local:', draftUuid);
+                await saveDraft(draft);
+                await addToSyncQueue(draftUuid, 'DRAFT');
 
                 await clearDraft();
-                Alert.alert('Éxito', 'Emergencia registrada', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+
+                const mensaje = isOnline
+                    ? 'Emergencia guardada. Sincronizando...'
+                    : 'Emergencia guardada localmente. Se sincronizará cuando haya conexión.';
+
+                Alert.alert('Éxito', mensaje, [{ text: 'OK', onPress: () => navigation.goBack() }]);
             }
         } catch (error: any) {
             console.error('Error guardando emergencia:', error);
@@ -261,9 +294,34 @@ export default function EmergenciaScreen() {
                             { value: 'general', label: 'General' },
                             { value: 'recursos', label: 'Recursos' },
                             { value: 'otros', label: 'Otros' },
-                            { value: 'evidencia', label: 'Evidencia', disabled: !situacionId },
+                            { value: 'evidencia', label: 'Evidencia' },
                         ]}
                     />
+                    {/* OFFLINE-FIRST: Indicadores de estado de sincronización */}
+                    <View style={styles.syncIndicators}>
+                        <Chip
+                            icon={isOnline ? 'wifi' : 'wifi-off'}
+                            style={[styles.syncChip, isOnline ? styles.onlineChip : styles.offlineChip]}
+                            textStyle={styles.chipText}
+                        >
+                            {isOnline ? 'Conectado' : 'Sin conexión'}
+                        </Chip>
+                        {isSyncing && (
+                            <Chip icon="sync" style={[styles.syncChip, styles.syncingChip]} textStyle={styles.chipText}>
+                                Sincronizando...
+                            </Chip>
+                        )}
+                        {pendingDrafts > 0 && (
+                            <Chip
+                                icon="cloud-upload"
+                                style={[styles.syncChip, styles.pendingChip]}
+                                textStyle={styles.chipText}
+                                onPress={forceSync}
+                            >
+                                {pendingDrafts} pendiente{pendingDrafts > 1 ? 's' : ''}
+                            </Chip>
+                        )}
+                    </View>
                 </View>
 
                 <ScrollView style={styles.content}>
@@ -446,29 +504,29 @@ export default function EmergenciaScreen() {
                         </View>
                     )}
 
-                    {activeTab === 'evidencia' && situacionId && (
+                    {activeTab === 'evidencia' && (
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>Evidencia Fotográfica y Video</Text>
                             <Text style={{ color: COLORS.gray[500], marginBottom: 12, fontSize: 13 }}>
                                 Se requieren 3 fotos y 1 video para completar la documentación.
                             </Text>
-                            <MultimediaCapture
-                                situacionId={situacionId}
-                                tipoSituacion="EMERGENCIA"
-                                onComplete={setMultimediaComplete}
-                                location={coordenadas ? { latitude: coordenadas.latitud, longitude: coordenadas.longitud } : undefined}
-                            />
-                        </View>
-                    )}
-
-                    {activeTab === 'evidencia' && !situacionId && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Evidencia Fotográfica y Video</Text>
-                            <View style={{ padding: 20, backgroundColor: COLORS.gray[100], borderRadius: 8, alignItems: 'center' }}>
-                                <Text style={{ color: COLORS.gray[600], textAlign: 'center' }}>
-                                    Primero guarda la emergencia para poder agregar fotos y video.
-                                </Text>
-                            </View>
+                            {editMode && situacionId ? (
+                                // Modo edición: usar MultimediaCapture con situacionId
+                                <MultimediaCapture
+                                    situacionId={situacionId}
+                                    tipoSituacion="EMERGENCIA"
+                                    onComplete={setMultimediaComplete}
+                                    location={coordenadas ? { latitude: coordenadas.latitud, longitude: coordenadas.longitud } : undefined}
+                                />
+                            ) : (
+                                // OFFLINE-FIRST: usar MultimediaCaptureOffline con draftUuid
+                                <MultimediaCaptureOffline
+                                    draftUuid={draftUuid}
+                                    tipoSituacion="EMERGENCIA"
+                                    onComplete={setMultimediaComplete}
+                                    location={coordenadas ? { latitude: coordenadas.latitud, longitude: coordenadas.longitud } : undefined}
+                                />
+                            )}
                         </View>
                     )}
 
@@ -520,4 +578,12 @@ const styles = StyleSheet.create({
     coordField: { flex: 1 },
     coordLabel: { fontSize: 12, fontWeight: '500', color: '#666', marginBottom: 4 },
     coordInput: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 6, padding: 10, fontSize: 14 },
+    // Sync indicators
+    syncIndicators: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8, paddingHorizontal: 4 },
+    syncChip: { height: 28 },
+    chipText: { fontSize: 11 },
+    onlineChip: { backgroundColor: '#e8f5e9' },
+    offlineChip: { backgroundColor: '#ffebee' },
+    syncingChip: { backgroundColor: '#e3f2fd' },
+    pendingChip: { backgroundColor: '#fff3e0' },
 });
