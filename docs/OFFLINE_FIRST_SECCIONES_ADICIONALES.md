@@ -138,12 +138,14 @@ Esta etapa finaliza la situación:
 - Verifica datos obligatorios según tipo de situación
 - Verifica multimedia completa (si es obligatoria)
 - Estado cambia: `ACTIVA` → `CERRADA`
-- Ya NO se puede editar (excepto COP/admin)
+- **SÍ se puede editar** - pero queda registrado en auditoría (quién, cuándo, qué cambió)
 - Aparece en bitácora como completa
 
-#### Validaciones por Tipo de Situación
+#### Validaciones por Tipo de Situación (Ejemplos)
 
-**HECHO_TRANSITO - Para CERRAR requiere:**
+**NOTA IMPORTANTE:** Las siguientes validaciones son **EJEMPLOS**, no reglas fijas. Cada tipo de situación tendrá sus propias validaciones configurables.
+
+**HECHO_TRANSITO - Ejemplo de validaciones para CERRAR:**
 ```typescript
 ✅ Datos mínimos (ubicación, km, sentido, tipo_hecho)
 ✅ Al menos 1 vehículo involucrado
@@ -216,8 +218,15 @@ Al presionar "Cerrar Situación":
   → Si está completo: Cambia a CERRADA
 
 Situación CERRADA:
-  [Ver Detalles]
-  (Solo COP puede editar situaciones cerradas)
+  [Editar] [Ver Detalles]
+  
+Al presionar "Editar" en situación CERRADA:
+  → Se puede editar normalmente
+  → Al guardar: Registra en auditoría
+    * Usuario que editó
+    * Fecha y hora
+    * Campos modificados (antes/después)
+  → Visible en historial de la situación
 ```
 
 #### Validaciones que NO SE ELIMINAN
