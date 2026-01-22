@@ -28,7 +28,7 @@
 Las brigadas de PROVIAL operan en carreteras de Guatemala donde:
 - ❌ **Conexión inestable:** Muchas zonas sin cobertura o con señal débil
 - 📸 **Multimedia obligatoria:** La mayoría de situaciones requieren fotos/videos para Comunicación Social
-- 👥 **Múltiples reportantes por unidad:** Cada tripulante (Comandante, Piloto, Asistente) puede reportar situaciones de su unidad desde su propio teléfono
+- 👥 **Múltiples reportantes por unidad:** Cada tripulante puede reportar situaciones de su unidad desde su propio teléfono. Los roles de tripulación son: Comandante, Piloto, Copiloto, Acompañante
 - ⏱️ **Tiempo crítico:** Los reportes deben ser rápidos, especialmente en emergencias
 - 🤝 **Unidades en apoyo:** Si dos unidades están en el mismo incidente, UNA reporta la situación principal, la OTRA reporta que está en apoyo
 
@@ -67,7 +67,7 @@ Las brigadas de PROVIAL operan en carreteras de Guatemala donde:
 1. ✅ **UN solo draft a la vez** - Simplicidad sobre flexibilidad
 2. ✅ **UX transparente** - El brigada siempre sabe el estado de su reporte
 3. ✅ **ID determinista** - Permite detectar duplicados antes de guardar
-4. ✅ **COP como árbitro** - Conflictos complejos se resuelven con supervisor
+4. ✅ **COP como árbitro** - Conflictos complejos se resuelven con brigadas que tienen rol COP (pueden ser encargados de departamento u operadores COP)
 5. ✅ **Offline-first** - Guardar local primero, sincronizar después
 
 ### ¿Por qué UN solo draft?
@@ -158,16 +158,19 @@ Opciones: [Enviar Ahora] [Eliminar] [Cancelar]
 ### Formato del ID
 
 ```
-YYYYMMDD-SSS-UUU-TT-RRR-KKK-NNN
+YYYYMMDD-{SEDE}-{UNIDAD}-{TIPO}-{RUTA}-{KM}-{NUM_SALIDA}
 
 Donde:
   YYYYMMDD = Fecha (8 dígitos)
-  SSS      = Sede ID (3 dígitos, padding con 0)
-  UUU      = Unidad ID (3 dígitos, padding con 0)
-  TT       = Tipo situación ID (2 dígitos, padding con 0)
-  RRR      = Ruta ID (3 dígitos, padding con 0)
-  KKK      = Kilómetro (3 dígitos, parte entera)
-  NNN      = Número de situación del día (3 dígitos)
+  SEDE     = Sede ID (sin padding, tal cual: 1, 10, 100)
+  UNIDAD   = Código de unidad (sin padding, ejemplos: 030, 1131, M007)
+  TIPO     = Tipo situación ID (sin padding, tal cual: 1, 70, 100)
+  RUTA     = Ruta ID (sin padding, tal cual: 86, 5, 120)
+  KM       = Kilómetro (parte entera, sin padding: 50, 125, 5)
+  NUM_SALIDA = Número de situación en esta SALIDA (no por día, sino por jornada completa)
+
+NOTA IMPORTANTE: Los códigos se usan tal cual existen en la base de datos, sin padding.
+Ejemplos reales de unidades: 030, 1131, M007 (motorizada)
 ```
 
 ### Ejemplo Real
@@ -176,17 +179,17 @@ Donde:
 // Datos:
 Fecha: 21 de enero de 2026
 Sede: 1 (Central)
-Unidad: 30 (Patrulla 030)
+Unidad: 030 (Patrulla 030)
 Tipo: 70 (Asistencia Vehicular)
 Ruta: 86 (CA-9 Norte)
 Km: 50
-Situación del día: 4 (cuarta del día para esta unidad)
+Situación de la salida: 4 (cuarta situación de esta jornada/salida)
 
-// ID generado:
-20260121-001-030-70-086-050-004
+// ID generado (sin padding):
+20260121-1-030-70-86-50-4
 
 // Legible:
-2026-01-21 | Sede 1 | Unidad 30 | Asistencia | CA-9 Norte Km 50 | Situación #4
+2026-01-21 | Sede 1 | Unidad 030 | Asistencia | CA-9 Norte Km 50 | Situación #4 de esta salida
 ```
 
 ### Ventajas
@@ -204,36 +207,51 @@ Situación del día: 4 (cuarta del día para esta unidad)
 function generateSituacionId(params: {
   fecha: Date,
   sede_id: number,
-  unidad_id: number,
+  unidad_codigo: string,        // Código tal cual: "030", "1131", "M007"
   tipo_situacion_id: number,
   ruta_id: number,
   km: number,
-  num_situacion_hoy: number
+  num_situacion_salida: number  // Número de esta SALIDA, no del día
 }): string {
   const fecha = format(params.fecha, 'yyyyMMdd');
-  const sede = String(params.sede_id).padStart(3, '0');
-  const unidad = String(params.unidad_id).padStart(3, '0');
-  const tipo = String(params.tipo_situacion_id).padStart(2, '0');
-  const ruta = String(params.ruta_id).padStart(3, '0');
-  const km = String(Math.floor(params.km)).padStart(3, '0');
-  const num = String(params.num_situacion_hoy).padStart(3, '0');
+  const sede = String(params.sede_id);              // Sin padding
+  const unidad = params.unidad_codigo;              // Tal cual: 030, 1131, M007
+  const tipo = String(params.tipo_situacion_id);    // Sin padding
+  const ruta = String(params.ruta_id);              // Sin padding
+  const km = String(Math.floor(params.km));         // Sin padding
+  const num = String(params.num_situacion_salida);  // Sin padding
   
   return `${fecha}-${sede}-${unidad}-${tipo}-${ruta}-${km}-${num}`;
 }
+
+// Ejemplo de uso:
+const id = generateSituacionId({
+  fecha: new Date('2026-01-21'),
+  sede_id: 1,
+  unidad_codigo: "030",
+  tipo_situacion_id: 70,
+  ruta_id: 86,
+  km: 50,
+  num_situacion_salida: 4
+});
+// Resultado: "20260121-1-030-70-86-50-4"
 ```
 
-### ¿Por qué número de situación del día y no timestamp?
+### ¿Por qué número de situación de SALIDA y no timestamp?
 
-**Decisión:** Usar número secuencial diario (1, 2, 3...) en lugar de timestamp (143055).
+**Decisión:** Usar número secuencial por SALIDA/JORNADA (1, 2, 3...) en lugar de timestamp (143055).
+
+**IMPORTANTE:** El contador es por SALIDA, no por día. Una salida puede durar varios días (comisiones, accidentes que amanecen). El número se resetea cuando la unidad FINALIZA su jornada y regresa a sede.
 
 **Justificación:**
 
-| Criterio | Timestamp | Número del día | Ganador |
-|----------|-----------|----------------|---------|
+| Criterio | Timestamp | Número de salida | Ganador |
+|----------|-----------|------------------|---------|
 | Detecta duplicados | ❌ Dos reportes con 1 min diferencia parecen situaciones diferentes | ✅ Si hay #4 y #5, claramente son diferentes | **Número** |
 | Orden de fila | ❌ No refleja orden de creación | ✅ Secuencial, fácil ver si alguien se "coló" | **Número** |
-| Legibilidad | ⚠️ Menos intuitivo | ✅ "4ta situación del día" | **Número** |
+| Legibilidad | ⚠️ Menos intuitivo | ✅ "4ta situación de esta salida" | **Número** |
 | Detección conflictos | ❌ Difícil verificar | ✅ Si dos tienen mismo número, hay error | **Número** |
+| Jornadas multi-día | ❌ Cambia cada día | ✅ Se mantiene durante toda la salida | **Número** |
 
 **Caso problemático con timestamp:**
 ```
