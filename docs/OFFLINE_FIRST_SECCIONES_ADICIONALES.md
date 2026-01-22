@@ -73,7 +73,7 @@ Backend verifica:
 Respuesta 409:
   → "Otro tripulante actualizó este campo"
   → Mostrar ambas versiones
-  → [Usar Mía] [Usar del Servidor] [Fusionar]
+  → [Usar Mía] [Usar del Servidor]
 ```
 
 **Regla:** Si dos tripulantes editan DIFERENTES campos, no hay conflicto.
@@ -343,9 +343,13 @@ Response 201: {
 El COP puede:
 
 1. **Usar Local**: Sobreescribe servidor con datos del brigada
-2. **Usar Servidor**: Descarta datos locales del brigada  
-3. **Fusionar**: COP edita manualmente tomando datos de ambos
-4. **Descartar**: Era error del brigada, no hacer nada
+2. **Usar Servidor**: Descarta datos locales del brigada
+3. **Descartar**: Era error del brigada, no hacer nada
+
+**IMPORTANTE:** NO hay opción de fusionar automáticamente. Si el COP necesita datos de ambos, debe:
+  - Elegir "Usar Local" o "Usar Servidor"
+  - Luego editar manualmente la situación en bitácora para agregar lo que falta
+  - Fusionar automáticamente daría muchos errores
 
 Cuando el COP resuelve:
 ```
