@@ -28,8 +28,9 @@
 Las brigadas de PROVIAL operan en carreteras de Guatemala donde:
 - ❌ **Conexión inestable:** Muchas zonas sin cobertura o con señal débil
 - 📸 **Multimedia obligatoria:** La mayoría de situaciones requieren fotos/videos para Comunicación Social
-- 👥 **Múltiples reportantes:** Varias unidades pueden estar en la misma zona
+- 👥 **Múltiples reportantes por unidad:** Cada tripulante (Comandante, Piloto, Asistente) puede reportar situaciones de su unidad desde su propio teléfono
 - ⏱️ **Tiempo crítico:** Los reportes deben ser rápidos, especialmente en emergencias
+- 🤝 **Unidades en apoyo:** Si dos unidades están en el mismo incidente, UNA reporta la situación principal, la OTRA reporta que está en apoyo
 
 ### Problemas Identificados
 
@@ -39,10 +40,13 @@ Las brigadas de PROVIAL operan en carreteras de Guatemala donde:
    - Error de red → Datos perdidos
    - **Impacto:** Frustración del usuario, re-trabajo, datos no registrados
 
-2. **Duplicación de situaciones**
-   - Dos brigadas en misma zona reportan el mismo incidente
-   - Sin sistema de verificación
-   - **Impacto:** Información duplicada en bitácora, estadísticas incorrectas
+2. **Duplicación de situaciones por múltiples tripulantes**
+   - Unidad 030 tiene 3 tripulantes: Comandante, Piloto, Asistente
+   - Todos tienen la app y pueden reportar situaciones de la Unidad 030
+   - Si Comandante reporta PATRULLAJE a las 14:30 (situación #4)
+   - Y Piloto reporta ASISTENCIA a las 14:31 (también situación #4?)
+   - **Conflicto:** Ambos intentan usar el mismo número de situación del día
+   - **Impacto:** Uno de los reportes puede sobreescribir al otro, o crear inconsistencias en los números secuenciales
 
 3. **Desincronización de multimedia**
    - Situación se guarda sin fotos/videos
@@ -587,18 +591,89 @@ Situación A y B tienen:
 → Opciones: Update | Delete | Wait
 ```
 
-#### 3. Número de Situación Usado por Otro
+#### 3. Múltiples Tripulantes Reportando Simultáneamente
+
+**Escenario común:**
+```
+Unidad 030 tiene 3 tripulantes:
+  - Comandante (usuario 17000)
+  - Piloto (usuario 17001)  
+  - Asistente (usuario 17002)
+
+Todos tienen la app instalada en sus teléfonos.
+Todos pueden reportar situaciones de la Unidad 030.
+
+14:30 - Comandante abre formulario PATRULLAJE
+        → Backend responde: num_situacion_hoy = 4
+        → Genera ID: 20260121-001-030-01-086-050-004
+        → Comienza a llenar formulario
+
+14:31 - Piloto abre formulario ASISTENCIA (sin saber que Comandante está llenando PATRULLAJE)
+        → Backend responde: num_situacion_hoy = 4 (todavía no se guardó el PATRULLAJE)
+        → Genera ID: 20260121-001-030-70-086-050-004
+        → Comienza a llenar formulario
+
+14:35 - Piloto termina primero y presiona "Guardar"
+        → POST /api/situaciones con ID ...004
+        → ✅ Guardado exitosamente (es el primero)
+        → num_situacion_hoy = 4 ahora está OCUPADO
+
+14:37 - Comandante termina y presiona "Guardar"  
+        → POST /api/situaciones con ID ...004
+        → ⚠️ 409 Conflict: Número 4 ya usado por ASISTENCIA
+```
+
+**Resolución del conflicto:**
+```
+Opción A - Backend reasigna número automáticamente:
+  → Backend detecta que num = 4 ya existe
+  → Asigna siguiente disponible: num = 5
+  → Genera nuevo ID: 20260121-001-030-01-086-050-005
+  → Guarda PATRULLAJE con número 5
+  → Responde: 200 OK con nuevo ID
+  → ✅ Ambos reportes guardados, orden preservado
+
+Opción B - Mostrar conflicto al usuario:
+  → Backend responde 409
+  → Móvil muestra: "Otro tripulante ya usó el número 4"
+  → Opciones:
+      [Usar Número 5] - Acepta el siguiente número
+      [Ver Qué se Guardó] - Muestra la ASISTENCIA que se guardó primero
+      [Esperar] - Consultar con el equipo
+```
+
+**Caso más complejo - Mismo tipo de situación:**
+```
+14:30 - Comandante reporta ASISTENCIA CA-9 Km 50
+        → ID: 20260121-001-030-70-086-050-004
+
+14:31 - Piloto reporta ASISTENCIA CA-9 Km 50 (¡misma asistencia!)
+        → ID: 20260121-001-030-70-086-050-004  (¡mismo ID!)
+        → ⚠️ 409 Conflict: Ya existe
+
+Aquí sí son datos duplicados:
+  → Mostrar UI de resolución
+  → Comparar diferencias
+  → Comandante y Piloto deciden cuál datos usar
+  → O llaman al COP para fusionar información
+```
+
+#### 4. Número de Situación Usado por Otro Tripulante
 
 ```
 Local intenta usar num_situacion_hoy = 4
-Pero servidor ya tiene situacion con num = 4 (diferente ID)
+Pero servidor ya tiene situacion con num = 4 (de otro tripulante)
 
-→ Alguien se "coló" en la fila
+→ Otro tripulante se "coló" en la fila
 → Backend asigna siguiente número disponible (5)
 → Genera nuevo ID: ...004 → ...005
 → Guarda exitosamente
 → Responde: 200 OK con nuevo ID
 ```
+
+**Nota importante:** 
+- Dos UNIDADES diferentes (ej: 030 y 045) pueden tener situación #4 el mismo día sin conflicto
+- El conflicto solo ocurre cuando MISMA UNIDAD intenta usar mismo número dos veces
 
 ### Tabla de Conflictos (COP)
 
