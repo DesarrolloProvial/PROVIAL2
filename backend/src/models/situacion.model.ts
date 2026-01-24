@@ -60,7 +60,7 @@ export interface Situacion {
   combustible?: number | null;
   combustible_fraccion?: string | null;
   kilometraje_unidad?: number | null;
-  tripulacion_confirmada?: boolean;
+  tripulacion_confirmada?: any | null; // JSONB en DB
 
   // Descripción
   descripcion?: string | null;
@@ -241,7 +241,7 @@ export const SituacionModel = {
       combustible: data.combustible ?? null,
       combustible_fraccion: data.combustible_fraccion ?? null,
       kilometraje_unidad: data.kilometraje_unidad ?? null,
-      tripulacion_confirmada: data.tripulacion_confirmada ?? false,
+      tripulacion_confirmada: data.tripulacion_confirmada ?? null,
 
       // Descripción
       descripcion: data.descripcion ?? null,
