@@ -214,17 +214,87 @@ export const SituacionModel = {
       ) RETURNING *
     `;
 
-    return db.one(qInsert, {
-      ...data,
-      // Defaults
+    // Construir objeto con TODOS los parámetros requeridos por la query
+    // pg-promise requiere que todas las propiedades referenciadas existan
+    const params = {
+      // Campos principales (requeridos)
+      tipo_situacion: data.tipo_situacion,
+      creado_por: data.creado_por,
+      codigo_situacion: data.codigo_situacion || null,
+
+      // Relaciones (opcionales)
+      unidad_id: data.unidad_id ?? null,
+      salida_unidad_id: data.salida_unidad_id ?? null,
+      turno_id: data.turno_id ?? null,
+      asignacion_id: data.asignacion_id ?? null,
+      ruta_id: data.ruta_id ?? null,
+      tipo_situacion_id: data.tipo_situacion_id ?? null,
+
+      // Ubicación
+      km: data.km ?? null,
+      sentido: data.sentido ?? null,
+      latitud: data.latitud ?? null,
+      longitud: data.longitud ?? null,
+      ubicacion_manual: data.ubicacion_manual ?? false,
+
+      // Combustible/Kilometraje
+      combustible: data.combustible ?? null,
+      combustible_fraccion: data.combustible_fraccion ?? null,
+      kilometraje_unidad: data.kilometraje_unidad ?? null,
+      tripulacion_confirmada: data.tripulacion_confirmada ?? false,
+
+      // Descripción
+      descripcion: data.descripcion ?? null,
+      observaciones: data.observaciones ?? null,
+
+      // Contexto
+      clima: data.clima ?? null,
+      carga_vehicular: data.carga_vehicular ?? null,
+      departamento_id: data.departamento_id ?? null,
+      municipio_id: data.municipio_id ?? null,
+      obstruccion_data: data.obstruccion_data ?? null,
+
+      // Campos Migración 104
       origen: data.origen || 'BRIGADA',
-      hay_heridos: data.hay_heridos || false,
-      cantidad_heridos: data.cantidad_heridos || 0,
-      hay_fallecidos: data.hay_fallecidos || false,
-      cantidad_fallecidos: data.cantidad_fallecidos || 0,
-      danios_materiales: data.danios_materiales || false,
-      danios_infraestructura: data.danios_infraestructura || false
-    });
+      tipo_hecho_id: data.tipo_hecho_id ?? null,
+      subtipo_hecho_id: data.subtipo_hecho_id ?? null,
+      area: data.area ?? null,
+
+      // Fechas
+      fecha_hora_aviso: data.fecha_hora_aviso ?? null,
+      fecha_hora_llegada: data.fecha_hora_llegada ?? null,
+
+      // Víctimas
+      hay_heridos: data.hay_heridos ?? false,
+      cantidad_heridos: data.cantidad_heridos ?? 0,
+      hay_fallecidos: data.hay_fallecidos ?? false,
+      cantidad_fallecidos: data.cantidad_fallecidos ?? 0,
+
+      // Servicios requeridos
+      requiere_bomberos: data.requiere_bomberos ?? false,
+      requiere_pnc: data.requiere_pnc ?? false,
+      requiere_ambulancia: data.requiere_ambulancia ?? false,
+
+      // Condiciones de vía
+      tipo_pavimento: data.tipo_pavimento ?? null,
+      iluminacion: data.iluminacion ?? null,
+      senalizacion: data.senalizacion ?? null,
+      visibilidad: data.visibilidad ?? null,
+
+      // Causa
+      causa_probable: data.causa_probable ?? null,
+      causa_especificar: data.causa_especificar ?? null,
+
+      // Daños
+      danios_materiales: data.danios_materiales ?? false,
+      danios_infraestructura: data.danios_infraestructura ?? false,
+      danios_descripcion: data.danios_descripcion ?? null,
+
+      // Situación persistente
+      situacion_persistente_id: data.situacion_persistente_id ?? null,
+    };
+
+    return db.one(qInsert, params);
   },
 
   /**
