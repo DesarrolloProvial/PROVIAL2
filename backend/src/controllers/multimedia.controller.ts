@@ -448,6 +448,92 @@ export async function getStats(req: Request, res: Response) {
   }
 }
 
+/**
+ * POST /api/multimedia/situacion/:situacionId/batch
+ * Guardar referencias de archivos ya subidos a Cloudinary
+ * Usado por el sistema offline-first cuando sincroniza
+ */
+export async function guardarReferenciasCloudinary(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
+
+    const { situacionId } = req.params;
+    const { archivos } = req.body;
+
+    if (!archivos || !Array.isArray(archivos) || archivos.length === 0) {
+      return res.status(400).json({ error: 'Se requiere un array de archivos' });
+    }
+
+    // Verificar que la situación existe
+    const situacion = await db.oneOrNone(
+      'SELECT id FROM situacion WHERE id = $1',
+      [situacionId]
+    );
+
+    if (!situacion) {
+      return res.status(404).json({ error: 'Situación no encontrada' });
+    }
+
+    const resultados = [];
+
+    for (const archivo of archivos) {
+      const { url, public_id, tipo, orden } = archivo;
+
+      if (!url || !tipo) {
+        resultados.push({ url, error: 'Faltan campos requeridos (url, tipo)' });
+        continue;
+      }
+
+      try {
+        // Determinar orden si es foto y no viene especificado
+        let ordenFinal = orden;
+        if (tipo === 'FOTO' && !ordenFinal) {
+          ordenFinal = await MultimediaModel.getSiguienteOrdenFoto(parseInt(situacionId));
+        }
+
+        // Guardar referencia en BD
+        const multimediaId = await MultimediaModel.create({
+          situacion_id: parseInt(situacionId),
+          tipo: tipo as 'FOTO' | 'VIDEO',
+          orden: ordenFinal,
+          url_original: url,
+          nombre_archivo: public_id || url.split('/').pop() || 'archivo',
+          mime_type: tipo === 'VIDEO' ? 'video/mp4' : 'image/jpeg',
+          tamanio_bytes: 0, // No tenemos el tamaño real desde Cloudinary
+          subido_por: req.user.userId
+        });
+
+        resultados.push({
+          url,
+          id: multimediaId,
+          success: true
+        });
+      } catch (err: any) {
+        resultados.push({
+          url,
+          error: err.message
+        });
+      }
+    }
+
+    // Verificar completitud
+    const completitud = await MultimediaModel.verificarCompletitud(parseInt(situacionId));
+
+    console.log(`[MULTIMEDIA] Batch: ${resultados.filter(r => r.success).length}/${archivos.length} guardados para situación ${situacionId}`);
+
+    return res.status(201).json({
+      message: 'Referencias procesadas',
+      resultados,
+      completitud
+    });
+  } catch (error: any) {
+    console.error('Error al guardar referencias batch:', error);
+    return res.status(500).json({ error: 'Error al procesar archivos' });
+  }
+}
+
 export default {
   upload,
   subirFoto,
@@ -456,5 +542,6 @@ export default {
   getResumenMultimedia,
   eliminarMultimedia,
   getGaleria,
-  getStats
+  getStats,
+  guardarReferenciasCloudinary
 };

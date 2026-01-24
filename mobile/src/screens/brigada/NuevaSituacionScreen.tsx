@@ -29,6 +29,8 @@ import { Picker } from '@react-native-picker/picker';
 import ClimaCargaSelector from '../../components/ClimaCargaSelector';
 import { DepartamentoMunicipioSelector } from '../../components/DepartamentoMunicipioSelector';
 import DynamicFormFields from '../../components/DynamicFormFields';
+import MultimediaCaptureOffline from '../../components/MultimediaCaptureOffline';
+import { MultimediaRef } from '../../services/draftStorage';
 
 type NuevaSituacionRouteProp = RouteProp<{
   NuevaSituacion: {
@@ -96,6 +98,10 @@ export default function NuevaSituacionScreen() {
 
   // State para unidades (Supervisión)
   const [unidadesList, setUnidadesList] = useState<any[]>([]);
+
+  // State para multimedia
+  const [multimedia, setMultimedia] = useState<MultimediaRef[]>([]);
+  const [draftUuid] = useState(() => `temp-${Date.now()}`); // UUID temporal para el componente
 
   // Cargar catálogo al inicio y unidades activas
   useEffect(() => {
@@ -207,14 +213,18 @@ export default function NuevaSituacionScreen() {
         };
         await api.patch(`/situaciones/${situacionId}`, data);
       } else {
-        // Transformar detalles dinámicos a estructura del backend
+        // Extraer campos de detallesDinamicos para enviar a nivel raíz
+        const dd = detallesDinamicos as any;
+
+        // Transformar detalles dinámicos a estructura del backend (solo para datos complejos)
         const detallesArray: any[] = [];
         if (Object.keys(detallesDinamicos).length > 0) {
           if (nombreTipoSeleccionado === 'Conteo vehicular') {
-            if ((detallesDinamicos as any).conteos) detallesArray.push({ tipo_detalle: 'CONTEO', datos: (detallesDinamicos as any).conteos });
+            if (dd.conteos) detallesArray.push({ tipo_detalle: 'CONTEO', datos: dd.conteos });
           } else if (nombreTipoSeleccionado === 'Toma de velocidad') {
-            if ((detallesDinamicos as any).velocidades) detallesArray.push({ tipo_detalle: 'VELOCIDAD', datos: (detallesDinamicos as any).velocidades });
-          } else {
+            if (dd.velocidades) detallesArray.push({ tipo_detalle: 'VELOCIDAD', datos: dd.velocidades });
+          } else if (dd.llamadas_detalles || dd.empresa || dd.piloto || dd.institucion) {
+            // Datos complejos van a detalles
             detallesArray.push({ tipo_detalle: 'INFO_EXTRA', datos: detallesDinamicos });
           }
         }
@@ -222,10 +232,8 @@ export default function NuevaSituacionScreen() {
         // CREACION
         // Determinar ruta: Tomar de asignación EXCEPTO si es "Cambio de Ruta"
         let rutaParaSituacion = salidaActiva?.ruta_id || undefined;
-        // Si es cambio de ruta y hay una ruta seleccionada manualmente, usar esa
-        // (futuro: agregar selector cuando nombreTipoSeleccionado === 'Cambio de Ruta')
 
-        const data = {
+        const data: any = {
           tipo_situacion: tipoSeleccionado,
           tipo_situacion_id: tipoSituacionId || undefined,
           unidad_id: salidaActiva!.unidad_id,
@@ -239,12 +247,24 @@ export default function NuevaSituacionScreen() {
           kilometraje_unidad: kilometraje ? parseInt(kilometraje, 10) : undefined,
           observaciones: observaciones || undefined,
           ubicacion_manual: testModeEnabled,
-          // Nuevos campos
+          // Contexto
           clima: clima || undefined,
           carga_vehicular: carga || undefined,
           departamento_id: deptoId || undefined,
           municipio_id: muniId || undefined,
-          detalles: detallesArray.length > 0 ? detallesArray : undefined
+          // Campos dinámicos a nivel raíz (extraídos de detallesDinamicos)
+          tipo_hecho_id: dd.tipo_hecho_id || undefined,
+          tipo_asistencia_id: dd.tipo_asistencia_id || undefined,
+          tipo_emergencia_id: dd.tipo_emergencia_id || undefined,
+          hay_heridos: dd.heridos ? parseInt(dd.heridos, 10) > 0 : false,
+          cantidad_heridos: dd.heridos ? parseInt(dd.heridos, 10) : 0,
+          hay_fallecidos: dd.fallecidos ? parseInt(dd.fallecidos, 10) > 0 : false,
+          cantidad_fallecidos: dd.fallecidos ? parseInt(dd.fallecidos, 10) : 0,
+          vehiculos_involucrados: dd.vehiculos_involucrados ? parseInt(dd.vehiculos_involucrados, 10) : undefined,
+          // Detalles complejos (arrays de datos)
+          detalles: detallesArray.length > 0 ? detallesArray : undefined,
+          // Multimedia (URIs locales - se subirán a Cloudinary después)
+          multimedia: multimedia.length > 0 ? multimedia : undefined
         };
         await createSituacion(data);
       }
@@ -378,6 +398,17 @@ export default function NuevaSituacionScreen() {
               auxiliares={catalogosAuxiliares}
               unidades={unidadesList}
             />
+
+            {/* MULTIMEDIA - Solo para tipos que requieren evidencia */}
+            {['INCIDENTE', 'ASISTENCIA_VEHICULAR', 'EMERGENCIA'].includes(tipoSeleccionado || '') && (
+              <MultimediaCaptureOffline
+                draftUuid={draftUuid}
+                tipoSituacion={tipoSeleccionado || 'OTROS'}
+                manualMode={true}
+                initialMedia={multimedia}
+                onMultimediaChange={setMultimedia}
+              />
+            )}
 
             {/* OBSERVACIONES */}
             <View style={styles.card}>

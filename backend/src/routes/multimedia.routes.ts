@@ -40,6 +40,17 @@ router.post(
   multimediaController.subirVideo
 );
 
+/**
+ * POST /api/multimedia/situacion/:situacionId/batch
+ * Guardar referencias de archivos subidos a Cloudinary (offline-first sync)
+ * Solo brigadas pueden subir
+ */
+router.post(
+  '/situacion/:situacionId/batch',
+  authorize('BRIGADA', 'ADMIN'),
+  multimediaController.guardarReferenciasCloudinary
+);
+
 // ========================================
 // CONSULTA DE ARCHIVOS
 // ========================================

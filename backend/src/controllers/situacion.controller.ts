@@ -61,11 +61,21 @@ export async function createSituacion(req: Request, res: Response) {
       obstruccion,
       area,
       material_via, // Mapear a tipo_pavimento
-      tipo_hecho, // ID
+      // Campos de tipo de hecho/asistencia/emergencia (IDs)
+      tipo_hecho_id,
+      subtipo_hecho_id,
+      tipo_asistencia_id,
+      tipo_emergencia_id,
+      // Víctimas
+      hay_heridos,
+      cantidad_heridos,
+      hay_fallecidos,
+      cantidad_fallecidos,
+      vehiculos_involucrados,
       // Campos que van a OTROS o Detalles
       apoyo_proporcionado,
-      tipo_asistencia, // string
-      tipo_emergencia,
+      tipo_asistencia, // string (legacy)
+      tipo_emergencia, // string (legacy)
       danios_materiales,
       danios_infraestructura,
       descripcion_danios_infra,
@@ -186,7 +196,18 @@ export async function createSituacion(req: Request, res: Response) {
       obstruccion_data: obstruccion,
       area,
       tipo_pavimento: material_via, // Mapeo
-      tipo_hecho_id: tipo_hecho ? parseInt(tipo_hecho, 10) || null : null, // ID de tipo hecho
+
+      // Tipo de hecho/asistencia (IDs)
+      tipo_hecho_id: tipo_hecho_id ? parseInt(tipo_hecho_id, 10) : null,
+      subtipo_hecho_id: subtipo_hecho_id ? parseInt(subtipo_hecho_id, 10) : null,
+
+      // Víctimas
+      hay_heridos: hay_heridos || false,
+      cantidad_heridos: cantidad_heridos ? parseInt(cantidad_heridos, 10) : 0,
+      hay_fallecidos: hay_fallecidos || false,
+      cantidad_fallecidos: cantidad_fallecidos ? parseInt(cantidad_fallecidos, 10) : 0,
+
+      // Daños
       danios_materiales,
       danios_infraestructura,
       danios_descripcion: descripcion_danios_infra,
@@ -211,12 +232,20 @@ export async function createSituacion(req: Request, res: Response) {
       }
     }
 
-    // Guardar OTROS (apoyo, tipo_asistencia) si existen
-    if (apoyo_proporcionado || tipo_asistencia || tipo_emergencia) {
+    // Guardar OTROS (apoyo, tipo_asistencia, tipo_emergencia, vehiculos) si existen
+    const otrosDatos: any = {};
+    if (apoyo_proporcionado) otrosDatos.apoyo_proporcionado = apoyo_proporcionado;
+    if (tipo_asistencia) otrosDatos.tipo_asistencia = tipo_asistencia;
+    if (tipo_emergencia) otrosDatos.tipo_emergencia = tipo_emergencia;
+    if (tipo_asistencia_id) otrosDatos.tipo_asistencia_id = tipo_asistencia_id;
+    if (tipo_emergencia_id) otrosDatos.tipo_emergencia_id = tipo_emergencia_id;
+    if (vehiculos_involucrados) otrosDatos.vehiculos_involucrados = vehiculos_involucrados;
+
+    if (Object.keys(otrosDatos).length > 0) {
       await DetalleSituacionModel.create({
         situacion_id: situacion.id,
         tipo_detalle: 'OTROS',
-        datos: { apoyo_proporcionado, tipo_asistencia, tipo_emergencia },
+        datos: otrosDatos,
         creado_por: userId
       });
     }
