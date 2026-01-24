@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Controller, Control, useWatch } from 'react-hook-form';
-import { TextInput, Button, Switch, List } from 'react-native-paper';
+import { TextInput, Button, Switch, List, Text as PaperText } from 'react-native-paper';
+import { Picker } from '@react-native-picker/picker';
 
 interface GruaFormProps {
     control: Control<any>;
@@ -16,6 +17,7 @@ export const GruaForm: React.FC<GruaFormProps> = ({ control, index, onRemove }) 
     });
 
     const realizoTraslado = useWatch({ control, name: `gruas.${index}.traslado` });
+    const vehiculos = useWatch({ control, name: 'vehiculos' }) || [];
 
     const toggleSection = (section: string) => {
         setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -37,6 +39,35 @@ export const GruaForm: React.FC<GruaFormProps> = ({ control, index, onRemove }) 
                 titleStyle={styles.accordionTitle}
             >
                 <View style={styles.section}>
+                    {/* Selector de Vehículo Asociado */}
+                    {vehiculos.length > 0 && (
+                        <View style={styles.input}>
+                            <PaperText variant="labelMedium" style={{ marginBottom: 4 }}>Vehículo Asociado</PaperText>
+                            <View style={{ borderWidth: 1, borderColor: '#79747E', borderRadius: 4 }}>
+                                <Controller
+                                    control={control}
+                                    name={`gruas.${index}.vehiculo_index`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <Picker
+                                            selectedValue={value}
+                                            onValueChange={onChange}
+                                            style={{ height: 50 }}
+                                        >
+                                            <Picker.Item label="Ninguno / General" value="" />
+                                            {vehiculos.map((v: any, idx: number) => (
+                                                <Picker.Item
+                                                    key={idx}
+                                                    label={`Vehículo ${idx + 1} - ${v.placa || 'Sin placa'} (${v.marca || 'Marca?'})`}
+                                                    value={idx.toString()}
+                                                />
+                                            ))}
+                                        </Picker>
+                                    )}
+                                />
+                            </View>
+                        </View>
+                    )}
+
                     <Controller
                         control={control}
                         name={`gruas.${index}.empresa`}

@@ -15,7 +15,25 @@
  * IMPORTANTE: Sin padding en ningun campo (tal cual como en la BD)
  */
 
-import { format } from 'date-fns';
+/**
+ * Formatea una fecha a YYYYMMDD usando JavaScript nativo
+ */
+function formatDateToYYYYMMDD(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}${month}${day}`;
+}
+
+/**
+ * Formatea una fecha a YYYY-MM-DD usando JavaScript nativo
+ */
+function formatDateToYYYYMMDDDashed(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 export interface SituacionIdParams {
   fecha: Date;
@@ -43,7 +61,7 @@ export interface SituacionIdParams {
  * // Resultado: "20260121-1-030-70-86-50-4"
  */
 export function generateSituacionId(params: SituacionIdParams): string {
-  const fecha = format(params.fecha, 'yyyyMMdd');
+  const fecha = formatDateToYYYYMMDD(params.fecha);
   const sede = String(params.sede_id);              // Sin padding
   const unidad = params.unidad_codigo;              // Tal cual: 030, 1131, M007
   const tipo = String(params.tipo_situacion_id);    // Sin padding
@@ -100,7 +118,7 @@ export function formatSituacionIdLegible(id: string): string {
   const parsed = parseSituacionId(id);
   if (!parsed) return id;
 
-  const fechaLegible = format(parsed.fecha, 'yyyy-MM-dd');
+  const fechaLegible = formatDateToYYYYMMDDDashed(parsed.fecha);
 
   return `${fechaLegible} | Sede ${parsed.sede_id} | Unidad ${parsed.unidad_codigo} | Tipo ${parsed.tipo_situacion_id} | Ruta ${parsed.ruta_id} Km ${parsed.km} | #${parsed.num_situacion_salida}`;
 }

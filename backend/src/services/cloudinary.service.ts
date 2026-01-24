@@ -92,10 +92,16 @@ export function generateSignedUploadParams(options: {
   draftUuid: string;
   fileType: 'image' | 'video';
   resourceType?: 'image' | 'video' | 'raw' | 'auto';
+  // Parámetros opcionales para control total del nombre/ubicación
+  folder?: string;
+  publicId?: string;
+  tags?: string;
 }) {
   const timestamp = Math.round(Date.now() / 1000);
-  const folder = `provial/drafts/${options.draftUuid}`;
-  const publicId = `${options.draftUuid}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+  // Usar carpeta/nombre custom o defaults basados en draft
+  const folder = options.folder || `provial/drafts/${options.draftUuid}`;
+  const publicId = options.publicId || `${options.draftUuid}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
   // Parámetros que se van a firmar
   const paramsToSign: any = {
@@ -104,7 +110,11 @@ export function generateSignedUploadParams(options: {
     public_id: publicId,
   };
 
-  // Agregar transformaciones según el tipo de archivo
+  if (options.tags) {
+    paramsToSign.tags = options.tags;
+  }
+
+  // Agregar transformaciones según el tipo de archivo (solo si no es video para evitar delays)
   if (options.fileType === 'image') {
     paramsToSign.transformation = 'c_limit,w_1920,h_1080,q_auto';
   }
@@ -122,6 +132,7 @@ export function generateSignedUploadParams(options: {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME!,
     folder,
     publicId,
+    tags: options.tags,
     uploadUrl: `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/${options.resourceType || 'auto'}/upload`,
   };
 }

@@ -36,67 +36,71 @@ interface Props {
     tipo: 'autoridad' | 'socorro';
     seleccionados: string[];
     detalles: Record<string, DetalleAutoridad | DetallesSocorro>;
-    onSelectionChange: (seleccionados: string[]) => void;
-    onDetallesChange: (detalles: Record<string, DetalleAutoridad | DetallesSocorro>) => void;
+    onChange: (data: { seleccionados: string[], detalles: Record<string, DetalleAutoridad | DetallesSocorro> }) => void;
 }
 
 export default function AutoridadSocorroManager({
     tipo,
     seleccionados,
     detalles,
-    onSelectionChange,
-    onDetallesChange,
+    onChange,
 }: Props) {
     const opciones = tipo === 'autoridad' ? AUTORIDADES : UNIDADES_SOCORRO;
     const titulo = tipo === 'autoridad' ? 'Autoridades Presentes' : 'Unidades de Socorro';
 
     const toggleSeleccion = (nombre: string) => {
         if (nombre === 'Ninguna') {
-            onSelectionChange(['Ninguna']);
-            onDetallesChange({});
+            onChange({
+                seleccionados: ['Ninguna'],
+                detalles: {}
+            });
         } else {
             const nuevosSeleccionados = seleccionados.filter((s) => s !== 'Ninguna');
+            let nuevosDetalles = { ...detalles };
+            let seleccionFinal: string[];
 
             if (nuevosSeleccionados.includes(nombre)) {
                 // Deseleccionar
-                const filtrados = nuevosSeleccionados.filter((s) => s !== nombre);
-                onSelectionChange(filtrados);
-
+                seleccionFinal = nuevosSeleccionados.filter((s) => s !== nombre);
                 // Eliminar detalles
-                const nuevosDetalles = { ...detalles };
                 delete nuevosDetalles[nombre];
-                onDetallesChange(nuevosDetalles);
             } else {
                 // Seleccionar
-                onSelectionChange([...nuevosSeleccionados, nombre]);
+                seleccionFinal = [...nuevosSeleccionados, nombre];
 
-                // Si no es PROVIAL, crear entrada de detalles vacía
-                if (nombre !== 'PROVIAL') {
-                    onDetallesChange({
-                        ...detalles,
-                        [nombre]: {
-                            nombre,
-                            hora_llegada: '',
-                            nip_chapa: '',
-                            numero_unidad: '',
-                            nombre_comandante: '',
-                            cantidad_elementos: '',
-                            subestacion: '',
-                            cantidad_unidades: '',
-                        },
-                    });
-                }
+                // Crear entrada de detalles vacía
+                nuevosDetalles[nombre] = {
+                    nombre,
+                    hora_llegada: '',
+                    nip_chapa: '',
+                    numero_unidad: '',
+                    nombre_comandante: '',
+                    cantidad_elementos: '',
+                    subestacion: '',
+                    cantidad_unidades: '',
+                };
             }
+
+            // Actualizar TODO de una vez
+            onChange({
+                seleccionados: seleccionFinal,
+                detalles: nuevosDetalles
+            });
         }
     };
 
     const actualizarDetalle = (nombre: string, campo: keyof DetalleAutoridad, valor: string) => {
-        onDetallesChange({
+        const nuevosDetalles = {
             ...detalles,
             [nombre]: {
                 ...detalles[nombre],
                 [campo]: valor,
             },
+        };
+
+        onChange({
+            seleccionados,
+            detalles: nuevosDetalles
         });
     };
 

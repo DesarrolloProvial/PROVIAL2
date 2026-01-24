@@ -235,29 +235,32 @@ export default function ObstruccionManager({
     sentidoSituacion,
     readonly = false
 }: Props) {
+    // Usar valor por defecto si value es undefined
+    const safeValue = value || getDefaultObstruccion();
+
     const [mostrarSentidoContrario, setMostrarSentidoContrario] = useState(
-        value.sentido_contrario !== null
+        safeValue.sentido_contrario !== null
     );
 
     useEffect(() => {
-        if (value.tipo_obstruccion === 'parcial' && !value.sentido_principal) {
+        if (safeValue.tipo_obstruccion === 'parcial' && !safeValue.sentido_principal) {
             onChange({
-                ...value,
+                ...safeValue,
                 sentido_principal: crearSentidoObstruccion(2, sentidoSituacion)
             });
         }
-    }, [value.tipo_obstruccion]);
+    }, [safeValue.tipo_obstruccion]);
 
     const handleVehiculoFueraViaChange = () => {
         onChange({
-            ...value,
-            hay_vehiculo_fuera_via: !value.hay_vehiculo_fuera_via
+            ...safeValue,
+            hay_vehiculo_fuera_via: !safeValue.hay_vehiculo_fuera_via
         });
     };
 
     const handleTipoObstruccionChange = (tipo: TipoObstruccion) => {
         const nuevoValue: ObstruccionData = {
-            ...value,
+            ...safeValue,
             tipo_obstruccion: tipo,
             sentido_principal: tipo === 'parcial' ? crearSentidoObstruccion(2, sentidoSituacion) : null,
             sentido_contrario: null
@@ -272,14 +275,14 @@ export default function ObstruccionManager({
 
     const handleSentidoPrincipalChange = (sentido: SentidoObstruccion) => {
         onChange({
-            ...value,
+            ...safeValue,
             sentido_principal: sentido
         });
     };
 
     const handleSentidoContrarioChange = (sentido: SentidoObstruccion) => {
         onChange({
-            ...value,
+            ...safeValue,
             sentido_contrario: sentido
         });
     };
@@ -287,13 +290,13 @@ export default function ObstruccionManager({
     const toggleSentidoContrario = () => {
         if (mostrarSentidoContrario) {
             setMostrarSentidoContrario(false);
-            onChange({ ...value, sentido_contrario: null });
+            onChange({ ...safeValue, sentido_contrario: null });
         } else {
             setMostrarSentidoContrario(true);
             onChange({
-                ...value,
+                ...safeValue,
                 sentido_contrario: crearSentidoObstruccion(
-                    value.sentido_principal?.cantidad_carriles || 2,
+                    safeValue.sentido_principal?.cantidad_carriles || 2,
                     sentidoSituacion ? `contrario a ${sentidoSituacion}` : undefined
                 )
             });
@@ -303,16 +306,16 @@ export default function ObstruccionManager({
     const generarDescripcion = useCallback(() => {
         let desc = '';
 
-        if (value.hay_vehiculo_fuera_via) {
+        if (safeValue.hay_vehiculo_fuera_via) {
             desc = 'Vehiculo fuera de la via';
-            if (value.tipo_obstruccion !== 'ninguna') {
+            if (safeValue.tipo_obstruccion !== 'ninguna') {
                 desc += '. Ademas, ';
             }
         }
 
-        switch (value.tipo_obstruccion) {
+        switch (safeValue.tipo_obstruccion) {
             case 'ninguna':
-                if (!value.hay_vehiculo_fuera_via) {
+                if (!safeValue.hay_vehiculo_fuera_via) {
                     desc = 'Sin obstruccion de via';
                 }
                 break;
@@ -323,8 +326,8 @@ export default function ObstruccionManager({
                 desc += 'Obstruccion total de ambos sentidos (via cerrada)';
                 break;
             case 'parcial':
-                if (value.sentido_principal) {
-                    const carrilesAfectados = value.sentido_principal.carriles
+                if (safeValue.sentido_principal) {
+                    const carrilesAfectados = safeValue.sentido_principal.carriles
                         .filter(c => c.porcentaje > 0)
                         .map(c => `${c.nombre} (${c.porcentaje}%)`)
                         .join(', ');
@@ -338,10 +341,10 @@ export default function ObstruccionManager({
                 break;
         }
 
-        onChange({ ...value, descripcion_manual: desc });
-    }, [value, sentidoSituacion, onChange]);
+        onChange({ ...safeValue, descripcion_manual: desc });
+    }, [safeValue, sentidoSituacion, onChange]);
 
-    const tieneObstruccionActiva = value.hay_vehiculo_fuera_via || value.tipo_obstruccion !== 'ninguna';
+    const tieneObstruccionActiva = safeValue.hay_vehiculo_fuera_via || safeValue.tipo_obstruccion !== 'ninguna';
 
     const tiposObstruccion: { value: TipoObstruccion; label: string; color: string }[] = [
         { value: 'ninguna', label: 'Sin obstruccion', color: COLORS.success },
@@ -358,8 +361,8 @@ export default function ObstruccionManager({
                 onPress={!readonly ? handleVehiculoFueraViaChange : undefined}
                 disabled={readonly}
             >
-                <View style={[styles.checkbox, value.hay_vehiculo_fuera_via && styles.checkboxCheckedYellow]}>
-                    {value.hay_vehiculo_fuera_via && <Text style={styles.checkboxCheck}>✓</Text>}
+                <View style={[styles.checkbox, safeValue.hay_vehiculo_fuera_via && styles.checkboxCheckedYellow]}>
+                    {safeValue.hay_vehiculo_fuera_via && <Text style={styles.checkboxCheck}>✓</Text>}
                 </View>
                 <View style={styles.fueraViaTexts}>
                     <Text style={styles.fueraViaTitle}>Vehiculo fuera de la via</Text>
@@ -375,14 +378,14 @@ export default function ObstruccionManager({
                         key={tipo.value}
                         style={[
                             styles.tipoButton,
-                            value.tipo_obstruccion === tipo.value && { borderColor: tipo.color, backgroundColor: tipo.color + '15' }
+                            safeValue.tipo_obstruccion === tipo.value && { borderColor: tipo.color, backgroundColor: tipo.color + '15' }
                         ]}
                         onPress={() => !readonly && handleTipoObstruccionChange(tipo.value)}
                         disabled={readonly}
                     >
                         <Text style={[
                             styles.tipoButtonText,
-                            value.tipo_obstruccion === tipo.value && { color: tipo.color, fontWeight: '600' }
+                            safeValue.tipo_obstruccion === tipo.value && { color: tipo.color, fontWeight: '600' }
                         ]}>
                             {tipo.label}
                         </Text>
@@ -391,10 +394,10 @@ export default function ObstruccionManager({
             </View>
 
             {/* Editor de carriles (solo para obstruccion parcial) */}
-            {value.tipo_obstruccion === 'parcial' && value.sentido_principal && (
+            {safeValue.tipo_obstruccion === 'parcial' && safeValue.sentido_principal && (
                 <View style={styles.parcialContainer}>
                     <CarrilesEditor
-                        sentido={value.sentido_principal}
+                        sentido={safeValue.sentido_principal}
                         onChange={handleSentidoPrincipalChange}
                         label={`Sentido ${sentidoSituacion || 'principal'}`}
                         readonly={readonly}
@@ -418,9 +421,9 @@ export default function ObstruccionManager({
                         </TouchableOpacity>
                     )}
 
-                    {mostrarSentidoContrario && value.sentido_contrario && (
+                    {mostrarSentidoContrario && safeValue.sentido_contrario && (
                         <CarrilesEditor
-                            sentido={value.sentido_contrario}
+                            sentido={safeValue.sentido_contrario}
                             onChange={handleSentidoContrarioChange}
                             label={`Sentido ${sentidoSituacion ? `contrario` : 'contrario'}`}
                             readonly={readonly}
@@ -445,8 +448,8 @@ export default function ObstruccionManager({
                     <Text style={styles.label}>Descripcion (puede editarse)</Text>
                     <TextInput
                         style={[styles.input, styles.textArea]}
-                        value={value.descripcion_manual}
-                        onChangeText={(text) => onChange({ ...value, descripcion_manual: text })}
+                        value={safeValue.descripcion_manual}
+                        onChangeText={(text) => onChange({ ...safeValue, descripcion_manual: text })}
                         placeholder="Descripcion de la obstruccion..."
                         multiline
                         numberOfLines={3}
@@ -460,25 +463,25 @@ export default function ObstruccionManager({
                 <View style={styles.resumenContainer}>
                     <Text style={styles.resumenTitle}>RESUMEN</Text>
                     <View style={styles.resumenTags}>
-                        {value.hay_vehiculo_fuera_via && (
+                        {safeValue.hay_vehiculo_fuera_via && (
                             <View style={[styles.tag, { backgroundColor: '#FEF3C7' }]}>
                                 <Text style={[styles.tagText, { color: '#92400E' }]}>Vehiculo fuera de via</Text>
                             </View>
                         )}
-                        {value.tipo_obstruccion === 'total_sentido' && (
+                        {safeValue.tipo_obstruccion === 'total_sentido' && (
                             <View style={[styles.tag, { backgroundColor: '#FFEDD5' }]}>
                                 <Text style={[styles.tagText, { color: '#9A3412' }]}>Total (1 sentido)</Text>
                             </View>
                         )}
-                        {value.tipo_obstruccion === 'total_ambos' && (
+                        {safeValue.tipo_obstruccion === 'total_ambos' && (
                             <View style={[styles.tag, { backgroundColor: '#FEE2E2' }]}>
                                 <Text style={[styles.tagText, { color: '#991B1B' }]}>Via cerrada</Text>
                             </View>
                         )}
-                        {value.tipo_obstruccion === 'parcial' && value.sentido_principal && (
+                        {safeValue.tipo_obstruccion === 'parcial' && safeValue.sentido_principal && (
                             <View style={[styles.tag, { backgroundColor: '#DBEAFE' }]}>
                                 <Text style={[styles.tagText, { color: '#1E40AF' }]}>
-                                    Parcial: {value.sentido_principal.carriles.filter(c => c.porcentaje > 0).length}/{value.sentido_principal.cantidad_carriles} carriles
+                                    Parcial: {safeValue.sentido_principal.carriles.filter(c => c.porcentaje > 0).length}/{safeValue.sentido_principal.cantidad_carriles} carriles
                                 </Text>
                             </View>
                         )}

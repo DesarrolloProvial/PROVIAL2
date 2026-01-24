@@ -279,7 +279,6 @@ export const TIPOS_EMERGENCIA = [
 export const AUTORIDADES = [
   'PMT',
   'PNC',
-  'PROVIAL',
   'DGT',
   'Ejército',
   'MP',

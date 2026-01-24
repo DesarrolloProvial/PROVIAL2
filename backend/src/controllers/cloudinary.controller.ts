@@ -31,7 +31,7 @@ export async function getSignature(req: Request, res: Response) {
       });
     }
 
-    const { draftUuid, fileType, resourceType } = req.body;
+    const { draftUuid, fileType, resourceType, folder, publicId, tags } = req.body;
 
     // Validar parámetros requeridos
     if (!draftUuid) {
@@ -48,10 +48,13 @@ export async function getSignature(req: Request, res: Response) {
     const signedParams = generateSignedUploadParams({
       draftUuid,
       fileType,
-      resourceType: resourceType || 'auto'
+      resourceType: resourceType || 'auto',
+      folder,
+      publicId,
+      tags
     });
 
-    console.log(`[CLOUDINARY] Signature generada para draft ${draftUuid} (${fileType}) por usuario ${req.user.userId}`);
+    console.log(`[CLOUDINARY] Signature generada para publicId ${signedParams.publicId} (${fileType}) por usuario ${req.user.userId}`);
 
     return res.json({
       success: true,

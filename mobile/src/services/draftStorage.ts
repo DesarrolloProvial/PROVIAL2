@@ -84,10 +84,26 @@ export interface DraftSituacion {
   tipo_asistencia?: string; // ASISTENCIA_VEHICULAR
   tipo_emergencia?: string; // EMERGENCIA
 
-  // Datos relacionados
+  // Datos relacionados (comunes)
   vehiculos?: any[];
   personas?: any[];
   autoridades?: any[];
+
+  // Campos específicos de ASISTENCIA_VEHICULAR
+  gruas?: any[];
+  ajustadores?: any[];
+  detalles_autoridades?: Record<string, any>;
+  socorro?: any[];
+  detalles_socorro?: Record<string, any>;
+  obstruye?: any; // ObstruccionData (LEGACY - mantener por compatibilidad)
+  obstruccion?: any; // ObstruccionData (NUEVO - alineado con controller)
+  jurisdiccion?: string;
+  direccion_detallada?: string;
+
+  // Campos específicos de ASISTENCIA / OTROS (NUEVOS)
+  area?: string;
+  material_via?: string;
+  apoyo_proporcionado?: string;
 
   // Multimedia
   multimedia: MultimediaRef[];
@@ -102,7 +118,7 @@ export interface DraftSituacion {
   // Datos de conflicto (si aplica)
   conflicto?: {
     datos_servidor: any;
-    diferencias: Array<{campo: string; local: any; servidor: any}>;
+    diferencias: Array<{ campo: string; local: any; servidor: any }>;
     conflicto_id?: number;
   };
 }
@@ -285,7 +301,7 @@ export async function getDraftInfo(): Promise<{
  */
 export async function setDraftConflicto(
   datosServidor: any,
-  diferencias: Array<{campo: string; local: any; servidor: any}>,
+  diferencias: Array<{ campo: string; local: any; servidor: any }>,
   conflictoId?: number
 ): Promise<void> {
   await updateDraft({

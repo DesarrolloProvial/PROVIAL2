@@ -1,4 +1,5 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
+import { TipoSituacion } from '../services/draftStorage';
 
 // ========================================
 // ROOT STACK (AUTH + MAIN)
@@ -30,6 +31,20 @@ export type MainDrawerParamList = {
 };
 
 // ========================================
+// PARAMS PARA SITUACION DINAMICA
+// ========================================
+
+export type SituacionDinamicaParams = {
+  codigoSituacion: string;      // Código para buscar config (ASISTENCIA_VEHICULAR, HECHO_TRANSITO, etc.)
+  tipoSituacionId: number;       // ID del tipo en la BD
+  nombreSituacion: string;       // Nombre para mostrar en header
+  tipoSituacion: TipoSituacion;  // Tipo para el draft storage
+  editMode?: boolean;
+  situacionId?: number;
+  situacionData?: any;
+};
+
+// ========================================
 // BRIGADA STACK
 // ========================================
 
@@ -38,9 +53,13 @@ export type BrigadaStackParamList = {
   NuevaSituacion: { editMode?: boolean; situacionId?: number; situacionData?: any } | undefined;
   DetalleSituacion: { situacionId: number };
   Bitacora: undefined;
-  Incidente: { editMode?: boolean; situacionId?: number; incidenteId?: number; situacionData?: any } | undefined;
-  Asistencia: { editMode?: boolean; situacionId?: number; situacionData?: any } | undefined;
-  Emergencia: { editMode?: boolean; situacionId?: number; situacionData?: any } | undefined;
+
+  // Situaciones - Ahora usan SituacionDinamicaScreen con params extendidos
+  Incidente: SituacionDinamicaParams | undefined;
+  Asistencia: SituacionDinamicaParams | undefined;
+  Emergencia: SituacionDinamicaParams | undefined;
+
+  // Otras pantallas
   SalidaSede: undefined;
   IniciarSalida: { editMode?: boolean; salidaData?: any } | undefined;
   IngresoSede: { editMode?: boolean; ingresoData?: any } | undefined;

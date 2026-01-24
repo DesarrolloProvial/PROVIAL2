@@ -7,9 +7,11 @@ export const COLORS = {
 
   // Colores de acción
   danger: '#ef4444', // Rojo
+  error: '#ef4444', // Alias de danger para compatibilidad
   warning: '#f59e0b', // Amarillo/naranja
   success: '#10b981', // Verde
   info: '#3b82f6', // Azul
+  purple: '#8b5cf6', // Púrpura
 
   // Colores neutros
   white: '#ffffff',

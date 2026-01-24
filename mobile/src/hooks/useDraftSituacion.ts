@@ -52,7 +52,7 @@ interface ConflictoResponse {
   codigo: string;
   codigo_situacion: string;
   situacion_existente: any;
-  diferencias: Array<{campo: string; local: any; servidor: any}>;
+  diferencias: Array<{ campo: string; local: any; servidor: any }>;
   total_diferencias: number;
 }
 
@@ -209,8 +209,23 @@ export function useDraftSituacion() {
       throw new Error(check.reason);
     }
 
-    // Reservar numero
-    const reserva = await reservarNumero(params.unidad_codigo);
+    // Reservar numero (Intentar Online, fallback Offline)
+    let reserva: ReservarNumeroResponse;
+    try {
+      reserva = await reservarNumero(params.unidad_codigo);
+    } catch (error) {
+      console.warn('[Draft] Falló reserva online. Usando modo offline:', error);
+      // Fallback: Datos temporales para permitir trabajar offline o sin salida activa
+      reserva = {
+        num_situacion_salida: 0, // 0 indica pendiente de sincronizar
+        fecha: new Date().toISOString(),
+        sede_id: 1, // Default (idealmente debería venir del AuthStore)
+        unidad_id: 0,
+        unidad_codigo: params.unidad_codigo,
+        salida_id: 0,
+        valido_hasta: new Date(Date.now() + 86400000).toISOString()
+      };
+    }
 
     // Generar ID determinista
     const id = generateSituacionId({
