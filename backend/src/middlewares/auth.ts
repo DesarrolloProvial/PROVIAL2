@@ -85,6 +85,12 @@ export async function canEditSituacion(req: Request, res: Response, next: NextFu
     }
 
     // Verificar si el usuario es miembro de la tripulación (Turno ACTIVO)
+    if (!situacion.unidad_id) {
+      return res.status(403).json({
+        error: 'Situación sin unidad asignada',
+        mensaje: 'No se puede verificar permisos sin unidad',
+      });
+    }
     const esMiembro = await TurnoModel.esMiembroTripulacion(req.user.userId, situacion.unidad_id);
 
     if (!esMiembro) {

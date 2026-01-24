@@ -354,6 +354,21 @@ export const TurnoModel = {
     );
   },
 
+  // Obtener asignación activa de una unidad específica
+  async getAsignacionActivaUnidad(unidadId: number): Promise<any | null> {
+    return db.oneOrNone(`
+      SELECT au.*, t.fecha as turno_fecha, r.codigo as ruta_codigo
+      FROM asignacion_unidad au
+      JOIN turno t ON au.turno_id = t.id
+      LEFT JOIN ruta r ON au.ruta_id = r.id
+      WHERE au.unidad_id = $1
+        AND t.fecha = CURRENT_DATE
+        AND t.estado IN ('PLANIFICADO', 'ACTIVO')
+      ORDER BY au.id DESC
+      LIMIT 1
+    `, [unidadId]);
+  },
+
   // Actualizar asignación
   async updateAsignacion(id: number, data: {
     ruta_id?: number;

@@ -37,17 +37,41 @@ export type TipoDetalle =
 
 export interface Situacion {
   id: number;
-  // uuid: string; // ELIMINADO
   codigo_situacion: string; // ID Determinista
-  // numero_situacion: string | null; // ELIMINADO
   tipo_situacion: TipoSituacion;
   tipo_situacion_id?: number | null;
+  estado: EstadoSituacion;
+
+  // Relaciones
+  unidad_id?: number | null;
+  salida_unidad_id?: number | null;
+  turno_id?: number | null;
+  asignacion_id?: number | null;
+  ruta_id?: number | null;
+
+  // Ubicación
+  km?: number | null;
+  sentido?: string | null;
+  latitud?: number | null;
+  longitud?: number | null;
+  ubicacion_manual?: boolean;
+
+  // Combustible/Kilometraje
+  combustible?: number | null;
+  combustible_fraccion?: string | null;
+  kilometraje_unidad?: number | null;
+  tripulacion_confirmada?: boolean;
+
+  // Descripción
+  descripcion?: string | null;
+  observaciones?: string | null;
+
+  // Contexto
   clima?: string | null;
   carga_vehicular?: string | null;
   departamento_id?: number | null;
   municipio_id?: number | null;
   obstruccion_data?: any | null;
-  estado: EstadoSituacion;
 
   // Campos Migración 104
   origen?: string;

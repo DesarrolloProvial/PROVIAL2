@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes';
 import turnoRoutes from './turno.routes';
-import incidenteRoutes from './incidente.routes';
+// import incidenteRoutes from './incidente.routes'; // OBSOLETO: Tabla incidente eliminada en migración 105
 import situacionesRoutes from './situaciones.routes';
 import gruposRoutes from './grupos.routes';
 import movimientosRoutes from './movimientos.routes';
@@ -47,8 +47,8 @@ router.use('/auth', authRoutes);
 // Rutas de turnos y asignaciones
 router.use('/turnos', turnoRoutes);
 
-// Rutas de incidentes
-router.use('/incidentes', incidenteRoutes);
+// Rutas de incidentes - OBSOLETO: Funcionalidad integrada en /situaciones (migración 105)
+// router.use('/incidentes', incidenteRoutes);
 
 // Rutas de situaciones operativas
 router.use('/situaciones', situacionesRoutes);

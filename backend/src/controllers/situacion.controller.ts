@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { SituacionModel, DetalleSituacionModel } from '../models/situacion.model';
 import { TurnoModel } from '../models/turno.model';
-import { UsuarioModel } from '../models/usuario.model';
+// import { UsuarioModel } from '../models/usuario.model'; // No usado actualmente
 import { SalidaModel } from '../models/salida.model';
 import { UbicacionBrigadaModel } from '../models/ubicacionBrigada.model';
 import { db } from '../config/database';
@@ -9,27 +9,20 @@ import {
   emitSituacionNueva,
   emitSituacionActualizada,
   emitSituacionCerrada,
-  SituacionEvent,
 } from '../services/socket.service';
 
 // ========================================
 // HELPERS
 // ========================================
 
-async function getUnidadesPermitidas(userId: number, rol: string): Promise<number[] | null> {
-  if (rol === 'COP' || rol === 'ADMIN' || rol === 'OPERACIONES') {
-    return null;
-  }
-  const usuario = await UsuarioModel.findById(userId);
-  if (!usuario || !usuario.sede_id) {
-    return [];
-  }
-  const result = await db.manyOrNone(
-    'SELECT id FROM unidad WHERE sede_id = $1 AND activa = true',
-    [usuario.sede_id]
-  );
-  return result.map((r: any) => r.id);
-}
+// Helper para obtener unidades permitidas (para uso futuro)
+// async function getUnidadesPermitidas(userId: number, rol: string): Promise<number[] | null> {
+//   if (rol === 'COP' || rol === 'ADMIN' || rol === 'OPERACIONES') return null;
+//   const usuario = await UsuarioModel.findById(userId);
+//   if (!usuario || !usuario.sede_id) return [];
+//   const result = await db.manyOrNone('SELECT id FROM unidad WHERE sede_id = $1 AND activa = true', [usuario.sede_id]);
+//   return result.map((r: any) => r.id);
+// }
 
 // ========================================
 // CREAR SITUACIÓN
@@ -193,7 +186,7 @@ export async function createSituacion(req: Request, res: Response) {
       obstruccion_data: obstruccion,
       area,
       tipo_pavimento: material_via, // Mapeo
-      // tipo_hecho_id: tipo_hecho, // TODO: Resolver ID de tipo hecho si viene string
+      tipo_hecho_id: tipo_hecho ? parseInt(tipo_hecho, 10) || null : null, // ID de tipo hecho
       danios_materiales,
       danios_infraestructura,
       danios_descripcion: descripcion_danios_infra,
@@ -309,7 +302,7 @@ export async function updateSituacion(req: Request, res: Response) {
       obstruccion_data: obstruccion
     };
 
-    const updated = await SituacionModel.update(situacionId, updateData);
+    await SituacionModel.update(situacionId, updateData);
 
     // Update Detalles OTROS
     if (apoyo_proporcionado || tipo_asistencia || tipo_emergencia) {
@@ -352,7 +345,7 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
   return res.json({ situaciones: list, asignacion: asig });
 }
 
-export async function getMapaSituaciones(req: Request, res: Response) {
+export async function getMapaSituaciones(_req: Request, res: Response) {
   const list = await SituacionModel.getUltimaSituacionPorUnidad();
   return res.json({ unidades: list });
 }
@@ -360,4 +353,185 @@ export async function getMapaSituaciones(req: Request, res: Response) {
 export async function getBitacoraUnidad(req: Request, res: Response) {
   const list = await SituacionModel.getBitacoraUnidad(parseInt(req.params.unidad_id), req.query);
   return res.json({ bitacora: list });
+}
+
+// ========================================
+// FUNCIONES ADICIONALES
+// ========================================
+
+export async function listSituacionesActivas(_req: Request, res: Response) {
+  try {
+    const activas = await db.manyOrNone(`
+      SELECT s.*, u.codigo as unidad_codigo, r.codigo as ruta_codigo
+      FROM situacion s
+      LEFT JOIN unidad u ON s.unidad_id = u.id
+      LEFT JOIN ruta r ON s.ruta_id = r.id
+      WHERE s.estado = 'ACTIVA'
+      ORDER BY s.created_at DESC
+    `);
+    return res.json({ situaciones: activas });
+  } catch (error: any) {
+    console.error('Error listSituacionesActivas:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+export async function getTiposSituacion(_req: Request, res: Response) {
+  const tipos = [
+    { id: 10, codigo: 'SALIDA_SEDE', nombre: 'Salida de Sede' },
+    { id: 20, codigo: 'PATRULLAJE', nombre: 'Patrullaje' },
+    { id: 30, codigo: 'CAMBIO_RUTA', nombre: 'Cambio de Ruta' },
+    { id: 40, codigo: 'PARADA_ESTRATEGICA', nombre: 'Parada Estratégica' },
+    { id: 50, codigo: 'COMIDA', nombre: 'Comida' },
+    { id: 60, codigo: 'DESCANSO', nombre: 'Descanso' },
+    { id: 70, codigo: 'INCIDENTE', nombre: 'Hecho de Tránsito' },
+    { id: 80, codigo: 'REGULACION_TRAFICO', nombre: 'Regulación de Tráfico' },
+    { id: 90, codigo: 'ASISTENCIA_VEHICULAR', nombre: 'Asistencia Vehicular' },
+    { id: 100, codigo: 'EMERGENCIA', nombre: 'Emergencia' },
+    { id: 110, codigo: 'OTROS', nombre: 'Otros' },
+  ];
+  return res.json({ tipos });
+}
+
+export async function cerrarSituacion(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { observaciones } = req.body;
+    const userId = req.user!.userId;
+
+    const situacion = await SituacionModel.cerrar(parseInt(id), userId, observaciones);
+    emitSituacionCerrada(situacion as any);
+
+    return res.json({ message: 'Situación cerrada', situacion });
+  } catch (error: any) {
+    console.error('Error cerrarSituacion:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+export async function deleteSituacion(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    await db.none('DELETE FROM situacion WHERE id = $1', [id]);
+    return res.json({ message: 'Situación eliminada' });
+  } catch (error: any) {
+    console.error('Error deleteSituacion:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+export async function createDetalle(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { tipo_detalle, datos } = req.body;
+    const userId = req.user!.userId;
+
+    const detalle = await DetalleSituacionModel.create({
+      situacion_id: parseInt(id),
+      tipo_detalle,
+      datos,
+      creado_por: userId
+    });
+
+    return res.status(201).json({ detalle });
+  } catch (error: any) {
+    console.error('Error createDetalle:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+export async function getDetalles(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const detalles = await DetalleSituacionModel.getBySituacionId(parseInt(id));
+    return res.json({ detalles });
+  } catch (error: any) {
+    console.error('Error getDetalles:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+export async function updateDetalle(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { datos } = req.body;
+
+    const detalle = await DetalleSituacionModel.update(parseInt(id), datos);
+    return res.json({ detalle });
+  } catch (error: any) {
+    console.error('Error updateDetalle:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+export async function deleteDetalle(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    await DetalleSituacionModel.delete(parseInt(id));
+    return res.json({ message: 'Detalle eliminado' });
+  } catch (error: any) {
+    console.error('Error deleteDetalle:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+export async function getResumenUnidades(_req: Request, res: Response) {
+  try {
+    const resumen = await db.manyOrNone(`
+      SELECT
+        u.id as unidad_id,
+        u.codigo as unidad_codigo,
+        u.tipo_unidad,
+        s.nombre as sede_nombre,
+        (SELECT COUNT(*) FROM situacion sit WHERE sit.unidad_id = u.id AND sit.estado = 'ACTIVA') as situaciones_activas,
+        (SELECT tipo_situacion FROM situacion sit WHERE sit.unidad_id = u.id ORDER BY sit.created_at DESC LIMIT 1) as ultima_situacion
+      FROM unidad u
+      LEFT JOIN sede s ON u.sede_id = s.id
+      WHERE u.activa = true
+      ORDER BY u.codigo
+    `);
+    return res.json({ resumen });
+  } catch (error: any) {
+    console.error('Error getResumenUnidades:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+export async function cambiarTipoSituacion(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { nuevo_tipo } = req.body;
+
+    const situacion = await SituacionModel.update(parseInt(id), { tipo_situacion: nuevo_tipo } as any);
+    return res.json({ message: 'Tipo cambiado', situacion });
+  } catch (error: any) {
+    console.error('Error cambiarTipoSituacion:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+export async function getCatalogo(_req: Request, res: Response) {
+  try {
+    const tipos = await db.manyOrNone('SELECT * FROM tipo_situacion WHERE activo = true ORDER BY orden');
+    const tiposHecho = await db.manyOrNone('SELECT * FROM tipo_hecho WHERE activo = true ORDER BY nombre');
+    const subtiposHecho = await db.manyOrNone('SELECT * FROM subtipo_hecho WHERE activo = true ORDER BY nombre');
+
+    return res.json({ tipos, tiposHecho, subtiposHecho });
+  } catch (error: any) {
+    console.error('Error getCatalogo:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+export async function getCatalogosAuxiliares(_req: Request, res: Response) {
+  try {
+    const tiposHecho = await db.manyOrNone('SELECT id, codigo, nombre, icono, color FROM tipo_hecho WHERE activo = true ORDER BY nombre');
+    const subtiposHecho = await db.manyOrNone('SELECT id, tipo_hecho_id, codigo, nombre FROM subtipo_hecho WHERE activo = true ORDER BY nombre');
+    const tiposAsistencia = await db.manyOrNone('SELECT id, nombre FROM tipo_asistencia WHERE activo = true ORDER BY nombre');
+
+    return res.json({ tiposHecho, subtiposHecho, tiposAsistencia });
+  } catch (error: any) {
+    console.error('Error getCatalogosAuxiliares:', error);
+    return res.status(500).json({ error: error.message });
+  }
 }
