@@ -31,15 +31,7 @@ import {
 
 export async function createSituacion(req: Request, res: Response) {
   try {
-    console.log('📥 [CONTROLLER] Crear Situación - Body completo:');
-    console.log(JSON.stringify(req.body, null, 2));
-    console.log('📥 [CONTROLLER] Campos específicos:');
-    console.log('- clima:', req.body.clima);
-    console.log('- carga_vehicular:', req.body.carga_vehicular);
-    console.log('- departamento_id:', req.body.departamento_id);
-    console.log('- municipio_id:', req.body.municipio_id);
-    console.log('- tipo_hecho_id:', req.body.tipo_hecho_id);
-    console.log('- tipo_asistencia_id:', req.body.tipo_asistencia_id);
+    console.log('📥 [CREATE SITUACION] Body:', JSON.stringify(req.body, null, 2));
 
     const {
       id: codigo_situacion, // ID determinista
@@ -60,7 +52,12 @@ export async function createSituacion(req: Request, res: Response) {
       tripulacion_confirmada,
       descripcion,
       observaciones,
-      detalles,
+      detalles, // Array explícito de detalles
+
+      // Campos legacy/frontend directos
+      vehiculos, // Array de vehículos del FormBuilder
+      autoridades, // Array de autoridades del FormBuilder
+
       // Campos nuevos (Columnas Reales)
       tipo_situacion_id,
       clima,
@@ -80,7 +77,7 @@ export async function createSituacion(req: Request, res: Response) {
       cantidad_heridos,
       hay_fallecidos,
       cantidad_fallecidos,
-      vehiculos_involucrados,
+      vehiculos_involucrados, // Fallback si viene con este nombre
       // Campos que van a OTROS o Detalles
       apoyo_proporcionado,
       tipo_asistencia, // string (legacy)
@@ -96,8 +93,6 @@ export async function createSituacion(req: Request, res: Response) {
     if (codigo_situacion) {
       const existente = await SituacionModel.findByCodigoSituacion(codigo_situacion);
       if (existente) {
-        // ... (Lógica de duplicados simplificada para brevedad, mantener la original es mejor, pero aquí la resumo por espacio)
-        // Idempotencia básica
         if (existente.km === km && existente.tipo_situacion === tipo_situacion) {
           return res.status(200).json({
             situacion: await SituacionModel.getById(existente.id),
@@ -108,71 +103,67 @@ export async function createSituacion(req: Request, res: Response) {
       }
     }
 
-    // Lógica de Unidad/Salida (Simplificada, asumiendo validaciones ya hechas o usando helpers)
+    // Lógica de Unidad/Salida
     let unidadFinal = unidad_id;
     let turnoFinal = turno_id;
     let asignacionFinal = asignacion_id;
     let rutaFinal = ruta_id;
 
-    // ... (Mantener lógica de brigada/ubicación aquí es seguro, copiada del anterior) ...
-    // [Omitido por brevedad, asumo que el usuario quiere el fix de estructura DB principalmente]
-    // Pero debo incluirlo para que funcione.
-
-    // -- INICIO LOGICA UNIDAD --
-    if (req.user!.rol === 'BRIGADA') {
+    // -- INICIO LOGICA UNIDAD AUTOMATICA --
+    if (req.user!.rol === 'BRIGADA' && (!unidadFinal || !rutaFinal)) {
       const ubicacionActual = await UbicacionBrigadaModel.getUbicacionActual(userId);
       if (ubicacionActual) {
         if (ubicacionActual.estado === 'PRESTADO') {
-          unidadFinal = ubicacionActual.unidad_actual_id;
+          if (!unidadFinal) unidadFinal = ubicacionActual.unidad_actual_id;
           // Buscar asignación de esa unidad...
           const asig = await TurnoModel.getAsignacionActivaUnidad(unidadFinal);
           if (asig) {
-            turnoFinal = asig.turno_id;
-            asignacionFinal = asig.id;
+            if (!turnoFinal) turnoFinal = asig.turno_id;
+            if (!asignacionFinal) asignacionFinal = asig.id;
             if (!rutaFinal) rutaFinal = asig.ruta_activa_id || asig.ruta_id;
           }
         } else { // CON_UNIDAD
           const miAsig = await TurnoModel.getMiAsignacionHoy(userId);
           if (miAsig) {
-            unidadFinal = miAsig.unidad_id;
-            turnoFinal = miAsig.turno_id;
-            asignacionFinal = miAsig.asignacion_id;
+            if (!unidadFinal) unidadFinal = miAsig.unidad_id;
+            if (!turnoFinal) turnoFinal = miAsig.turno_id;
+            if (!asignacionFinal) asignacionFinal = miAsig.asignacion_id;
             if (!rutaFinal) rutaFinal = miAsig.ruta_id;
           }
         }
       } else {
         const miAsig = await TurnoModel.getMiAsignacionHoy(userId);
         if (miAsig) {
-          unidadFinal = miAsig.unidad_id;
-          turnoFinal = miAsig.turno_id;
-          asignacionFinal = miAsig.asignacion_id;
+          if (!unidadFinal) unidadFinal = miAsig.unidad_id;
+          if (!turnoFinal) turnoFinal = miAsig.turno_id;
+          if (!asignacionFinal) asignacionFinal = miAsig.asignacion_id;
           if (!rutaFinal) rutaFinal = miAsig.ruta_id;
         }
       }
     }
 
-    if (!unidadFinal) return res.status(400).json({ error: 'unidad_id requerido' });
+    if (!unidadFinal) return res.status(400).json({ error: 'unidad_id requerido (o no asignado a brigada)' });
+
+    // Fallback ruta si tenemos asignación
     if (!rutaFinal && asignacionFinal) {
-      // Fallback ruta
       const asig = await db.oneOrNone('SELECT ruta_id FROM asignacion_unidad WHERE id=$1', [asignacionFinal]);
       if (asig) rutaFinal = asig.ruta_id;
     }
     if (!rutaFinal) return res.status(400).json({ error: 'ruta_id requerido' });
 
-    // Cerrar anterior
+    // Cerrar anterior activa
     const anterior = await db.oneOrNone("SELECT id FROM situacion WHERE unidad_id=$1 AND estado='ACTIVA' ORDER BY created_at DESC LIMIT 1", [unidadFinal]);
     if (anterior) {
-      await SituacionModel.cerrar(anterior.id, userId, `Cierre auto por ${tipo_situacion}`);
+      await SituacionModel.cerrar(anterior.id, userId, `Cierre auto por nueva ${tipo_situacion}`);
       emitSituacionCerrada({ id: anterior.id, estado: 'CERRADA' } as any);
     }
 
     // Buscar salida activa
     let salidaFinal = salida_unidad_id;
     if (!salidaFinal) {
-      const sal = await SalidaModel.getMiSalidaActiva(userId); // O lógica similar
+      const sal = await SalidaModel.getMiSalidaActiva(userId);
       if (sal) salidaFinal = sal.salida_id;
     }
-    // -- FIN LOGICA UNIDAD --
 
     // Mapeo Datos
     const dataToCreate = {
@@ -194,42 +185,34 @@ export async function createSituacion(req: Request, res: Response) {
       descripcion,
       observaciones,
       creado_por: userId,
-      codigo_situacion, // ID Determinista
+      codigo_situacion,
 
-      // Nuevas Columnas Directas
+      // Mapeo campos nuevos
       tipo_situacion_id,
       clima,
-      carga_vehicular,
+      carga_vehicular, // Frontend debe enviar nombre exacto
       departamento_id,
       municipio_id,
       obstruccion_data: obstruccion,
       area,
-      tipo_pavimento: material_via, // Mapeo
-
-      // Tipo de hecho/asistencia (IDs)
+      tipo_pavimento: material_via,
       tipo_hecho_id: tipo_hecho_id ? parseInt(tipo_hecho_id, 10) : null,
       subtipo_hecho_id: subtipo_hecho_id ? parseInt(subtipo_hecho_id, 10) : null,
-
-      // Víctimas
       hay_heridos: hay_heridos || false,
       cantidad_heridos: cantidad_heridos ? parseInt(cantidad_heridos, 10) : 0,
       hay_fallecidos: hay_fallecidos || false,
       cantidad_fallecidos: cantidad_fallecidos ? parseInt(cantidad_fallecidos, 10) : 0,
-
-      // Daños
       danios_materiales,
       danios_infraestructura,
       danios_descripcion: descripcion_danios_infra,
-
-      // Nuevos campos migración 104
-      fecha_hora_aviso: new Date(), // Por defecto ahora
+      fecha_hora_aviso: new Date(),
       fecha_hora_llegada: new Date()
     };
 
     const situacion = await SituacionModel.create(dataToCreate);
-    console.log('✅ [CONTROLLER] Situación creada:', situacion.id);
+    console.log(`✅ [CREATE] OK ID: ${situacion.id}`);
 
-    // Detalles adicionales (Arrays)
+    // Persistir Detalles (detalles explícitos)
     if (detalles && Array.isArray(detalles)) {
       for (const d of detalles) {
         await DetalleSituacionModel.create({
@@ -241,14 +224,38 @@ export async function createSituacion(req: Request, res: Response) {
       }
     }
 
-    // Guardar OTROS (apoyo, tipo_asistencia, tipo_emergencia, vehiculos) si existen
+    // Persistir Vehículos (legacy array)
+    const vehiculosList = vehiculos || vehiculos_involucrados;
+    if (vehiculosList && Array.isArray(vehiculosList)) {
+      for (const v of vehiculosList) {
+        await DetalleSituacionModel.create({
+          situacion_id: situacion.id,
+          tipo_detalle: 'VEHICULO',
+          datos: v,
+          creado_por: userId
+        });
+      }
+    }
+
+    // Persistir Autoridades (legacy array)
+    if (autoridades && Array.isArray(autoridades)) {
+      for (const a of autoridades) {
+        await DetalleSituacionModel.create({
+          situacion_id: situacion.id,
+          tipo_detalle: 'AUTORIDAD',
+          datos: a,
+          creado_por: userId
+        });
+      }
+    }
+
+    // Persistir OTROS
     const otrosDatos: any = {};
     if (apoyo_proporcionado) otrosDatos.apoyo_proporcionado = apoyo_proporcionado;
     if (tipo_asistencia) otrosDatos.tipo_asistencia = tipo_asistencia;
     if (tipo_emergencia) otrosDatos.tipo_emergencia = tipo_emergencia;
     if (tipo_asistencia_id) otrosDatos.tipo_asistencia_id = tipo_asistencia_id;
     if (tipo_emergencia_id) otrosDatos.tipo_emergencia_id = tipo_emergencia_id;
-    if (vehiculos_involucrados) otrosDatos.vehiculos_involucrados = vehiculos_involucrados;
 
     if (Object.keys(otrosDatos).length > 0) {
       await DetalleSituacionModel.create({
@@ -268,7 +275,7 @@ export async function createSituacion(req: Request, res: Response) {
     });
 
   } catch (error: any) {
-    console.error('❌ [CONTROLLER] Error createSituacion:', error);
+    console.error('❌ [CREATE ERROR]:', error);
     return res.status(500).json({ error: 'Internal Error', detail: error.message });
   }
 }
