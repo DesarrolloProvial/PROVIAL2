@@ -306,8 +306,9 @@ export const SituacionModel = {
     const values: any = { id, actualizado_por: data.actualizado_por };
 
     const fields = [
-      'tipo_situacion', 'ruta_id', 'km', 'sentido', 'latitud', 'longitud',
-      'combustible', 'combustible_fraccion', 'kilometraje_unidad', 'descripcion', 'observaciones',
+      'tipo_situacion', 'ruta_id', 'km', 'sentido', 'latitud', 'longitud', 'ubicacion_manual',
+      'combustible', 'combustible_fraccion', 'kilometraje_unidad', 'tripulacion_confirmada',
+      'descripcion', 'observaciones',
       'tipo_situacion_id', 'clima', 'carga_vehicular', 'departamento_id', 'municipio_id', 'obstruccion_data',
       'origen', 'tipo_hecho_id', 'subtipo_hecho_id', 'area',
       'fecha_hora_aviso', 'fecha_hora_llegada', 'fecha_hora_finalizacion',

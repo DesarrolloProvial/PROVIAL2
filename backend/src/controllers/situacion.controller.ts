@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { SituacionModel, DetalleSituacionModel } from '../models/situacion.model';
+import { MultimediaModel } from '../models/multimedia.model';
 import { TurnoModel } from '../models/turno.model';
 // import { UsuarioModel } from '../models/usuario.model'; // No usado actualmente
 import { SalidaModel } from '../models/salida.model';
@@ -294,13 +295,22 @@ export async function getSituacion(req: Request, res: Response) {
     if (!situacion) return res.status(404).json({ error: 'No encontrada' });
 
     const detalles = await DetalleSituacionModel.getBySituacionId(situacionId);
-    const detallesOrg = {
-      vehiculos: detalles.filter(d => d.tipo_detalle === 'VEHICULO').map(d => d.datos),
-      otros: detalles.find(d => d.tipo_detalle === 'OTROS')?.datos,
-      // ... otros
+    const multimedia = await MultimediaModel.getBySituacionId(situacionId);
+
+    // Mapeo Inteligente: Elevar detalles al objeto principal para facilitar frontend
+    const otros = detalles.find(d => d.tipo_detalle === 'OTROS')?.datos || {};
+    const vehiculos = detalles.filter(d => d.tipo_detalle === 'VEHICULO').map(d => d.datos);
+
+    // Combinar todo en una respuesta plana enriquecida
+    const situacionResponse = {
+      ...situacion,
+      ...otros, // Inyecta: tipo_asistencia, tipo_emergencia, apoyo_proporcionado, etc.
+      vehiculos_involucrados: vehiculos,
+      detalles_raw: detalles, // Mantener original por referencia
+      multimedia
     };
 
-    return res.json({ situacion, detalles: detallesOrg });
+    return res.json(situacionResponse);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Error' });
@@ -324,8 +334,21 @@ export async function updateSituacion(req: Request, res: Response) {
       area, material_via, clima, carga_vehicular,
       danios_materiales, danios_infraestructura, descripcion_danios_infra,
       obstruccion,
-      // Detalles
-      apoyo_proporcionado, tipo_asistencia, tipo_emergencia
+      // Detalles/Otros
+      apoyo_proporcionado, tipo_asistencia, tipo_emergencia,
+      vehiculos_involucrados,
+      // IDs de tipos
+      tipo_hecho_id, subtipo_hecho_id, tipo_asistencia_id, tipo_emergencia_id,
+      // Víctimas
+      hay_heridos, cantidad_heridos, hay_fallecidos, cantidad_fallecidos,
+      // Servicios
+      requiere_bomberos, requiere_pnc, requiere_ambulancia,
+      // Causa/Condiciones
+      causa_probable, causa_especificar,
+      tipo_pavimento, iluminacion, senalizacion, visibilidad,
+      tripulacion_confirmada,
+      ubicacion_manual,
+      combustible, combustible_fraccion, kilometraje_unidad
     } = req.body;
 
     // Update principal
@@ -333,25 +356,52 @@ export async function updateSituacion(req: Request, res: Response) {
       actualizado_por: userId,
       km, sentido, latitud, longitud, observaciones, descripcion,
       area,
-      tipo_pavimento: material_via,
+      tipo_pavimento: material_via || tipo_pavimento,
       clima, carga_vehicular,
       danios_materiales, danios_infraestructura, danios_descripcion: descripcion_danios_infra,
-      obstruccion_data: obstruccion
+      obstruccion_data: obstruccion,
+
+      // Mapeo detallado
+      tipo_hecho_id: tipo_hecho_id ? parseInt(tipo_hecho_id, 10) : null,
+      subtipo_hecho_id: subtipo_hecho_id ? parseInt(subtipo_hecho_id, 10) : null,
+
+      hay_heridos: hay_heridos || false,
+      cantidad_heridos: cantidad_heridos ? parseInt(cantidad_heridos, 10) : 0,
+      hay_fallecidos: hay_fallecidos || false,
+      cantidad_fallecidos: cantidad_fallecidos ? parseInt(cantidad_fallecidos, 10) : 0,
+
+      requiere_bomberos: requiere_bomberos || false,
+      requiere_pnc: requiere_pnc || false,
+      requiere_ambulancia: requiere_ambulancia || false,
+
+      causa_probable, causa_especificar,
+      iluminacion, senalizacion, visibilidad,
+
+      tripulacion_confirmada,
+      ubicacion_manual: ubicacion_manual || false,
+
+      combustible: combustible ? parseFloat(combustible) : null,
+      combustible_fraccion,
+      kilometraje_unidad: kilometraje_unidad ? parseFloat(kilometraje_unidad) : null
     };
 
     await SituacionModel.update(situacionId, updateData);
 
     // Update Detalles OTROS
-    if (apoyo_proporcionado || tipo_asistencia || tipo_emergencia) {
-      // Lógica simplificada: borrar e insertar o update
-      // Por brevedad, asumimos update/insert
-      // ... (Implementar lógica similar a create)
+    const otrosDatos: any = {};
+    if (apoyo_proporcionado) otrosDatos.apoyo_proporcionado = apoyo_proporcionado;
+    if (tipo_asistencia) otrosDatos.tipo_asistencia = tipo_asistencia;
+    if (tipo_emergencia) otrosDatos.tipo_emergencia = tipo_emergencia;
+    if (tipo_asistencia_id) otrosDatos.tipo_asistencia_id = tipo_asistencia_id;
+    if (tipo_emergencia_id) otrosDatos.tipo_emergencia_id = tipo_emergencia_id;
+    if (vehiculos_involucrados) otrosDatos.vehiculos_involucrados = vehiculos_involucrados;
+
+    if (Object.keys(otrosDatos).length > 0) {
       const detalleExistente = await db.oneOrNone('SELECT * FROM detalle_situacion WHERE situacion_id=$1 AND tipo_detalle=$2', [situacionId, 'OTROS']);
-      const datosNuevos = { apoyo_proporcionado, tipo_asistencia, tipo_emergencia };
       if (detalleExistente) {
-        await DetalleSituacionModel.update(detalleExistente.id, { ...detalleExistente.datos, ...datosNuevos });
+        await DetalleSituacionModel.update(detalleExistente.id, { ...detalleExistente.datos, ...otrosDatos });
       } else {
-        await DetalleSituacionModel.create({ situacion_id: situacionId, tipo_detalle: 'OTROS', datos: datosNuevos, creado_por: userId });
+        await DetalleSituacionModel.create({ situacion_id: situacionId, tipo_detalle: 'OTROS', datos: otrosDatos, creado_por: userId });
       }
     }
 
