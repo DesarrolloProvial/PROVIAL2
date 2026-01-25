@@ -30,7 +30,15 @@ import {
 
 export async function createSituacion(req: Request, res: Response) {
   try {
-    console.log('📥 [CONTROLLER] Crear Situación - Body:', JSON.stringify(req.body, null, 2));
+    console.log('📥 [CONTROLLER] Crear Situación - Body completo:');
+    console.log(JSON.stringify(req.body, null, 2));
+    console.log('📥 [CONTROLLER] Campos específicos:');
+    console.log('- clima:', req.body.clima);
+    console.log('- carga_vehicular:', req.body.carga_vehicular);
+    console.log('- departamento_id:', req.body.departamento_id);
+    console.log('- municipio_id:', req.body.municipio_id);
+    console.log('- tipo_hecho_id:', req.body.tipo_hecho_id);
+    console.log('- tipo_asistencia_id:', req.body.tipo_asistencia_id);
 
     const {
       id: codigo_situacion, // ID determinista
@@ -554,11 +562,17 @@ export async function getCatalogo(_req: Request, res: Response) {
 
 export async function getCatalogosAuxiliares(_req: Request, res: Response) {
   try {
-    const tiposHecho = await db.manyOrNone('SELECT id, codigo, nombre, icono, color FROM tipo_hecho WHERE activo = true ORDER BY nombre');
-    const subtiposHecho = await db.manyOrNone('SELECT id, tipo_hecho_id, codigo, nombre FROM subtipo_hecho WHERE activo = true ORDER BY nombre');
-    const tiposAsistencia = await db.manyOrNone('SELECT id, nombre FROM tipo_asistencia WHERE activo = true ORDER BY nombre');
+    const tipos_hecho = await db.manyOrNone('SELECT id, codigo, nombre, icono, color FROM tipo_hecho WHERE activo = true ORDER BY nombre');
+    const subtipos_hecho = await db.manyOrNone('SELECT id, tipo_hecho_id, codigo, nombre FROM subtipo_hecho WHERE activo = true ORDER BY nombre');
+    const tipos_asistencia = await db.manyOrNone('SELECT id, nombre FROM tipo_asistencia WHERE activo = true ORDER BY nombre');
+    // Tipos de emergencia pueden ser de la misma tabla o una diferente
+    const tipos_emergencia = await db.manyOrNone(`
+      SELECT id, nombre FROM tipo_situacion
+      WHERE activo = true AND categoria = 'EMERGENCIA'
+      ORDER BY nombre
+    `).catch(() => []); // Fallback si no existe la columna categoria
 
-    return res.json({ tiposHecho, subtiposHecho, tiposAsistencia });
+    return res.json({ tipos_hecho, subtipos_hecho, tipos_asistencia, tipos_emergencia });
   } catch (error: any) {
     console.error('Error getCatalogosAuxiliares:', error);
     return res.status(500).json({ error: error.message });

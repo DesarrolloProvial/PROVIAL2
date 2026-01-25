@@ -199,17 +199,17 @@ export default function NuevaSituacionScreen() {
       if (editMode && situacionId) {
         // EDICION
         const data = {
-          km: km ? parseFloat(km) : undefined,
-          sentido: sentido || undefined,
-          latitud: latitud ? parseFloat(latitud) : undefined,
-          longitud: longitud ? parseFloat(longitud) : undefined,
-          combustible: combustibleInput ? parseFloat(combustibleInput) : undefined,
-          kilometraje_unidad: kilometraje ? parseInt(kilometraje, 10) : undefined,
-          observaciones: observaciones || undefined,
-          clima: clima || undefined,
-          carga_vehicular: carga || undefined,
-          departamento_id: deptoId || undefined,
-          municipio_id: muniId || undefined,
+          km: km ? parseFloat(km) : null,
+          sentido: sentido || null,
+          latitud: latitud ? parseFloat(latitud) : null,
+          longitud: longitud ? parseFloat(longitud) : null,
+          combustible: combustibleInput ? parseFloat(combustibleInput) : null,
+          kilometraje_unidad: kilometraje ? parseInt(kilometraje, 10) : null,
+          observaciones: observaciones || null,
+          clima: clima || null,
+          carga_vehicular: carga || null,
+          departamento_id: deptoId || null,
+          municipio_id: muniId || null,
         };
         await api.patch(`/situaciones/${situacionId}`, data);
       } else {
@@ -235,36 +235,36 @@ export default function NuevaSituacionScreen() {
 
         const data: any = {
           tipo_situacion: tipoSeleccionado,
-          tipo_situacion_id: tipoSituacionId || undefined,
+          tipo_situacion_id: tipoSituacionId || null,
           unidad_id: salidaActiva!.unidad_id,
           salida_unidad_id: salidaActiva!.salida_id,
           ruta_id: rutaParaSituacion,
-          km: km ? parseFloat(km) : undefined,
-          sentido: sentido || undefined,
-          latitud: latitud ? parseFloat(latitud) : undefined,
-          longitud: longitud ? parseFloat(longitud) : undefined,
-          combustible: combustibleInput ? parseFloat(combustibleInput) : undefined,
-          kilometraje_unidad: kilometraje ? parseInt(kilometraje, 10) : undefined,
-          observaciones: observaciones || undefined,
+          km: km ? parseFloat(km) : null,
+          sentido: sentido || null,
+          latitud: latitud ? parseFloat(latitud) : null,
+          longitud: longitud ? parseFloat(longitud) : null,
+          combustible: combustibleInput ? parseFloat(combustibleInput) : null,
+          kilometraje_unidad: kilometraje ? parseInt(kilometraje, 10) : null,
+          observaciones: observaciones || null,
           ubicacion_manual: testModeEnabled,
           // Contexto
-          clima: clima || undefined,
-          carga_vehicular: carga || undefined,
-          departamento_id: deptoId || undefined,
-          municipio_id: muniId || undefined,
+          clima: clima || null,
+          carga_vehicular: carga || null,
+          departamento_id: deptoId || null,
+          municipio_id: muniId || null,
           // Campos dinámicos a nivel raíz (extraídos de detallesDinamicos)
-          tipo_hecho_id: dd.tipo_hecho_id || undefined,
-          tipo_asistencia_id: dd.tipo_asistencia_id || undefined,
-          tipo_emergencia_id: dd.tipo_emergencia_id || undefined,
+          tipo_hecho_id: dd.tipo_hecho_id || null,
+          tipo_asistencia_id: dd.tipo_asistencia_id || null,
+          tipo_emergencia_id: dd.tipo_emergencia_id || null,
           hay_heridos: dd.heridos ? parseInt(dd.heridos, 10) > 0 : false,
           cantidad_heridos: dd.heridos ? parseInt(dd.heridos, 10) : 0,
           hay_fallecidos: dd.fallecidos ? parseInt(dd.fallecidos, 10) > 0 : false,
           cantidad_fallecidos: dd.fallecidos ? parseInt(dd.fallecidos, 10) : 0,
-          vehiculos_involucrados: dd.vehiculos_involucrados ? parseInt(dd.vehiculos_involucrados, 10) : undefined,
+          vehiculos_involucrados: dd.vehiculos_involucrados ? parseInt(dd.vehiculos_involucrados, 10) : null,
           // Detalles complejos (arrays de datos)
-          detalles: detallesArray.length > 0 ? detallesArray : undefined,
+          detalles: detallesArray.length > 0 ? detallesArray : null,
           // Multimedia (URIs locales - se subirán a Cloudinary después)
-          multimedia: multimedia.length > 0 ? multimedia : undefined
+          multimedia: multimedia.length > 0 ? multimedia : null
         };
         await createSituacion(data);
       }

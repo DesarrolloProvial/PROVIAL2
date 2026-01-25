@@ -80,6 +80,7 @@ export interface CreateSituacionData {
   turno_id?: number;
   asignacion_id?: number;
   ruta_id?: number;
+  salida_unidad_id?: number;
   km?: number;
   sentido?: string;
   latitud?: number;
@@ -90,6 +91,42 @@ export interface CreateSituacionData {
   tripulacion_confirmada?: any;
   descripcion?: string;
   observaciones?: string;
+
+  // Contexto
+  clima?: string;
+  carga_vehicular?: string;
+  departamento_id?: number;
+  municipio_id?: number;
+
+  // Campos dinámicos (de DynamicFormFields)
+  tipo_hecho_id?: number;
+  subtipo_hecho_id?: number;
+  tipo_asistencia_id?: number;
+  tipo_emergencia_id?: number;
+
+  // Víctimas
+  hay_heridos?: boolean;
+  cantidad_heridos?: number;
+  hay_fallecidos?: boolean;
+  cantidad_fallecidos?: number;
+  vehiculos_involucrados?: number;
+
+  // Daños
+  danios_materiales?: boolean;
+  danios_infraestructura?: boolean;
+  danios_descripcion?: string;
+
+  // Otros
+  area?: string;
+  obstruccion?: any;
+
+  // Multimedia (URIs locales)
+  multimedia?: Array<{
+    tipo: 'FOTO' | 'VIDEO';
+    uri: string;
+    orden?: number;
+  }>;
+
   detalles?: Array<{
     tipo_detalle: TipoDetalle;
     datos: any;
