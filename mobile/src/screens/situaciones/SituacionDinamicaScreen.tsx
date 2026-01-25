@@ -98,7 +98,6 @@ export default function SituacionDinamicaScreen() {
         const camposDirectos = [
             'sentido', 'observaciones', 'descripcion',
             'clima', 'carga_vehicular', 'area', 'material_via',
-            'tipo_asistencia', 'tipo_hecho', 'tipo_emergencia',
             'apoyo_proporcionado'
         ];
 
@@ -107,6 +106,17 @@ export default function SituacionDinamicaScreen() {
                 formValues[campo] = data[campo];
             }
         });
+
+        // === CAMPOS CON _ID (tipos) ===
+        if (data.tipo_asistencia_id !== undefined && data.tipo_asistencia_id !== null) {
+            formValues.tipo_asistencia_id = data.tipo_asistencia_id;
+        }
+        if (data.tipo_hecho_id !== undefined && data.tipo_hecho_id !== null) {
+            formValues.tipo_hecho_id = data.tipo_hecho_id;
+        }
+        if (data.tipo_emergencia_id !== undefined && data.tipo_emergencia_id !== null) {
+            formValues.tipo_emergencia_id = data.tipo_emergencia_id;
+        }
 
         // === COORDENADAS (DB planos -> Form objeto GPS) ===
         if (data.latitud && data.longitud) {
@@ -146,9 +156,10 @@ export default function SituacionDinamicaScreen() {
                 if (otros.apoyo_proporcionado) formValues.apoyo_proporcionado = otros.apoyo_proporcionado;
                 if (otros.area) formValues.area = otros.area;
                 if (otros.material_via) formValues.material_via = otros.material_via;
-                if (otros.tipo_asistencia) formValues.tipo_asistencia = otros.tipo_asistencia;
-                if (otros.tipo_hecho) formValues.tipo_hecho = otros.tipo_hecho;
-                if (otros.tipo_emergencia) formValues.tipo_emergencia = otros.tipo_emergencia;
+                // NOTE: These fields are now _id suffixed, but detalles.otros might have old format
+                if (otros.tipo_asistencia_id) formValues.tipo_asistencia_id = otros.tipo_asistencia_id;
+                if (otros.tipo_hecho_id) formValues.tipo_hecho_id = otros.tipo_hecho_id;
+                if (otros.tipo_emergencia_id) formValues.tipo_emergencia_id = otros.tipo_emergencia_id;
             }
 
             // Vehículos
@@ -293,10 +304,10 @@ export default function SituacionDinamicaScreen() {
             sentido: draftData.sentido || '',
             observaciones: draftData.observaciones || '',
             descripcion: draftData.descripcion || '',
-            // Campos específicos según tipo
-            tipo_hecho: draftData.tipo_hecho || '',
-            tipo_asistencia: draftData.tipo_asistencia || '',
-            tipo_emergencia: draftData.tipo_emergencia || '',
+            // Campos específicos según tipo (ahora con _id suffix)
+            tipo_hecho_id: draftData.tipo_hecho_id || '',
+            tipo_asistencia_id: draftData.tipo_asistencia_id || '',
+            tipo_emergencia_id: draftData.tipo_emergencia_id || '',
             vehiculos: draftData.vehiculos || [],
             autoridades: draftData.autoridades || [],
             // ... otros campos del draft
@@ -376,10 +387,10 @@ export default function SituacionDinamicaScreen() {
                     longitud,
                     observaciones: formData.observaciones,
                     descripcion: formData.descripcion,
-                    // Campos específicos
-                    tipo_hecho: formData.tipo_hecho || formData.tipoIncidente,
-                    tipo_asistencia: formData.tipo_asistencia || formData.tipoAsistencia,
-                    tipo_emergencia: formData.tipo_emergencia || formData.tipoEmergencia,
+                    // Campos específicos (ahora con _id suffix)
+                    tipo_hecho_id: formData.tipo_hecho_id || formData.tipoIncidente,
+                    tipo_asistencia_id: formData.tipo_asistencia_id || formData.tipoAsistencia,
+                    tipo_emergencia_id: formData.tipo_emergencia_id || formData.tipoEmergencia,
                     vehiculos: formData.vehiculos,
                     // Estructura nueva para backend
                     autoridades_socorro: {
@@ -437,6 +448,30 @@ export default function SituacionDinamicaScreen() {
             }
 
             // 2. Actualizar draft con todos los datos del formulario
+            console.log('═══════════════════════════════════════════════════════');
+            console.log('🚀 [MOBILE] DATOS QUE SE VAN A ENVIAR AL BACKEND');
+            console.log('═══════════════════════════════════════════════════════');
+            console.log('📋 formData RAW (lo que viene del formulario):');
+            console.log(JSON.stringify(formData, null, 2));
+            console.log('---');
+            console.log('📍 Coordenadas calculadas:');
+            console.log('  - latitud:', latitud, '(type:', typeof latitud, ')');
+            console.log('  - longitud:', longitud, '(type:', typeof longitud, ')');
+            console.log('---');
+            console.log('🎯 Campos específicos que se enviarán:');
+            console.log('  - tipo_hecho_id:', formData.tipo_hecho_id, '(type:', typeof formData.tipo_hecho_id, ')');
+            console.log('  - tipo_asistencia_id:', formData.tipo_asistencia_id, '(type:', typeof formData.tipo_asistencia_id, ')');
+            console.log('  - tipo_emergencia_id:', formData.tipo_emergencia_id, '(type:', typeof formData.tipo_emergencia_id, ')');
+            console.log('  - clima:', formData.clima, '(type:', typeof formData.clima, ')');
+            console.log('  - carga_vehicular:', formData.carga_vehicular, '(type:', typeof formData.carga_vehicular, ')');
+            console.log('  - departamento_id:', formData.departamento_id, '(type:', typeof formData.departamento_id, ')');
+            console.log('  - municipio_id:', formData.municipio_id, '(type:', typeof formData.municipio_id, ')');
+            console.log('  - area:', formData.area, '(type:', typeof formData.area, ')');
+            console.log('  - material_via:', formData.material_via, '(type:', typeof formData.material_via, ')');
+            console.log('  - km:', formData.km, '(type:', typeof formData.km, ')');
+            console.log('  - sentido:', formData.sentido, '(type:', typeof formData.sentido, ')');
+            console.log('═══════════════════════════════════════════════════════');
+
             console.log('[SITUACION] Actualizando draft con datos del formulario');
             await actualizarDraft({
                 km: parseFloat(formData.km) || 0,
@@ -446,10 +481,10 @@ export default function SituacionDinamicaScreen() {
                 ubicacion_manual: testModeEnabled,
                 observaciones: formData.observaciones,
                 descripcion: formData.descripcion,
-                // Campos específicos por tipo
-                tipo_hecho: formData.tipo_hecho || formData.tipoIncidente,
-                tipo_asistencia: formData.tipo_asistencia || formData.tipoAsistencia,
-                tipo_emergencia: formData.tipo_emergencia || formData.tipoEmergencia,
+                // Campos específicos por tipo (ahora con _id suffix)
+                tipo_hecho_id: formData.tipo_hecho_id || formData.tipoIncidente,
+                tipo_asistencia_id: formData.tipo_asistencia_id || formData.tipoAsistencia,
+                tipo_emergencia_id: formData.tipo_emergencia_id || formData.tipoEmergencia,
                 vehiculos: formData.vehiculos,
                 autoridades: formData.autoridadesSeleccionadas,
                 detalles_autoridades: formData.detallesAutoridades,

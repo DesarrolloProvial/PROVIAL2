@@ -45,6 +45,24 @@ export interface CatalogoSocorro {
     nombre: string;
 }
 
+export interface CatalogoTipoHecho {
+    id: number;
+    codigo: string;
+    nombre: string;
+    icono?: string;
+    color?: string;
+}
+
+export interface CatalogoTipoAsistencia {
+    id: number;
+    nombre: string;
+}
+
+export interface CatalogoTipoEmergencia {
+    id: number;
+    nombre: string;
+}
+
 export interface SyncMetadata {
     catalogo: string;
     ultima_sincronizacion: string;
@@ -117,6 +135,30 @@ class CatalogoStorage {
 
             this.db.execSync(`
                 CREATE TABLE IF NOT EXISTS socorro (
+                    id INTEGER PRIMARY KEY,
+                    nombre TEXT NOT NULL UNIQUE
+                )
+            `);
+
+            this.db.execSync(`
+                CREATE TABLE IF NOT EXISTS tipo_hecho (
+                    id INTEGER PRIMARY KEY,
+                    codigo TEXT NOT NULL,
+                    nombre TEXT NOT NULL,
+                    icono TEXT,
+                    color TEXT
+                )
+            `);
+
+            this.db.execSync(`
+                CREATE TABLE IF NOT EXISTS tipo_asistencia (
+                    id INTEGER PRIMARY KEY,
+                    nombre TEXT NOT NULL UNIQUE
+                )
+            `);
+
+            this.db.execSync(`
+                CREATE TABLE IF NOT EXISTS tipo_emergencia (
                     id INTEGER PRIMARY KEY,
                     nombre TEXT NOT NULL UNIQUE
                 )
@@ -221,6 +263,45 @@ class CatalogoStorage {
     }
 
     /**
+     * Obtener todos los tipos de hecho
+     */
+    async getTiposHecho(): Promise<CatalogoTipoHecho[]> {
+        if (!this.db) return [];
+        try {
+            return this.db.getAllSync<CatalogoTipoHecho>('SELECT * FROM tipo_hecho ORDER BY nombre');
+        } catch (error) {
+            console.error('[CATALOGOS] Error getTiposHecho:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Obtener todos los tipos de asistencia
+     */
+    async getTiposAsistencia(): Promise<CatalogoTipoAsistencia[]> {
+        if (!this.db) return [];
+        try {
+            return this.db.getAllSync<CatalogoTipoAsistencia>('SELECT * FROM tipo_asistencia ORDER BY nombre');
+        } catch (error) {
+            console.error('[CATALOGOS] Error getTiposAsistencia:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Obtener todos los tipos de emergencia
+     */
+    async getTiposEmergencia(): Promise<CatalogoTipoEmergencia[]> {
+        if (!this.db) return [];
+        try {
+            return this.db.getAllSync<CatalogoTipoEmergencia>('SELECT * FROM tipo_emergencia ORDER BY nombre');
+        } catch (error) {
+            console.error('[CATALOGOS] Error getTiposEmergencia:', error);
+            return [];
+        }
+    }
+
+    /**
      * Insertar/Actualizar departamentos (bulk)
      */
     async saveDepartamentos(departamentos: CatalogoDepartamento[]): Promise<void> {
@@ -317,6 +398,78 @@ class CatalogoStorage {
     }
 
     /**
+     * Insertar/Actualizar tipos de hecho (bulk)
+     */
+    async saveTiposHecho(tipos: CatalogoTipoHecho[]): Promise<void> {
+        if (!this.db) return;
+        try {
+            this.db.runSync('DELETE FROM tipo_hecho');
+            for (const tipo of tipos) {
+                this.db.runSync(
+                    'INSERT INTO tipo_hecho (id, codigo, nombre, icono, color) VALUES (?, ?, ?, ?, ?)',
+                    [tipo.id, tipo.codigo, tipo.nombre, tipo.icono || null, tipo.color || null]
+                );
+            }
+            this.db.runSync(
+                `INSERT OR REPLACE INTO sync_metadata (catalogo, ultima_sincronizacion, version)
+                 VALUES ('tipo_hecho', datetime('now'), 1)`
+            );
+            console.log(`[CATALOGOS] ${tipos.length} tipos de hecho guardados`);
+        } catch (error) {
+            console.error('[CATALOGOS] Error saveTiposHecho:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Insertar/Actualizar tipos de asistencia (bulk)
+     */
+    async saveTiposAsistencia(tipos: CatalogoTipoAsistencia[]): Promise<void> {
+        if (!this.db) return;
+        try {
+            this.db.runSync('DELETE FROM tipo_asistencia');
+            for (const tipo of tipos) {
+                this.db.runSync(
+                    'INSERT INTO tipo_asistencia (id, nombre) VALUES (?, ?)',
+                    [tipo.id, tipo.nombre]
+                );
+            }
+            this.db.runSync(
+                `INSERT OR REPLACE INTO sync_metadata (catalogo, ultima_sincronizacion, version)
+                 VALUES ('tipo_asistencia', datetime('now'), 1)`
+            );
+            console.log(`[CATALOGOS] ${tipos.length} tipos de asistencia guardados`);
+        } catch (error) {
+            console.error('[CATALOGOS] Error saveTiposAsistencia:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Insertar/Actualizar tipos de emergencia (bulk)
+     */
+    async saveTiposEmergencia(tipos: CatalogoTipoEmergencia[]): Promise<void> {
+        if (!this.db) return;
+        try {
+            this.db.runSync('DELETE FROM tipo_emergencia');
+            for (const tipo of tipos) {
+                this.db.runSync(
+                    'INSERT INTO tipo_emergencia (id, nombre) VALUES (?, ?)',
+                    [tipo.id, tipo.nombre]
+                );
+            }
+            this.db.runSync(
+                `INSERT OR REPLACE INTO sync_metadata (catalogo, ultima_sincronizacion, version)
+                 VALUES ('tipo_emergencia', datetime('now'), 1)`
+            );
+            console.log(`[CATALOGOS] ${tipos.length} tipos de emergencia guardados`);
+        } catch (error) {
+            console.error('[CATALOGOS] Error saveTiposEmergencia:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Obtener metadata de sincronización
      */
     async getSyncMetadata(catalogo: string): Promise<SyncMetadata | null> {
@@ -344,6 +497,9 @@ class CatalogoStorage {
             this.db.runSync('DELETE FROM marca_vehiculo');
             this.db.runSync('DELETE FROM autoridad');
             this.db.runSync('DELETE FROM socorro');
+            this.db.runSync('DELETE FROM tipo_hecho');
+            this.db.runSync('DELETE FROM tipo_asistencia');
+            this.db.runSync('DELETE FROM tipo_emergencia');
             this.db.runSync('DELETE FROM sync_metadata');
             console.log('[CATALOGOS] Todos los catálogos limpiados');
         } catch (error) {

@@ -67,8 +67,16 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
             <View style={styles.section}>
                 <Text style={styles.title}>Tipo de Accidente / Hecho</Text>
                 <View style={styles.pickerContainer}>
-                    <Picker selectedValue={detalles.tipo_hecho_id} onValueChange={(v) => handleChange('tipo_hecho_id', v)}>
-                        <Picker.Item label="Seleccione..." value="" />
+                    <Picker
+                        selectedValue={detalles.tipo_hecho_id}
+                        onValueChange={(v) => {
+                            // Convertir a número si no es vacío, sino null
+                            const valor = v === '' || v === null ? null : parseInt(String(v), 10);
+                            handleChange('tipo_hecho_id', valor);
+                            console.log('🔍 [Picker] tipo_hecho_id seleccionado:', valor, 'tipo:', typeof valor);
+                        }}
+                    >
+                        <Picker.Item label="Seleccione..." value={null} />
                         {lista.map((item: any) => <Picker.Item key={item.id} label={item.nombre} value={item.id} />)}
                     </Picker>
                 </View>
@@ -86,8 +94,16 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
             <View style={styles.section}>
                 <Text style={styles.title}>Tipo de Asistencia</Text>
                 <View style={styles.pickerContainer}>
-                    <Picker selectedValue={detalles.tipo_asistencia_id} onValueChange={(v) => handleChange('tipo_asistencia_id', v)}>
-                        <Picker.Item label="Seleccione..." value="" />
+                    <Picker
+                        selectedValue={detalles.tipo_asistencia_id}
+                        onValueChange={(v) => {
+                            // Convertir a número si no es vacío, sino null
+                            const valor = v === '' || v === null ? null : parseInt(String(v), 10);
+                            handleChange('tipo_asistencia_id', valor);
+                            console.log('🔍 [Picker] tipo_asistencia_id seleccionado:', valor, 'tipo:', typeof valor);
+                        }}
+                    >
+                        <Picker.Item label="Seleccione..." value={null} />
                         {lista.map((item: any) => <Picker.Item key={item.id} label={item.nombre} value={item.id} />)}
                     </Picker>
                 </View>
@@ -102,8 +118,16 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
             <View style={styles.section}>
                 <Text style={styles.title}>Tipo de Emergencia / Obstáculo</Text>
                 <View style={styles.pickerContainer}>
-                    <Picker selectedValue={detalles.tipo_emergencia_id} onValueChange={(v) => handleChange('tipo_emergencia_id', v)}>
-                        <Picker.Item label="Seleccione..." value="" />
+                    <Picker
+                        selectedValue={detalles.tipo_emergencia_id}
+                        onValueChange={(v) => {
+                            // Convertir a número si no es vacío, sino null
+                            const valor = v === '' || v === null ? null : parseInt(String(v), 10);
+                            handleChange('tipo_emergencia_id', valor);
+                            console.log('🔍 [Picker] tipo_emergencia_id seleccionado:', valor, 'tipo:', typeof valor);
+                        }}
+                    >
+                        <Picker.Item label="Seleccione..." value={null} />
                         {lista.map((item: any) => <Picker.Item key={item.id} label={item.nombre} value={item.id} />)}
                     </Picker>
                 </View>
@@ -338,8 +362,10 @@ const styles = StyleSheet.create({
     row: { flexDirection: 'row', gap: 8, marginBottom: 8 },
     pickerContainer: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 6, backgroundColor: 'white', marginBottom: 8 },
     btnAdd: { backgroundColor: COLORS.primary, padding: 8, borderRadius: 6, alignItems: 'center', marginTop: 5 },
+    list: { marginTop: 10 },
     listItem: { padding: 5, borderBottomWidth: 1, borderBottomColor: '#eee', fontSize: 14 },
     conteoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    conteoLabel: { fontSize: 14, color: '#374151', flex: 1 },
     conteoControls: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     conteoValue: { width: 30, textAlign: 'center', fontWeight: 'bold' },
     btn: { width: 30, height: 30, backgroundColor: '#e5e7eb', justifyContent: 'center', alignItems: 'center', borderRadius: 15 },

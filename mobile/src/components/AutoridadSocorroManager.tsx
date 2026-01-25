@@ -108,7 +108,16 @@ export default function AutoridadSocorroManager({
         if (nombre === 'PROVIAL' || nombre === 'Ninguna') return null;
         if (!seleccionados.includes(nombre)) return null;
 
-        const detalle = detalles[nombre] || {};
+        const detalle = detalles[nombre] || {
+            nombre: '',
+            hora_llegada: '',
+            nip_chapa: '',
+            numero_unidad: '',
+            nombre_comandante: '',
+            cantidad_elementos: '',
+            subestacion: '',
+            cantidad_unidades: '',
+        } as DetalleAutoridad;
 
         return (
             <View key={`detalles-${nombre}`} style={styles.detallesCard}>

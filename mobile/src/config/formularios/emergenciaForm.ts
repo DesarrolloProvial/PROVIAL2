@@ -33,7 +33,7 @@ export const emergenciaForm: FormConfig = {
                 title: 'Tipo de Emergencia',
                 fields: [
                     {
-                        name: 'tipo_emergencia',
+                        name: 'tipo_emergencia_id',
                         type: 'select',
                         label: 'Tipo de Emergencia',
                         required: true,

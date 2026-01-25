@@ -34,7 +34,7 @@ export const hechoTransitoForm: FormConfig = {
                 title: 'Tipo de Hecho',
                 fields: [
                     {
-                        name: 'tipo_hecho',
+                        name: 'tipo_hecho_id',
                         type: 'select',
                         label: 'Tipo de Hecho de Tránsito',
                         required: true,

@@ -266,6 +266,20 @@ export default function NuevaSituacionScreen() {
           // Multimedia (URIs locales - se subirán a Cloudinary después)
           multimedia: multimedia.length > 0 ? multimedia : null
         };
+
+        // DEBUG: Log data antes de enviar
+        console.log('🔍 [DEBUG] Data completa ANTES de enviar:');
+        console.log('- clima:', clima, '(type:', typeof clima, ')');
+        console.log('- carga_vehicular:', carga, '(type:', typeof carga, ')');
+        console.log('- departamento_id:', deptoId, '(type:', typeof deptoId, ')');
+        console.log('- municipio_id:', muniId, '(type:', typeof muniId, ')');
+        console.log('- tipo_asistencia_id:', dd.tipo_asistencia_id, '(type:', typeof dd.tipo_asistencia_id, ')');
+        console.log('- detallesDinamicos completo:', JSON.stringify(dd, null, 2));
+        console.log('- data.clima final:', data.clima);
+        console.log('- data.carga_vehicular final:', data.carga_vehicular);
+        console.log('- data.tipo_asistencia_id final:', data.tipo_asistencia_id);
+        console.log('📦 [DEBUG] JSON que se enviará:', JSON.stringify(data, null, 2));
+
         await createSituacion(data);
       }
 

@@ -125,7 +125,7 @@ export default function MultiSelectField({
                     styles.inputContainer,
                     {
                         backgroundColor: disabled ? theme.components.input.disabledBackgroundColor : theme.components.input.backgroundColor,
-                        borderColor: error ? theme.theme.colors.danger : theme.components.input.borderColor,
+                        borderColor: error ? theme.colors.danger : theme.components.input.borderColor,
                         borderWidth: theme.components.input.borderWidth,
                         borderRadius: theme.components.input.borderRadius,
                     }

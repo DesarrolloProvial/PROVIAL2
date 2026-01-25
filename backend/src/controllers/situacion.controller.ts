@@ -31,7 +31,12 @@ import {
 
 export async function createSituacion(req: Request, res: Response) {
   try {
-    console.log('📥 [CREATE SITUACION] Body:', JSON.stringify(req.body, null, 2));
+    console.log('═══════════════════════════════════════════════════════');
+    console.log('📥 [BACKEND] DATOS RECIBIDOS EN createSituacion');
+    console.log('═══════════════════════════════════════════════════════');
+    console.log('📦 req.body COMPLETO:');
+    console.log(JSON.stringify(req.body, null, 2));
+    console.log('---');
 
     const {
       id: codigo_situacion, // ID determinista
@@ -69,7 +74,6 @@ export async function createSituacion(req: Request, res: Response) {
       material_via, // Mapear a tipo_pavimento
       // Campos de tipo de hecho/asistencia/emergencia (IDs)
       tipo_hecho_id,
-      subtipo_hecho_id,
       tipo_asistencia_id,
       tipo_emergencia_id,
       // Víctimas
@@ -86,6 +90,25 @@ export async function createSituacion(req: Request, res: Response) {
       danios_infraestructura,
       descripcion_danios_infra,
     } = req.body;
+
+    console.log('🔍 [BACKEND] CAMPOS EXTRAÍDOS (destructuring):');
+    console.log('  - tipo_situacion:', tipo_situacion, '(type:', typeof tipo_situacion, ')');
+    console.log('  - tipo_situacion_id:', tipo_situacion_id, '(type:', typeof tipo_situacion_id, ')');
+    console.log('  - clima:', clima, '(type:', typeof clima, ')');
+    console.log('  - carga_vehicular:', carga_vehicular, '(type:', typeof carga_vehicular, ')');
+    console.log('  - departamento_id:', departamento_id, '(type:', typeof departamento_id, ')');
+    console.log('  - municipio_id:', municipio_id, '(type:', typeof municipio_id, ')');
+    console.log('  - tipo_hecho_id:', tipo_hecho_id, '(type:', typeof tipo_hecho_id, ')');
+    console.log('  - tipo_asistencia_id:', tipo_asistencia_id, '(type:', typeof tipo_asistencia_id, ')');
+    console.log('  - tipo_emergencia_id:', tipo_emergencia_id, '(type:', typeof tipo_emergencia_id, ')');
+    console.log('  - area:', area, '(type:', typeof area, ')');
+    console.log('  - material_via:', material_via, '(type:', typeof material_via, ')');
+    console.log('  - km:', km, '(type:', typeof km, ')');
+    console.log('  - sentido:', sentido, '(type:', typeof sentido, ')');
+    console.log('  - latitud:', latitud, '(type:', typeof latitud, ')');
+    console.log('  - longitud:', longitud, '(type:', typeof longitud, ')');
+    console.log('  - apoyo_proporcionado:', apoyo_proporcionado, '(type:', typeof apoyo_proporcionado, ')');
+    console.log('═══════════════════════════════════════════════════════');
 
     const userId = req.user!.userId;
 
@@ -197,7 +220,6 @@ export async function createSituacion(req: Request, res: Response) {
       area,
       tipo_pavimento: material_via,
       tipo_hecho_id: tipo_hecho_id ? parseInt(tipo_hecho_id, 10) : null,
-      subtipo_hecho_id: subtipo_hecho_id ? parseInt(subtipo_hecho_id, 10) : null,
       hay_heridos: hay_heridos || false,
       cantidad_heridos: cantidad_heridos ? parseInt(cantidad_heridos, 10) : 0,
       hay_fallecidos: hay_fallecidos || false,
@@ -208,6 +230,21 @@ export async function createSituacion(req: Request, res: Response) {
       fecha_hora_aviso: new Date(),
       fecha_hora_llegada: new Date()
     };
+
+    console.log('💾 [BACKEND] OBJETO dataToCreate QUE SE ENVIARÁ A LA BASE DE DATOS:');
+    console.log(JSON.stringify(dataToCreate, null, 2));
+    console.log('---');
+    console.log('🔑 CAMPOS IMPORTANTES:');
+    console.log('  - tipo_situacion_id:', dataToCreate.tipo_situacion_id, '(type:', typeof dataToCreate.tipo_situacion_id, ')');
+    console.log('  - clima:', dataToCreate.clima, '(type:', typeof dataToCreate.clima, ')');
+    console.log('  - carga_vehicular:', dataToCreate.carga_vehicular, '(type:', typeof dataToCreate.carga_vehicular, ')');
+    console.log('  - departamento_id:', dataToCreate.departamento_id, '(type:', typeof dataToCreate.departamento_id, ')');
+    console.log('  - municipio_id:', dataToCreate.municipio_id, '(type:', typeof dataToCreate.municipio_id, ')');
+    console.log('  - tipo_hecho_id:', dataToCreate.tipo_hecho_id, '(type:', typeof dataToCreate.tipo_hecho_id, ')');
+    console.log('  - tipo_asistencia_id (en otrosDatos, línea 281):', tipo_asistencia_id, '(type:', typeof tipo_asistencia_id, ')');
+    console.log('  - area:', dataToCreate.area, '(type:', typeof dataToCreate.area, ')');
+    console.log('  - tipo_pavimento:', dataToCreate.tipo_pavimento, '(type:', typeof dataToCreate.tipo_pavimento, ')');
+    console.log('═══════════════════════════════════════════════════════');
 
     const situacion = await SituacionModel.create(dataToCreate);
     console.log(`✅ [CREATE] OK ID: ${situacion.id}`);
@@ -269,6 +306,18 @@ export async function createSituacion(req: Request, res: Response) {
     const full = await SituacionModel.getById(situacion.id);
     if (full) emitSituacionNueva(full as any);
 
+    console.log('✅ [BACKEND] SITUACIÓN GUARDADA CON ÉXITO:');
+    console.log('  - ID:', full?.id);
+    console.log('  - tipo_situacion_id:', full?.tipo_situacion_id);
+    console.log('  - clima:', full?.clima);
+    console.log('  - carga_vehicular:', full?.carga_vehicular);
+    console.log('  - departamento_id:', full?.departamento_id);
+    console.log('  - municipio_id:', full?.municipio_id);
+    console.log('  - tipo_hecho_id:', full?.tipo_hecho_id);
+    console.log('  - area:', full?.area);
+    console.log('  - tipo_pavimento:', full?.tipo_pavimento);
+    console.log('═══════════════════════════════════════════════════════');
+
     return res.status(201).json({
       message: 'Situación creada',
       situacion: full
@@ -317,7 +366,8 @@ export async function getSituacion(req: Request, res: Response) {
       multimedia
     };
 
-    return res.json(situacionResponse);
+    // Devolver envuelto en 'situacion' para compatibilidad con frontend actual
+    return res.json({ situacion: situacionResponse });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Error' });
@@ -345,7 +395,7 @@ export async function updateSituacion(req: Request, res: Response) {
       apoyo_proporcionado, tipo_asistencia, tipo_emergencia,
       vehiculos_involucrados,
       // IDs de tipos
-      tipo_hecho_id, subtipo_hecho_id, tipo_asistencia_id, tipo_emergencia_id,
+      tipo_hecho_id, tipo_asistencia_id, tipo_emergencia_id,
       // Víctimas
       hay_heridos, cantidad_heridos, hay_fallecidos, cantidad_fallecidos,
       // Servicios
@@ -370,7 +420,6 @@ export async function updateSituacion(req: Request, res: Response) {
 
       // Mapeo detallado
       tipo_hecho_id: tipo_hecho_id ? parseInt(tipo_hecho_id, 10) : null,
-      subtipo_hecho_id: subtipo_hecho_id ? parseInt(subtipo_hecho_id, 10) : null,
 
       hay_heridos: hay_heridos || false,
       cantidad_heridos: cantidad_heridos ? parseInt(cantidad_heridos, 10) : 0,
@@ -607,8 +656,10 @@ export async function cambiarTipoSituacion(req: Request, res: Response) {
 export async function getCatalogo(_req: Request, res: Response) {
   try {
     const tipos = await db.manyOrNone('SELECT * FROM tipo_situacion WHERE activo = true ORDER BY orden');
-    const tiposHecho = await db.manyOrNone('SELECT * FROM tipo_hecho WHERE activo = true ORDER BY nombre');
-    const subtiposHecho = await db.manyOrNone('SELECT * FROM subtipo_hecho WHERE activo = true ORDER BY nombre');
+    const tiposHecho = await db.manyOrNone(
+      "SELECT id, nombre, icono, color FROM tipo_situacion_catalogo WHERE categoria = 'HECHO_TRANSITO' AND activo = true ORDER BY nombre"
+    );
+    const subtiposHecho: any[] = []; // Ya no se usan subtipos
 
     return res.json({ tipos, tiposHecho, subtiposHecho });
   } catch (error: any) {
@@ -619,15 +670,18 @@ export async function getCatalogo(_req: Request, res: Response) {
 
 export async function getCatalogosAuxiliares(_req: Request, res: Response) {
   try {
-    const tipos_hecho = await db.manyOrNone('SELECT id, codigo, nombre, icono, color FROM tipo_hecho WHERE activo = true ORDER BY nombre');
-    const subtipos_hecho = await db.manyOrNone('SELECT id, tipo_hecho_id, codigo, nombre FROM subtipo_hecho WHERE activo = true ORDER BY nombre');
-    const tipos_asistencia = await db.manyOrNone('SELECT id, nombre FROM tipo_asistencia WHERE activo = true ORDER BY nombre');
-    // Tipos de emergencia pueden ser de la misma tabla o una diferente
-    const tipos_emergencia = await db.manyOrNone(`
-      SELECT id, nombre FROM tipo_situacion
-      WHERE activo = true AND categoria = 'EMERGENCIA'
-      ORDER BY nombre
-    `).catch(() => []); // Fallback si no existe la columna categoria
+    const tipos_hecho = await db.manyOrNone(
+      "SELECT id, nombre, icono, color FROM tipo_situacion_catalogo WHERE categoria = 'HECHO_TRANSITO' AND activo = true ORDER BY nombre"
+    );
+    const tipos_asistencia = await db.manyOrNone(
+      "SELECT id, nombre, icono, color FROM tipo_situacion_catalogo WHERE categoria = 'ASISTENCIA' AND activo = true ORDER BY nombre"
+    );
+    const tipos_emergencia = await db.manyOrNone(
+      "SELECT id, nombre, icono, color FROM tipo_situacion_catalogo WHERE categoria = 'EMERGENCIA' AND activo = true ORDER BY nombre"
+    );
+
+    // Mantener retrocompatibilidad con subtipos_hecho vacío
+    const subtipos_hecho: any[] = [];
 
     return res.json({ tipos_hecho, subtipos_hecho, tipos_asistencia, tipos_emergencia });
   } catch (error: any) {

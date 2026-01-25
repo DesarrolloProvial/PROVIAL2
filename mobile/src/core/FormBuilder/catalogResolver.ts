@@ -69,15 +69,15 @@ export class CatalogResolver {
             case '@catalogos.socorro':
                 return await this.resolveSocorro();
 
-            // Constantes
+            // Tipos de situaciones (desde SQLite)
             case '@catalogos.tipos_asistencia':
-                return this.resolveConstantes(TIPOS_ASISTENCIA);
+                return await this.resolveTiposAsistencia();
 
             case '@catalogos.tipos_hecho':
-                return this.resolveConstantes(TIPOS_HECHO_TRANSITO);
+                return await this.resolveTiposHecho();
 
             case '@catalogos.tipos_emergencia':
-                return this.resolveConstantes(TIPOS_EMERGENCIA);
+                return await this.resolveTiposEmergencia();
 
             case '@catalogos.sentidos':
                 return SENTIDOS.map(s => ({
@@ -175,6 +175,45 @@ export class CatalogResolver {
             }));
         } catch (error) {
             console.error('[CATALOG_RESOLVER] Error en resolveSocorro:', error);
+            return [];
+        }
+    }
+
+    private static async resolveTiposHecho(): Promise<FieldOption[]> {
+        try {
+            const tipos = await catalogoStorage.getTiposHecho();
+            return tipos.map(t => ({
+                value: t.id,
+                label: t.nombre,
+            }));
+        } catch (error) {
+            console.error('[CATALOG_RESOLVER] Error en resolveTiposHecho:', error);
+            return [];
+        }
+    }
+
+    private static async resolveTiposAsistencia(): Promise<FieldOption[]> {
+        try {
+            const tipos = await catalogoStorage.getTiposAsistencia();
+            return tipos.map(t => ({
+                value: t.id,
+                label: t.nombre,
+            }));
+        } catch (error) {
+            console.error('[CATALOG_RESOLVER] Error en resolveTiposAsistencia:', error);
+            return [];
+        }
+    }
+
+    private static async resolveTiposEmergencia(): Promise<FieldOption[]> {
+        try {
+            const tipos = await catalogoStorage.getTiposEmergencia();
+            return tipos.map(t => ({
+                value: t.id,
+                label: t.nombre,
+            }));
+        } catch (error) {
+            console.error('[CATALOG_RESOLVER] Error en resolveTiposEmergencia:', error);
             return [];
         }
     }

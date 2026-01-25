@@ -743,9 +743,10 @@ export const SituacionPersistenteModel = {
    */
   async getTiposEmergencia(): Promise<TipoEmergenciaVial[]> {
     return db.manyOrNone(`
-      SELECT * FROM tipo_emergencia_vial
-      WHERE activo = TRUE
-      ORDER BY orden, nombre
+      SELECT id, nombre, icono, color, activo
+      FROM tipo_situacion_catalogo
+      WHERE categoria = 'EMERGENCIA' AND activo = TRUE
+      ORDER BY nombre
     `);
   },
 
@@ -1135,7 +1136,7 @@ export const SituacionPersistenteModel = {
   }): Promise<SituacionPersistenteCompleta> {
     // Obtener tipo de emergencia
     const tipoEmergencia = await db.oneOrNone<TipoEmergenciaVial>(
-      'SELECT * FROM tipo_emergencia_vial WHERE id = $1',
+      "SELECT id, nombre, icono, color, activo FROM tipo_situacion_catalogo WHERE categoria = 'EMERGENCIA' AND id = $1",
       [data.tipo_emergencia_id]
     );
 

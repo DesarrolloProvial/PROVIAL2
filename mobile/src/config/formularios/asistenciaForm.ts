@@ -33,7 +33,7 @@ export const asistenciaVehicularForm: FormConfig = {
                 title: 'Tipo de Asistencia',
                 fields: [
                     {
-                        name: 'tipo_asistencia',
+                        name: 'tipo_asistencia_id',
                         type: 'select',
                         label: 'Tipo de Asistencia',
                         required: true,
