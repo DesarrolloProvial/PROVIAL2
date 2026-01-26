@@ -137,4 +137,146 @@ export function generateSignedUploadParams(options: {
   };
 }
 
+/**
+ * Subir foto desde buffer a Cloudinary
+ * Retorna URL pública de la imagen
+ */
+export async function uploadPhotoBuffer(
+  buffer: Buffer,
+  situacionId: number,
+  orden?: number
+): Promise<{
+  success: boolean;
+  url?: string;
+  thumbnailUrl?: string;
+  publicId?: string;
+  width?: number;
+  height?: number;
+  size?: number;
+  error?: string;
+}> {
+  if (!isCloudinaryConfigured()) {
+    return { success: false, error: 'Cloudinary no está configurado' };
+  }
+
+  try {
+    const folder = `provial/situaciones/${situacionId}`;
+    const publicId = `foto_${orden || 1}_${Date.now()}`;
+
+    const result = await new Promise<any>((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        {
+          folder,
+          public_id: publicId,
+          resource_type: 'image',
+          transformation: [
+            { width: 1920, height: 1080, crop: 'limit', quality: 'auto' }
+          ]
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      ).end(buffer);
+    });
+
+    // Generar URL de thumbnail
+    const thumbnailUrl = cloudinary.url(result.public_id, {
+      width: 300,
+      height: 200,
+      crop: 'fill',
+      format: 'jpg',
+      quality: 'auto'
+    });
+
+    console.log(`[CLOUDINARY] Foto subida: ${result.secure_url}`);
+
+    return {
+      success: true,
+      url: result.secure_url,
+      thumbnailUrl,
+      publicId: result.public_id,
+      width: result.width,
+      height: result.height,
+      size: result.bytes
+    };
+  } catch (error: any) {
+    console.error('[CLOUDINARY] Error subiendo foto:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Subir video desde buffer a Cloudinary
+ * Retorna URL pública del video
+ */
+export async function uploadVideoBuffer(
+  buffer: Buffer,
+  situacionId: number
+): Promise<{
+  success: boolean;
+  url?: string;
+  publicId?: string;
+  size?: number;
+  duration?: number;
+  error?: string;
+}> {
+  if (!isCloudinaryConfigured()) {
+    return { success: false, error: 'Cloudinary no está configurado' };
+  }
+
+  try {
+    const folder = `provial/situaciones/${situacionId}`;
+    const publicId = `video_${Date.now()}`;
+
+    const result = await new Promise<any>((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        {
+          folder,
+          public_id: publicId,
+          resource_type: 'video',
+          // Videos no se transforman para no perder calidad/duración
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      ).end(buffer);
+    });
+
+    console.log(`[CLOUDINARY] Video subido: ${result.secure_url}`);
+
+    return {
+      success: true,
+      url: result.secure_url,
+      publicId: result.public_id,
+      size: result.bytes,
+      duration: result.duration
+    };
+  } catch (error: any) {
+    console.error('[CLOUDINARY] Error subiendo video:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Eliminar archivo de Cloudinary por URL
+ */
+export async function deleteByUrl(url: string): Promise<boolean> {
+  try {
+    // Extraer public_id de la URL de Cloudinary
+    // URL format: https://res.cloudinary.com/cloud_name/image/upload/v123/folder/public_id.ext
+    const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/);
+    if (!match) {
+      console.warn('[CLOUDINARY] No se pudo extraer public_id de URL:', url);
+      return false;
+    }
+    const publicId = match[1];
+    return await deleteFile(publicId);
+  } catch (error) {
+    console.error('[CLOUDINARY] Error eliminando por URL:', error);
+    return false;
+  }
+}
+
 export { cloudinary };

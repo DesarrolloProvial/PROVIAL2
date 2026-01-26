@@ -6,7 +6,12 @@
 import { Request, Response } from 'express';
 import multer from 'multer';
 import { MultimediaModel } from '../models/multimedia.model';
-import { uploadPhoto, uploadVideo, deleteFile, getStorageStats } from '../services/storage.service';
+import {
+  uploadPhotoBuffer,
+  uploadVideoBuffer,
+  deleteByUrl,
+  isCloudinaryConfigured
+} from '../services/cloudinary.service';
 import { db } from '../config/database';
 
 // Configuración de multer para manejo de archivos en memoria
@@ -64,19 +69,26 @@ export async function subirFoto(req: Request, res: Response) {
       });
     }
 
-    // Subir foto con compresión
-    const result = await uploadPhoto(
-      {
-        buffer: req.file.buffer,
-        originalname: req.file.originalname,
-        mimetype: req.file.mimetype
-      },
-      parseInt(situacionId)
+    // Verificar que Cloudinary está configurado
+    if (!isCloudinaryConfigured()) {
+      console.error('[MULTIMEDIA] Cloudinary NO está configurado!');
+      return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
+    }
+
+    // Subir foto a Cloudinary
+    console.log(`[MULTIMEDIA] Subiendo foto a Cloudinary para situación ${situacionId}...`);
+    const result = await uploadPhotoBuffer(
+      req.file.buffer,
+      parseInt(situacionId),
+      ordenSiguiente
     );
 
     if (!result.success) {
+      console.error('[MULTIMEDIA] Error subiendo a Cloudinary:', result.error);
       return res.status(500).json({ error: result.error });
     }
+
+    console.log(`[MULTIMEDIA] Foto subida a Cloudinary: ${result.url}`);
 
     // Guardar referencia en BD
     const multimediaId = await MultimediaModel.create({
@@ -85,9 +97,9 @@ export async function subirFoto(req: Request, res: Response) {
       orden: ordenSiguiente,
       url_original: result.url!,
       url_thumbnail: result.thumbnailUrl,
-      nombre_archivo: result.filename!,
+      nombre_archivo: result.publicId || `foto_${ordenSiguiente}`,
       mime_type: req.file.mimetype,
-      tamanio_bytes: result.size!,
+      tamanio_bytes: result.size || req.file.size,
       ancho: result.width,
       alto: result.height,
       latitud: latitud ? parseFloat(latitud) : null,
@@ -155,29 +167,35 @@ export async function subirVideo(req: Request, res: Response) {
       });
     }
 
-    // Subir video
-    const result = await uploadVideo(
-      {
-        buffer: req.file.buffer,
-        originalname: req.file.originalname,
-        mimetype: req.file.mimetype
-      },
+    // Verificar que Cloudinary está configurado
+    if (!isCloudinaryConfigured()) {
+      console.error('[MULTIMEDIA] Cloudinary NO está configurado!');
+      return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
+    }
+
+    // Subir video a Cloudinary
+    console.log(`[MULTIMEDIA] Subiendo video a Cloudinary para situación ${situacionId}...`);
+    const result = await uploadVideoBuffer(
+      req.file.buffer,
       parseInt(situacionId)
     );
 
     if (!result.success) {
+      console.error('[MULTIMEDIA] Error subiendo video a Cloudinary:', result.error);
       return res.status(500).json({ error: result.error });
     }
+
+    console.log(`[MULTIMEDIA] Video subido a Cloudinary: ${result.url}`);
 
     // Guardar referencia en BD
     const multimediaId = await MultimediaModel.create({
       situacion_id: parseInt(situacionId),
       tipo: 'VIDEO',
       url_original: result.url!,
-      nombre_archivo: result.filename!,
+      nombre_archivo: result.publicId || `video_${Date.now()}`,
       mime_type: req.file.mimetype,
-      tamanio_bytes: result.size!,
-      duracion_segundos: duracion_segundos ? parseInt(duracion_segundos) : null,
+      tamanio_bytes: result.size || req.file.size,
+      duracion_segundos: duracion_segundos ? parseInt(duracion_segundos) : (result.duration ? Math.round(result.duration) : null),
       latitud: latitud ? parseFloat(latitud) : null,
       longitud: longitud ? parseFloat(longitud) : null,
       subido_por: req.user.userId
@@ -278,11 +296,9 @@ export async function eliminarMultimedia(req: Request, res: Response) {
       return res.status(403).json({ error: 'No tienes permiso para eliminar este archivo' });
     }
 
-    // Eliminar archivos del storage
-    await deleteFile(multimedia.url_original);
-    if (multimedia.url_thumbnail) {
-      await deleteFile(multimedia.url_thumbnail);
-    }
+    // Eliminar archivos de Cloudinary
+    await deleteByUrl(multimedia.url_original);
+    // El thumbnail se genera dinámicamente en Cloudinary, no necesita eliminarse
 
     // Eliminar de BD
     await MultimediaModel.delete(parseInt(id));
@@ -420,8 +436,6 @@ export async function getStats(req: Request, res: Response) {
       return res.status(403).json({ error: 'No autorizado' });
     }
 
-    const storageStats = getStorageStats();
-
     const dbStats = await db.one(`
       SELECT
         COUNT(*) as total_archivos,
@@ -433,7 +447,10 @@ export async function getStats(req: Request, res: Response) {
     `);
 
     return res.json({
-      storage: storageStats,
+      storage: {
+        provider: 'cloudinary',
+        configured: isCloudinaryConfigured()
+      },
       database: {
         total_archivos: parseInt(dbStats.total_archivos),
         total_fotos: parseInt(dbStats.total_fotos),
