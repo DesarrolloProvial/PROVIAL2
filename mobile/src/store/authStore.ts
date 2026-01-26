@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL, STORAGE_KEYS } from '../constants/config';
+import { syncCatalogosAuxiliares } from '../services/catalogSync';
 
 // ========================================
 // INTERFACES
@@ -181,6 +182,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         await get().refreshEstadoBrigada();
       }
 
+      // Sincronizar catálogos auxiliares desde backend
+      try {
+        console.log('[LOGIN] Sincronizando catálogos auxiliares...');
+        await syncCatalogosAuxiliares();
+        console.log('[LOGIN] ✅ Catálogos sincronizados');
+      } catch (error) {
+        console.warn('[LOGIN] ⚠️ No se pudieron sincronizar catálogos:', error);
+        // No fallar el login si falla la sincronización
+      }
+
       return { success: true };
     } catch (error: any) {
       console.error('❌ [LOGIN] Error completo:', error);
@@ -266,6 +277,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Si es BRIGADA, obtener su estado completo (asignación, salida, ingreso, sede)
         if (usuario.rol === 'BRIGADA') {
           await get().refreshEstadoBrigada();
+        }
+
+        // Sincronizar catálogos auxiliares desde backend
+        try {
+          console.log('[LOAD_AUTH] Sincronizando catálogos auxiliares...');
+          await syncCatalogosAuxiliares();
+          console.log('[LOAD_AUTH] ✅ Catálogos sincronizados');
+        } catch (error) {
+          console.warn('[LOAD_AUTH] ⚠️ No se pudieron sincronizar catálogos:', error);
+          // No fallar el load si falla la sincronización
         }
       } else {
         set({ isLoading: false });

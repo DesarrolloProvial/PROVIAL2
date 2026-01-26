@@ -31,16 +31,28 @@ export async function syncCatalogosAuxiliares(): Promise<boolean> {
 
         // Inicializar storage si no está inicializado
         await catalogoStorage.init();
+        console.log('[CATALOG_SYNC] SQLite inicializado');
 
         // Fetch desde backend
-        const response = await api.get<CatalogoAuxiliaresResponse>('/situaciones/auxiliares');
+        console.log('[CATALOG_SYNC] Llamando a /situaciones/auxiliares...');
+        const response = await api.get<CatalogosAuxiliaresResponse>('/situaciones/auxiliares');
+        console.log('[CATALOG_SYNC] Response status:', response.status);
+
         const { tipos_hecho, tipos_asistencia, tipos_emergencia } = response.data;
 
-        console.log('[CATALOG_SYNC] Recibido:', {
+        console.log('[CATALOG_SYNC] Datos recibidos:', {
             tipos_hecho: tipos_hecho?.length || 0,
             tipos_asistencia: tipos_asistencia?.length || 0,
             tipos_emergencia: tipos_emergencia?.length || 0,
         });
+
+        // Debug: mostrar primeros elementos
+        if (tipos_hecho?.length > 0) {
+            console.log('[CATALOG_SYNC] Primer tipo_hecho:', tipos_hecho[0]);
+        }
+        if (tipos_asistencia?.length > 0) {
+            console.log('[CATALOG_SYNC] Primer tipo_asistencia:', tipos_asistencia[0]);
+        }
 
         // Guardar en SQLite
         if (tipos_hecho && tipos_hecho.length > 0) {
@@ -55,10 +67,21 @@ export async function syncCatalogosAuxiliares(): Promise<boolean> {
             await catalogoStorage.saveTiposEmergencia(tipos_emergencia);
         }
 
-        console.log('[CATALOG_SYNC] Sincronización completada exitosamente');
+        console.log('[CATALOG_SYNC] ✅ Sincronización completada exitosamente');
         return true;
-    } catch (error) {
-        console.error('[CATALOG_SYNC] Error sincronizando catálogos:', error);
+    } catch (error: any) {
+        console.error('[CATALOG_SYNC] ❌ Error sincronizando catálogos:', error);
+
+        // Detalles del error
+        if (error.response) {
+            console.error('[CATALOG_SYNC] Response status:', error.response.status);
+            console.error('[CATALOG_SYNC] Response data:', error.response.data);
+        } else if (error.request) {
+            console.error('[CATALOG_SYNC] No se recibió respuesta del servidor');
+        } else {
+            console.error('[CATALOG_SYNC] Error:', error.message);
+        }
+
         return false;
     }
 }
