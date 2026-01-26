@@ -371,7 +371,6 @@ export function useDraftSituacion() {
         tipo_pavimento: toNull(draft.tipo_pavimento ?? draft.material_via),
         descripcion: toNull(draft.descripcion),
         observaciones: toNull(draft.observaciones),
-        apoyo_proporcionado: toNull(draft.apoyo_proporcionado),
         clima: toNull(draft.clima),
         carga_vehicular: toNull(draft.carga_vehicular),
         area: toNull(draft.area),

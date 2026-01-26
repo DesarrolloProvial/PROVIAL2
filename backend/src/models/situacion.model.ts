@@ -73,11 +73,9 @@ export interface Situacion {
   municipio_id?: number | null;
   obstruccion_data?: any | null;
 
-  // Campos Migración 104
+  // Campos adicionales
   origen?: string;
-  tipo_hecho_id?: number | null;
-  tipo_asistencia_id?: number | null;
-  tipo_emergencia_id?: number | null;
+  subtipo_hecho_id?: number | null;
   area?: string | null;
 
   fecha_hora_aviso?: Date | null;
@@ -189,7 +187,7 @@ export const SituacionModel = {
         descripcion, observaciones, creado_por, tipo_situacion_id,
         clima, carga_vehicular, departamento_id, municipio_id, codigo_situacion, obstruccion_data,
         -- Nuevos campos
-        origen, tipo_hecho_id, tipo_asistencia_id, tipo_emergencia_id, area,
+        origen, subtipo_hecho_id, area,
         fecha_hora_aviso, fecha_hora_llegada,
         hay_heridos, cantidad_heridos, hay_fallecidos, cantidad_fallecidos,
         requiere_bomberos, requiere_pnc, requiere_ambulancia,
@@ -204,7 +202,7 @@ export const SituacionModel = {
         $/descripcion/, $/observaciones/, $/creado_por/, $/tipo_situacion_id/,
         $/clima/, $/carga_vehicular/, $/departamento_id/, $/municipio_id/, $/codigo_situacion/, $/obstruccion_data/,
         -- Nuevos
-        $/origen/, $/tipo_hecho_id/, $/tipo_asistencia_id/, $/tipo_emergencia_id/, $/area/,
+        $/origen/, $/subtipo_hecho_id/, $/area/,
         $/fecha_hora_aviso/, $/fecha_hora_llegada/,
         $/hay_heridos/, $/cantidad_heridos/, $/hay_fallecidos/, $/cantidad_fallecidos/,
         $/requiere_bomberos/, $/requiere_pnc/, $/requiere_ambulancia/,
@@ -255,11 +253,9 @@ export const SituacionModel = {
       municipio_id: data.municipio_id ?? null,
       obstruccion_data: data.obstruccion_data ?? null,
 
-      // Campos Migración 104
+      // Campos adicionales
       origen: data.origen || 'BRIGADA',
-      tipo_hecho_id: data.tipo_hecho_id ?? null,
-      tipo_asistencia_id: data.tipo_asistencia_id ?? null,
-      tipo_emergencia_id: data.tipo_emergencia_id ?? null,
+      subtipo_hecho_id: data.subtipo_hecho_id ?? null,
       area: data.area ?? null,
 
       // Fechas
@@ -312,7 +308,7 @@ export const SituacionModel = {
       'combustible', 'combustible_fraccion', 'kilometraje_unidad', 'tripulacion_confirmada',
       'descripcion', 'observaciones',
       'tipo_situacion_id', 'clima', 'carga_vehicular', 'departamento_id', 'municipio_id', 'obstruccion_data',
-      'origen', 'tipo_hecho_id', 'tipo_asistencia_id', 'tipo_emergencia_id', 'area',
+      'origen', 'subtipo_hecho_id', 'area',
       'fecha_hora_aviso', 'fecha_hora_llegada', 'fecha_hora_finalizacion',
       'hay_heridos', 'cantidad_heridos', 'hay_fallecidos', 'cantidad_fallecidos',
       'requiere_bomberos', 'requiere_pnc', 'requiere_ambulancia',

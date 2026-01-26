@@ -85,7 +85,6 @@ export async function createSituacion(req: Request, res: Response) {
       cantidad_fallecidos,
       vehiculos_involucrados, // Fallback si viene con este nombre
       // Campos que van a OTROS o Detalles
-      apoyo_proporcionado,
       tipo_asistencia, // string (legacy)
       tipo_emergencia, // string (legacy)
       danios_materiales,
@@ -104,26 +103,28 @@ export async function createSituacion(req: Request, res: Response) {
     const latitud = latitudRaw ?? coordenadas?.latitude ?? coordenadas?.latitud ?? null;
     const longitud = longitudRaw ?? coordenadas?.longitude ?? coordenadas?.longitud ?? null;
 
+    // Alias para tipo_situacion_id: mobile envía tipo_hecho_id/tipo_asistencia_id/tipo_emergencia_id
+    // pero en BD solo existe tipo_situacion_id (FK a tipo_situacion_catalogo)
+    const tipo_situacion_id_final = normalizeId(
+      tipo_situacion_id ?? tipo_hecho_id ?? tipo_asistencia_id ?? tipo_emergencia_id
+    );
+
     // Alias para tipo_pavimento (backend usa tipo_pavimento, mobile puede enviar material_via)
     const tipo_pavimento_final = tipo_pavimento ?? material_via ?? null;
 
     console.log('🔍 [BACKEND] CAMPOS EXTRAÍDOS (destructuring):');
     console.log('  - tipo_situacion:', tipo_situacion, '(type:', typeof tipo_situacion, ')');
-    console.log('  - tipo_situacion_id:', tipo_situacion_id, '(type:', typeof tipo_situacion_id, ')');
+    console.log('  - tipo_situacion_id_final:', tipo_situacion_id_final, '(computed from tipo_situacion_id/tipo_hecho_id/tipo_asistencia_id/tipo_emergencia_id)');
     console.log('  - clima:', clima, '(type:', typeof clima, ')');
     console.log('  - carga_vehicular:', carga_vehicular, '(type:', typeof carga_vehicular, ')');
     console.log('  - departamento_id:', departamento_id, '(type:', typeof departamento_id, ')');
     console.log('  - municipio_id:', municipio_id, '(type:', typeof municipio_id, ')');
-    console.log('  - tipo_hecho_id:', tipo_hecho_id, '(type:', typeof tipo_hecho_id, ')');
-    console.log('  - tipo_asistencia_id:', tipo_asistencia_id, '(type:', typeof tipo_asistencia_id, ')');
-    console.log('  - tipo_emergencia_id:', tipo_emergencia_id, '(type:', typeof tipo_emergencia_id, ')');
     console.log('  - area:', area, '(type:', typeof area, ')');
-    console.log('  - material_via:', material_via, '(type:', typeof material_via, ')');
+    console.log('  - material_via/tipo_pavimento:', tipo_pavimento_final, '(type:', typeof tipo_pavimento_final, ')');
     console.log('  - km:', km, '(type:', typeof km, ')');
     console.log('  - sentido:', sentido, '(type:', typeof sentido, ')');
     console.log('  - latitud:', latitud, '(type:', typeof latitud, ')');
     console.log('  - longitud:', longitud, '(type:', typeof longitud, ')');
-    console.log('  - apoyo_proporcionado:', apoyo_proporcionado, '(type:', typeof apoyo_proporcionado, ')');
     console.log('═══════════════════════════════════════════════════════');
 
     const userId = req.user!.userId;
@@ -227,7 +228,7 @@ export async function createSituacion(req: Request, res: Response) {
       codigo_situacion,
 
       // Mapeo campos nuevos
-      tipo_situacion_id,
+      tipo_situacion_id: tipo_situacion_id_final,
       clima,
       carga_vehicular, // Frontend debe enviar nombre exacto
       departamento_id: normalizeId(departamento_id),
@@ -235,9 +236,6 @@ export async function createSituacion(req: Request, res: Response) {
       obstruccion_data: obstruccion,
       area,
       tipo_pavimento: tipo_pavimento_final,
-      tipo_hecho_id: normalizeId(tipo_hecho_id),
-      tipo_asistencia_id: normalizeId(tipo_asistencia_id),
-      tipo_emergencia_id: normalizeId(tipo_emergencia_id),
       hay_heridos: hay_heridos || false,
       cantidad_heridos: cantidad_heridos ? parseInt(cantidad_heridos, 10) : 0,
       hay_fallecidos: hay_fallecidos || false,
@@ -253,15 +251,16 @@ export async function createSituacion(req: Request, res: Response) {
     console.log(JSON.stringify(dataToCreate, null, 2));
     console.log('---');
     console.log('🔑 CAMPOS IMPORTANTES:');
+    console.log('  - tipo_situacion:', dataToCreate.tipo_situacion, '(type:', typeof dataToCreate.tipo_situacion, ')');
     console.log('  - tipo_situacion_id:', dataToCreate.tipo_situacion_id, '(type:', typeof dataToCreate.tipo_situacion_id, ')');
     console.log('  - clima:', dataToCreate.clima, '(type:', typeof dataToCreate.clima, ')');
     console.log('  - carga_vehicular:', dataToCreate.carga_vehicular, '(type:', typeof dataToCreate.carga_vehicular, ')');
     console.log('  - departamento_id:', dataToCreate.departamento_id, '(type:', typeof dataToCreate.departamento_id, ')');
     console.log('  - municipio_id:', dataToCreate.municipio_id, '(type:', typeof dataToCreate.municipio_id, ')');
-    console.log('  - tipo_hecho_id:', dataToCreate.tipo_hecho_id, '(type:', typeof dataToCreate.tipo_hecho_id, ')');
-    console.log('  - tipo_asistencia_id (en otrosDatos, línea 281):', tipo_asistencia_id, '(type:', typeof tipo_asistencia_id, ')');
     console.log('  - area:', dataToCreate.area, '(type:', typeof dataToCreate.area, ')');
     console.log('  - tipo_pavimento:', dataToCreate.tipo_pavimento, '(type:', typeof dataToCreate.tipo_pavimento, ')');
+    console.log('  - latitud:', dataToCreate.latitud, '(type:', typeof dataToCreate.latitud, ')');
+    console.log('  - longitud:', dataToCreate.longitud, '(type:', typeof dataToCreate.longitud, ')');
     console.log('═══════════════════════════════════════════════════════');
 
     const situacion = await SituacionModel.create(dataToCreate);
