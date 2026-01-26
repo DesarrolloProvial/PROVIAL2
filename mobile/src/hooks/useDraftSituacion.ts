@@ -349,8 +349,49 @@ export function useDraftSituacion() {
       setState(prev => ({ ...prev, sending: true, error: null }));
       await updateDraftStatus('ENVIANDO');
 
+      // Helpers para normalizar valores vacíos a null
+      const toNull = (v: any) => (v === '' || v === undefined ? null : v);
+      const toIntOrNull = (v: any) => {
+        if (v === '' || v === null || v === undefined) return null;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+      };
+
+      // Sanitizar payload: convertir "" a null para IDs y campos opcionales
+      const payload = {
+        ...draft,
+        // IDs de catálogos: nunca enviar "" (string vacío)
+        tipo_hecho_id: toIntOrNull(draft.tipo_hecho_id),
+        tipo_asistencia_id: toIntOrNull(draft.tipo_asistencia_id),
+        tipo_emergencia_id: toIntOrNull(draft.tipo_emergencia_id),
+        departamento_id: toIntOrNull(draft.departamento_id),
+        municipio_id: toIntOrNull(draft.municipio_id),
+
+        // Campos opcionales: convertir "" a null
+        tipo_pavimento: toNull(draft.tipo_pavimento ?? draft.material_via),
+        descripcion: toNull(draft.descripcion),
+        observaciones: toNull(draft.observaciones),
+        apoyo_proporcionado: toNull(draft.apoyo_proporcionado),
+        clima: toNull(draft.clima),
+        carga_vehicular: toNull(draft.carga_vehicular),
+        area: toNull(draft.area),
+
+        // Mantener ID determinista
+        id: draft.id,
+
+        // Remover campos internos del draft que no necesita el backend
+        multimedia: undefined, // Se sube después con endpoint separado
+        estado: undefined,
+        created_at: undefined,
+        updated_at: undefined,
+        conflicto: undefined,
+        num_situacion_salida: undefined,
+        fecha: undefined,
+        material_via: undefined // Ya se mandó como tipo_pavimento
+      };
+
       console.log('🚀 [ENVIAR_DRAFT] Haciendo POST a:', `${API_URL}/situaciones`);
-      console.log('📦 [ENVIAR_DRAFT] Payload:', JSON.stringify({...draft, multimedia: `[${draft.multimedia.length} items]`}, null, 2));
+      console.log('📦 [ENVIAR_DRAFT] Payload sanitizado:', JSON.stringify({...payload, multimedia: undefined}, null, 2));
 
       const response = await fetch(`${API_URL}/situaciones`, {
         method: 'POST',
@@ -359,25 +400,14 @@ export function useDraftSituacion() {
           'Authorization': `Bearer ${token}`,
           'Idempotency-Key': draft.id
         },
-        body: JSON.stringify({
-          // Mandar TODO el draft completo
-          ...draft,
-          // Solo sobrescribir metadatos que no deben ir
-          id: draft.id, // Mantener ID determinista
-          // Remover campos internos del draft que no necesita el backend
-          multimedia: undefined, // Se sube después con endpoint separado
-          estado: undefined,
-          created_at: undefined,
-          updated_at: undefined,
-          conflicto: undefined,
-          num_situacion_salida: undefined,
-          fecha: undefined
-        })
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
         // Exito!
         const data = await response.json();
+        console.log('✅ [ENVIAR_DRAFT] POST exitoso:', response.status);
+        console.log('✅ [ENVIAR_DRAFT] Respuesta:', JSON.stringify(data, null, 2));
 
         // Subir multimedia si hay
         if (draft.multimedia.length > 0) {
@@ -418,15 +448,23 @@ export function useDraftSituacion() {
         };
       }
 
-      // Otro error
+      // Otro error (400, 500, etc.)
+      console.log('❌ [ENVIAR_DRAFT] Error HTTP:', response.status);
       const error = await response.json();
+      console.log('❌ [ENVIAR_DRAFT] Error body:', JSON.stringify(error, null, 2));
+
       await updateDraftStatus('PENDIENTE');
       setState(prev => ({ ...prev, sending: false, error: error.error }));
 
       return { success: false, error: error.error || 'Error al enviar' };
 
     } catch (error: any) {
-      // Error de red
+      // Error de red o fetch
+      console.log('❌ [ENVIAR_DRAFT] ERROR capturado en catch');
+      console.log('❌ [ENVIAR_DRAFT] error.message:', error?.message);
+      console.log('❌ [ENVIAR_DRAFT] error.response?.status:', error?.response?.status);
+      console.log('❌ [ENVIAR_DRAFT] error.response?.data:', JSON.stringify(error?.response?.data, null, 2));
+
       await updateDraftStatus('PENDIENTE');
       setState(prev => ({
         ...prev,

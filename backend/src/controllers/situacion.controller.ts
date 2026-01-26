@@ -93,6 +93,13 @@ export async function createSituacion(req: Request, res: Response) {
       descripcion_danios_infra,
     } = req.body;
 
+    // Helper: normalizar IDs (convertir "" a null, strings a números)
+    const normalizeId = (val: any): number | null => {
+      if (val === '' || val === null || val === undefined) return null;
+      const num = Number(val);
+      return Number.isFinite(num) ? num : null;
+    };
+
     // Convertir coordenadas si vienen como objeto {latitude, longitude}
     const latitud = latitudRaw ?? coordenadas?.latitude ?? coordenadas?.latitud ?? null;
     const longitud = longitudRaw ?? coordenadas?.longitude ?? coordenadas?.longitud ?? null;
@@ -223,14 +230,14 @@ export async function createSituacion(req: Request, res: Response) {
       tipo_situacion_id,
       clima,
       carga_vehicular, // Frontend debe enviar nombre exacto
-      departamento_id,
-      municipio_id,
+      departamento_id: normalizeId(departamento_id),
+      municipio_id: normalizeId(municipio_id),
       obstruccion_data: obstruccion,
       area,
       tipo_pavimento: tipo_pavimento_final,
-      tipo_hecho_id: tipo_hecho_id ? parseInt(tipo_hecho_id, 10) : null,
-      tipo_asistencia_id: tipo_asistencia_id ? parseInt(tipo_asistencia_id, 10) : null,
-      tipo_emergencia_id: tipo_emergencia_id ? parseInt(tipo_emergencia_id, 10) : null,
+      tipo_hecho_id: normalizeId(tipo_hecho_id),
+      tipo_asistencia_id: normalizeId(tipo_asistencia_id),
+      tipo_emergencia_id: normalizeId(tipo_emergencia_id),
       hay_heridos: hay_heridos || false,
       cantidad_heridos: cantidad_heridos ? parseInt(cantidad_heridos, 10) : 0,
       hay_fallecidos: hay_fallecidos || false,
