@@ -92,6 +92,10 @@ export async function createSituacion(req: Request, res: Response) {
       descripcion_danios_infra,
     } = req.body;
 
+    // Convertir coordenadas si vienen como objeto {latitude, longitude}
+    const latitud = latitudRaw ?? coordenadas?.latitude ?? coordenadas?.latitud ?? null;
+    const longitud = longitudRaw ?? coordenadas?.longitude ?? coordenadas?.longitud ?? null;
+
     console.log('🔍 [BACKEND] CAMPOS EXTRAÍDOS (destructuring):');
     console.log('  - tipo_situacion:', tipo_situacion, '(type:', typeof tipo_situacion, ')');
     console.log('  - tipo_situacion_id:', tipo_situacion_id, '(type:', typeof tipo_situacion_id, ')');
@@ -110,10 +114,6 @@ export async function createSituacion(req: Request, res: Response) {
     console.log('  - longitud:', longitud, '(type:', typeof longitud, ')');
     console.log('  - apoyo_proporcionado:', apoyo_proporcionado, '(type:', typeof apoyo_proporcionado, ')');
     console.log('═══════════════════════════════════════════════════════');
-
-    // Convertir coordenadas si vienen como objeto {latitude, longitude}
-    const latitud = latitudRaw ?? coordenadas?.latitude ?? coordenadas?.latitud ?? null;
-    const longitud = longitudRaw ?? coordenadas?.longitude ?? coordenadas?.longitud ?? null;
 
     const userId = req.user!.userId;
 
