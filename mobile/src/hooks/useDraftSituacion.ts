@@ -409,9 +409,17 @@ export function useDraftSituacion() {
         console.log('✅ [ENVIAR_DRAFT] POST exitoso:', response.status);
         console.log('✅ [ENVIAR_DRAFT] Respuesta:', JSON.stringify(data, null, 2));
 
+        // El backend retorna { situacion: { id, numero_situacion, ... } }
+        const situacionId = data.situacion?.id || data.situacion_id;
+        const numeroSituacion = data.situacion?.numero_situacion || data.numero_situacion;
+
+        console.log('📍 [ENVIAR_DRAFT] situacionId extraído:', situacionId);
+
         // Subir multimedia si hay
-        if (draft.multimedia.length > 0) {
-          await subirMultimedia(data.situacion_id, draft.multimedia);
+        if (draft.multimedia.length > 0 && situacionId) {
+          await subirMultimedia(situacionId, draft.multimedia);
+        } else if (draft.multimedia.length > 0 && !situacionId) {
+          console.error('❌ [ENVIAR_DRAFT] No se puede subir multimedia: situacionId es undefined');
         }
 
         // Limpiar draft
@@ -425,8 +433,8 @@ export function useDraftSituacion() {
 
         return {
           success: true,
-          situacion_id: data.situacion_id,
-          numero_situacion: data.numero_situacion
+          situacion_id: situacionId,
+          numero_situacion: numeroSituacion
         };
       }
 
