@@ -220,6 +220,8 @@ export async function createSituacion(req: Request, res: Response) {
       area,
       tipo_pavimento: material_via,
       tipo_hecho_id: tipo_hecho_id ? parseInt(tipo_hecho_id, 10) : null,
+      tipo_asistencia_id: tipo_asistencia_id ? parseInt(tipo_asistencia_id, 10) : null,
+      tipo_emergencia_id: tipo_emergencia_id ? parseInt(tipo_emergencia_id, 10) : null,
       hay_heridos: hay_heridos || false,
       cantidad_heridos: cantidad_heridos ? parseInt(cantidad_heridos, 10) : 0,
       hay_fallecidos: hay_fallecidos || false,

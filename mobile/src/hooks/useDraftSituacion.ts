@@ -352,25 +352,18 @@ export function useDraftSituacion() {
           'Idempotency-Key': draft.id
         },
         body: JSON.stringify({
-          id: draft.id,
-          tipo_situacion: draft.tipo_situacion,
-          tipo_situacion_id: draft.tipo_situacion_id,
-          sede_id: draft.sede_id,
-          unidad_id: draft.unidad_id,
-          salida_id: draft.salida_id,
-          ruta_id: draft.ruta_id,
-          km: draft.km,
-          sentido: draft.sentido,
-          latitud: draft.latitud,
-          longitud: draft.longitud,
-          descripcion: draft.descripcion,
-          observaciones: draft.observaciones,
-          tipo_hecho: draft.tipo_hecho,
-          tipo_asistencia: draft.tipo_asistencia,
-          tipo_emergencia: draft.tipo_emergencia,
-          vehiculos: draft.vehiculos,
-          personas: draft.personas,
-          autoridades: draft.autoridades
+          // Mandar TODO el draft completo
+          ...draft,
+          // Solo sobrescribir metadatos que no deben ir
+          id: draft.id, // Mantener ID determinista
+          // Remover campos internos del draft que no necesita el backend
+          multimedia: undefined, // Se sube después con endpoint separado
+          estado: undefined,
+          created_at: undefined,
+          updated_at: undefined,
+          conflicto: undefined,
+          num_situacion_salida: undefined,
+          fecha: undefined
         })
       });
 

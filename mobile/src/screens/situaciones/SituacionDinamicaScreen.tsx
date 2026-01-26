@@ -474,33 +474,18 @@ export default function SituacionDinamicaScreen() {
 
             console.log('[SITUACION] Actualizando draft con datos del formulario');
             await actualizarDraft({
+                // Mandar TODO el formData completo
+                ...formData,
+                // Solo sobrescribir campos calculados o forzados
                 km: parseFloat(formData.km) || 0,
-                sentido: formData.sentido,
                 latitud,
                 longitud,
                 ubicacion_manual: testModeEnabled,
-                observaciones: formData.observaciones,
-                descripcion: formData.descripcion,
-                // Campos específicos por tipo (ahora con _id suffix)
+                tipo_situacion_id: tipoSituacionId,
+                // Fallbacks para compatibilidad
                 tipo_hecho_id: formData.tipo_hecho_id || formData.tipoIncidente,
                 tipo_asistencia_id: formData.tipo_asistencia_id || formData.tipoAsistencia,
-                tipo_emergencia_id: formData.tipo_emergencia_id || formData.tipoEmergencia,
-                vehiculos: formData.vehiculos,
-                autoridades: formData.autoridadesSeleccionadas,
-                detalles_autoridades: formData.detallesAutoridades,
-                socorro: formData.socorroSeleccionado,
-                detalles_socorro: formData.detallesSocorro,
-                obstruye: formData.obstruye,
-                obstruccion: formData.obstruye ? formData.obstruccion : null, // Incluir datos obstruccion
-                jurisdiccion: formData.jurisdiccion,
-
-                // Campos nuevos para asistencia
-                area: formData.area,
-                material_via: formData.material_via,
-                apoyo_proporcionado: formData.apoyo_proporcionado,
-
-                // Asegurar tipo_situacion_id
-                tipo_situacion_id: tipoSituacionId
+                tipo_emergencia_id: formData.tipo_emergencia_id || formData.tipoEmergencia
             }, true);
 
             // 3. Intentar enviar
