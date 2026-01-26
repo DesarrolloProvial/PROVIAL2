@@ -75,13 +75,18 @@ export async function deleteFile(publicId: string) {
   }
 }
 
-// Verificar si Cloudinary esta configurado
+// Verificar si Cloudinary esta configurado (para signed uploads)
 export function isCloudinaryConfigured(): boolean {
   return !!(
     process.env.CLOUDINARY_CLOUD_NAME &&
     process.env.CLOUDINARY_API_KEY &&
     process.env.CLOUDINARY_API_SECRET
   );
+}
+
+// Verificar si Cloudinary está configurado para unsigned uploads (solo necesita cloud_name)
+export function isCloudinaryConfiguredUnsigned(): boolean {
+  return !!process.env.CLOUDINARY_CLOUD_NAME;
 }
 
 /**
@@ -137,14 +142,18 @@ export function generateSignedUploadParams(options: {
   };
 }
 
+// Upload preset configurado en Cloudinary (unsigned)
+const UPLOAD_PRESET = process.env.CLOUDINARY_UPLOAD_PRESET || 'provial_upload';
+
 /**
- * Subir foto desde buffer a Cloudinary
+ * Subir foto desde buffer a Cloudinary usando el preset provial_upload
  * Retorna URL pública de la imagen
  */
 export async function uploadPhotoBuffer(
   buffer: Buffer,
   situacionId: number,
-  orden?: number
+  orden?: number,
+  codigoSituacion?: string
 ): Promise<{
   success: boolean;
   url?: string;
@@ -155,23 +164,26 @@ export async function uploadPhotoBuffer(
   size?: number;
   error?: string;
 }> {
-  if (!isCloudinaryConfigured()) {
-    return { success: false, error: 'Cloudinary no está configurado' };
+  // Solo necesitamos cloud_name para unsigned uploads
+  if (!process.env.CLOUDINARY_CLOUD_NAME) {
+    return { success: false, error: 'CLOUDINARY_CLOUD_NAME no está configurado' };
   }
 
   try {
-    const folder = `provial/situaciones/${situacionId}`;
-    const publicId = `foto_${orden || 1}_${Date.now()}`;
+    // Nombre según convención: CODIGO_FOTO_INDEX o fallback con situacionId
+    const publicId = codigoSituacion
+      ? `${codigoSituacion}_FOTO_${orden || 1}`
+      : `situacion_${situacionId}_FOTO_${orden || 1}_${Date.now()}`;
+
+    console.log(`[CLOUDINARY] Subiendo foto con preset "${UPLOAD_PRESET}", public_id: ${publicId}`);
 
     const result = await new Promise<any>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
-          folder,
+          upload_preset: UPLOAD_PRESET,
           public_id: publicId,
           resource_type: 'image',
-          transformation: [
-            { width: 1920, height: 1080, crop: 'limit', quality: 'auto' }
-          ]
+          tags: ['provial_app', `situacion_${situacionId}`]
         },
         (error, result) => {
           if (error) reject(error);
@@ -189,7 +201,7 @@ export async function uploadPhotoBuffer(
       quality: 'auto'
     });
 
-    console.log(`[CLOUDINARY] Foto subida: ${result.secure_url}`);
+    console.log(`[CLOUDINARY] ✅ Foto subida: ${result.secure_url}`);
 
     return {
       success: true,
@@ -201,18 +213,19 @@ export async function uploadPhotoBuffer(
       size: result.bytes
     };
   } catch (error: any) {
-    console.error('[CLOUDINARY] Error subiendo foto:', error);
+    console.error('[CLOUDINARY] ❌ Error subiendo foto:', error);
     return { success: false, error: error.message };
   }
 }
 
 /**
- * Subir video desde buffer a Cloudinary
+ * Subir video desde buffer a Cloudinary usando el preset provial_upload
  * Retorna URL pública del video
  */
 export async function uploadVideoBuffer(
   buffer: Buffer,
-  situacionId: number
+  situacionId: number,
+  codigoSituacion?: string
 ): Promise<{
   success: boolean;
   url?: string;
@@ -221,21 +234,26 @@ export async function uploadVideoBuffer(
   duration?: number;
   error?: string;
 }> {
-  if (!isCloudinaryConfigured()) {
-    return { success: false, error: 'Cloudinary no está configurado' };
+  // Solo necesitamos cloud_name para unsigned uploads
+  if (!process.env.CLOUDINARY_CLOUD_NAME) {
+    return { success: false, error: 'CLOUDINARY_CLOUD_NAME no está configurado' };
   }
 
   try {
-    const folder = `provial/situaciones/${situacionId}`;
-    const publicId = `video_${Date.now()}`;
+    // Nombre según convención: CODIGO_VIDEO_1 o fallback con situacionId
+    const publicId = codigoSituacion
+      ? `${codigoSituacion}_VIDEO_1`
+      : `situacion_${situacionId}_VIDEO_1_${Date.now()}`;
+
+    console.log(`[CLOUDINARY] Subiendo video con preset "${UPLOAD_PRESET}", public_id: ${publicId}`);
 
     const result = await new Promise<any>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
-          folder,
+          upload_preset: UPLOAD_PRESET,
           public_id: publicId,
           resource_type: 'video',
-          // Videos no se transforman para no perder calidad/duración
+          tags: ['provial_app', `situacion_${situacionId}`]
         },
         (error, result) => {
           if (error) reject(error);
@@ -244,7 +262,7 @@ export async function uploadVideoBuffer(
       ).end(buffer);
     });
 
-    console.log(`[CLOUDINARY] Video subido: ${result.secure_url}`);
+    console.log(`[CLOUDINARY] ✅ Video subido: ${result.secure_url}`);
 
     return {
       success: true,
@@ -254,7 +272,7 @@ export async function uploadVideoBuffer(
       duration: result.duration
     };
   } catch (error: any) {
-    console.error('[CLOUDINARY] Error subiendo video:', error);
+    console.error('[CLOUDINARY] ❌ Error subiendo video:', error);
     return { success: false, error: error.message };
   }
 }

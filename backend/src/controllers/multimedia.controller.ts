@@ -10,7 +10,7 @@ import {
   uploadPhotoBuffer,
   uploadVideoBuffer,
   deleteByUrl,
-  isCloudinaryConfigured
+  isCloudinaryConfiguredUnsigned
 } from '../services/cloudinary.service';
 import { db } from '../config/database';
 
@@ -70,7 +70,7 @@ export async function subirFoto(req: Request, res: Response) {
     }
 
     // Verificar que Cloudinary está configurado
-    if (!isCloudinaryConfigured()) {
+    if (!isCloudinaryConfiguredUnsigned()) {
       console.error('[MULTIMEDIA] Cloudinary NO está configurado!');
       return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
     }
@@ -168,7 +168,7 @@ export async function subirVideo(req: Request, res: Response) {
     }
 
     // Verificar que Cloudinary está configurado
-    if (!isCloudinaryConfigured()) {
+    if (!isCloudinaryConfiguredUnsigned()) {
       console.error('[MULTIMEDIA] Cloudinary NO está configurado!');
       return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
     }
@@ -449,7 +449,7 @@ export async function getStats(req: Request, res: Response) {
     return res.json({
       storage: {
         provider: 'cloudinary',
-        configured: isCloudinaryConfigured()
+        configured: isCloudinaryConfiguredUnsigned()
       },
       database: {
         total_archivos: parseInt(dbStats.total_archivos),
