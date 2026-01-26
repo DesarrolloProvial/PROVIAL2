@@ -247,50 +247,22 @@ const payload = {
 
 ---
 
-## ⚠️ Campo Pendiente: apoyo_proporcionado
+## ✅ Campo apoyo_proporcionado: ELIMINADO
 
-**Estado actual:**
-- ✅ Se captura en el formulario (`asistenciaForm.ts`)
-- ❌ NO existe en la tabla `situacion`
-- ❌ Se envía en el payload pero el backend lo ignora
+**Decisión del usuario:** NO quiere apoyo_proporcionado
 
-**Opciones:**
+**Cambios realizados:**
+- ❌ Eliminado de `asistenciaForm.ts` (formulario)
+- ❌ Eliminado de interface `DraftSituacion`
+- ❌ Eliminado de `SituacionDinamicaScreen.tsx` (todos los usos)
+- ❌ Eliminado de payload de backend
 
-### Opción 1: Agregar columna a situacion
-```sql
-ALTER TABLE situacion
-ADD COLUMN apoyo_proporcionado TEXT;
-```
+**Resultado:**
+✅ Campo ya no se captura en la app
+✅ Campo ya no se guarda en drafts
+✅ Campo ya no se envía al backend
 
-**Pros:**
-- Fácil de consultar (SELECT)
-- Indexable
-
-**Contras:**
-- Agrega columna que solo se usa para ASISTENCIAS
-- La tabla situacion ya tiene muchas columnas
-
-### Opción 2: Guardar en detalle_situacion
-```sql
-INSERT INTO detalle_situacion (
-  situacion_id,
-  tipo_detalle,   -- 'APOYO_BRINDADO'
-  datos           -- JSONB: {descripcion: "..."}
-)
-```
-
-**Pros:**
-- No agrega columna a situacion
-- Flexible (puede tener múltiples apoyos)
-
-**Contras:**
-- Más complejo consultar
-- Requiere parsear JSONB
-
-### Recomendación
-
-**Opción 1** si el campo es importante para reportes y análisis.
-**Opción 2** si es solo informativo.
+El campo descripción/observaciones puede usarse para detalles adicionales si es necesario.
 
 ---
 
