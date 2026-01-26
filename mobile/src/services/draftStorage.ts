@@ -115,7 +115,6 @@ export interface DraftSituacion {
   // Campos específicos de ASISTENCIA / OTROS (NUEVOS)
   area?: string;
   material_via?: string;
-  apoyo_proporcionado?: string;
 
   // Multimedia
   multimedia: MultimediaRef[];

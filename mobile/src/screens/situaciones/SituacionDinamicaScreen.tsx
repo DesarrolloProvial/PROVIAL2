@@ -97,8 +97,7 @@ export default function SituacionDinamicaScreen() {
         // Copiar campos que tienen el mismo nombre
         const camposDirectos = [
             'sentido', 'observaciones', 'descripcion',
-            'clima', 'carga_vehicular', 'area', 'material_via',
-            'apoyo_proporcionado'
+            'clima', 'carga_vehicular', 'area', 'material_via'
         ];
 
         camposDirectos.forEach(campo => {
@@ -150,10 +149,9 @@ export default function SituacionDinamicaScreen() {
 
         // === DETALLES (vienen organizados en objeto 'detalles') ===
         if (data.detalles) {
-            // Datos específicos guardados en 'otros' (apoyo, area, material, etc.)
+            // Datos específicos guardados en 'otros' (area, material, etc.)
             if (data.detalles.otros) {
                 const otros = data.detalles.otros;
-                if (otros.apoyo_proporcionado) formValues.apoyo_proporcionado = otros.apoyo_proporcionado;
                 if (otros.area) formValues.area = otros.area;
                 if (otros.material_via) formValues.material_via = otros.material_via;
                 // NOTE: These fields are now _id suffixed, but detalles.otros might have old format
@@ -310,7 +308,6 @@ export default function SituacionDinamicaScreen() {
             tipo_hecho_id: '',
             tipo_asistencia_id: '',
             tipo_emergencia_id: '',
-            apoyo_proporcionado: '',
             departamento_id: '',
             municipio_id: '',
             area: '',
@@ -423,7 +420,6 @@ export default function SituacionDinamicaScreen() {
                     // Campos específicos de asistencia/otros
                     area: formData.area,
                     material_via: formData.material_via,
-                    apoyo_proporcionado: formData.apoyo_proporcionado,
                     obstruccion: formData.obstruye ? formData.obstruccion : null,
                     jurisdiccion: formData.jurisdiccion,
 

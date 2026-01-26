@@ -41,14 +41,6 @@ export const asistenciaVehicularForm: FormConfig = {
                         placeholder: 'Seleccione tipo de asistencia',
                         helperText: 'Tipo de servicio brindado al usuario',
                     },
-                    {
-                        name: 'apoyo_proporcionado',
-                        type: 'textarea',
-                        label: 'Apoyo Proporcionado',
-                        placeholder: 'Describa el apoyo brindado...',
-                        helperText: 'Detalles del servicio prestado (sección "otros")',
-                        rows: 3,
-                    },
                 ],
             },
             {
