@@ -54,17 +54,29 @@ export async function syncCatalogosAuxiliares(): Promise<boolean> {
             console.log('[CATALOG_SYNC] Primer tipo_asistencia:', tipos_asistencia[0]);
         }
 
-        // Guardar en SQLite
+        // Normalizar datos (convertir IDs a números) y guardar en SQLite
         if (tipos_hecho && tipos_hecho.length > 0) {
-            await catalogoStorage.saveTiposHecho(tipos_hecho);
+            const normalized = tipos_hecho.map(t => ({
+                ...t,
+                id: typeof t.id === 'string' ? parseInt(t.id, 10) : t.id,
+            }));
+            await catalogoStorage.saveTiposHecho(normalized);
         }
 
         if (tipos_asistencia && tipos_asistencia.length > 0) {
-            await catalogoStorage.saveTiposAsistencia(tipos_asistencia);
+            const normalized = tipos_asistencia.map(t => ({
+                ...t,
+                id: typeof t.id === 'string' ? parseInt(t.id, 10) : t.id,
+            }));
+            await catalogoStorage.saveTiposAsistencia(normalized);
         }
 
         if (tipos_emergencia && tipos_emergencia.length > 0) {
-            await catalogoStorage.saveTiposEmergencia(tipos_emergencia);
+            const normalized = tipos_emergencia.map(t => ({
+                ...t,
+                id: typeof t.id === 'string' ? parseInt(t.id, 10) : t.id,
+            }));
+            await catalogoStorage.saveTiposEmergencia(normalized);
         }
 
         console.log('[CATALOG_SYNC] ✅ Sincronización completada exitosamente');

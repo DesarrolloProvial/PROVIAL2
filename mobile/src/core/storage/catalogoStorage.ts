@@ -47,7 +47,7 @@ export interface CatalogoSocorro {
 
 export interface CatalogoTipoHecho {
     id: number;
-    codigo: string;
+    codigo?: string;
     nombre: string;
     icono?: string;
     color?: string;
@@ -140,10 +140,12 @@ class CatalogoStorage {
                 )
             `);
 
+            // Recrear tabla tipo_hecho con codigo nullable (migración)
+            this.db.execSync(`DROP TABLE IF EXISTS tipo_hecho`);
             this.db.execSync(`
-                CREATE TABLE IF NOT EXISTS tipo_hecho (
+                CREATE TABLE tipo_hecho (
                     id INTEGER PRIMARY KEY,
-                    codigo TEXT NOT NULL,
+                    codigo TEXT,
                     nombre TEXT NOT NULL,
                     icono TEXT,
                     color TEXT
@@ -407,7 +409,7 @@ class CatalogoStorage {
             for (const tipo of tipos) {
                 this.db.runSync(
                     'INSERT INTO tipo_hecho (id, codigo, nombre, icono, color) VALUES (?, ?, ?, ?, ?)',
-                    [tipo.id, tipo.codigo, tipo.nombre, tipo.icono || null, tipo.color || null]
+                    [tipo.id, tipo.codigo || null, tipo.nombre, tipo.icono || null, tipo.color || null]
                 );
             }
             this.db.runSync(
