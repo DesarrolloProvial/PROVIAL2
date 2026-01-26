@@ -324,25 +324,33 @@ export function useDraftSituacion() {
     conflicto?: ConflictoResponse;
     error?: string;
   }> => {
+    console.log('🚨 [ENVIAR_DRAFT] Función enviarDraft() llamada');
     const draft = await getDraftPendiente();
     if (!draft) {
+      console.warn('[ENVIAR_DRAFT] No hay draft para enviar');
       return { success: false, error: 'No hay draft para enviar' };
     }
 
     if (!token) {
+      console.warn('[ENVIAR_DRAFT] No autenticado');
       return { success: false, error: 'No autenticado' };
     }
 
     // Verificar conexion
     const netInfo = await NetInfo.fetch();
+    console.log('[ENVIAR_DRAFT] Conexión:', netInfo.isConnected);
     if (!netInfo.isConnected) {
       await updateDraftStatus('PENDIENTE');
+      console.warn('[ENVIAR_DRAFT] Sin conexión. Draft guardado localmente');
       return { success: false, error: 'Sin conexion. Draft guardado localmente.' };
     }
 
     try {
       setState(prev => ({ ...prev, sending: true, error: null }));
       await updateDraftStatus('ENVIANDO');
+
+      console.log('🚀 [ENVIAR_DRAFT] Haciendo POST a:', `${API_URL}/situaciones`);
+      console.log('📦 [ENVIAR_DRAFT] Payload:', JSON.stringify({...draft, multimedia: `[${draft.multimedia.length} items]`}, null, 2));
 
       const response = await fetch(`${API_URL}/situaciones`, {
         method: 'POST',

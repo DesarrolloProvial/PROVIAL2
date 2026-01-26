@@ -299,19 +299,33 @@ export default function SituacionDinamicaScreen() {
      * Cargar datos del draft en el formulario
      */
     const cargarDraftEnFormulario = (draftData: any) => {
-        setInitialValues({
+        // Usar TODO el draft como base y solo sobrescribir defaults/formatos
+        const initial = {
+            // Defaults para que no truene el UI
+            km: '',
+            sentido: '',
+            observaciones: '',
+            descripcion: '',
+            tipo_hecho_id: '',
+            tipo_asistencia_id: '',
+            tipo_emergencia_id: '',
+            apoyo_proporcionado: '',
+            departamento_id: '',
+            municipio_id: '',
+            area: '',
+            material_via: '',
+            clima: '',
+            carga_vehicular: '',
+            vehiculos: [],
+            autoridades: [],
+            multimedia: [],
+            // Spread COMPLETO del draft encima
+            ...draftData,
+            // Solo formatear km a string si existe
             km: draftData.km?.toString() || '',
-            sentido: draftData.sentido || '',
-            observaciones: draftData.observaciones || '',
-            descripcion: draftData.descripcion || '',
-            // Campos específicos según tipo (ahora con _id suffix)
-            tipo_hecho_id: draftData.tipo_hecho_id || '',
-            tipo_asistencia_id: draftData.tipo_asistencia_id || '',
-            tipo_emergencia_id: draftData.tipo_emergencia_id || '',
-            vehiculos: draftData.vehiculos || [],
-            autoridades: draftData.autoridades || [],
-            // ... otros campos del draft
-        });
+        };
+
+        setInitialValues(initial);
 
         if (draftData.latitud && draftData.longitud) {
             setCoordenadas({

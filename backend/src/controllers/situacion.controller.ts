@@ -48,8 +48,9 @@ export async function createSituacion(req: Request, res: Response) {
       ruta_id,
       km,
       sentido,
-      latitud,
-      longitud,
+      latitud: latitudRaw,
+      longitud: longitudRaw,
+      coordenadas, // Fallback si viene como objeto {latitude, longitude}
       ubicacion_manual,
       combustible,
       combustible_fraccion,
@@ -109,6 +110,10 @@ export async function createSituacion(req: Request, res: Response) {
     console.log('  - longitud:', longitud, '(type:', typeof longitud, ')');
     console.log('  - apoyo_proporcionado:', apoyo_proporcionado, '(type:', typeof apoyo_proporcionado, ')');
     console.log('═══════════════════════════════════════════════════════');
+
+    // Convertir coordenadas si vienen como objeto {latitude, longitude}
+    const latitud = latitudRaw ?? coordenadas?.latitude ?? coordenadas?.latitud ?? null;
+    const longitud = longitudRaw ?? coordenadas?.longitude ?? coordenadas?.longitud ?? null;
 
     const userId = req.user!.userId;
 
