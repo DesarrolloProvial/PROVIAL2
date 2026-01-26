@@ -303,13 +303,11 @@ export async function createSituacion(req: Request, res: Response) {
       }
     }
 
-    // Persistir OTROS
+    // Persistir OTROS (legacy strings, solo para backward compat con datos viejos)
     const otrosDatos: any = {};
-    if (apoyo_proporcionado) otrosDatos.apoyo_proporcionado = apoyo_proporcionado;
     if (tipo_asistencia) otrosDatos.tipo_asistencia = tipo_asistencia;
     if (tipo_emergencia) otrosDatos.tipo_emergencia = tipo_emergencia;
-    if (tipo_asistencia_id) otrosDatos.tipo_asistencia_id = tipo_asistencia_id;
-    if (tipo_emergencia_id) otrosDatos.tipo_emergencia_id = tipo_emergencia_id;
+    // NO agregar tipo_asistencia_id ni tipo_emergencia_id - no existen en tabla situacion
 
     if (Object.keys(otrosDatos).length > 0) {
       await DetalleSituacionModel.create({
@@ -325,12 +323,12 @@ export async function createSituacion(req: Request, res: Response) {
 
     console.log('✅ [BACKEND] SITUACIÓN GUARDADA CON ÉXITO:');
     console.log('  - ID:', full?.id);
+    console.log('  - tipo_situacion:', full?.tipo_situacion);
     console.log('  - tipo_situacion_id:', full?.tipo_situacion_id);
     console.log('  - clima:', full?.clima);
     console.log('  - carga_vehicular:', full?.carga_vehicular);
     console.log('  - departamento_id:', full?.departamento_id);
     console.log('  - municipio_id:', full?.municipio_id);
-    console.log('  - tipo_hecho_id:', full?.tipo_hecho_id);
     console.log('  - area:', full?.area);
     console.log('  - tipo_pavimento:', full?.tipo_pavimento);
     console.log('═══════════════════════════════════════════════════════');
@@ -408,11 +406,9 @@ export async function updateSituacion(req: Request, res: Response) {
       area, material_via, clima, carga_vehicular,
       danios_materiales, danios_infraestructura, descripcion_danios_infra,
       obstruccion,
-      // Detalles/Otros
-      apoyo_proporcionado, tipo_asistencia, tipo_emergencia,
+      // Detalles/Otros (legacy strings para backward compat)
+      tipo_asistencia, tipo_emergencia,
       vehiculos_involucrados,
-      // IDs de tipos
-      tipo_hecho_id, tipo_asistencia_id, tipo_emergencia_id,
       // Víctimas
       hay_heridos, cantidad_heridos, hay_fallecidos, cantidad_fallecidos,
       // Servicios
@@ -435,8 +431,7 @@ export async function updateSituacion(req: Request, res: Response) {
       danios_materiales, danios_infraestructura, danios_descripcion: descripcion_danios_infra,
       obstruccion_data: obstruccion,
 
-      // Mapeo detallado
-      tipo_hecho_id: tipo_hecho_id ? parseInt(tipo_hecho_id, 10) : null,
+      // No mapear tipo_hecho_id - no existe en BD (se usa tipo_situacion_id)
 
       hay_heridos: hay_heridos || false,
       cantidad_heridos: cantidad_heridos ? parseInt(cantidad_heridos, 10) : 0,
@@ -460,13 +455,11 @@ export async function updateSituacion(req: Request, res: Response) {
 
     await SituacionModel.update(situacionId, updateData);
 
-    // Update Detalles OTROS
+    // Update Detalles OTROS (legacy strings, solo para backward compat)
     const otrosDatos: any = {};
-    if (apoyo_proporcionado) otrosDatos.apoyo_proporcionado = apoyo_proporcionado;
     if (tipo_asistencia) otrosDatos.tipo_asistencia = tipo_asistencia;
     if (tipo_emergencia) otrosDatos.tipo_emergencia = tipo_emergencia;
-    if (tipo_asistencia_id) otrosDatos.tipo_asistencia_id = tipo_asistencia_id;
-    if (tipo_emergencia_id) otrosDatos.tipo_emergencia_id = tipo_emergencia_id;
+    // NO agregar tipo_asistencia_id ni tipo_emergencia_id - no existen en tabla situacion
     if (vehiculos_involucrados) otrosDatos.vehiculos_involucrados = vehiculos_involucrados;
 
     if (Object.keys(otrosDatos).length > 0) {
