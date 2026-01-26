@@ -299,6 +299,7 @@ export default function SituacionDinamicaScreen() {
      * Cargar datos del draft en el formulario
      */
     const cargarDraftEnFormulario = (draftData: any) => {
+        console.log('🔍 [CARGAR_DRAFT] Draft recibido:', JSON.stringify(draftData, null, 2));
         // Usar TODO el draft como base y solo sobrescribir defaults/formatos
         const initial = {
             // Defaults para que no truene el UI
@@ -325,6 +326,7 @@ export default function SituacionDinamicaScreen() {
             km: draftData.km?.toString() || '',
         };
 
+        console.log('✅ [CARGAR_DRAFT] Initial values construidos:', JSON.stringify(initial, null, 2));
         setInitialValues(initial);
 
         if (draftData.latitud && draftData.longitud) {

@@ -72,7 +72,8 @@ export async function createSituacion(req: Request, res: Response) {
       municipio_id,
       obstruccion,
       area,
-      material_via, // Mapear a tipo_pavimento
+      material_via, // Frontend envía material_via
+      tipo_pavimento, // Algunos payloads pueden enviar tipo_pavimento
       // Campos de tipo de hecho/asistencia/emergencia (IDs)
       tipo_hecho_id,
       tipo_asistencia_id,
@@ -95,6 +96,9 @@ export async function createSituacion(req: Request, res: Response) {
     // Convertir coordenadas si vienen como objeto {latitude, longitude}
     const latitud = latitudRaw ?? coordenadas?.latitude ?? coordenadas?.latitud ?? null;
     const longitud = longitudRaw ?? coordenadas?.longitude ?? coordenadas?.longitud ?? null;
+
+    // Alias para tipo_pavimento (backend usa tipo_pavimento, mobile puede enviar material_via)
+    const tipo_pavimento_final = tipo_pavimento ?? material_via ?? null;
 
     console.log('🔍 [BACKEND] CAMPOS EXTRAÍDOS (destructuring):');
     console.log('  - tipo_situacion:', tipo_situacion, '(type:', typeof tipo_situacion, ')');
@@ -223,7 +227,7 @@ export async function createSituacion(req: Request, res: Response) {
       municipio_id,
       obstruccion_data: obstruccion,
       area,
-      tipo_pavimento: material_via,
+      tipo_pavimento: tipo_pavimento_final,
       tipo_hecho_id: tipo_hecho_id ? parseInt(tipo_hecho_id, 10) : null,
       tipo_asistencia_id: tipo_asistencia_id ? parseInt(tipo_asistencia_id, 10) : null,
       tipo_emergencia_id: tipo_emergencia_id ? parseInt(tipo_emergencia_id, 10) : null,
