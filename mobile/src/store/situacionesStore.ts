@@ -12,6 +12,7 @@ export interface SituacionCompleta {
   uuid: string;
   numero_situacion: string | null;
   tipo_situacion: TipoSituacion;
+  tipo_situacion_id: number | null;
   estado: EstadoSituacion;
   asignacion_id: number | null;
   unidad_id: number;
@@ -45,6 +46,13 @@ export interface SituacionCompleta {
   evento_persistente_id: number | null;
   evento_titulo: string | null;
   evento_tipo: string | null;
+  // Campos del catálogo tipo_situacion_catalogo (tipo de asistencia/hecho/emergencia)
+  tipo_situacion_nombre: string | null;
+  tipo_situacion_categoria: string | null;
+  // Campos adicionales de contexto
+  tipo_pavimento: string | null; // material_via
+  clima: string | null;
+  area: string | null;
 }
 
 interface SituacionesState {

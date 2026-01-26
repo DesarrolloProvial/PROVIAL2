@@ -447,6 +447,9 @@ export default function BitacoraScreen() {
     const config = SITUACIONES_CONFIG[item.tipo_situacion];
     const isActiva = item.estado === 'ACTIVA';
 
+    // Determinar si mostrar campos adicionales (INCIDENTE, ASISTENCIA_VEHICULAR, OBSTACULO/EMERGENCIA)
+    const mostrarCamposAdicionales = ['INCIDENTE', 'ASISTENCIA_VEHICULAR', 'OBSTACULO'].includes(item.tipo_situacion);
+
     return (
       <TouchableOpacity
         style={[
@@ -474,6 +477,16 @@ export default function BitacoraScreen() {
         </View>
 
         <View style={styles.cardContent}>
+          {/* Tipo específico del catálogo (Choque, Calentamiento, Derrumbe, etc.) */}
+          {mostrarCamposAdicionales && item.tipo_situacion_nombre && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Tipo:</Text>
+              <Text style={[styles.infoValue, { color: getTipoColor(item.tipo_situacion) }]}>
+                {item.tipo_situacion_nombre}
+              </Text>
+            </View>
+          )}
+
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Inicio:</Text>
             <Text style={styles.infoValue}>{formatFecha(item.created_at)}</Text>
@@ -494,6 +507,30 @@ export default function BitacoraScreen() {
               <Text style={styles.infoValue}>
                 {item.ruta_codigo} {item.km ? `Km ${item.km}` : ''}
               </Text>
+            </View>
+          )}
+
+          {/* Material de vía (tipo_pavimento) */}
+          {mostrarCamposAdicionales && item.tipo_pavimento && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Material Vía:</Text>
+              <Text style={styles.infoValue}>{item.tipo_pavimento}</Text>
+            </View>
+          )}
+
+          {/* Clima */}
+          {mostrarCamposAdicionales && item.clima && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Clima:</Text>
+              <Text style={styles.infoValue}>{item.clima}</Text>
+            </View>
+          )}
+
+          {/* Área */}
+          {mostrarCamposAdicionales && item.area && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Área:</Text>
+              <Text style={styles.infoValue}>{item.area}</Text>
             </View>
           )}
 

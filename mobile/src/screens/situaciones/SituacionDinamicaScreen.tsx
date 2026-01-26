@@ -25,10 +25,11 @@ import { getFormConfigForSituation } from '../../config/formularios';
 import { SituacionDinamicaParams, BrigadaStackParamList } from '../../types/navigation';
 import { COLORS } from '../../constants/colors';
 import api from '../../services/api';
+import MultimediaService from '../../services/multimedia.service';
 
 // Offline-First
 import { useDraftSituacion } from '../../hooks/useDraftSituacion';
-import { TipoSituacion } from '../../services/draftStorage';
+import { TipoSituacion, MultimediaRef } from '../../services/draftStorage';
 import { useAuthStore } from '../../store/authStore';
 import { useTestMode } from '../../context/TestModeContext';
 
@@ -360,6 +361,67 @@ export default function SituacionDinamicaScreen() {
     };
 
     /**
+     * Subir multimedia para edición de situación existente
+     */
+    const subirMultimediaEdicion = async (
+        situacionId: number,
+        multimedia: MultimediaRef[]
+    ): Promise<void> => {
+        console.log(`📸 [MULTIMEDIA-EDIT] Subiendo ${multimedia.length} archivos a situacion ${situacionId}`);
+
+        for (const media of multimedia) {
+            const tipo = media.tipo as 'FOTO' | 'VIDEO';
+            const uri = media.uri;
+
+            // Construir objeto MediaFile compatible con el servicio
+            const guessMime = (uri: string, tipo: 'FOTO' | 'VIDEO') => {
+                if (tipo === 'VIDEO') return 'video/mp4';
+                if (uri.toLowerCase().endsWith('.png')) return 'image/png';
+                return 'image/jpeg';
+            };
+
+            const buildName = (uri: string, tipo: 'FOTO' | 'VIDEO', orden?: number) => {
+                const ext = tipo === 'VIDEO' ? 'mp4' : uri.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
+                return tipo === 'VIDEO' ? `video_${Date.now()}.${ext}` : `foto_${orden ?? 1}_${Date.now()}.${ext}`;
+            };
+
+            const mediaFile = {
+                uri,
+                type: tipo === 'FOTO' ? 'image' as const : 'video' as const,
+                mimeType: guessMime(uri, tipo),
+                fileName: buildName(uri, tipo, media.orden),
+                duration: media.duracion_segundos,
+            };
+
+            const location = (media.latitud && media.longitud)
+                ? { latitude: media.latitud, longitude: media.longitud }
+                : undefined;
+
+            try {
+                let result;
+
+                if (tipo === 'FOTO') {
+                    console.log(`📷 [MULTIMEDIA-EDIT] Subiendo FOTO ${media.orden || 1}...`);
+                    result = await MultimediaService.uploadPhoto(situacionId, mediaFile, location);
+                } else {
+                    console.log(`🎥 [MULTIMEDIA-EDIT] Subiendo VIDEO...`);
+                    result = await MultimediaService.uploadVideo(situacionId, mediaFile, location);
+                }
+
+                if (result.success) {
+                    console.log(`✅ [MULTIMEDIA-EDIT] ${tipo} subida OK -> ID: ${result.id}, URL: ${result.url}`);
+                } else {
+                    console.error(`❌ [MULTIMEDIA-EDIT] ${tipo} FALLÓ:`, result.error);
+                }
+            } catch (error: any) {
+                console.error(`❌ [MULTIMEDIA-EDIT] Error subiendo ${tipo}:`, error?.message || error);
+            }
+        }
+
+        console.log(`📸 [MULTIMEDIA-EDIT] Proceso de subida completado para situacion ${situacionId}`);
+    };
+
+    /**
      * Manejar envío del formulario
      */
     const handleSubmit = async (formData: any) => {
@@ -431,6 +493,12 @@ export default function SituacionDinamicaScreen() {
                 console.log('[SITUACION] Enviando update:', JSON.stringify(payload, null, 2));
 
                 await api.patch(`/situaciones/${situacionId}`, payload);
+
+                // === SUBIR MULTIMEDIA (si hay nuevos archivos) ===
+                if (formData.multimedia && Array.isArray(formData.multimedia) && formData.multimedia.length > 0) {
+                    console.log(`📸 [EDIT] Subiendo ${formData.multimedia.length} archivos multimedia...`);
+                    await subirMultimediaEdicion(situacionId, formData.multimedia);
+                }
 
                 Alert.alert(
                     'Éxito',

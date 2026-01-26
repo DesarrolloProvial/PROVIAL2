@@ -124,6 +124,9 @@ export interface SituacionCompleta extends Situacion {
   departamento_nombre?: string | null;
   municipio_nombre?: string | null;
   subtipo_nombre?: string | null;
+  // Campos del catálogo tipo_situacion_catalogo
+  tipo_situacion_nombre?: string | null;
+  tipo_situacion_categoria?: string | null;
 }
 
 export interface DetalleSituacion {
@@ -394,8 +397,14 @@ export const SituacionModel = {
     const params: any = { unidad_id, salida_id };
 
     let query = `
-      SELECT s.* 
+      SELECT s.*,
+        r.codigo as ruta_codigo,
+        r.nombre as ruta_nombre,
+        tsc.nombre as tipo_situacion_nombre,
+        tsc.categoria as tipo_situacion_categoria
       FROM situacion s
+      LEFT JOIN ruta r ON s.ruta_id = r.id
+      LEFT JOIN tipo_situacion_catalogo tsc ON s.tipo_situacion_id = tsc.id
       WHERE s.unidad_id = $/unidad_id/
       AND s.created_at >= CURRENT_DATE
     `;

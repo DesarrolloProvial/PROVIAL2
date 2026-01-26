@@ -406,6 +406,8 @@ export async function updateSituacion(req: Request, res: Response) {
       area, material_via, clima, carga_vehicular,
       danios_materiales, danios_infraestructura, descripcion_danios_infra,
       obstruccion,
+      // IDs de catálogo (mobile envía estos, pero BD usa tipo_situacion_id)
+      tipo_hecho_id, tipo_asistencia_id, tipo_emergencia_id,
       // Detalles/Otros (legacy strings para backward compat)
       tipo_asistencia, tipo_emergencia,
       vehiculos_involucrados,
@@ -421,6 +423,21 @@ export async function updateSituacion(req: Request, res: Response) {
       combustible, combustible_fraccion, kilometraje_unidad
     } = req.body;
 
+    // Normalizar IDs (convertir strings vacías a null)
+    const normalizeId = (v: any): number | null => {
+      if (v === '' || v === null || v === undefined) return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+
+    // Mapear tipo_hecho_id/tipo_asistencia_id/tipo_emergencia_id -> tipo_situacion_id
+    const tipo_situacion_id_final = normalizeId(
+      tipo_hecho_id ?? tipo_asistencia_id ?? tipo_emergencia_id
+    );
+
+    console.log('[UPDATE] tipo_situacion_id_final:', tipo_situacion_id_final,
+      '(from hecho:', tipo_hecho_id, ', asist:', tipo_asistencia_id, ', emerg:', tipo_emergencia_id, ')');
+
     // Update principal
     const updateData: any = {
       actualizado_por: userId,
@@ -431,7 +448,8 @@ export async function updateSituacion(req: Request, res: Response) {
       danios_materiales, danios_infraestructura, danios_descripcion: descripcion_danios_infra,
       obstruccion_data: obstruccion,
 
-      // No mapear tipo_hecho_id - no existe en BD (se usa tipo_situacion_id)
+      // Mapear tipo_*_id a tipo_situacion_id (único campo que existe en BD)
+      tipo_situacion_id: tipo_situacion_id_final,
 
       hay_heridos: hay_heridos || false,
       cantidad_heridos: cantidad_heridos ? parseInt(cantidad_heridos, 10) : 0,
