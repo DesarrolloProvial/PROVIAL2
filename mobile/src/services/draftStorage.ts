@@ -44,6 +44,10 @@ export interface MultimediaRef {
   tipo: 'FOTO' | 'VIDEO';
   uri: string;
   orden?: number; // Solo para fotos (1, 2, 3)
+  // Metadata opcional para subida
+  latitud?: number;
+  longitud?: number;
+  duracion_segundos?: number; // Solo para videos
 }
 
 /**

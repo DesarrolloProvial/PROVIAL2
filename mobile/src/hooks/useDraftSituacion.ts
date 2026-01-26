@@ -28,6 +28,7 @@ import {
   setDraftWaitCOP
 } from '../services/draftStorage';
 import { generateSituacionId, SituacionIdParams } from '../utils/situacionId';
+import MultimediaService from '../services/multimedia.service';
 import { API_URL } from '../constants/config';
 import { useAuthStore } from '../store/authStore';
 
@@ -479,37 +480,68 @@ export function useDraftSituacion() {
   }, [token, loadDraft]);
 
   /**
-   * Subir multimedia al backend
+   * Subir multimedia al backend usando MultimediaService
+   * Usa los endpoints correctos: /multimedia/situacion/:id/foto y /multimedia/situacion/:id/video
    */
   const subirMultimedia = async (
     situacionId: number,
     multimedia: MultimediaRef[]
   ): Promise<void> => {
+    console.log(`📸 [MULTIMEDIA] Subiendo ${multimedia.length} archivos a situacion ${situacionId}`);
+
     for (const media of multimedia) {
+      const tipo = media.tipo as 'FOTO' | 'VIDEO';
+      const uri = media.uri;
+
+      // Construir objeto MediaFile compatible con el servicio
+      const guessMime = (uri: string, tipo: 'FOTO' | 'VIDEO') => {
+        if (tipo === 'VIDEO') return 'video/mp4';
+        if (uri.toLowerCase().endsWith('.png')) return 'image/png';
+        return 'image/jpeg';
+      };
+
+      const buildName = (uri: string, tipo: 'FOTO' | 'VIDEO', orden?: number) => {
+        const ext = tipo === 'VIDEO' ? 'mp4' : uri.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
+        return tipo === 'VIDEO' ? `video_${Date.now()}.${ext}` : `foto_${orden ?? 1}_${Date.now()}.${ext}`;
+      };
+
+      const mediaFile = {
+        uri,
+        type: tipo === 'FOTO' ? 'image' as const : 'video' as const,
+        mimeType: guessMime(uri, tipo),
+        fileName: buildName(uri, tipo, media.orden),
+        duration: media.duracion_segundos,
+      };
+
+      const location = (media.latitud && media.longitud)
+        ? { latitude: media.latitud, longitude: media.longitud }
+        : undefined;
+
       try {
-        const formData = new FormData();
-        formData.append('file', {
-          uri: media.uri,
-          type: media.tipo === 'FOTO' ? 'image/jpeg' : 'video/mp4',
-          name: media.tipo === 'FOTO' ? `foto_${media.orden}.jpg` : 'video.mp4'
-        } as any);
-        formData.append('tipo', media.tipo);
-        if (media.orden) {
-          formData.append('orden', String(media.orden));
+        let result;
+
+        if (tipo === 'FOTO') {
+          console.log(`📷 [MULTIMEDIA] Subiendo FOTO ${media.orden || 1}...`);
+          result = await MultimediaService.uploadPhoto(situacionId, mediaFile, location);
+        } else {
+          console.log(`🎥 [MULTIMEDIA] Subiendo VIDEO...`);
+          result = await MultimediaService.uploadVideo(situacionId, mediaFile, location);
         }
 
-        await fetch(`${API_URL}/situaciones/${situacionId}/multimedia`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formData
-        });
-      } catch (error) {
-        console.error('[DRAFT] Error subiendo multimedia:', error);
+        if (result.success) {
+          console.log(`✅ [MULTIMEDIA] ${tipo} subida OK -> ID: ${result.id}, URL: ${result.url}`);
+        } else {
+          console.error(`❌ [MULTIMEDIA] ${tipo} FALLÓ:`, result.error);
+          // TODO: Marcar como pendiente de reintento en storage local
+        }
+      } catch (error: any) {
+        console.error(`❌ [MULTIMEDIA] Error subiendo ${tipo}:`, error?.message || error);
         // Continuar con el siguiente, no fallar todo
+        // TODO: Marcar como pendiente de reintento
       }
     }
+
+    console.log(`📸 [MULTIMEDIA] Proceso de subida completado para situacion ${situacionId}`);
   };
 
   /**
