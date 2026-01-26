@@ -80,9 +80,21 @@ export interface DraftSituacion {
   observaciones?: string;
 
   // Campos especificos por tipo
-  tipo_hecho?: string; // HECHO_TRANSITO
-  tipo_asistencia?: string; // ASISTENCIA_VEHICULAR
-  tipo_emergencia?: string; // EMERGENCIA
+  tipo_hecho?: string; // HECHO_TRANSITO (legacy - string)
+  tipo_asistencia?: string; // ASISTENCIA_VEHICULAR (legacy - string)
+  tipo_emergencia?: string; // EMERGENCIA (legacy - string)
+
+  // IDs de catálogos (nuevos - alineados con backend)
+  tipo_hecho_id?: number | null;
+  tipo_asistencia_id?: number | null;
+  tipo_emergencia_id?: number | null;
+
+  // Campos adicionales del formulario
+  clima?: string | null;
+  carga_vehicular?: string | null;
+  departamento_id?: number | null;
+  municipio_id?: number | null;
+  tipo_pavimento?: string | null;
 
   // Datos relacionados (comunes)
   vehiculos?: any[];
