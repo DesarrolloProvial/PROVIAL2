@@ -27,32 +27,9 @@ interface CatalogosAuxiliaresResponse {
  */
 export async function syncCatalogosAuxiliares(): Promise<boolean> {
     try {
-        console.log('[CATALOG_SYNC] Iniciando sincronización de catálogos auxiliares...');
-
-        // Inicializar storage si no está inicializado
         await catalogoStorage.init();
-        console.log('[CATALOG_SYNC] SQLite inicializado');
-
-        // Fetch desde backend
-        console.log('[CATALOG_SYNC] Llamando a /situaciones/auxiliares...');
         const response = await api.get<CatalogosAuxiliaresResponse>('/situaciones/auxiliares');
-        console.log('[CATALOG_SYNC] Response status:', response.status);
-
         const { tipos_hecho, tipos_asistencia, tipos_emergencia } = response.data;
-
-        console.log('[CATALOG_SYNC] Datos recibidos:', {
-            tipos_hecho: tipos_hecho?.length || 0,
-            tipos_asistencia: tipos_asistencia?.length || 0,
-            tipos_emergencia: tipos_emergencia?.length || 0,
-        });
-
-        // Debug: mostrar primeros elementos
-        if (tipos_hecho?.length > 0) {
-            console.log('[CATALOG_SYNC] Primer tipo_hecho:', tipos_hecho[0]);
-        }
-        if (tipos_asistencia?.length > 0) {
-            console.log('[CATALOG_SYNC] Primer tipo_asistencia:', tipos_asistencia[0]);
-        }
 
         // Normalizar datos (convertir IDs a números) y guardar en SQLite
         if (tipos_hecho && tipos_hecho.length > 0) {
@@ -79,7 +56,6 @@ export async function syncCatalogosAuxiliares(): Promise<boolean> {
             await catalogoStorage.saveTiposEmergencia(normalized);
         }
 
-        console.log('[CATALOG_SYNC] ✅ Sincronización completada exitosamente');
         return true;
     } catch (error: any) {
         console.error('[CATALOG_SYNC] ❌ Error sincronizando catálogos:', error);

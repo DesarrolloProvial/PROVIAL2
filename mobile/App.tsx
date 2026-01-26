@@ -24,14 +24,9 @@ export default function App() {
   useEffect(() => {
     const initStorage = async () => {
       try {
-        console.log('[APP] Inicializando SQLite storage...');
         await catalogoStorage.init();
-        console.log('[APP] ✅ SQLite storage inicializado');
-
-        // NOTA: La sincronización con backend se hará después del login
-        // Ver: authStore.ts o BrigadaHomeScreen.tsx
       } catch (error) {
-        console.error('[APP] ❌ Error inicializando storage:', error);
+        console.error('[APP] Error inicializando storage:', error);
       }
     };
 

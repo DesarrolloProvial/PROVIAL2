@@ -82,7 +82,6 @@ class CatalogoStorage {
      */
     async init(): Promise<void> {
         if (this.initialized) {
-            console.log('[CATALOGOS] Ya inicializado');
             return;
         }
 
@@ -175,7 +174,6 @@ class CatalogoStorage {
             `);
 
             this.initialized = true;
-            console.log('[CATALOGOS] Inicialización completada');
         } catch (error) {
             console.error('[CATALOGOS] Error al crear tablas:', error);
             this.initialized = false;
@@ -320,7 +318,6 @@ class CatalogoStorage {
                 `INSERT OR REPLACE INTO sync_metadata (catalogo, ultima_sincronizacion, version)
                  VALUES ('departamento', datetime('now'), 1)`
             );
-            console.log(`[CATALOGOS] ${departamentos.length} departamentos guardados`);
         } catch (error) {
             console.error('[CATALOGOS] Error saveDepartamentos:', error);
             throw error;
@@ -344,7 +341,6 @@ class CatalogoStorage {
                 `INSERT OR REPLACE INTO sync_metadata (catalogo, ultima_sincronizacion, version)
                  VALUES ('municipio', datetime('now'), 1)`
             );
-            console.log(`[CATALOGOS] ${municipios.length} municipios guardados`);
         } catch (error) {
             console.error('[CATALOGOS] Error saveMunicipios:', error);
             throw error;
@@ -368,7 +364,6 @@ class CatalogoStorage {
                 `INSERT OR REPLACE INTO sync_metadata (catalogo, ultima_sincronizacion, version)
                  VALUES ('tipo_vehiculo', datetime('now'), 1)`
             );
-            console.log(`[CATALOGOS] ${tipos.length} tipos de vehículo guardados`);
         } catch (error) {
             console.error('[CATALOGOS] Error saveTiposVehiculo:', error);
             throw error;
@@ -392,7 +387,6 @@ class CatalogoStorage {
                 `INSERT OR REPLACE INTO sync_metadata (catalogo, ultima_sincronizacion, version)
                  VALUES ('marca_vehiculo', datetime('now'), 1)`
             );
-            console.log(`[CATALOGOS] ${marcas.length} marcas de vehículo guardadas`);
         } catch (error) {
             console.error('[CATALOGOS] Error saveMarcasVehiculo:', error);
             throw error;
@@ -416,7 +410,6 @@ class CatalogoStorage {
                 `INSERT OR REPLACE INTO sync_metadata (catalogo, ultima_sincronizacion, version)
                  VALUES ('tipo_hecho', datetime('now'), 1)`
             );
-            console.log(`[CATALOGOS] ${tipos.length} tipos de hecho guardados`);
         } catch (error) {
             console.error('[CATALOGOS] Error saveTiposHecho:', error);
             throw error;
@@ -440,7 +433,6 @@ class CatalogoStorage {
                 `INSERT OR REPLACE INTO sync_metadata (catalogo, ultima_sincronizacion, version)
                  VALUES ('tipo_asistencia', datetime('now'), 1)`
             );
-            console.log(`[CATALOGOS] ${tipos.length} tipos de asistencia guardados`);
         } catch (error) {
             console.error('[CATALOGOS] Error saveTiposAsistencia:', error);
             throw error;
@@ -464,7 +456,6 @@ class CatalogoStorage {
                 `INSERT OR REPLACE INTO sync_metadata (catalogo, ultima_sincronizacion, version)
                  VALUES ('tipo_emergencia', datetime('now'), 1)`
             );
-            console.log(`[CATALOGOS] ${tipos.length} tipos de emergencia guardados`);
         } catch (error) {
             console.error('[CATALOGOS] Error saveTiposEmergencia:', error);
             throw error;
@@ -503,7 +494,6 @@ class CatalogoStorage {
             this.db.runSync('DELETE FROM tipo_asistencia');
             this.db.runSync('DELETE FROM tipo_emergencia');
             this.db.runSync('DELETE FROM sync_metadata');
-            console.log('[CATALOGOS] Todos los catálogos limpiados');
         } catch (error) {
             console.error('[CATALOGOS] Error clearAll:', error);
             throw error;

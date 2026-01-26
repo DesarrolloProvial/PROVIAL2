@@ -184,11 +184,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Sincronizar catálogos auxiliares desde backend
       try {
-        console.log('[LOGIN] Sincronizando catálogos auxiliares...');
         await syncCatalogosAuxiliares();
-        console.log('[LOGIN] ✅ Catálogos sincronizados');
       } catch (error) {
-        console.warn('[LOGIN] ⚠️ No se pudieron sincronizar catálogos:', error);
         // No fallar el login si falla la sincronización
       }
 
@@ -281,11 +278,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         // Sincronizar catálogos auxiliares desde backend
         try {
-          console.log('[LOAD_AUTH] Sincronizando catálogos auxiliares...');
           await syncCatalogosAuxiliares();
-          console.log('[LOAD_AUTH] ✅ Catálogos sincronizados');
         } catch (error) {
-          console.warn('[LOAD_AUTH] ⚠️ No se pudieron sincronizar catálogos:', error);
           // No fallar el load si falla la sincronización
         }
       } else {
