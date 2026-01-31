@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Icon, LatLngExpression } from 'leaflet';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { incidentesAPI, situacionesAPI } from '../services/api';
+import { situacionesAPI } from '../services/api';
 import { situacionesPersistentesAPI } from '../services/movimientos.service';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut } from 'lucide-react';
+import { RefreshCw, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut, Search } from 'lucide-react';
 import { useDashboardSocket } from '../hooks/useSocket';
 import ResumenUnidadesTable from '../components/ResumenUnidadesTable';
 import { useAuthStore } from '../store/authStore';
@@ -26,11 +26,10 @@ const createCustomIcon = (color: string) => {
   });
 };
 
-// Iconos para Incidentes
-const iconReportado = createCustomIcon('#EF4444');
-const iconEnAtencion = createCustomIcon('#F59E0B');
-const iconRegulacion = createCustomIcon('#3B82F6');
-const iconCerrado = createCustomIcon('#10B981');
+// Iconos para estados de situación
+const iconActiva = createCustomIcon('#EF4444');    // Rojo - situación activa
+const iconCerrada = createCustomIcon('#10B981');   // Verde - situación cerrada
+const iconSinSituacion = createCustomIcon('#6B7280'); // Gris - sin situación reportada
 
 // Colores por sede
 const COLORES_SEDE: Record<number, string> = {
@@ -101,41 +100,34 @@ export default function COPMapaPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [showLegend, setShowLegend] = useState(true);
   const [modoVista, setModoVista] = useState<'mapa' | 'tabla'>('mapa');
-  const [selectedIncidente, setSelectedIncidente] = useState<any | null>(null);
-  const [selectedSituacion, setSelectedSituacion] = useState<any | null>(null);
+  const [selectedUnidad, setSelectedUnidad] = useState<any | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [filters, setFilters] = useState({
-    incidentes: true,
-    situaciones: true,
+    unidades: true,
     persistentes: true,
+    soloActivas: false, // Si true, solo muestra situaciones ACTIVAS
     sedes: [] as number[],
   });
 
   const { isConnected: socketConnected, lastUpdate } = useDashboardSocket(queryClient);
   const defaultCenter: LatLngExpression = [14.6407, -90.5133];
 
-  // Queries
-  const { data: incidentes = [], refetch: refetchIncidentes, isLoading: loadingIncidentes, isError: errorIncidentes } = useQuery({
-    queryKey: ['incidentes-activos'],
-    queryFn: incidentesAPI.getActivos,
-    refetchInterval: socketConnected ? false : 30000,
-  });
-
+  // Query principal: Resumen de unidades (última situación por unidad activa en patrullaje)
   const { data: resumenUnidades = [], refetch: refetchResumen, isLoading: loadingResumen, isError: errorResumen } = useQuery({
     queryKey: ['resumen-unidades'],
     queryFn: async () => {
       const data = await situacionesAPI.getResumenUnidades() as any;
       console.log('📊 [COP] Resumen unidades recibido:', data);
-      console.log('📊 [COP] Tipo de data:', typeof data, 'Es array?', Array.isArray(data));
 
       // Si data es un array directamente, retornarlo
       if (Array.isArray(data)) {
-        console.log('📊 [COP] Data es array, retornando directamente');
         return data;
       }
 
       // Si es un objeto con propiedad resumen, extraer el array
       if (data && data.resumen && Array.isArray(data.resumen)) {
-        console.log('📊 [COP] Data tiene propiedad resumen, extrayendo array');
         return data.resumen;
       }
 
@@ -145,13 +137,7 @@ export default function COPMapaPage() {
     refetchInterval: socketConnected ? false : 30000,
   });
 
-  const { data: situacionesActivas = [], refetch: refetchSituacionesActivas } = useQuery({
-    queryKey: ['situaciones-activas'],
-    queryFn: situacionesAPI.getActivas,
-    refetchInterval: socketConnected ? false : 30000,
-  });
-
-  const { data: situacionesPersistentes = [] } = useQuery({
+  const { data: situacionesPersistentes = [], refetch: refetchPersistentes } = useQuery({
     queryKey: ['situaciones-persistentes-mapa'],
     queryFn: situacionesPersistentesAPI.getActivas,
     refetchInterval: 60000,
@@ -160,19 +146,50 @@ export default function COPMapaPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([refetchIncidentes(), refetchResumen(), refetchSituacionesActivas()]);
+      await Promise.all([refetchResumen(), refetchPersistentes()]);
     } finally {
       setIsRefreshing(false);
     }
   };
+
+  // Búsqueda de lugares con Nominatim (OpenStreetMap)
+  const searchPlaces = async (query: string) => {
+    if (!query || query.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      // Buscar en Guatemala
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=gt&limit=5`
+      );
+      const results = await response.json();
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Error buscando lugares:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounce para búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchPlaces(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const isLoading = loadingIncidentes || loadingResumen;
-  const hasError = errorIncidentes || errorResumen;
+  const isLoading = loadingResumen;
+  const hasError = errorResumen;
 
   const formatLastUpdate = () => {
     return lastUpdate.toLocaleTimeString('es-GT', {
@@ -182,45 +199,50 @@ export default function COPMapaPage() {
     });
   };
 
-  const getIncidenteIcon = (estado: string) => {
+  const getSituacionIcon = (estado: string) => {
     switch (estado) {
-      case 'REPORTADO': return iconReportado;
-      case 'EN_ATENCION': return iconEnAtencion;
-      case 'REGULACION': return iconRegulacion;
-      case 'CERRADO': return iconCerrado;
-      default: return iconReportado;
+      case 'ACTIVA': return iconActiva;
+      case 'CERRADA': return iconCerrada;
+      default: return iconSinSituacion;
     }
   };
 
   const getEstadoBadgeColor = (estado: string) => {
     switch (estado) {
-      case 'REPORTADO': return 'bg-red-100 text-red-800';
-      case 'EN_ATENCION': return 'bg-yellow-100 text-yellow-800';
-      case 'REGULACION': return 'bg-blue-100 text-blue-800';
-      case 'CERRADO': return 'bg-green-100 text-green-800';
+      case 'ACTIVA': return 'bg-red-100 text-red-800';
+      case 'CERRADA': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
+  const getTipoSituacionLabel = (tipo: string) => {
+    const labels: Record<string, string> = {
+      'INCIDENTE': 'Hecho de Tránsito',
+      'ASISTENCIA_VEHICULAR': 'Asistencia Vehicular',
+      'EMERGENCIA': 'Emergencia',
+      'OBSTACULO': 'Obstáculo en Vía',
+      'PATRULLAJE': 'Patrullaje',
+      'PUNTO_FIJO': 'Punto Fijo',
+      'REGULACION': 'Regulación de Tráfico',
+    };
+    return labels[tipo] || tipo?.replace(/_/g, ' ') || 'Sin tipo';
+  };
+
   // Filtrar datos
-  const filteredIncidentes = filters.incidentes
-    ? incidentes.filter((i: any) =>
-      filters.sedes.length === 0 || (i.sede_id && filters.sedes.includes(i.sede_id))
-    )
+  const filteredUnidades = filters.unidades
+    ? resumenUnidades.filter((u: any) => {
+        // Filtro por sede
+        const pasaSede = filters.sedes.length === 0 || (u.sede_id && filters.sedes.includes(u.sede_id));
+        // Filtro por estado (solo activas si está activado)
+        const pasaEstado = !filters.soloActivas || u.situacion_estado === 'ACTIVA';
+        return pasaSede && pasaEstado;
+      })
     : [];
-
-  const filteredSituaciones = filters.situaciones
-    ? resumenUnidades.filter((u: any) =>
-      filters.sedes.length === 0 || (u.sede_id && filters.sedes.includes(u.sede_id))
-    )
-    : [];
-
-
 
   const filteredPersistentes = filters.persistentes
     ? situacionesPersistentes.filter((p: any) =>
-      filters.sedes.length === 0 || (p.sede_id && filters.sedes.includes(p.sede_id))
-    ) // Asumiendo que persistentes también tienen sede_id, si no, se mostrarán solo si no hay filtro de sede o se añade lógica extra
+        filters.sedes.length === 0 || (p.sede_id && filters.sedes.includes(p.sede_id))
+      )
     : [];
 
 
@@ -352,87 +374,58 @@ export default function COPMapaPage() {
             </div>
           )}
 
-          {!isLoading && !hasError && incidentes.length === 0 && situacionesActivas.length === 0 && (
+          {!isLoading && !hasError && resumenUnidades.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              No hay elementos activos
+              No hay unidades activas
             </div>
           )}
 
-          {/* Mostrar Incidentes */}
-          {incidentes.map((incidente: any) => (
+          {/* Mostrar Unidades con su última situación */}
+          {filteredUnidades.map((unidad: any) => (
             <div
-              key={incidente.id}
-              onClick={() => {
-                setSelectedIncidente(incidente);
-                setSelectedSituacion(null);
-              }}
+              key={`unidad-${unidad.unidad_id}`}
+              onClick={() => setSelectedUnidad(unidad)}
               className={`bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition cursor-pointer border-l-4 ${
-                selectedIncidente?.id === incidente.id
+                selectedUnidad?.unidad_id === unidad.unidad_id
                   ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200'
+                  : unidad.situacion_estado === 'ACTIVA'
+                    ? 'border-red-400'
+                    : 'border-green-400'
               }`}
             >
               <div className="flex items-start justify-between mb-2">
                 <span className="font-semibold text-gray-800">
-                  {incidente.numero_reporte || `#${incidente.id}`}
+                  🚓 {unidad.unidad_codigo || `Unidad #${unidad.unidad_id}`}
                 </span>
                 <span
                   className={`px-2 py-1 rounded-full text-xs font-medium ${getEstadoBadgeColor(
-                    incidente.estado
+                    unidad.situacion_estado
                   )}`}
                 >
-                  {incidente.estado}
+                  {unidad.situacion_estado || 'EN RUTA'}
                 </span>
               </div>
 
-              <p className="text-sm font-medium text-gray-700 mb-1">
-                {incidente.tipo_hecho}
-              </p>
-
-              <div className="text-xs text-gray-600 space-y-1">
-                <p>
-                  📍 {incidente.ruta_codigo} Km {incidente.km}
-                  {incidente.sentido && ` (${incidente.sentido})`}
+              {unidad.tipo_situacion && (
+                <p className="text-sm font-medium text-gray-700 mb-1">
+                  {getTipoSituacionLabel(unidad.tipo_situacion)}
                 </p>
-                {incidente.unidad_codigo && (
-                  <p>🚓 {incidente.unidad_codigo}</p>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {/* Mostrar Situaciones Activas */}
-          {situacionesActivas.map((situacion: any) => (
-            <div
-              key={`situacion-${situacion.id}`}
-              onClick={() => {
-                setSelectedSituacion(situacion);
-                setSelectedIncidente(null);
-              }}
-              className={`bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition cursor-pointer border-l-4 ${
-                selectedSituacion?.id === situacion.id
-                  ? 'border-purple-500 bg-purple-50'
-                  : 'border-purple-200'
-              }`}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <span className="font-semibold text-gray-800">
-                  🚓 {situacion.unidad_codigo || `Unidad #${situacion.unidad_id}`}
-                </span>
-                <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  {situacion.tipo_situacion?.replace(/_/g, ' ')}
-                </span>
-              </div>
-
-              <p className="text-sm font-medium text-purple-700 mb-1">
-                {situacion.descripcion || 'Sin descripción'}
-              </p>
+              )}
 
               <div className="text-xs text-gray-600 space-y-1">
-                {situacion.ruta_codigo && (
+                {(unidad.ruta_activa_codigo || unidad.ruta_codigo) && (
                   <p>
-                    📍 {situacion.ruta_codigo} Km {situacion.km}
-                    {situacion.sentido && ` (${situacion.sentido})`}
+                    📍 {unidad.ruta_activa_codigo || unidad.ruta_codigo}
+                    {unidad.km && ` Km ${unidad.km}`}
+                    {unidad.sentido && ` (${unidad.sentido})`}
+                  </p>
+                )}
+                {unidad.sede_nombre && (
+                  <p>🏢 {unidad.sede_nombre}</p>
+                )}
+                {unidad.situacion_descripcion && (
+                  <p className="italic text-gray-500 truncate">
+                    {unidad.situacion_descripcion}
                   </p>
                 )}
               </div>
@@ -456,51 +449,8 @@ export default function COPMapaPage() {
               />
               <MapController center={defaultCenter} />
 
-        {/* Marcadores de Incidentes */}
-        {filteredIncidentes.map((incidente: any) => {
-          const lat = incidente.latitud != null ? Number(incidente.latitud) : null;
-          const lng = incidente.longitud != null ? Number(incidente.longitud) : null;
-
-          if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-            console.log('❌ Incidente sin coordenadas:', {
-              id: incidente.id,
-              numero: incidente.numero_reporte,
-              latitud_raw: incidente.latitud,
-              longitud_raw: incidente.longitud
-            });
-            return null;
-          }
-
-          return (
-            <Marker
-              key={`incidente-${incidente.id}`}
-              position={[lat, lng]}
-              icon={getIncidenteIcon(incidente.estado)}
-            >
-              <Popup>
-                <div className="p-2 min-w-[200px]">
-                  <h3 className="font-bold text-lg mb-2">
-                    {incidente.numero_reporte || `#${incidente.id}`}
-                  </h3>
-                  <p className="font-semibold text-gray-700 mb-2">{incidente.tipo_hecho}</p>
-                  <div className="text-sm space-y-1">
-                    <p>📍 {incidente.ruta_codigo} Km {incidente.km}</p>
-                    <p>
-                      Estado:{' '}
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getEstadoBadgeColor(incidente.estado)}`}>
-                        {incidente.estado}
-                      </span>
-                    </p>
-                    {incidente.unidad_codigo && <p>🚓 {incidente.unidad_codigo}</p>}
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
-
-        {/* Marcadores de Unidades (Resumen) */}
-        {filteredSituaciones.map((unidad: any) => {
+        {/* Marcadores de Unidades (última situación reportada) */}
+        {filteredUnidades.map((unidad: any) => {
           // Convertir coordenadas de string a número
           const lat = unidad.latitud != null ? Number(unidad.latitud) : null;
           const lng = unidad.longitud != null ? Number(unidad.longitud) : null;
@@ -626,6 +576,73 @@ export default function COPMapaPage() {
         })}
             </MapContainer>
 
+            {/* Buscador de lugares */}
+            <div className="absolute top-4 left-4 z-[1000] w-80">
+              <div className="relative">
+                <div className="flex items-center bg-white rounded-lg shadow-lg">
+                  <Search className="w-5 h-5 text-gray-400 ml-3" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar lugar en Guatemala..."
+                    className="w-full px-3 py-3 rounded-lg focus:outline-none"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSearchResults([]);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-r-lg"
+                    >
+                      <X className="w-4 h-4 text-gray-500" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Resultados de búsqueda */}
+                {searchResults.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {searchResults.map((result: any, index: number) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          // Navegar al lugar en el mapa
+                          const lat = parseFloat(result.lat);
+                          const lng = parseFloat(result.lon);
+                          if (!isNaN(lat) && !isNaN(lng)) {
+                            // Usar el MapController para centrar
+                            setSearchQuery(result.display_name.split(',')[0]);
+                            setSearchResults([]);
+                            // El mapa se centrará en esta ubicación
+                            const mapEl = document.querySelector('.leaflet-container') as any;
+                            if (mapEl && mapEl._leaflet_map) {
+                              mapEl._leaflet_map.setView([lat, lng], 15);
+                            }
+                          }
+                        }}
+                        className="w-full px-4 py-2 text-left hover:bg-blue-50 border-b border-gray-100 last:border-0"
+                      >
+                        <p className="text-sm font-medium text-gray-800 truncate">
+                          {result.display_name.split(',')[0]}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {result.display_name.split(',').slice(1, 3).join(',')}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {isSearching && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg p-3 text-center text-gray-500 text-sm">
+                    Buscando...
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Controles flotantes del mapa */}
             <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
               <button
@@ -666,20 +683,21 @@ export default function COPMapaPage() {
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={filters.incidentes}
-                      onChange={(e) => setFilters(prev => ({ ...prev, incidentes: e.target.checked }))}
-                      className="rounded text-blue-600"
-                    />
-                    <span className="text-sm">Incidentes ({incidentes.length})</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.situaciones}
-                      onChange={(e) => setFilters(prev => ({ ...prev, situaciones: e.target.checked }))}
+                      checked={filters.unidades}
+                      onChange={(e) => setFilters(prev => ({ ...prev, unidades: e.target.checked }))}
                       className="rounded text-blue-600"
                     />
                     <span className="text-sm">Unidades ({resumenUnidades.length})</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={filters.soloActivas}
+                      onChange={(e) => setFilters(prev => ({ ...prev, soloActivas: e.target.checked }))}
+                      className="rounded text-blue-600"
+                    />
+                    <span className="text-sm">Solo situaciones activas</span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -745,23 +763,15 @@ export default function COPMapaPage() {
                 <h4 className="text-xs font-bold text-gray-600 mb-2 uppercase">Leyenda</h4>
 
                 <div className="mb-3">
-                  <p className="text-xs font-semibold text-gray-500 mb-1">Estados Incidente:</p>
+                  <p className="text-xs font-semibold text-gray-500 mb-1">Estado Situación:</p>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-red-500" />
-                      <span className="text-xs">Reportado</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                      <span className="text-xs">En Atención</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-blue-500" />
-                      <span className="text-xs">Regulación</span>
+                      <span className="text-xs">Situación Activa</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-green-500" />
-                      <span className="text-xs">Cerrado</span>
+                      <span className="text-xs">Situación Cerrada</span>
                     </div>
                   </div>
                 </div>
@@ -784,12 +794,14 @@ export default function COPMapaPage() {
             <div className="absolute bottom-4 right-4 z-[1000] bg-white/90 backdrop-blur rounded-lg shadow-lg p-3">
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div>
-                  <p className="text-xs text-gray-500">Incidentes</p>
-                  <p className="text-lg font-bold text-red-600">{filteredIncidentes.length}</p>
+                  <p className="text-xs text-gray-500">Unidades</p>
+                  <p className="text-lg font-bold text-blue-600">{filteredUnidades.length}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Unidades</p>
-                  <p className="text-lg font-bold text-purple-600">{filteredSituaciones.length}</p>
+                  <p className="text-xs text-gray-500">Con Situación Activa</p>
+                  <p className="text-lg font-bold text-red-600">
+                    {filteredUnidades.filter((u: any) => u.situacion_estado === 'ACTIVA').length}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Persistentes</p>
