@@ -170,10 +170,12 @@ export async function uploadPhotoBuffer(
   }
 
   try {
-    // Nombre según convención: CODIGO_FOTO_INDEX o fallback con situacionId
+    // Nombre según convención:
+    // Con código: 20260121-1-030-70-86-50-4_F1 (fecha-sede-unidad-tipo-ruta-km-num_Foto#)
+    // Sin código: SIT_32_F1_1769436762168 (fallback con ID)
     const publicId = codigoSituacion
-      ? `${codigoSituacion}_FOTO_${orden || 1}`
-      : `situacion_${situacionId}_FOTO_${orden || 1}_${Date.now()}`;
+      ? `${codigoSituacion}_F${orden || 1}`
+      : `SIT_${situacionId}_F${orden || 1}_${Date.now()}`;
 
     console.log(`[CLOUDINARY] Subiendo foto con preset "${UPLOAD_PRESET}", public_id: ${publicId}`);
 
@@ -240,10 +242,12 @@ export async function uploadVideoBuffer(
   }
 
   try {
-    // Nombre según convención: CODIGO_VIDEO_1 o fallback con situacionId
+    // Nombre según convención:
+    // Con código: 20260121-1-030-70-86-50-4_V1 (fecha-sede-unidad-tipo-ruta-km-num_Video)
+    // Sin código: SIT_32_V1_1769436762168 (fallback con ID)
     const publicId = codigoSituacion
-      ? `${codigoSituacion}_VIDEO_1`
-      : `situacion_${situacionId}_VIDEO_1_${Date.now()}`;
+      ? `${codigoSituacion}_V1`
+      : `SIT_${situacionId}_V1_${Date.now()}`;
 
     console.log(`[CLOUDINARY] Subiendo video con preset "${UPLOAD_PRESET}", public_id: ${publicId}`);
 

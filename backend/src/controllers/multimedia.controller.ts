@@ -50,9 +50,9 @@ export async function subirFoto(req: Request, res: Response) {
       return res.status(400).json({ error: 'No se recibió ningún archivo' });
     }
 
-    // Verificar que la situación existe
+    // Verificar que la situación existe y obtener código determinista
     const situacion = await db.oneOrNone(
-      'SELECT id, tipo_situacion FROM situacion WHERE id = $1',
+      'SELECT id, tipo_situacion, codigo_situacion FROM situacion WHERE id = $1',
       [situacionId]
     );
 
@@ -75,12 +75,13 @@ export async function subirFoto(req: Request, res: Response) {
       return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
     }
 
-    // Subir foto a Cloudinary
-    console.log(`[MULTIMEDIA] Subiendo foto a Cloudinary para situación ${situacionId}...`);
+    // Subir foto a Cloudinary usando el código determinista
+    console.log(`[MULTIMEDIA] Subiendo foto a Cloudinary para situación ${situacionId} (${situacion.codigo_situacion})...`);
     const result = await uploadPhotoBuffer(
       req.file.buffer,
       parseInt(situacionId),
-      ordenSiguiente
+      ordenSiguiente,
+      situacion.codigo_situacion // Usar código determinista para nombrar archivo
     );
 
     if (!result.success) {
@@ -148,9 +149,9 @@ export async function subirVideo(req: Request, res: Response) {
       return res.status(400).json({ error: 'No se recibió ningún archivo' });
     }
 
-    // Verificar que la situación existe
+    // Verificar que la situación existe y obtener código determinista
     const situacion = await db.oneOrNone(
-      'SELECT id, tipo_situacion FROM situacion WHERE id = $1',
+      'SELECT id, tipo_situacion, codigo_situacion FROM situacion WHERE id = $1',
       [situacionId]
     );
 
@@ -173,11 +174,12 @@ export async function subirVideo(req: Request, res: Response) {
       return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
     }
 
-    // Subir video a Cloudinary
-    console.log(`[MULTIMEDIA] Subiendo video a Cloudinary para situación ${situacionId}...`);
+    // Subir video a Cloudinary usando el código determinista
+    console.log(`[MULTIMEDIA] Subiendo video a Cloudinary para situación ${situacionId} (${situacion.codigo_situacion})...`);
     const result = await uploadVideoBuffer(
       req.file.buffer,
-      parseInt(situacionId)
+      parseInt(situacionId),
+      situacion.codigo_situacion // Usar código determinista para nombrar archivo
     );
 
     if (!result.success) {
