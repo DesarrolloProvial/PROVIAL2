@@ -199,14 +199,6 @@ export default function COPMapaPage() {
     });
   };
 
-  const getSituacionIcon = (estado: string) => {
-    switch (estado) {
-      case 'ACTIVA': return iconActiva;
-      case 'CERRADA': return iconCerrada;
-      default: return iconSinSituacion;
-    }
-  };
-
   const getEstadoBadgeColor = (estado: string) => {
     switch (estado) {
       case 'ACTIVA': return 'bg-red-100 text-red-800';
@@ -826,7 +818,7 @@ export default function COPMapaPage() {
                     setModoVista('mapa');
                     const unidad = resumenUnidades.find((u: any) => u.unidad_id === unidadId);
                     if (unidad) {
-                      setSelectedSituacion(unidad);
+                      setSelectedUnidad(unidad);
                     }
                   }}
                 />
