@@ -396,15 +396,31 @@ export const SituacionModel = {
   async getMiUnidadHoy(unidad_id: number, salida_id?: number): Promise<SituacionCompleta[]> {
     const params: any = { unidad_id, salida_id };
 
+    // Query con subqueries para obtener nombres de tipo desde las tablas correctas
+    // - tipo_hecho: para INCIDENTE (via tipo_hecho_id en situacion)
+    // - tipo_asistencia_vial/tipo_emergencia_vial: datos guardados en detalle_situacion OTROS
     let query = `
       SELECT s.*,
         r.codigo as ruta_codigo,
         r.nombre as ruta_nombre,
-        tsc.nombre as tipo_situacion_nombre,
-        tsc.categoria as tipo_situacion_categoria
+        COALESCE(
+          th.nombre,
+          tav.nombre,
+          tev.nombre
+        ) as tipo_situacion_nombre,
+        CASE
+          WHEN s.tipo_hecho_id IS NOT NULL THEN 'HECHO_TRANSITO'
+          WHEN (ds.datos->>'tipo_asistencia_id')::int IS NOT NULL THEN 'ASISTENCIA'
+          WHEN (ds.datos->>'tipo_emergencia_id')::int IS NOT NULL THEN 'EMERGENCIA'
+          ELSE NULL
+        END as tipo_situacion_categoria,
+        s.tipo_pavimento as material_via
       FROM situacion s
       LEFT JOIN ruta r ON s.ruta_id = r.id
-      LEFT JOIN tipo_situacion_catalogo tsc ON s.tipo_situacion_id = tsc.id
+      LEFT JOIN tipo_hecho th ON s.tipo_hecho_id = th.id
+      LEFT JOIN detalle_situacion ds ON ds.situacion_id = s.id AND ds.tipo_detalle = 'OTROS'
+      LEFT JOIN tipo_asistencia_vial tav ON tav.id = (ds.datos->>'tipo_asistencia_id')::int
+      LEFT JOIN tipo_emergencia_vial tev ON tev.id = (ds.datos->>'tipo_emergencia_id')::int
       WHERE s.unidad_id = $/unidad_id/
       AND s.created_at >= CURRENT_DATE
     `;

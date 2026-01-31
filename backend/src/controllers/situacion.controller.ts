@@ -698,14 +698,15 @@ export async function getCatalogo(_req: Request, res: Response) {
 
 export async function getCatalogosAuxiliares(_req: Request, res: Response) {
   try {
+    // Query desde las tablas correctas que existen en la base de datos
     const tipos_hecho = await db.manyOrNone(
-      "SELECT id, nombre, icono, color FROM tipo_situacion_catalogo WHERE categoria = 'HECHO_TRANSITO' AND activo = true ORDER BY nombre"
+      "SELECT id, nombre FROM tipo_hecho WHERE activo = true ORDER BY nombre"
     );
     const tipos_asistencia = await db.manyOrNone(
-      "SELECT id, nombre, icono, color FROM tipo_situacion_catalogo WHERE categoria = 'ASISTENCIA' AND activo = true ORDER BY nombre"
+      "SELECT id, nombre FROM tipo_asistencia_vial WHERE activo = true ORDER BY nombre"
     );
     const tipos_emergencia = await db.manyOrNone(
-      "SELECT id, nombre, icono, color FROM tipo_situacion_catalogo WHERE categoria = 'EMERGENCIA' AND activo = true ORDER BY nombre"
+      "SELECT id, codigo, nombre, icono FROM tipo_emergencia_vial WHERE activo = true ORDER BY nombre"
     );
 
     // Mantener retrocompatibilidad con subtipos_hecho vacío
