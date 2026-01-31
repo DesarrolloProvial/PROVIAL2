@@ -26,11 +26,6 @@ const createCustomIcon = (color: string) => {
   });
 };
 
-// Iconos para estados de situación
-const iconActiva = createCustomIcon('#EF4444');    // Rojo - situación activa
-const iconCerrada = createCustomIcon('#10B981');   // Verde - situación cerrada
-const iconSinSituacion = createCustomIcon('#6B7280'); // Gris - sin situación reportada
-
 // Colores por sede
 const COLORES_SEDE: Record<number, string> = {
   1: '#3B82F6',
