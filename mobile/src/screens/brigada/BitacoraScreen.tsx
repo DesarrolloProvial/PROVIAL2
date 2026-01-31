@@ -11,6 +11,8 @@ import {
   Modal,
   TextInput,
   Pressable,
+  Image,
+  ScrollView,
 } from 'react-native';
 import { useSituacionesStore, SituacionCompleta } from '../../store/situacionesStore';
 import { useAuthStore } from '../../store/authStore';
@@ -539,6 +541,36 @@ export default function BitacoraScreen() {
               <Text style={styles.descripcionText} numberOfLines={2}>
                 {item.descripcion}
               </Text>
+            </View>
+          )}
+
+          {/* Galería de fotos */}
+          {item.multimedia && item.multimedia.length > 0 && (
+            <View style={styles.multimediaContainer}>
+              <Text style={styles.multimediaLabel}>
+                📷 {item.total_fotos || 0} foto{(item.total_fotos || 0) !== 1 ? 's' : ''}
+                {(item.total_videos || 0) > 0 && ` • 🎬 ${item.total_videos} video`}
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.fotosScroll}>
+                {item.multimedia
+                  .filter(m => m.tipo === 'FOTO')
+                  .map((foto, index) => (
+                    <TouchableOpacity
+                      key={foto.id}
+                      style={styles.fotoThumbnailContainer}
+                      onPress={() => {
+                        // Abrir foto en modal o visor
+                        Alert.alert('Foto', `Foto ${index + 1} de ${item.total_fotos}`);
+                      }}
+                    >
+                      <Image
+                        source={{ uri: foto.thumbnail || foto.url }}
+                        style={styles.fotoThumbnail}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                  ))}
+              </ScrollView>
             </View>
           )}
 
@@ -1481,5 +1513,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: COLORS.warning,
+  },
+  // Multimedia styles
+  multimediaContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  multimediaLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.text.secondary,
+    marginBottom: 8,
+  },
+  fotosScroll: {
+    flexDirection: 'row',
+  },
+  fotoThumbnailContainer: {
+    marginRight: 8,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  fotoThumbnail: {
+    width: 80,
+    height: 60,
+    backgroundColor: COLORS.background,
   },
 });

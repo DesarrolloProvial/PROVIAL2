@@ -648,16 +648,63 @@ export async function deleteDetalle(req: Request, res: Response) {
 
 export async function getResumenUnidades(_req: Request, res: Response) {
   try {
+    // Obtener resumen de unidades con detalles de última situación y multimedia
     const resumen = await db.manyOrNone(`
+      WITH ultima_situacion_por_unidad AS (
+        SELECT DISTINCT ON (unidad_id)
+          s.id as situacion_id,
+          s.unidad_id,
+          s.tipo_situacion,
+          s.estado,
+          s.descripcion,
+          s.latitud,
+          s.longitud,
+          s.km,
+          s.ruta_id,
+          r.codigo as ruta_codigo,
+          s.created_at as situacion_created_at
+        FROM situacion s
+        LEFT JOIN ruta r ON s.ruta_id = r.id
+        WHERE s.created_at >= CURRENT_DATE
+        ORDER BY s.unidad_id, s.created_at DESC
+      )
       SELECT
         u.id as unidad_id,
         u.codigo as unidad_codigo,
         u.tipo_unidad,
-        s.nombre as sede_nombre,
+        u.sede_id,
+        se.nombre as sede_nombre,
         (SELECT COUNT(*) FROM situacion sit WHERE sit.unidad_id = u.id AND sit.estado = 'ACTIVA') as situaciones_activas,
-        (SELECT tipo_situacion FROM situacion sit WHERE sit.unidad_id = u.id ORDER BY sit.created_at DESC LIMIT 1) as ultima_situacion
+        us.situacion_id,
+        us.tipo_situacion as ultima_situacion,
+        us.estado as estado_situacion,
+        us.descripcion,
+        us.latitud,
+        us.longitud,
+        us.km,
+        us.ruta_codigo,
+        us.situacion_created_at,
+        -- Primera foto de la última situación (para preview)
+        (SELECT sm.url_thumbnail
+         FROM situacion_multimedia sm
+         WHERE sm.situacion_id = us.situacion_id AND sm.tipo = 'FOTO'
+         ORDER BY sm.orden LIMIT 1) as foto_preview,
+        -- Total de fotos de la última situación
+        (SELECT COUNT(*)
+         FROM situacion_multimedia sm
+         WHERE sm.situacion_id = us.situacion_id AND sm.tipo = 'FOTO') as total_fotos,
+        -- Array de todas las fotos (thumbnails)
+        (SELECT json_agg(json_build_object(
+          'id', sm.id,
+          'url', sm.url_original,
+          'thumbnail', sm.url_thumbnail,
+          'orden', sm.orden
+        ) ORDER BY sm.orden)
+         FROM situacion_multimedia sm
+         WHERE sm.situacion_id = us.situacion_id AND sm.tipo = 'FOTO') as fotos
       FROM unidad u
-      LEFT JOIN sede s ON u.sede_id = s.id
+      LEFT JOIN sede se ON u.sede_id = se.id
+      LEFT JOIN ultima_situacion_por_unidad us ON u.id = us.unidad_id
       WHERE u.activa = true
       ORDER BY u.codigo
     `);

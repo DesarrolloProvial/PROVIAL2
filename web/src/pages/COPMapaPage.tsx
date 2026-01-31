@@ -416,6 +416,34 @@ export default function COPMapaPage() {
                   </p>
                 )}
               </div>
+
+              {/* Miniaturas de fotos */}
+              {unidad.fotos && unidad.fotos.length > 0 && (
+                <div className="mt-2 flex gap-1">
+                  {unidad.fotos.slice(0, 3).map((foto: any) => (
+                    <img
+                      key={foto.id}
+                      src={foto.thumbnail || foto.url}
+                      alt={`Foto ${foto.orden}`}
+                      className="w-12 h-9 object-cover rounded border border-gray-200"
+                    />
+                  ))}
+                  {unidad.fotos.length > 3 && (
+                    <span className="w-12 h-9 flex items-center justify-center bg-gray-100 rounded text-xs text-gray-500">
+                      +{unidad.fotos.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
+              {unidad.foto_preview && !unidad.fotos && (
+                <div className="mt-2">
+                  <img
+                    src={unidad.foto_preview}
+                    alt="Preview"
+                    className="w-full h-16 object-cover rounded border border-gray-200"
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -495,6 +523,42 @@ export default function COPMapaPage() {
                     )}
 
                     {unidad.situacion_descripcion && <p className="mt-2 text-gray-700">{unidad.situacion_descripcion}</p>}
+
+                    {/* Galería de fotos */}
+                    {unidad.fotos && unidad.fotos.length > 0 && (
+                      <div className="mt-3 pt-2 border-t border-gray-100">
+                        <p className="text-xs text-gray-500 mb-2">📷 {unidad.total_fotos || unidad.fotos.length} foto(s)</p>
+                        <div className="flex gap-1 overflow-x-auto">
+                          {unidad.fotos.slice(0, 3).map((foto: any) => (
+                            <a
+                              key={foto.id}
+                              href={foto.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-shrink-0"
+                            >
+                              <img
+                                src={foto.thumbnail || foto.url}
+                                alt={`Foto ${foto.orden}`}
+                                className="w-16 h-12 object-cover rounded border border-gray-200 hover:border-blue-400 transition"
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {unidad.foto_preview && !unidad.fotos && (
+                      <div className="mt-3 pt-2 border-t border-gray-100">
+                        <a href={unidad.foto_preview.replace('/c_fill,h_200,w_300/', '/')} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={unidad.foto_preview}
+                            alt="Preview"
+                            className="w-full h-20 object-cover rounded border border-gray-200 hover:border-blue-400 transition"
+                          />
+                        </a>
+                      </div>
+                    )}
+
                     <div className="mt-3 pt-2 border-t border-gray-100">
                       <button
                         onClick={() => navigate(`/bitacora/${unidad.unidad_id}`)}

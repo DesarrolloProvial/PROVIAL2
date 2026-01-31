@@ -53,6 +53,16 @@ export interface SituacionCompleta {
   tipo_pavimento: string | null; // material_via
   clima: string | null;
   area: string | null;
+  // Multimedia
+  multimedia?: Array<{
+    id: number;
+    tipo: 'FOTO' | 'VIDEO';
+    orden: number;
+    url: string;
+    thumbnail: string | null;
+  }>;
+  total_fotos?: number;
+  total_videos?: number;
 }
 
 interface SituacionesState {

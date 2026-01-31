@@ -399,6 +399,7 @@ export const SituacionModel = {
     // Query con subqueries para obtener nombres de tipo desde las tablas correctas
     // - tipo_hecho: para INCIDENTE (via tipo_hecho_id en situacion)
     // - tipo_asistencia_vial/tipo_emergencia_vial: datos guardados en detalle_situacion OTROS
+    // - Incluye multimedia (fotos/videos) de cada situación
     let query = `
       SELECT s.*,
         r.codigo as ruta_codigo,
@@ -414,7 +415,21 @@ export const SituacionModel = {
           WHEN (ds.datos->>'tipo_emergencia_id')::int IS NOT NULL THEN 'EMERGENCIA'
           ELSE NULL
         END as tipo_situacion_categoria,
-        s.tipo_pavimento as material_via
+        s.tipo_pavimento as material_via,
+        -- Multimedia: array de fotos y conteos
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+            'id', sm.id,
+            'tipo', sm.tipo,
+            'orden', sm.orden,
+            'url', sm.url_original,
+            'thumbnail', sm.url_thumbnail
+          ) ORDER BY sm.tipo, sm.orden)
+          FROM situacion_multimedia sm WHERE sm.situacion_id = s.id),
+          '[]'
+        ) as multimedia,
+        (SELECT COUNT(*) FROM situacion_multimedia WHERE situacion_id = s.id AND tipo = 'FOTO') as total_fotos,
+        (SELECT COUNT(*) FROM situacion_multimedia WHERE situacion_id = s.id AND tipo = 'VIDEO') as total_videos
       FROM situacion s
       LEFT JOIN ruta r ON s.ruta_id = r.id
       LEFT JOIN tipo_hecho th ON s.tipo_hecho_id = th.id
