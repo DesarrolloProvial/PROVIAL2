@@ -60,7 +60,6 @@ export type BrigadaStackParamList = {
   Emergencia: SituacionDinamicaParams | undefined;
 
   // Otras pantallas
-  SalidaSede: undefined;
   IniciarSalida: { editMode?: boolean; salidaData?: any } | undefined;
   IngresoSede: { editMode?: boolean; ingresoData?: any } | undefined;
   SalidaDeSede: undefined;

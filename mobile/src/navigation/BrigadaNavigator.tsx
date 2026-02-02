@@ -17,7 +17,6 @@ import { COLORS } from '../constants/colors';
 import BrigadaHomeScreen from '../screens/brigada/BrigadaHomeScreen';
 import NuevaSituacionScreen from '../screens/brigada/NuevaSituacionScreen';
 import BitacoraScreen from '../screens/brigada/BitacoraScreen';
-import SalidaSedeScreen from '../screens/brigada/SalidaSedeScreen';
 import IniciarSalidaScreen from '../screens/brigada/IniciarSalidaScreen';
 import IngresoSedeScreen from '../screens/brigada/IngresoSedeScreen';
 import SalidaDeSedeScreen from '../screens/brigada/SalidaDeSedeScreen';
@@ -113,11 +112,6 @@ export default function BrigadaNavigator() {
                 OTRAS PANTALLAS
                 ============================================ */}
 
-            <Stack.Screen
-                name="SalidaSede"
-                component={SalidaSedeScreen}
-                options={{ title: 'Salida de Sede', headerShown: true }}
-            />
             <Stack.Screen
                 name="IniciarSalida"
                 component={IniciarSalidaScreen}
