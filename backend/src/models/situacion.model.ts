@@ -450,19 +450,27 @@ export const SituacionModel = {
   },
 
   async getUltimaSituacionPorUnidad(): Promise<any[]> {
-    // Query complejo para mapa
+    // Usar tabla situacion_actual para consulta O(1) por unidad
+    // Esta tabla se actualiza automáticamente con trigger en cada INSERT/UPDATE de situacion
     const query = `
-        SELECT DISTINCT ON (s.unidad_id)
-            s.id, s.codigo_situacion, s.tipo_situacion, s.latitud, s.longitud, s.created_at, 
-            s.km, s.sentido, s.estado,
-            u.codigo as unidad_codigo, u.tipo_unidad,
-            r.codigo as ruta_codigo
-        FROM situacion s
-        JOIN unidad u ON s.unidad_id = u.id
-        LEFT JOIN ruta r ON s.ruta_id = r.id
-        WHERE s.created_at >= NOW() - INTERVAL '24 hours'
-        ORDER BY s.unidad_id, s.created_at DESC
-       `;
+        SELECT
+            sa.situacion_id as id,
+            sa.tipo_situacion,
+            sa.estado,
+            sa.latitud,
+            sa.longitud,
+            sa.km,
+            sa.sentido,
+            sa.situacion_created_at as created_at,
+            u.id as unidad_id,
+            u.codigo as unidad_codigo,
+            u.tipo_unidad,
+            sa.ruta_codigo
+        FROM unidad u
+        LEFT JOIN situacion_actual sa ON u.id = sa.unidad_id
+        WHERE u.activa = true
+        ORDER BY u.codigo
+    `;
     return db.manyOrNone(query);
   },
 
