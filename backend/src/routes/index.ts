@@ -23,7 +23,7 @@ import eventoRoutes from './evento.routes';
 import multimediaRoutes from './multimedia.routes';
 import asignacionAvanzadaRoutes from './asignacionAvanzada.routes';
 import ubicacionBrigadaRoutes from './ubicacionBrigada.routes';
-import situacionPersistenteRoutes from './situacionPersistente.routes';
+// import situacionPersistenteRoutes from './situacionPersistente.routes'; // ELIMINADO: Tabla eliminada en migración 108
 import administracionRoutes from './administracion.routes';
 import inspeccion360Routes from './inspeccion360.routes';
 import notificacionesRoutes from './notificaciones.routes';
@@ -113,8 +113,8 @@ router.use('/asignaciones-avanzadas', asignacionAvanzadaRoutes);
 // Rutas de ubicación de brigadas (préstamos, divisiones, cambios)
 router.use('/ubicacion-brigadas', ubicacionBrigadaRoutes);
 
-// Rutas de situaciones persistentes (derrumbes, obras, etc.)
-router.use('/situaciones-persistentes', situacionPersistenteRoutes);
+// Rutas de situaciones persistentes - ELIMINADO: Tabla eliminada en migración 108
+// router.use('/situaciones-persistentes', situacionPersistenteRoutes);
 
 // Rutas de administración del sistema (SUPER_ADMIN, ADMIN_COP)
 router.use('/admin', administracionRoutes);

@@ -54,16 +54,8 @@ export interface Situacion {
   sentido?: string | null;
   latitud?: number | null;
   longitud?: number | null;
-  ubicacion_manual?: boolean;
 
-  // Combustible/Kilometraje
-  combustible?: number | null;
-  combustible_fraccion?: string | null;
-  kilometraje_unidad?: number | null;
-  tripulacion_confirmada?: any | null; // JSONB en DB
-
-  // Descripción
-  descripcion?: string | null;
+  // Observaciones
   observaciones?: string | null;
 
   // Contexto
@@ -75,23 +67,15 @@ export interface Situacion {
 
   // Campos adicionales
   origen?: string;
-  subtipo_hecho_id?: number | null;
   area?: string | null;
 
   fecha_hora_aviso?: Date | null;
-  fecha_hora_asignacion?: Date | null;
   fecha_hora_llegada?: Date | null;
-  fecha_hora_estabilizacion?: Date | null;
   fecha_hora_finalizacion?: Date | null;
 
-  hay_heridos?: boolean;
-  cantidad_heridos?: number;
-  hay_fallecidos?: boolean;
-  cantidad_fallecidos?: number;
-
-  requiere_bomberos?: boolean;
-  requiere_pnc?: boolean;
-  requiere_ambulancia?: boolean;
+  // Víctimas (consolidado)
+  heridos?: number;
+  fallecidos?: number;
 
   tipo_pavimento?: string | null;
   iluminacion?: string | null;
@@ -104,8 +88,6 @@ export interface Situacion {
   danios_materiales?: boolean;
   danios_infraestructura?: boolean;
   danios_descripcion?: string | null;
-
-  situacion_persistente_id?: number | null;
 
   created_at: Date;
   updated_at: Date;
@@ -123,7 +105,6 @@ export interface SituacionCompleta extends Situacion {
   actualizado_por_nombre?: string;
   departamento_nombre?: string | null;
   municipio_nombre?: string | null;
-  subtipo_nombre?: string | null;
   // Campos del catálogo tipo_situacion_catalogo
   tipo_situacion_nombre?: string | null;
   tipo_situacion_categoria?: string | null;
@@ -156,8 +137,8 @@ export const SituacionModel = {
    */
   async getById(id: number): Promise<SituacionCompleta | null> {
     const query = `
-      SELECT s.*, 
-        u.codigo as unidad_codigo, 
+      SELECT s.*,
+        u.codigo as unidad_codigo,
         r.nombre as ruta_nombre, r.codigo as ruta_codigo,
         u.sede_id, se.nombre as sede_nombre,
         us1.nombre_completo as creado_por_nombre,
@@ -181,50 +162,39 @@ export const SituacionModel = {
    * Crear nueva situación
    */
   async create(data: Partial<Situacion>): Promise<Situacion> {
-    // Definir columnas y valores dinámicamente o mapear todos
     const qInsert = `
       INSERT INTO situacion (
         tipo_situacion, unidad_id, salida_unidad_id, turno_id, asignacion_id,
-        ruta_id, km, sentido, latitud, longitud, ubicacion_manual,
-        combustible, combustible_fraccion, kilometraje_unidad, tripulacion_confirmada,
-        descripcion, observaciones, creado_por, tipo_situacion_id,
+        ruta_id, km, sentido, latitud, longitud,
+        observaciones, creado_por, tipo_situacion_id,
         clima, carga_vehicular, departamento_id, municipio_id, codigo_situacion, obstruccion_data,
-        -- Nuevos campos
-        origen, subtipo_hecho_id, area,
+        origen, area,
         fecha_hora_aviso, fecha_hora_llegada,
-        hay_heridos, cantidad_heridos, hay_fallecidos, cantidad_fallecidos,
-        requiere_bomberos, requiere_pnc, requiere_ambulancia,
+        heridos, fallecidos,
         tipo_pavimento, iluminacion, senalizacion, visibilidad,
         causa_probable, causa_especificar,
-        danios_materiales, danios_infraestructura, danios_descripcion,
-        situacion_persistente_id
+        danios_materiales, danios_infraestructura, danios_descripcion
       ) VALUES (
         $/tipo_situacion/, $/unidad_id/, $/salida_unidad_id/, $/turno_id/, $/asignacion_id/,
-        $/ruta_id/, $/km/, $/sentido/, $/latitud/, $/longitud/, $/ubicacion_manual/,
-        $/combustible/, $/combustible_fraccion/, $/kilometraje_unidad/, $/tripulacion_confirmada/,
-        $/descripcion/, $/observaciones/, $/creado_por/, $/tipo_situacion_id/,
+        $/ruta_id/, $/km/, $/sentido/, $/latitud/, $/longitud/,
+        $/observaciones/, $/creado_por/, $/tipo_situacion_id/,
         $/clima/, $/carga_vehicular/, $/departamento_id/, $/municipio_id/, $/codigo_situacion/, $/obstruccion_data/,
-        -- Nuevos
-        $/origen/, $/subtipo_hecho_id/, $/area/,
+        $/origen/, $/area/,
         $/fecha_hora_aviso/, $/fecha_hora_llegada/,
-        $/hay_heridos/, $/cantidad_heridos/, $/hay_fallecidos/, $/cantidad_fallecidos/,
-        $/requiere_bomberos/, $/requiere_pnc/, $/requiere_ambulancia/,
+        $/heridos/, $/fallecidos/,
         $/tipo_pavimento/, $/iluminacion/, $/senalizacion/, $/visibilidad/,
         $/causa_probable/, $/causa_especificar/,
-        $/danios_materiales/, $/danios_infraestructura/, $/danios_descripcion/,
-        $/situacion_persistente_id/
+        $/danios_materiales/, $/danios_infraestructura/, $/danios_descripcion/
       ) RETURNING *
     `;
 
-    // Construir objeto con TODOS los parámetros requeridos por la query
-    // pg-promise requiere que todas las propiedades referenciadas existan
     const params = {
-      // Campos principales (requeridos)
+      // Campos principales
       tipo_situacion: data.tipo_situacion,
       creado_por: data.creado_por,
       codigo_situacion: data.codigo_situacion || null,
 
-      // Relaciones (opcionales)
+      // Relaciones
       unidad_id: data.unidad_id ?? null,
       salida_unidad_id: data.salida_unidad_id ?? null,
       turno_id: data.turno_id ?? null,
@@ -237,16 +207,8 @@ export const SituacionModel = {
       sentido: data.sentido ?? null,
       latitud: data.latitud ?? null,
       longitud: data.longitud ?? null,
-      ubicacion_manual: data.ubicacion_manual ?? false,
 
-      // Combustible/Kilometraje
-      combustible: data.combustible ?? null,
-      combustible_fraccion: data.combustible_fraccion ?? null,
-      kilometraje_unidad: data.kilometraje_unidad ?? null,
-      tripulacion_confirmada: data.tripulacion_confirmada ?? null,
-
-      // Descripción
-      descripcion: data.descripcion ?? null,
+      // Observaciones
       observaciones: data.observaciones ?? null,
 
       // Contexto
@@ -258,23 +220,15 @@ export const SituacionModel = {
 
       // Campos adicionales
       origen: data.origen || 'BRIGADA',
-      subtipo_hecho_id: data.subtipo_hecho_id ?? null,
       area: data.area ?? null,
 
       // Fechas
       fecha_hora_aviso: data.fecha_hora_aviso ?? null,
       fecha_hora_llegada: data.fecha_hora_llegada ?? null,
 
-      // Víctimas
-      hay_heridos: data.hay_heridos ?? false,
-      cantidad_heridos: data.cantidad_heridos ?? 0,
-      hay_fallecidos: data.hay_fallecidos ?? false,
-      cantidad_fallecidos: data.cantidad_fallecidos ?? 0,
-
-      // Servicios requeridos
-      requiere_bomberos: data.requiere_bomberos ?? false,
-      requiere_pnc: data.requiere_pnc ?? false,
-      requiere_ambulancia: data.requiere_ambulancia ?? false,
+      // Víctimas (consolidado)
+      heridos: data.heridos ?? 0,
+      fallecidos: data.fallecidos ?? 0,
 
       // Condiciones de vía
       tipo_pavimento: data.tipo_pavimento ?? null,
@@ -290,9 +244,6 @@ export const SituacionModel = {
       danios_materiales: data.danios_materiales ?? false,
       danios_infraestructura: data.danios_infraestructura ?? false,
       danios_descripcion: data.danios_descripcion ?? null,
-
-      // Situación persistente
-      situacion_persistente_id: data.situacion_persistente_id ?? null,
     };
 
     return db.one(qInsert, params);
@@ -302,23 +253,20 @@ export const SituacionModel = {
    * Actualizar situación por ID
    */
   async update(id: number, data: Partial<Situacion>): Promise<Situacion> {
-    // Construir query dinámico
     const sets: string[] = [];
     const values: any = { id, actualizado_por: data.actualizado_por };
 
     const fields = [
-      'tipo_situacion', 'ruta_id', 'km', 'sentido', 'latitud', 'longitud', 'ubicacion_manual',
-      'combustible', 'combustible_fraccion', 'kilometraje_unidad', 'tripulacion_confirmada',
-      'descripcion', 'observaciones',
+      'tipo_situacion', 'ruta_id', 'km', 'sentido', 'latitud', 'longitud',
+      'observaciones',
       'tipo_situacion_id', 'clima', 'carga_vehicular', 'departamento_id', 'municipio_id', 'obstruccion_data',
-      'origen', 'subtipo_hecho_id', 'area',
+      'origen', 'area',
       'fecha_hora_aviso', 'fecha_hora_llegada', 'fecha_hora_finalizacion',
-      'hay_heridos', 'cantidad_heridos', 'hay_fallecidos', 'cantidad_fallecidos',
-      'requiere_bomberos', 'requiere_pnc', 'requiere_ambulancia',
+      'heridos', 'fallecidos',
       'tipo_pavimento', 'iluminacion', 'senalizacion', 'visibilidad',
       'causa_probable', 'causa_especificar',
       'danios_materiales', 'danios_infraestructura', 'danios_descripcion',
-      'situacion_persistente_id', 'estado'
+      'estado'
     ];
 
     fields.forEach(field => {
@@ -375,7 +323,7 @@ export const SituacionModel = {
     const offset = filters.offset ? `OFFSET ${parseInt(filters.offset)}` : '';
 
     const query = `
-      SELECT s.*, 
+      SELECT s.*,
         u.codigo as unidad_codigo,
         r.nombre as ruta_nombre
       FROM situacion s
@@ -396,27 +344,15 @@ export const SituacionModel = {
   async getMiUnidadHoy(unidad_id: number, salida_id?: number): Promise<SituacionCompleta[]> {
     const params: any = { unidad_id, salida_id };
 
-    // Query con subqueries para obtener nombres de tipo desde las tablas correctas
-    // - tipo_hecho: para INCIDENTE (via tipo_hecho_id en situacion)
-    // - tipo_asistencia_vial/tipo_emergencia_vial: datos guardados en detalle_situacion OTROS
-    // - Incluye multimedia (fotos/videos) de cada situación
+    // Query simplificado - tipo_situacion_id apunta al catálogo unificado
     let query = `
       SELECT s.*,
         r.codigo as ruta_codigo,
         r.nombre as ruta_nombre,
-        COALESCE(
-          th.nombre,
-          tav.nombre,
-          tev.nombre
-        ) as tipo_situacion_nombre,
-        CASE
-          WHEN s.tipo_hecho_id IS NOT NULL THEN 'HECHO_TRANSITO'
-          WHEN (ds.datos->>'tipo_asistencia_id')::int IS NOT NULL THEN 'ASISTENCIA'
-          WHEN (ds.datos->>'tipo_emergencia_id')::int IS NOT NULL THEN 'EMERGENCIA'
-          ELSE NULL
-        END as tipo_situacion_categoria,
+        tsc.nombre as tipo_situacion_nombre,
+        tsc.categoria as tipo_situacion_categoria,
         s.tipo_pavimento as material_via,
-        -- Multimedia: array de fotos y conteos
+        -- Multimedia
         COALESCE(
           (SELECT json_agg(json_build_object(
             'id', sm.id,
@@ -432,10 +368,7 @@ export const SituacionModel = {
         (SELECT COUNT(*) FROM situacion_multimedia WHERE situacion_id = s.id AND tipo = 'VIDEO') as total_videos
       FROM situacion s
       LEFT JOIN ruta r ON s.ruta_id = r.id
-      LEFT JOIN tipo_hecho th ON s.tipo_hecho_id = th.id
-      LEFT JOIN detalle_situacion ds ON ds.situacion_id = s.id AND ds.tipo_detalle = 'OTROS'
-      LEFT JOIN tipo_asistencia_vial tav ON tav.id = (ds.datos->>'tipo_asistencia_id')::int
-      LEFT JOIN tipo_emergencia_vial tev ON tev.id = (ds.datos->>'tipo_emergencia_id')::int
+      LEFT JOIN tipo_situacion_catalogo tsc ON s.tipo_situacion_id = tsc.id
       WHERE s.unidad_id = $/unidad_id/
       AND s.created_at >= CURRENT_DATE
     `;
@@ -451,7 +384,6 @@ export const SituacionModel = {
 
   async getUltimaSituacionPorUnidad(): Promise<any[]> {
     // Usar tabla situacion_actual para consulta O(1) por unidad
-    // Esta tabla se actualiza automáticamente con trigger en cada INSERT/UPDATE de situacion
     const query = `
         SELECT
             sa.situacion_id as id,
@@ -475,7 +407,6 @@ export const SituacionModel = {
   },
 
   async getBitacoraUnidad(unidad_id: number, filters: any): Promise<any[]> {
-    // Implementación simple
     return this.list({ ...filters, unidad_id });
   },
 

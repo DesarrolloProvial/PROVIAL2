@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { SituacionModel, DetalleSituacionModel } from '../models/situacion.model';
 import { MultimediaModel } from '../models/multimedia.model';
 import { TurnoModel } from '../models/turno.model';
-// import { UsuarioModel } from '../models/usuario.model'; // No usado actualmente
 import { SalidaModel } from '../models/salida.model';
 import { UbicacionBrigadaModel } from '../models/ubicacionBrigada.model';
 import { db } from '../config/database';
@@ -13,33 +12,13 @@ import {
 } from '../services/socket.service';
 
 // ========================================
-// HELPERS
-// ========================================
-
-// Helper para obtener unidades permitidas (para uso futuro)
-// async function getUnidadesPermitidas(userId: number, rol: string): Promise<number[] | null> {
-//   if (rol === 'COP' || rol === 'ADMIN' || rol === 'OPERACIONES') return null;
-//   const usuario = await UsuarioModel.findById(userId);
-//   if (!usuario || !usuario.sede_id) return [];
-//   const result = await db.manyOrNone('SELECT id FROM unidad WHERE sede_id = $1 AND activa = true', [usuario.sede_id]);
-//   return result.map((r: any) => r.id);
-// }
-
-// ========================================
 // CREAR SITUACIÓN
 // ========================================
 
 export async function createSituacion(req: Request, res: Response) {
   try {
-    console.log('═══════════════════════════════════════════════════════');
-    console.log('📥 [BACKEND] DATOS RECIBIDOS EN createSituacion');
-    console.log('═══════════════════════════════════════════════════════');
-    console.log('📦 req.body COMPLETO:');
-    console.log(JSON.stringify(req.body, null, 2));
-    console.log('---');
-
     const {
-      id: codigo_situacion, // ID determinista
+      id: codigo_situacion,
       tipo_situacion,
       unidad_id,
       salida_unidad_id,
@@ -50,86 +29,69 @@ export async function createSituacion(req: Request, res: Response) {
       sentido,
       latitud: latitudRaw,
       longitud: longitudRaw,
-      coordenadas, // Fallback si viene como objeto {latitude, longitude}
-      ubicacion_manual,
-      combustible,
-      combustible_fraccion,
-      kilometraje_unidad,
-      tripulacion_confirmada,
-      descripcion,
+      coordenadas,
       observaciones,
-      detalles, // Array explícito de detalles
+      detalles,
 
-      // Campos legacy/frontend directos
-      vehiculos, // Array de vehículos del FormBuilder
-      autoridades, // Array de autoridades del FormBuilder
+      // Campos frontend
+      vehiculos,
+      autoridades,
 
-      // Campos nuevos (Columnas Reales)
+      // Campos de catálogo
       tipo_situacion_id,
+      tipo_hecho_id,
+      tipo_asistencia_id,
+      tipo_emergencia_id,
+
+      // Contexto
       clima,
       carga_vehicular,
       departamento_id,
       municipio_id,
       obstruccion,
       area,
-      material_via, // Frontend envía material_via
-      tipo_pavimento, // Algunos payloads pueden enviar tipo_pavimento
-      // Campos de tipo de hecho/asistencia/emergencia (IDs)
-      tipo_hecho_id,
-      tipo_asistencia_id,
-      tipo_emergencia_id,
-      // Víctimas
+      material_via,
+      tipo_pavimento,
+
+      // Víctimas (consolidado)
+      heridos,
+      fallecidos,
+      // Legacy (para compatibilidad)
       hay_heridos,
       cantidad_heridos,
       hay_fallecidos,
       cantidad_fallecidos,
-      vehiculos_involucrados, // Fallback si viene con este nombre
-      // Campos que van a OTROS o Detalles
-      tipo_asistencia, // string (legacy)
-      tipo_emergencia, // string (legacy)
+
+      vehiculos_involucrados,
+      tipo_asistencia,
+      tipo_emergencia,
       danios_materiales,
       danios_infraestructura,
       descripcion_danios_infra,
     } = req.body;
 
-    // Helper: normalizar IDs (convertir "" a null, strings a números)
     const normalizeId = (val: any): number | null => {
       if (val === '' || val === null || val === undefined) return null;
       const num = Number(val);
       return Number.isFinite(num) ? num : null;
     };
 
-    // Convertir coordenadas si vienen como objeto {latitude, longitude}
     const latitud = latitudRaw ?? coordenadas?.latitude ?? coordenadas?.latitud ?? null;
     const longitud = longitudRaw ?? coordenadas?.longitude ?? coordenadas?.longitud ?? null;
 
-    // Alias para tipo_situacion_id: mobile envía tipo_hecho_id/tipo_asistencia_id/tipo_emergencia_id
-    // pero en BD solo existe tipo_situacion_id (FK a tipo_situacion_catalogo)
     const tipo_situacion_id_final = normalizeId(
       tipo_situacion_id ?? tipo_hecho_id ?? tipo_asistencia_id ?? tipo_emergencia_id
     );
 
-    // Alias para tipo_pavimento (backend usa tipo_pavimento, mobile puede enviar material_via)
     const tipo_pavimento_final = tipo_pavimento ?? material_via ?? null;
 
-    console.log('🔍 [BACKEND] CAMPOS EXTRAÍDOS (destructuring):');
-    console.log('  - tipo_situacion:', tipo_situacion, '(type:', typeof tipo_situacion, ')');
-    console.log('  - tipo_situacion_id_final:', tipo_situacion_id_final, '(computed from tipo_situacion_id/tipo_hecho_id/tipo_asistencia_id/tipo_emergencia_id)');
-    console.log('  - clima:', clima, '(type:', typeof clima, ')');
-    console.log('  - carga_vehicular:', carga_vehicular, '(type:', typeof carga_vehicular, ')');
-    console.log('  - departamento_id:', departamento_id, '(type:', typeof departamento_id, ')');
-    console.log('  - municipio_id:', municipio_id, '(type:', typeof municipio_id, ')');
-    console.log('  - area:', area, '(type:', typeof area, ')');
-    console.log('  - material_via/tipo_pavimento:', tipo_pavimento_final, '(type:', typeof tipo_pavimento_final, ')');
-    console.log('  - km:', km, '(type:', typeof km, ')');
-    console.log('  - sentido:', sentido, '(type:', typeof sentido, ')');
-    console.log('  - latitud:', latitud, '(type:', typeof latitud, ')');
-    console.log('  - longitud:', longitud, '(type:', typeof longitud, ')');
-    console.log('═══════════════════════════════════════════════════════');
+    // Consolidar heridos/fallecidos (soporta ambos formatos)
+    const heridosFinal = heridos ?? (hay_heridos ? (cantidad_heridos || 1) : 0);
+    const fallecidosFinal = fallecidos ?? (hay_fallecidos ? (cantidad_fallecidos || 1) : 0);
 
     const userId = req.user!.userId;
 
-    // Validación duplicados Offline-First
+    // Validación duplicados
     if (codigo_situacion) {
       const existente = await SituacionModel.findByCodigoSituacion(codigo_situacion);
       if (existente) {
@@ -149,20 +111,18 @@ export async function createSituacion(req: Request, res: Response) {
     let asignacionFinal = asignacion_id;
     let rutaFinal = ruta_id;
 
-    // -- INICIO LOGICA UNIDAD AUTOMATICA --
     if (req.user!.rol === 'BRIGADA' && (!unidadFinal || !rutaFinal)) {
       const ubicacionActual = await UbicacionBrigadaModel.getUbicacionActual(userId);
       if (ubicacionActual) {
         if (ubicacionActual.estado === 'PRESTADO') {
           if (!unidadFinal) unidadFinal = ubicacionActual.unidad_actual_id;
-          // Buscar asignación de esa unidad...
           const asig = await TurnoModel.getAsignacionActivaUnidad(unidadFinal);
           if (asig) {
             if (!turnoFinal) turnoFinal = asig.turno_id;
             if (!asignacionFinal) asignacionFinal = asig.id;
             if (!rutaFinal) rutaFinal = asig.ruta_activa_id || asig.ruta_id;
           }
-        } else { // CON_UNIDAD
+        } else {
           const miAsig = await TurnoModel.getMiAsignacionHoy(userId);
           if (miAsig) {
             if (!unidadFinal) unidadFinal = miAsig.unidad_id;
@@ -184,7 +144,6 @@ export async function createSituacion(req: Request, res: Response) {
 
     if (!unidadFinal) return res.status(400).json({ error: 'unidad_id requerido (o no asignado a brigada)' });
 
-    // Fallback ruta si tenemos asignación
     if (!rutaFinal && asignacionFinal) {
       const asig = await db.oneOrNone('SELECT ruta_id FROM asignacion_unidad WHERE id=$1', [asignacionFinal]);
       if (asig) rutaFinal = asig.ruta_id;
@@ -205,7 +164,6 @@ export async function createSituacion(req: Request, res: Response) {
       if (sal) salidaFinal = sal.salida_id;
     }
 
-    // Mapeo Datos
     const dataToCreate = {
       tipo_situacion,
       unidad_id: unidadFinal,
@@ -217,29 +175,20 @@ export async function createSituacion(req: Request, res: Response) {
       sentido,
       latitud,
       longitud,
-      ubicacion_manual,
-      combustible,
-      combustible_fraccion,
-      kilometraje_unidad,
-      tripulacion_confirmada,
-      descripcion,
       observaciones,
       creado_por: userId,
       codigo_situacion,
 
-      // Mapeo campos nuevos
       tipo_situacion_id: tipo_situacion_id_final,
       clima,
-      carga_vehicular, // Frontend debe enviar nombre exacto
+      carga_vehicular,
       departamento_id: normalizeId(departamento_id),
       municipio_id: normalizeId(municipio_id),
       obstruccion_data: obstruccion,
       area,
       tipo_pavimento: tipo_pavimento_final,
-      hay_heridos: hay_heridos || false,
-      cantidad_heridos: cantidad_heridos ? parseInt(cantidad_heridos, 10) : 0,
-      hay_fallecidos: hay_fallecidos || false,
-      cantidad_fallecidos: cantidad_fallecidos ? parseInt(cantidad_fallecidos, 10) : 0,
+      heridos: heridosFinal,
+      fallecidos: fallecidosFinal,
       danios_materiales,
       danios_infraestructura,
       danios_descripcion: descripcion_danios_infra,
@@ -247,26 +196,9 @@ export async function createSituacion(req: Request, res: Response) {
       fecha_hora_llegada: new Date()
     };
 
-    console.log('💾 [BACKEND] OBJETO dataToCreate QUE SE ENVIARÁ A LA BASE DE DATOS:');
-    console.log(JSON.stringify(dataToCreate, null, 2));
-    console.log('---');
-    console.log('🔑 CAMPOS IMPORTANTES:');
-    console.log('  - tipo_situacion:', dataToCreate.tipo_situacion, '(type:', typeof dataToCreate.tipo_situacion, ')');
-    console.log('  - tipo_situacion_id:', dataToCreate.tipo_situacion_id, '(type:', typeof dataToCreate.tipo_situacion_id, ')');
-    console.log('  - clima:', dataToCreate.clima, '(type:', typeof dataToCreate.clima, ')');
-    console.log('  - carga_vehicular:', dataToCreate.carga_vehicular, '(type:', typeof dataToCreate.carga_vehicular, ')');
-    console.log('  - departamento_id:', dataToCreate.departamento_id, '(type:', typeof dataToCreate.departamento_id, ')');
-    console.log('  - municipio_id:', dataToCreate.municipio_id, '(type:', typeof dataToCreate.municipio_id, ')');
-    console.log('  - area:', dataToCreate.area, '(type:', typeof dataToCreate.area, ')');
-    console.log('  - tipo_pavimento:', dataToCreate.tipo_pavimento, '(type:', typeof dataToCreate.tipo_pavimento, ')');
-    console.log('  - latitud:', dataToCreate.latitud, '(type:', typeof dataToCreate.latitud, ')');
-    console.log('  - longitud:', dataToCreate.longitud, '(type:', typeof dataToCreate.longitud, ')');
-    console.log('═══════════════════════════════════════════════════════');
-
     const situacion = await SituacionModel.create(dataToCreate);
-    console.log(`✅ [CREATE] OK ID: ${situacion.id}`);
 
-    // Persistir Detalles (detalles explícitos)
+    // Persistir Detalles
     if (detalles && Array.isArray(detalles)) {
       for (const d of detalles) {
         await DetalleSituacionModel.create({
@@ -278,7 +210,7 @@ export async function createSituacion(req: Request, res: Response) {
       }
     }
 
-    // Persistir Vehículos (legacy array)
+    // Persistir Vehículos
     const vehiculosList = vehiculos || vehiculos_involucrados;
     if (vehiculosList && Array.isArray(vehiculosList)) {
       for (const v of vehiculosList) {
@@ -291,7 +223,7 @@ export async function createSituacion(req: Request, res: Response) {
       }
     }
 
-    // Persistir Autoridades (legacy array)
+    // Persistir Autoridades
     if (autoridades && Array.isArray(autoridades)) {
       for (const a of autoridades) {
         await DetalleSituacionModel.create({
@@ -303,11 +235,10 @@ export async function createSituacion(req: Request, res: Response) {
       }
     }
 
-    // Persistir OTROS (legacy strings, solo para backward compat con datos viejos)
+    // Persistir OTROS (legacy)
     const otrosDatos: any = {};
     if (tipo_asistencia) otrosDatos.tipo_asistencia = tipo_asistencia;
     if (tipo_emergencia) otrosDatos.tipo_emergencia = tipo_emergencia;
-    // NO agregar tipo_asistencia_id ni tipo_emergencia_id - no existen en tabla situacion
 
     if (Object.keys(otrosDatos).length > 0) {
       await DetalleSituacionModel.create({
@@ -320,18 +251,6 @@ export async function createSituacion(req: Request, res: Response) {
 
     const full = await SituacionModel.getById(situacion.id);
     if (full) emitSituacionNueva(full as any);
-
-    console.log('✅ [BACKEND] SITUACIÓN GUARDADA CON ÉXITO:');
-    console.log('  - ID:', full?.id);
-    console.log('  - tipo_situacion:', full?.tipo_situacion);
-    console.log('  - tipo_situacion_id:', full?.tipo_situacion_id);
-    console.log('  - clima:', full?.clima);
-    console.log('  - carga_vehicular:', full?.carga_vehicular);
-    console.log('  - departamento_id:', full?.departamento_id);
-    console.log('  - municipio_id:', full?.municipio_id);
-    console.log('  - area:', full?.area);
-    console.log('  - tipo_pavimento:', full?.tipo_pavimento);
-    console.log('═══════════════════════════════════════════════════════');
 
     return res.status(201).json({
       message: 'Situación creada',
@@ -353,7 +272,6 @@ export async function getSituacion(req: Request, res: Response) {
     const { id } = req.params;
     let situacionId: number;
 
-    // Buscar por ID Determinista (contiene guiones) o ID numérico
     if (id.includes('-')) {
       const s = await SituacionModel.findByCodigoSituacion(id);
       if (!s) return res.status(404).json({ error: 'No encontrada' });
@@ -368,20 +286,17 @@ export async function getSituacion(req: Request, res: Response) {
     const detalles = await DetalleSituacionModel.getBySituacionId(situacionId);
     const multimedia = await MultimediaModel.getBySituacionId(situacionId);
 
-    // Mapeo Inteligente: Elevar detalles al objeto principal para facilitar frontend
     const otros = detalles.find(d => d.tipo_detalle === 'OTROS')?.datos || {};
     const vehiculos = detalles.filter(d => d.tipo_detalle === 'VEHICULO').map(d => d.datos);
 
-    // Combinar todo en una respuesta plana enriquecida
     const situacionResponse = {
       ...situacion,
-      ...otros, // Inyecta: tipo_asistencia, tipo_emergencia, apoyo_proporcionado, etc.
+      ...otros,
       vehiculos_involucrados: vehiculos,
-      detalles_raw: detalles, // Mantener original por referencia
+      detalles_raw: detalles,
       multimedia
     };
 
-    // Devolver envuelto en 'situacion' para compatibilidad con frontend actual
     return res.json({ situacion: situacionResponse });
   } catch (error) {
     console.error(error);
@@ -400,84 +315,57 @@ export async function updateSituacion(req: Request, res: Response) {
     const situacionId = parseInt(id, 10);
 
     const {
-      // Campos estándar
-      km, sentido, latitud, longitud, observaciones, descripcion,
-      // Nuevas columnas
+      km, sentido, latitud, longitud, observaciones,
       area, material_via, clima, carga_vehicular,
       danios_materiales, danios_infraestructura, descripcion_danios_infra,
       obstruccion,
-      // IDs de catálogo (mobile envía estos, pero BD usa tipo_situacion_id)
       tipo_hecho_id, tipo_asistencia_id, tipo_emergencia_id,
-      // Detalles/Otros (legacy strings para backward compat)
       tipo_asistencia, tipo_emergencia,
       vehiculos_involucrados,
-      // Víctimas
+      // Víctimas (consolidado)
+      heridos,
+      fallecidos,
+      // Legacy
       hay_heridos, cantidad_heridos, hay_fallecidos, cantidad_fallecidos,
-      // Servicios
-      requiere_bomberos, requiere_pnc, requiere_ambulancia,
-      // Causa/Condiciones
       causa_probable, causa_especificar,
       tipo_pavimento, iluminacion, senalizacion, visibilidad,
-      tripulacion_confirmada,
-      ubicacion_manual,
-      combustible, combustible_fraccion, kilometraje_unidad
     } = req.body;
 
-    // Normalizar IDs (convertir strings vacías a null)
     const normalizeId = (v: any): number | null => {
       if (v === '' || v === null || v === undefined) return null;
       const n = Number(v);
       return Number.isFinite(n) ? n : null;
     };
 
-    // Mapear tipo_hecho_id/tipo_asistencia_id/tipo_emergencia_id -> tipo_situacion_id
     const tipo_situacion_id_final = normalizeId(
       tipo_hecho_id ?? tipo_asistencia_id ?? tipo_emergencia_id
     );
 
-    console.log('[UPDATE] tipo_situacion_id_final:', tipo_situacion_id_final,
-      '(from hecho:', tipo_hecho_id, ', asist:', tipo_asistencia_id, ', emerg:', tipo_emergencia_id, ')');
+    // Consolidar heridos/fallecidos
+    const heridosFinal = heridos ?? (hay_heridos ? (cantidad_heridos || 1) : undefined);
+    const fallecidosFinal = fallecidos ?? (hay_fallecidos ? (cantidad_fallecidos || 1) : undefined);
 
-    // Update principal
     const updateData: any = {
       actualizado_por: userId,
-      km, sentido, latitud, longitud, observaciones, descripcion,
+      km, sentido, latitud, longitud, observaciones,
       area,
       tipo_pavimento: material_via || tipo_pavimento,
       clima, carga_vehicular,
       danios_materiales, danios_infraestructura, danios_descripcion: descripcion_danios_infra,
       obstruccion_data: obstruccion,
-
-      // Mapear tipo_*_id a tipo_situacion_id (único campo que existe en BD)
       tipo_situacion_id: tipo_situacion_id_final,
-
-      hay_heridos: hay_heridos || false,
-      cantidad_heridos: cantidad_heridos ? parseInt(cantidad_heridos, 10) : 0,
-      hay_fallecidos: hay_fallecidos || false,
-      cantidad_fallecidos: cantidad_fallecidos ? parseInt(cantidad_fallecidos, 10) : 0,
-
-      requiere_bomberos: requiere_bomberos || false,
-      requiere_pnc: requiere_pnc || false,
-      requiere_ambulancia: requiere_ambulancia || false,
-
+      heridos: heridosFinal,
+      fallecidos: fallecidosFinal,
       causa_probable, causa_especificar,
       iluminacion, senalizacion, visibilidad,
-
-      tripulacion_confirmada,
-      ubicacion_manual: ubicacion_manual || false,
-
-      combustible: combustible ? parseFloat(combustible) : null,
-      combustible_fraccion,
-      kilometraje_unidad: kilometraje_unidad ? parseFloat(kilometraje_unidad) : null
     };
 
     await SituacionModel.update(situacionId, updateData);
 
-    // Update Detalles OTROS (legacy strings, solo para backward compat)
+    // Update Detalles OTROS (legacy)
     const otrosDatos: any = {};
     if (tipo_asistencia) otrosDatos.tipo_asistencia = tipo_asistencia;
     if (tipo_emergencia) otrosDatos.tipo_emergencia = tipo_emergencia;
-    // NO agregar tipo_asistencia_id ni tipo_emergencia_id - no existen en tabla situacion
     if (vehiculos_involucrados) otrosDatos.vehiculos_involucrados = vehiculos_involucrados;
 
     if (Object.keys(otrosDatos).length > 0) {
@@ -500,10 +388,12 @@ export async function updateSituacion(req: Request, res: Response) {
   }
 }
 
-// Exportar funciones restantes (list, mapas, bitacora) sin cambios mayores, solo asegurando que usen el nuevo model
+// ========================================
+// LIST / MAPAS / BITACORA
+// ========================================
+
 export async function listSituaciones(req: Request, res: Response) {
   const filters = req.query;
-  // ... mapeo de filtros
   const list = await SituacionModel.list(filters);
   return res.json({ situaciones: list, count: list.length });
 }
@@ -648,8 +538,6 @@ export async function deleteDetalle(req: Request, res: Response) {
 
 export async function getResumenUnidades(_req: Request, res: Response) {
   try {
-    // Usar tabla situacion_actual para consulta ultra-rápida (O(1) por unidad)
-    // Esta tabla se actualiza automáticamente con trigger en cada INSERT/UPDATE de situacion
     const resumen = await db.manyOrNone(`
       SELECT
         u.id as unidad_id,
@@ -657,18 +545,15 @@ export async function getResumenUnidades(_req: Request, res: Response) {
         u.tipo_unidad,
         u.sede_id,
         se.nombre as sede_nombre,
-        -- Datos de situacion_actual (cache de última situación)
         sa.situacion_id,
         sa.tipo_situacion as ultima_situacion,
         sa.estado as estado_situacion,
-        sa.descripcion,
         sa.latitud,
         sa.longitud,
         sa.km,
         sa.sentido,
         sa.ruta_codigo,
         sa.situacion_created_at,
-        -- Multimedia (solo si hay situacion)
         CASE WHEN sa.situacion_id IS NOT NULL THEN
           (SELECT sm.url_thumbnail
            FROM situacion_multimedia sm
@@ -722,7 +607,7 @@ export async function getCatalogo(_req: Request, res: Response) {
     const tiposHecho = await db.manyOrNone(
       "SELECT id, nombre, icono, color FROM tipo_situacion_catalogo WHERE categoria = 'HECHO_TRANSITO' AND activo = true ORDER BY nombre"
     );
-    const subtiposHecho: any[] = []; // Ya no se usan subtipos
+    const subtiposHecho: any[] = [];
 
     return res.json({ tipos, tiposHecho, subtiposHecho });
   } catch (error: any) {
@@ -733,7 +618,6 @@ export async function getCatalogo(_req: Request, res: Response) {
 
 export async function getCatalogosAuxiliares(_req: Request, res: Response) {
   try {
-    // Query desde las tablas correctas que existen en la base de datos
     const tipos_hecho = await db.manyOrNone(
       "SELECT id, nombre FROM tipo_hecho WHERE activo = true ORDER BY nombre"
     );
@@ -744,7 +628,6 @@ export async function getCatalogosAuxiliares(_req: Request, res: Response) {
       "SELECT id, codigo, nombre, icono FROM tipo_emergencia_vial WHERE activo = true ORDER BY nombre"
     );
 
-    // Mantener retrocompatibilidad con subtipos_hecho vacío
     const subtipos_hecho: any[] = [];
 
     return res.json({ tipos_hecho, subtipos_hecho, tipos_asistencia, tipos_emergencia });
