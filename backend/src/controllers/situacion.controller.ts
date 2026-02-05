@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { SituacionModel, DetalleSituacionModel } from '../models/situacion.model';
+import { SituacionModel } from '../models/situacion.model';
+import { SituacionDetalleModel } from '../models/situacionDetalle.model';
 import { MultimediaModel } from '../models/multimedia.model';
 import { TurnoModel } from '../models/turno.model';
 import { SalidaModel } from '../models/salida.model';
@@ -63,8 +64,6 @@ export async function createSituacion(req: Request, res: Response) {
       cantidad_fallecidos,
 
       vehiculos_involucrados,
-      tipo_asistencia,
-      tipo_emergencia,
       danios_materiales,
       danios_infraestructura,
       descripcion_danios_infra,
@@ -198,55 +197,26 @@ export async function createSituacion(req: Request, res: Response) {
 
     const situacion = await SituacionModel.create(dataToCreate);
 
-    // Persistir Detalles
+    // Persistir Detalles (legacy format -> tablas relacionales)
     if (detalles && Array.isArray(detalles)) {
       for (const d of detalles) {
-        await DetalleSituacionModel.create({
-          situacion_id: situacion.id,
-          tipo_detalle: d.tipo_detalle,
-          datos: d.datos,
-          creado_por: userId
-        });
+        await SituacionDetalleModel.createByTipo(situacion.id, d.tipo_detalle, d.datos);
       }
     }
 
-    // Persistir Vehículos
+    // Persistir Vehiculos en tablas relacionales
     const vehiculosList = vehiculos || vehiculos_involucrados;
     if (vehiculosList && Array.isArray(vehiculosList)) {
       for (const v of vehiculosList) {
-        await DetalleSituacionModel.create({
-          situacion_id: situacion.id,
-          tipo_detalle: 'VEHICULO',
-          datos: v,
-          creado_por: userId
-        });
+        await SituacionDetalleModel.addVehiculo(situacion.id, v);
       }
     }
 
-    // Persistir Autoridades
+    // Persistir Autoridades en tabla relacional
     if (autoridades && Array.isArray(autoridades)) {
       for (const a of autoridades) {
-        await DetalleSituacionModel.create({
-          situacion_id: situacion.id,
-          tipo_detalle: 'AUTORIDAD',
-          datos: a,
-          creado_por: userId
-        });
+        await SituacionDetalleModel.addAutoridad(situacion.id, a);
       }
-    }
-
-    // Persistir OTROS (legacy)
-    const otrosDatos: any = {};
-    if (tipo_asistencia) otrosDatos.tipo_asistencia = tipo_asistencia;
-    if (tipo_emergencia) otrosDatos.tipo_emergencia = tipo_emergencia;
-
-    if (Object.keys(otrosDatos).length > 0) {
-      await DetalleSituacionModel.create({
-        situacion_id: situacion.id,
-        tipo_detalle: 'OTROS',
-        datos: otrosDatos,
-        creado_por: userId
-      });
     }
 
     const full = await SituacionModel.getById(situacion.id);
@@ -283,17 +253,15 @@ export async function getSituacion(req: Request, res: Response) {
     const situacion = await SituacionModel.getById(situacionId);
     if (!situacion) return res.status(404).json({ error: 'No encontrada' });
 
-    const detalles = await DetalleSituacionModel.getBySituacionId(situacionId);
+    const detalles = await SituacionDetalleModel.getAllDetalles(situacionId);
     const multimedia = await MultimediaModel.getBySituacionId(situacionId);
-
-    const otros = detalles.find(d => d.tipo_detalle === 'OTROS')?.datos || {};
-    const vehiculos = detalles.filter(d => d.tipo_detalle === 'VEHICULO').map(d => d.datos);
 
     const situacionResponse = {
       ...situacion,
-      ...otros,
-      vehiculos_involucrados: vehiculos,
-      detalles_raw: detalles,
+      vehiculos_involucrados: detalles.vehiculos,
+      autoridades: detalles.autoridades,
+      gruas: detalles.gruas,
+      ajustadores: detalles.ajustadores,
       multimedia
     };
 
@@ -320,7 +288,6 @@ export async function updateSituacion(req: Request, res: Response) {
       danios_materiales, danios_infraestructura, descripcion_danios_infra,
       obstruccion,
       tipo_hecho_id, tipo_asistencia_id, tipo_emergencia_id,
-      tipo_asistencia, tipo_emergencia,
       vehiculos_involucrados,
       // Víctimas (consolidado)
       heridos,
@@ -362,18 +329,10 @@ export async function updateSituacion(req: Request, res: Response) {
 
     await SituacionModel.update(situacionId, updateData);
 
-    // Update Detalles OTROS (legacy)
-    const otrosDatos: any = {};
-    if (tipo_asistencia) otrosDatos.tipo_asistencia = tipo_asistencia;
-    if (tipo_emergencia) otrosDatos.tipo_emergencia = tipo_emergencia;
-    if (vehiculos_involucrados) otrosDatos.vehiculos_involucrados = vehiculos_involucrados;
-
-    if (Object.keys(otrosDatos).length > 0) {
-      const detalleExistente = await db.oneOrNone('SELECT * FROM detalle_situacion WHERE situacion_id=$1 AND tipo_detalle=$2', [situacionId, 'OTROS']);
-      if (detalleExistente) {
-        await DetalleSituacionModel.update(detalleExistente.id, { ...detalleExistente.datos, ...otrosDatos });
-      } else {
-        await DetalleSituacionModel.create({ situacion_id: situacionId, tipo_detalle: 'OTROS', datos: otrosDatos, creado_por: userId });
+    // Persistir vehiculos actualizados en tablas relacionales
+    if (vehiculos_involucrados && Array.isArray(vehiculos_involucrados)) {
+      for (const v of vehiculos_involucrados) {
+        await SituacionDetalleModel.addVehiculo(situacionId, v);
       }
     }
 
@@ -485,14 +444,8 @@ export async function createDetalle(req: Request, res: Response) {
   try {
     const { id } = req.params;
     const { tipo_detalle, datos } = req.body;
-    const userId = req.user!.userId;
 
-    const detalle = await DetalleSituacionModel.create({
-      situacion_id: parseInt(id),
-      tipo_detalle,
-      datos,
-      creado_por: userId
-    });
+    const detalle = await SituacionDetalleModel.createByTipo(parseInt(id), tipo_detalle, datos);
 
     return res.status(201).json({ detalle });
   } catch (error: any) {
@@ -504,7 +457,7 @@ export async function createDetalle(req: Request, res: Response) {
 export async function getDetalles(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const detalles = await DetalleSituacionModel.getBySituacionId(parseInt(id));
+    const detalles = await SituacionDetalleModel.getAllDetalles(parseInt(id));
     return res.json({ detalles });
   } catch (error: any) {
     console.error('Error getDetalles:', error);
@@ -515,9 +468,10 @@ export async function getDetalles(req: Request, res: Response) {
 export async function updateDetalle(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { datos } = req.body;
+    const { tipo_detalle, datos } = req.body;
 
-    const detalle = await DetalleSituacionModel.update(parseInt(id), datos);
+    // Para updates, crear nuevo registro (las tablas relacionales no tienen update generico)
+    const detalle = await SituacionDetalleModel.createByTipo(parseInt(id), tipo_detalle || 'VEHICULO', datos);
     return res.json({ detalle });
   } catch (error: any) {
     console.error('Error updateDetalle:', error);
@@ -528,7 +482,9 @@ export async function updateDetalle(req: Request, res: Response) {
 export async function deleteDetalle(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    await DetalleSituacionModel.delete(parseInt(id));
+    const { tipo_detalle } = req.query;
+
+    await SituacionDetalleModel.deleteByTipo((tipo_detalle as string) || 'VEHICULO', parseInt(id));
     return res.json({ message: 'Detalle eliminado' });
   } catch (error: any) {
     console.error('Error deleteDetalle:', error);
@@ -618,19 +574,18 @@ export async function getCatalogo(_req: Request, res: Response) {
 
 export async function getCatalogosAuxiliares(_req: Request, res: Response) {
   try {
+    // Usar tipo_situacion_catalogo unificado
     const tipos_hecho = await db.manyOrNone(
-      "SELECT id, nombre FROM tipo_hecho WHERE activo = true ORDER BY nombre"
+      "SELECT id, nombre, icono, color FROM tipo_situacion_catalogo WHERE categoria = 'HECHO_TRANSITO' AND activo = true ORDER BY nombre"
     );
     const tipos_asistencia = await db.manyOrNone(
-      "SELECT id, nombre FROM tipo_asistencia_vial WHERE activo = true ORDER BY nombre"
+      "SELECT id, nombre, icono, color FROM tipo_situacion_catalogo WHERE categoria = 'ASISTENCIA' AND activo = true ORDER BY nombre"
     );
     const tipos_emergencia = await db.manyOrNone(
-      "SELECT id, codigo, nombre, icono FROM tipo_emergencia_vial WHERE activo = true ORDER BY nombre"
+      "SELECT id, nombre, icono, color FROM tipo_situacion_catalogo WHERE categoria = 'EMERGENCIA' AND activo = true ORDER BY nombre"
     );
 
-    const subtipos_hecho: any[] = [];
-
-    return res.json({ tipos_hecho, subtipos_hecho, tipos_asistencia, tipos_emergencia });
+    return res.json({ tipos_hecho, tipos_asistencia, tipos_emergencia });
   } catch (error: any) {
     console.error('Error getCatalogosAuxiliares:', error);
     return res.status(500).json({ error: error.message });

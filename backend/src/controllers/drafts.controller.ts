@@ -6,6 +6,7 @@
 
 import { Request, Response } from 'express';
 import { db } from '../config/database';
+import { SituacionDetalleModel } from '../models/situacionDetalle.model';
 
 // Tipos de situación soportados
 const TIPOS_SITUACION_VALIDOS = [
@@ -522,13 +523,9 @@ export async function finalizeDraft(req: Request, res: Response) {
         );
       }
 
-      // 3. Para ASISTENCIA_VEHICULAR, crear detalle si hay datos del vehículo
+      // 3. Para ASISTENCIA_VEHICULAR, crear vehiculo en tabla relacional
       if (tipoSituacion === 'ASISTENCIA_VEHICULAR' && payload.vehiculo) {
-        await t.none(
-          `INSERT INTO detalle_situacion (situacion_id, tipo_detalle, datos, creado_por)
-           VALUES ($1, 'VEHICULO', $2, $3)`,
-          [situacion.id, payload.vehiculo, req.user!.userId]
-        );
+        await SituacionDetalleModel.addVehiculo(situacion.id, payload.vehiculo);
       }
 
       // 4. Actualizar evidencias (asociarlas a la situación)

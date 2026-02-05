@@ -19,22 +19,6 @@ export type TipoSituacion =
 
 export type EstadoSituacion = 'ACTIVA' | 'CERRADA' | 'CANCELADA';
 
-export type TipoDetalle =
-  | 'VEHICULO'
-  | 'AUTORIDAD'
-  | 'RECURSO'
-  | 'VICTIMA'
-  | 'GRUA'
-  | 'ASEGURADORA'
-  | 'AJUSTADOR'
-  | 'TESTIGO'
-  | 'EVIDENCIA'
-  | 'OBSTRUCCION'
-  | 'AUTORIDADES_SOCORRO'
-  | 'DANIOS'
-  | 'SUBTIPO'
-  | 'OTROS';
-
 export interface Situacion {
   id: number;
   codigo_situacion: string; // ID Determinista
@@ -108,16 +92,6 @@ export interface SituacionCompleta extends Situacion {
   // Campos del catálogo tipo_situacion_catalogo
   tipo_situacion_nombre?: string | null;
   tipo_situacion_categoria?: string | null;
-}
-
-export interface DetalleSituacion {
-  id: number;
-  situacion_id: number;
-  tipo_detalle: TipoDetalle;
-  datos: any;
-  created_at: Date;
-  updated_at: Date;
-  creado_por: number;
 }
 
 // ========================================
@@ -415,32 +389,3 @@ export const SituacionModel = {
   }
 };
 
-export const DetalleSituacionModel = {
-  async create(data: {
-    situacion_id: number;
-    tipo_detalle: TipoDetalle;
-    datos: any;
-    creado_por: number;
-  }): Promise<DetalleSituacion> {
-    const query = `
-      INSERT INTO detalle_situacion (situacion_id, tipo_detalle, datos, creado_por)
-      VALUES ($1, $2, $3, $4)
-      RETURNING *
-    `;
-    return db.one(query, [data.situacion_id, data.tipo_detalle, data.datos, data.creado_por]);
-  },
-
-  async getBySituacionId(situacion_id: number): Promise<DetalleSituacion[]> {
-    return db.manyOrNone('SELECT * FROM detalle_situacion WHERE situacion_id = $1 ORDER BY created_at ASC', [
-      situacion_id,
-    ]);
-  },
-
-  async update(id: number, datos: any): Promise<DetalleSituacion> {
-    return db.one('UPDATE detalle_situacion SET datos = $1, updated_at = NOW() WHERE id = $2 RETURNING *', [datos, id]);
-  },
-
-  async delete(id: number): Promise<void> {
-    await db.none('DELETE FROM detalle_situacion WHERE id = $1', [id]);
-  }
-};
