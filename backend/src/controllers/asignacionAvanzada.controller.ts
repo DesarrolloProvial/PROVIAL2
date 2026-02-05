@@ -5,7 +5,7 @@
 import { Request, Response } from 'express';
 import { AsignacionAvanzadaModel } from '../models/asignacionAvanzada.model';
 import { ConfiguracionSedeModel } from '../models/configuracionSede.model';
-import { SituacionFijaModel } from '../models/situacionFija.model';
+// import { SituacionFijaModel } from '../models/situacionFija.model'; // ELIMINADO: Tabla eliminada en migración 108
 
 // =====================================================
 // ASIGNACIONES POR SEDE
@@ -207,151 +207,27 @@ export async function updateConfiguracionSede(req: Request, res: Response) {
 // SITUACIONES FIJAS
 // =====================================================
 
-/**
- * GET /api/asignaciones-avanzadas/situaciones-fijas
- * Obtener situaciones fijas
- */
-export async function getSituacionesFijas(req: Request, res: Response) {
-  try {
-    const { sedeId, incluirInactivas } = req.query;
+// FUNCIONES DE SITUACIONES FIJAS - ELIMINADAS (tabla eliminada en migración 108)
+// Se reemplazará por el sistema de situacion_sesiones
 
-    const situaciones = await SituacionFijaModel.getAll({
-      sedeId: sedeId ? parseInt(String(sedeId), 10) : undefined,
-      incluirInactivas: incluirInactivas === 'true'
-    });
-
-    res.json(situaciones);
-  } catch (error: any) {
-    console.error('Error en getSituacionesFijas:', error);
-    res.status(500).json({ error: 'Error al obtener situaciones fijas', details: error.message });
-  }
+export async function getSituacionesFijas(_req: Request, res: Response) {
+  return res.status(410).json({ error: 'Funcionalidad eliminada. Usar situaciones persistentes.' });
 }
 
-/**
- * GET /api/asignaciones-avanzadas/situaciones-fijas/:id
- * Obtener situación fija por ID
- */
-export async function getSituacionFija(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-
-    const situacion = await SituacionFijaModel.getById(parseInt(id, 10));
-
-    if (!situacion) {
-      return res.status(404).json({ error: 'Situación fija no encontrada' });
-    }
-
-    res.json(situacion);
-  } catch (error: any) {
-    console.error('Error en getSituacionFija:', error);
-    res.status(500).json({ error: 'Error al obtener situación fija', details: error.message });
-  }
+export async function getSituacionFija(_req: Request, res: Response) {
+  return res.status(410).json({ error: 'Funcionalidad eliminada. Usar situaciones persistentes.' });
 }
 
-/**
- * POST /api/asignaciones-avanzadas/situaciones-fijas
- * Crear nueva situación fija
- */
-export async function createSituacionFija(req: Request, res: Response) {
-  try {
-    const userId = (req as any).user.userId;
-    const userSedeId = (req as any).user.sede_id;
-
-    const {
-      sede_id,
-      titulo,
-      descripcion,
-      tipo,
-      ruta_id,
-      km_inicio,
-      km_fin,
-      punto_referencia,
-      hora_inicio,
-      hora_fin,
-      dias_semana,
-      fecha_inicio,
-      fecha_fin,
-      observaciones,
-      puntos_destacar,
-      requiere_unidad_especifica,
-      unidad_tipo_requerido
-    } = req.body;
-
-    if (!titulo || !tipo || !fecha_inicio) {
-      return res.status(400).json({ error: 'Título, tipo y fecha de inicio son requeridos' });
-    }
-
-    // Si no es admin, solo puede crear para su sede
-    const sedeIdFinal = sede_id || userSedeId;
-
-    const situacion = await SituacionFijaModel.create({
-      sede_id: sedeIdFinal,
-      titulo,
-      descripcion,
-      tipo,
-      ruta_id,
-      km_inicio,
-      km_fin,
-      punto_referencia,
-      hora_inicio,
-      hora_fin,
-      dias_semana,
-      fecha_inicio,
-      fecha_fin,
-      observaciones,
-      puntos_destacar,
-      requiere_unidad_especifica,
-      unidad_tipo_requerido,
-      creado_por: userId
-    });
-
-    res.status(201).json(situacion);
-  } catch (error: any) {
-    console.error('Error en createSituacionFija:', error);
-    res.status(500).json({ error: 'Error al crear situación fija', details: error.message });
-  }
+export async function createSituacionFija(_req: Request, res: Response) {
+  return res.status(410).json({ error: 'Funcionalidad eliminada. Usar situaciones persistentes.' });
 }
 
-/**
- * PUT /api/asignaciones-avanzadas/situaciones-fijas/:id
- * Actualizar situación fija
- */
-export async function updateSituacionFija(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-
-    const situacion = await SituacionFijaModel.update(parseInt(id, 10), req.body);
-
-    if (!situacion) {
-      return res.status(404).json({ error: 'Situación fija no encontrada' });
-    }
-
-    res.json(situacion);
-  } catch (error: any) {
-    console.error('Error en updateSituacionFija:', error);
-    res.status(500).json({ error: 'Error al actualizar situación fija', details: error.message });
-  }
+export async function updateSituacionFija(_req: Request, res: Response) {
+  return res.status(410).json({ error: 'Funcionalidad eliminada. Usar situaciones persistentes.' });
 }
 
-/**
- * DELETE /api/asignaciones-avanzadas/situaciones-fijas/:id
- * Desactivar situación fija
- */
-export async function deleteSituacionFija(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-
-    const success = await SituacionFijaModel.desactivar(parseInt(id, 10));
-
-    if (!success) {
-      return res.status(404).json({ error: 'Situación fija no encontrada' });
-    }
-
-    res.json({ message: 'Situación fija desactivada' });
-  } catch (error: any) {
-    console.error('Error en deleteSituacionFija:', error);
-    res.status(500).json({ error: 'Error al desactivar situación fija', details: error.message });
-  }
+export async function deleteSituacionFija(_req: Request, res: Response) {
+  return res.status(410).json({ error: 'Funcionalidad eliminada. Usar situaciones persistentes.' });
 }
 
 // =====================================================
