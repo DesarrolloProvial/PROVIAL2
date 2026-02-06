@@ -2,7 +2,7 @@
  * FotoCaptura - Componente para captura de fotos
  *
  * - Cámara: usa expo-camera para mayor control
- * - Galería: usa expo-image-picker para selector nativo del sistema
+ * - Galería: usa expo-image-picker con onDismiss para evitar conflictos de modal
  */
 
 import React, { useState, useRef } from 'react';
@@ -15,7 +15,6 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
-  InteractionManager,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -30,6 +29,8 @@ interface FotoCapturaProps {
   requerido?: boolean;
 }
 
+type PendingAction = 'camera' | 'gallery' | null;
+
 export default function FotoCaptura({
   onFotoCapturada,
   fotoActual,
@@ -38,107 +39,109 @@ export default function FotoCaptura({
   requerido = false,
 }: FotoCapturaProps) {
   const [modalVisible, setModalVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [cameraVisible, setCameraVisible] = useState(false);
+  const [cameraLoading, setCameraLoading] = useState(false);
+  const [pending, setPending] = useState<PendingAction>(null);
+  const [isPicking, setIsPicking] = useState(false);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const cameraRef = useRef<any>(null);
 
-  const tomarFoto = async () => {
-    // Cerrar modal primero
+  // ============================================
+  // GALERÍA - usando onDismiss del modal
+  // ============================================
+  const pedirGaleria = () => {
+    setPending('gallery');
     setModalVisible(false);
+  };
 
-    // Esperar a que terminen todas las animaciones/interacciones
-    InteractionManager.runAfterInteractions(async () => {
-      try {
-        console.log('[FotoCaptura] Abriendo cámara...');
+  const abrirGaleria = async () => {
+    if (isPicking) return;
+    setIsPicking(true);
 
-        // Solicitar permisos de cámara
-        if (!cameraPermission?.granted) {
-          const result = await requestCameraPermission();
-          if (!result.granted) {
-            Alert.alert('Permisos requeridos', 'Se necesita permiso de cámara para tomar fotos.');
-            return;
-          }
-        }
+    try {
+      console.log('[FotoCaptura] Abriendo galería...');
 
-        setCameraVisible(true);
-      } catch (error: any) {
-        console.error('[FotoCaptura] Error abriendo cámara:', error);
-        Alert.alert('Error', 'No se pudo abrir la cámara.');
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 0.7,
+        presentationStyle: ImagePicker.UIImagePickerPresentationStyle.FULL_SCREEN,
+      });
+
+      console.log('[FotoCaptura] Resultado:', result.canceled ? 'cancelado' : 'seleccionado');
+
+      if (!result.canceled && result.assets?.length) {
+        onFotoCapturada(result.assets[0].uri);
       }
-    });
+    } catch (error: any) {
+      console.error('[FotoCaptura] Error galería:', error);
+      Alert.alert('Error', 'No se pudo abrir la galería');
+    } finally {
+      setIsPicking(false);
+    }
+  };
+
+  // ============================================
+  // CÁMARA
+  // ============================================
+  const pedirCamara = () => {
+    setPending('camera');
+    setModalVisible(false);
+  };
+
+  const abrirCamara = async () => {
+    try {
+      console.log('[FotoCaptura] Abriendo cámara...');
+
+      if (!cameraPermission?.granted) {
+        const result = await requestCameraPermission();
+        if (!result.granted) {
+          Alert.alert('Permisos requeridos', 'Se necesita permiso de cámara.');
+          return;
+        }
+      }
+
+      setCameraVisible(true);
+    } catch (error: any) {
+      console.error('[FotoCaptura] Error cámara:', error);
+      Alert.alert('Error', 'No se pudo abrir la cámara');
+    }
   };
 
   const capturarFoto = async () => {
-    try {
-      if (!cameraRef.current) {
-        console.error('[FotoCaptura] CameraRef no disponible');
-        return;
-      }
+    if (!cameraRef.current) return;
 
-      console.log('[FotoCaptura] Capturando foto...');
-      setLoading(true);
+    try {
+      setCameraLoading(true);
+      console.log('[FotoCaptura] Capturando...');
 
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.7,
       });
 
       console.log('[FotoCaptura] Foto capturada:', photo.uri);
-
       setCameraVisible(false);
       onFotoCapturada(photo.uri);
     } catch (error) {
-      console.error('[FotoCaptura] Error capturando foto:', error);
+      console.error('[FotoCaptura] Error capturando:', error);
       Alert.alert('Error', 'No se pudo capturar la foto');
     } finally {
-      setLoading(false);
+      setCameraLoading(false);
     }
   };
 
-  const seleccionarDeGaleria = async () => {
-    // Cerrar modal primero
-    setModalVisible(false);
-
-    // Esperar a que terminen todas las animaciones/interacciones
-    InteractionManager.runAfterInteractions(async () => {
-      try {
-        console.log('[FotoCaptura] Solicitando permisos de galería...');
-
-        // Solicitar permisos - usar .granted (boolean) no status (string)
-        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        console.log('[FotoCaptura] Permisos granted:', permissionResult.granted);
-
-        if (!permissionResult.granted) {
-          Alert.alert(
-            'Permisos requeridos',
-            'Se necesita acceso a la galería para seleccionar fotos.'
-          );
-          return;
-        }
-
-        console.log('[FotoCaptura] Abriendo selector de galería nativo...');
-
-        const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ['images'],
-          allowsEditing: false,
-          quality: 0.7,
-        });
-
-        console.log('[FotoCaptura] Resultado picker:', JSON.stringify(result, null, 2));
-
-        if (!result.canceled && result.assets && result.assets.length > 0) {
-          const asset = result.assets[0];
-          console.log('[FotoCaptura] Asset seleccionado:', asset.uri);
-          onFotoCapturada(asset.uri);
-        } else {
-          console.log('[FotoCaptura] Selección cancelada');
-        }
-      } catch (error: any) {
-        console.error('[FotoCaptura] Error con galería:', error);
-        Alert.alert('Error', `No se pudo acceder a la galería: ${error.message}`);
-      }
-    });
+  // ============================================
+  // MODAL onDismiss - ejecuta acción pendiente
+  // ============================================
+  const handleModalDismiss = () => {
+    if (pending === 'gallery') {
+      setPending(null);
+      abrirGaleria();
+    } else if (pending === 'camera') {
+      setPending(null);
+      abrirCamara();
+    }
   };
 
   const eliminarFoto = () => {
@@ -172,9 +175,9 @@ export default function FotoCaptura({
         <TouchableOpacity
           style={[styles.capturaButton, requerido && styles.capturaButtonRequired]}
           onPress={() => setModalVisible(true)}
-          disabled={loading}
+          disabled={isPicking}
         >
-          {loading ? (
+          {isPicking ? (
             <ActivityIndicator color={COLORS.primary} />
           ) : (
             <>
@@ -194,17 +197,18 @@ export default function FotoCaptura({
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
+        onDismiss={handleModalDismiss}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Seleccionar foto</Text>
 
-            <TouchableOpacity style={styles.modalButton} onPress={tomarFoto}>
+            <TouchableOpacity style={styles.modalButton} onPress={pedirCamara}>
               <Ionicons name="camera-outline" size={24} color={COLORS.primary} />
               <Text style={styles.modalButtonText}>Tomar foto</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.modalButton} onPress={seleccionarDeGaleria}>
+            <TouchableOpacity style={styles.modalButton} onPress={pedirGaleria}>
               <Ionicons name="images-outline" size={24} color={COLORS.primary} />
               <Text style={styles.modalButtonText}>Desde galería</Text>
             </TouchableOpacity>
@@ -243,7 +247,7 @@ export default function FotoCaptura({
         </View>
       </Modal>
 
-      {/* Modal de cámara personalizada */}
+      {/* Modal de cámara */}
       <Modal
         animationType="slide"
         transparent={false}
@@ -259,7 +263,6 @@ export default function FotoCaptura({
                 facing="back"
               />
 
-              {/* Controles de cámara */}
               <View style={styles.cameraControls}>
                 <TouchableOpacity
                   style={styles.cameraCancelButton}
@@ -271,9 +274,9 @@ export default function FotoCaptura({
                 <TouchableOpacity
                   style={styles.cameraShutterButton}
                   onPress={capturarFoto}
-                  disabled={loading}
+                  disabled={cameraLoading}
                 >
-                  {loading ? (
+                  {cameraLoading ? (
                     <ActivityIndicator color="#fff" size="large" />
                   ) : (
                     <View style={styles.shutterInner} />
@@ -422,7 +425,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  // Estilos de cámara personalizada
   cameraControls: {
     position: 'absolute',
     bottom: 40,
