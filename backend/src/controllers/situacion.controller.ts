@@ -560,18 +560,17 @@ export async function cambiarTipoSituacion(req: Request, res: Response) {
 export async function getCatalogo(_req: Request, res: Response) {
   try {
     // Tabla unificada: catalogo_tipo_situacion
+    // Excluir HECHO_TRANSITO, ASISTENCIA y EMERGENCIA (tienen pantallas dedicadas)
     const tipos = await db.manyOrNone(`
       SELECT id, categoria, nombre, icono, color, formulario_tipo, orden
       FROM catalogo_tipo_situacion
       WHERE activo = true
+        AND categoria NOT IN ('HECHO_TRANSITO', 'ASISTENCIA', 'EMERGENCIA')
       ORDER BY categoria, orden, nombre
     `);
 
     // Nombres legibles por categoría
     const categoriaNombres: Record<string, string> = {
-      'HECHO_TRANSITO': 'Accidentes',
-      'ASISTENCIA': 'Asistencia Vial',
-      'EMERGENCIA': 'Emergencias',
       'OPERATIVO': 'Operativo',
       'APOYO': 'Apoyo',
       'ADMINISTRATIVO': 'Administrativo',
@@ -579,9 +578,6 @@ export async function getCatalogo(_req: Request, res: Response) {
 
     // Código para colores en el frontend
     const categoriaCodigos: Record<string, string> = {
-      'HECHO_TRANSITO': 'ACCIDENTE',
-      'ASISTENCIA': 'ASISTENCIA',
-      'EMERGENCIA': 'EMERGENCIA',
       'OPERATIVO': 'OPERATIVO',
       'APOYO': 'APOYO',
       'ADMINISTRATIVO': 'ADMINISTRATIVO',
