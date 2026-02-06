@@ -74,7 +74,7 @@ export async function takePhoto(): Promise<MediaFile | null> {
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: 'images',
       allowsEditing: false,
       quality: 1, // Capturar en máxima calidad, comprimir después
       exif: true,
@@ -114,7 +114,7 @@ export async function pickPhoto(): Promise<MediaFile | null> {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: 'images',
       allowsEditing: false,
       quality: 1,
       exif: true,
@@ -154,7 +154,7 @@ export async function recordVideo(): Promise<MediaFile | null> {
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      mediaTypes: 'videos',
       allowsEditing: true,
       videoMaxDuration: VIDEO_CONFIG.maxDurationSeconds,
       videoQuality: VIDEO_CONFIG.quality,
@@ -196,7 +196,7 @@ export async function pickVideo(): Promise<MediaFile | null> {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      mediaTypes: 'videos',
       allowsEditing: true,
       videoMaxDuration: VIDEO_CONFIG.maxDurationSeconds,
       videoQuality: VIDEO_CONFIG.quality,
