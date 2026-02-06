@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import CrossPlatformPicker from './CrossPlatformPicker';
 import { COLORS } from '../constants/colors';
 
 interface Props {
@@ -63,23 +63,19 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
     // 0. INCIDENTE (ACCIDENTE)
     if (formularioTipo === 'INCIDENTE' || situacionNombre === 'Accidente de Tránsito') {
         const lista = auxiliares?.tipos_hecho || [];
+        const options = lista.map((item: any) => ({ label: item.nombre, value: item.id }));
         return (
             <View style={styles.section}>
                 <Text style={styles.title}>Tipo de Accidente / Hecho</Text>
-                <View style={styles.pickerContainer}>
-                    <Picker
-                        selectedValue={detalles.tipo_hecho_id}
-                        onValueChange={(v) => {
-                            // Convertir a número si no es vacío, sino null
-                            const valor = v === '' || v === null ? null : parseInt(String(v), 10);
-                            handleChange('tipo_hecho_id', valor);
-                            console.log('🔍 [Picker] tipo_hecho_id seleccionado:', valor, 'tipo:', typeof valor);
-                        }}
-                    >
-                        <Picker.Item label="Seleccione..." value={null} />
-                        {lista.map((item: any) => <Picker.Item key={item.id} label={item.nombre} value={item.id} />)}
-                    </Picker>
-                </View>
+                <CrossPlatformPicker
+                    selectedValue={detalles.tipo_hecho_id}
+                    onValueChange={(v) => {
+                        const valor = v === null ? null : parseInt(String(v), 10);
+                        handleChange('tipo_hecho_id', valor);
+                    }}
+                    options={options}
+                    placeholder="Seleccione..."
+                />
                 <TextInput style={styles.input} placeholder="Vehículos Involucrados (Cant)" keyboardType="numeric" value={detalles.vehiculos_involucrados} onChangeText={t => handleChange('vehiculos_involucrados', t)} />
                 <TextInput style={styles.input} placeholder="Personas Heridas (Cant)" keyboardType="numeric" value={detalles.heridos} onChangeText={t => handleChange('heridos', t)} />
                 <TextInput style={styles.input} placeholder="Fallecidos (Cant)" keyboardType="numeric" value={detalles.fallecidos} onChangeText={t => handleChange('fallecidos', t)} />
@@ -90,23 +86,19 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
     // 0.1 ASISTENCIA
     if (formularioTipo === 'ASISTENCIA_VEHICULAR') {
         const lista = auxiliares?.tipos_asistencia || [];
+        const options = lista.map((item: any) => ({ label: item.nombre, value: item.id }));
         return (
             <View style={styles.section}>
                 <Text style={styles.title}>Tipo de Asistencia</Text>
-                <View style={styles.pickerContainer}>
-                    <Picker
-                        selectedValue={detalles.tipo_asistencia_id}
-                        onValueChange={(v) => {
-                            // Convertir a número si no es vacío, sino null
-                            const valor = v === '' || v === null ? null : parseInt(String(v), 10);
-                            handleChange('tipo_asistencia_id', valor);
-                            console.log('🔍 [Picker] tipo_asistencia_id seleccionado:', valor, 'tipo:', typeof valor);
-                        }}
-                    >
-                        <Picker.Item label="Seleccione..." value={null} />
-                        {lista.map((item: any) => <Picker.Item key={item.id} label={item.nombre} value={item.id} />)}
-                    </Picker>
-                </View>
+                <CrossPlatformPicker
+                    selectedValue={detalles.tipo_asistencia_id}
+                    onValueChange={(v) => {
+                        const valor = v === null ? null : parseInt(String(v), 10);
+                        handleChange('tipo_asistencia_id', valor);
+                    }}
+                    options={options}
+                    placeholder="Seleccione..."
+                />
             </View>
         );
     }
@@ -114,23 +106,19 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
     // 0.2 EMERGENCIA / OBSTACULO
     if (formularioTipo === 'OBSTACULO') {
         const lista = auxiliares?.tipos_emergencia || [];
+        const options = lista.map((item: any) => ({ label: item.nombre, value: item.id }));
         return (
             <View style={styles.section}>
                 <Text style={styles.title}>Tipo de Emergencia / Obstáculo</Text>
-                <View style={styles.pickerContainer}>
-                    <Picker
-                        selectedValue={detalles.tipo_emergencia_id}
-                        onValueChange={(v) => {
-                            // Convertir a número si no es vacío, sino null
-                            const valor = v === '' || v === null ? null : parseInt(String(v), 10);
-                            handleChange('tipo_emergencia_id', valor);
-                            console.log('🔍 [Picker] tipo_emergencia_id seleccionado:', valor, 'tipo:', typeof valor);
-                        }}
-                    >
-                        <Picker.Item label="Seleccione..." value={null} />
-                        {lista.map((item: any) => <Picker.Item key={item.id} label={item.nombre} value={item.id} />)}
-                    </Picker>
-                </View>
+                <CrossPlatformPicker
+                    selectedValue={detalles.tipo_emergencia_id}
+                    onValueChange={(v) => {
+                        const valor = v === null ? null : parseInt(String(v), 10);
+                        handleChange('tipo_emergencia_id', valor);
+                    }}
+                    options={options}
+                    placeholder="Seleccione..."
+                />
             </View>
         );
     }
@@ -161,14 +149,18 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
     // 2. TOMA DE VELOCIDAD
     if (situacionNombre === 'Toma de velocidad') {
         const registros = detalles.velocidades || [];
+        const tipoOptions = TIPOS_VEHICULO.map(t => ({ label: t, value: t }));
         return (
             <View style={styles.section}>
                 <Text style={styles.title}>Toma de Velocidad</Text>
                 <View style={styles.row}>
-                    <View style={{ flex: 1, ...styles.pickerContainer, marginBottom: 0 }}>
-                        <Picker selectedValue={tipoInput} onValueChange={setTipoInput} style={{ height: 50 }}>
-                            {TIPOS_VEHICULO.map(t => <Picker.Item key={t} label={t} value={t} />)}
-                        </Picker>
+                    <View style={{ flex: 1 }}>
+                        <CrossPlatformPicker
+                            selectedValue={tipoInput}
+                            onValueChange={setTipoInput}
+                            options={tipoOptions}
+                            placeholder="Tipo vehículo"
+                        />
                     </View>
                     <TextInput
                         style={[styles.input, { width: 80, marginBottom: 0 }]}
@@ -190,15 +182,19 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
 
     // 3. SUPERVISANDO UNIDAD
     if (situacionNombre === 'Supervisando unidad') {
+        const unidadOptions = (unidades || []).map(u => ({
+            label: `${u.codigo} ${u.placa || ''}`,
+            value: u.id,
+        }));
         return (
             <View style={styles.section}>
                 <Text style={styles.title}>Unidad Supervisada</Text>
-                <View style={styles.pickerContainer}>
-                    <Picker selectedValue={detalles.unidad_supervisada_id} onValueChange={v => handleChange('unidad_supervisada_id', v)}>
-                        <Picker.Item label="Seleccione unidad..." value="" />
-                        {unidades?.map(u => <Picker.Item key={u.id} label={`${u.codigo} ${u.placa || ''}`} value={u.id} />)}
-                    </Picker>
-                </View>
+                <CrossPlatformPicker
+                    selectedValue={detalles.unidad_supervisada_id}
+                    onValueChange={v => handleChange('unidad_supervisada_id', v)}
+                    options={unidadOptions}
+                    placeholder="Seleccione unidad..."
+                />
             </View>
         )
     }
@@ -251,14 +247,16 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
             <View style={styles.section}>
                 <Text style={styles.title}>Consignación</Text>
                 <TextInput style={styles.input} placeholder="Motivo Consignación" value={detalles.motivo} onChangeText={t => handleChange('motivo', t)} />
-                <View style={styles.pickerContainer}>
-                    <Picker selectedValue={detalles.tipo_consignacion} onValueChange={v => handleChange('tipo_consignacion', v)}>
-                        <Picker.Item label="¿Qué se consigna?" value="" />
-                        <Picker.Item label="Vehículo" value="VEHICULO" />
-                        <Picker.Item label="Piloto" value="PILOTO" />
-                        <Picker.Item label="Ambos" value="AMBOS" />
-                    </Picker>
-                </View>
+                <CrossPlatformPicker
+                    selectedValue={detalles.tipo_consignacion}
+                    onValueChange={v => handleChange('tipo_consignacion', v)}
+                    options={[
+                        { label: 'Vehículo', value: 'VEHICULO' },
+                        { label: 'Piloto', value: 'PILOTO' },
+                        { label: 'Ambos', value: 'AMBOS' },
+                    ]}
+                    placeholder="¿Qué se consigna?"
+                />
                 <TextInput style={styles.input} placeholder="Datos Piloto" value={detalles.piloto} onChangeText={t => handleChange('piloto', t)} />
                 <TextInput style={styles.input} placeholder="Datos Vehículo" value={detalles.vehiculo} onChangeText={t => handleChange('vehiculo', t)} />
                 <TextInput style={styles.input} placeholder="Autoridad Presente" value={detalles.autoridad} onChangeText={t => handleChange('autoridad', t)} />
@@ -274,12 +272,17 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
                 <Text style={styles.title}>Falla Mecánica</Text>
                 <TextInput style={styles.input} placeholder="Tipo de falla" value={detalles.tipo_falla} onChangeText={t => handleChange('tipo_falla', t)} />
                 <View style={styles.row}>
-                    <Text style={{ alignSelf: 'center' }}>Requiere Grúa?</Text>
-                    <View style={{ ...styles.pickerContainer, flex: 1, marginBottom: 0 }}>
-                        <Picker selectedValue={detalles.requiere_grua} onValueChange={(v) => handleChange('requiere_grua', v)}>
-                            <Picker.Item label="No" value="No" />
-                            <Picker.Item label="Sí" value="Sí" />
-                        </Picker>
+                    <Text style={{ alignSelf: 'center', marginRight: 10 }}>Requiere Grúa?</Text>
+                    <View style={{ flex: 1 }}>
+                        <CrossPlatformPicker
+                            selectedValue={detalles.requiere_grua}
+                            onValueChange={(v) => handleChange('requiere_grua', v)}
+                            options={[
+                                { label: 'No', value: 'No' },
+                                { label: 'Sí', value: 'Sí' },
+                            ]}
+                            placeholder="Seleccione..."
+                        />
                     </View>
                 </View>
                 <TouchableOpacity style={styles.btnAdd}><Text style={{ color: 'white' }}>Adjuntar Foto (Pendiente)</Text></TouchableOpacity>
@@ -292,14 +295,16 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
         return (
             <View style={styles.section}>
                 <Text style={styles.title}>Tiempo de Comida</Text>
-                <View style={styles.pickerContainer}>
-                    <Picker selectedValue={detalles.tiempo_comida} onValueChange={v => handleChange('tiempo_comida', v)}>
-                        <Picker.Item label="Seleccione..." value="" />
-                        <Picker.Item label="Desayuno" value="Desayuno" />
-                        <Picker.Item label="Almuerzo" value="Almuerzo" />
-                        <Picker.Item label="Cena" value="Cena" />
-                    </Picker>
-                </View>
+                <CrossPlatformPicker
+                    selectedValue={detalles.tiempo_comida}
+                    onValueChange={v => handleChange('tiempo_comida', v)}
+                    options={[
+                        { label: 'Desayuno', value: 'Desayuno' },
+                        { label: 'Almuerzo', value: 'Almuerzo' },
+                        { label: 'Cena', value: 'Cena' },
+                    ]}
+                    placeholder="Seleccione..."
+                />
             </View>
         )
     }
@@ -359,8 +364,7 @@ const styles = StyleSheet.create({
     title: { fontSize: 16, fontWeight: 'bold', marginBottom: 10, color: '#374151' },
     label: { fontSize: 14, fontWeight: '600', marginBottom: 5, color: '#4b5563' },
     input: { backgroundColor: 'white', borderWidth: 1, borderColor: '#d1d5db', borderRadius: 6, padding: 8, marginBottom: 8 },
-    row: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-    pickerContainer: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 6, backgroundColor: 'white', marginBottom: 8 },
+    row: { flexDirection: 'row', gap: 8, marginBottom: 8, alignItems: 'center' },
     btnAdd: { backgroundColor: COLORS.primary, padding: 8, borderRadius: 6, alignItems: 'center', marginTop: 5 },
     list: { marginTop: 10 },
     listItem: { padding: 5, borderBottomWidth: 1, borderBottomColor: '#eee', fontSize: 14 },

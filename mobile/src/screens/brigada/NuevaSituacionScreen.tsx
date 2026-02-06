@@ -23,9 +23,8 @@ import {
 import * as Location from 'expo-location';
 import api from '../../services/api';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
-
 // Componentes
+import CrossPlatformPicker from '../../components/CrossPlatformPicker';
 import ClimaCargaSelector from '../../components/ClimaCargaSelector';
 import { DepartamentoMunicipioSelector } from '../../components/DepartamentoMunicipioSelector';
 import DynamicFormFields from '../../components/DynamicFormFields';
@@ -372,16 +371,18 @@ export default function NuevaSituacionScreen() {
                   />
                 </View>
                 <View style={styles.half}>
-                  <Text style={styles.label}>Sentido</Text>
-                  <View style={styles.pickerBox}>
-                    <Picker selectedValue={sentido} onValueChange={setSentido} style={styles.picker}>
-                      <Picker.Item label="Sel..." value="" />
-                      <Picker.Item label="Norte" value="NORTE" />
-                      <Picker.Item label="Sur" value="SUR" />
-                      <Picker.Item label="Oriente" value="ORIENTE" />
-                      <Picker.Item label="Occidente" value="OCCIDENTE" />
-                    </Picker>
-                  </View>
+                  <CrossPlatformPicker
+                    label="Sentido"
+                    selectedValue={sentido || null}
+                    onValueChange={(v) => setSentido(v || '')}
+                    placeholder="Sel..."
+                    options={[
+                      { label: 'Norte', value: 'NORTE' },
+                      { label: 'Sur', value: 'SUR' },
+                      { label: 'Oriente', value: 'ORIENTE' },
+                      { label: 'Occidente', value: 'OCCIDENTE' },
+                    ]}
+                  />
                 </View>
               </View>
 
@@ -490,8 +491,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   half: { flex: 1 },
   input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 10, fontSize: 16, backgroundColor: '#fafafa' },
-  pickerBox: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, overflow: 'hidden' },
-  picker: { height: 50, width: '100%' },
   textArea: { height: 80, textAlignVertical: 'top' },
   saveButton: { backgroundColor: COLORS.primary, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
   saveButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },

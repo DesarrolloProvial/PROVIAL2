@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import CrossPlatformPicker from './CrossPlatformPicker';
 import { geografiaAPI } from '../services/api';
 
 interface Departamento {
@@ -78,86 +78,70 @@ export const DepartamentoMunicipioSelector: React.FC<Props> = ({
     }
   };
 
-  const handleDepartamentoChange = (value: string) => {
-    if (value === '') {
+  const handleDepartamentoChange = (value: any) => {
+    if (value === null || value === '') {
       onDepartamentoChange(undefined);
     } else {
-      onDepartamentoChange(parseInt(value, 10));
+      onDepartamentoChange(typeof value === 'number' ? value : parseInt(value, 10));
     }
   };
 
-  const handleMunicipioChange = (value: string) => {
-    if (value === '') {
+  const handleMunicipioChange = (value: any) => {
+    if (value === null || value === '') {
       onMunicipioChange(undefined);
     } else {
-      onMunicipioChange(parseInt(value, 10));
+      onMunicipioChange(typeof value === 'number' ? value : parseInt(value, 10));
     }
   };
+
+  const departamentoOptions = departamentos.map(depto => ({
+    label: depto.nombre,
+    value: depto.id,
+  }));
+
+  const municipioOptions = municipios.map(muni => ({
+    label: muni.nombre,
+    value: muni.id,
+  }));
 
   return (
     <View style={styles.container}>
       {/* Selector de Departamento */}
       <View style={styles.selectorContainer}>
-        <Text style={styles.label}>
-          {departamentoLabel}
-          {required && <Text style={styles.required}> *</Text>}
-        </Text>
-
         {loadingDepartamentos ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" />
             <Text style={styles.loadingText}>Cargando departamentos...</Text>
           </View>
         ) : (
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={departamentoValue?.toString() || ''}
-              onValueChange={handleDepartamentoChange}
-              style={styles.picker}
-            >
-              <Picker.Item label="Seleccionar departamento..." value="" />
-              {departamentos.map((depto) => (
-                <Picker.Item
-                  key={depto.id}
-                  label={depto.nombre}
-                  value={depto.id.toString()}
-                />
-              ))}
-            </Picker>
-          </View>
+          <CrossPlatformPicker
+            label={departamentoLabel}
+            required={required}
+            selectedValue={departamentoValue || null}
+            onValueChange={handleDepartamentoChange}
+            options={departamentoOptions}
+            placeholder="Seleccionar departamento..."
+          />
         )}
       </View>
 
       {/* Selector de Municipio (solo visible si hay departamento seleccionado) */}
       {departamentoValue && (
         <View style={styles.selectorContainer}>
-          <Text style={styles.label}>
-            {municipioLabel}
-            {required && <Text style={styles.required}> *</Text>}
-          </Text>
-
           {loadingMunicipios ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="small" />
               <Text style={styles.loadingText}>Cargando municipios...</Text>
             </View>
           ) : municipios.length > 0 ? (
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={municipioValue?.toString() || ''}
-                onValueChange={handleMunicipioChange}
-                style={styles.picker}
-              >
-                <Picker.Item label="Seleccionar municipio..." value="" />
-                {municipios.map((municipio) => (
-                  <Picker.Item
-                    key={municipio.id}
-                    label={municipio.nombre}
-                    value={municipio.id.toString()}
-                  />
-                ))}
-              </Picker>
-            </View>
+            <CrossPlatformPicker
+              label={municipioLabel}
+              required={required}
+              selectedValue={municipioValue || null}
+              onValueChange={handleMunicipioChange}
+              options={municipioOptions}
+              placeholder="Seleccionar municipio..."
+            />
           ) : (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No hay municipios disponibles</Text>
@@ -175,24 +159,6 @@ const styles = StyleSheet.create({
   },
   selectorContainer: {
     marginBottom: 10,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 6,
-  },
-  required: {
-    color: '#d32f2f',
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    backgroundColor: '#fff',
-  },
-  picker: {
-    height: 50,
   },
   loadingContainer: {
     flexDirection: 'row',

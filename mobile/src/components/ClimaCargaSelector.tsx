@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { View, StyleSheet } from 'react-native';
+import CrossPlatformPicker from './CrossPlatformPicker';
 import { CLIMA_OPCIONES, CARGA_VEHICULAR_OPCIONES } from '../constants/geografia';
-import { COLORS } from '../constants/colors';
 
 interface Props {
     clima: string;
@@ -12,33 +11,28 @@ interface Props {
 }
 
 export default function ClimaCargaSelector({ clima, setClima, carga, setCarga }: Props) {
+    const climaOptions = CLIMA_OPCIONES.map(op => ({ label: op, value: op }));
+    const cargaOptions = CARGA_VEHICULAR_OPCIONES.map(op => ({ label: op, value: op }));
+
     return (
         <View style={styles.container}>
             <View style={styles.field}>
-                <Text style={styles.label}>Clima</Text>
-                <View style={styles.pickerContainer}>
-                    <Picker
-                        selectedValue={clima}
-                        onValueChange={setClima}
-                        style={styles.picker}
-                    >
-                        <Picker.Item label="Seleccione..." value="" />
-                        {CLIMA_OPCIONES.map(op => <Picker.Item key={op} label={op} value={op} />)}
-                    </Picker>
-                </View>
+                <CrossPlatformPicker
+                    label="Clima"
+                    selectedValue={clima || null}
+                    onValueChange={(v) => setClima(v || '')}
+                    options={climaOptions}
+                    placeholder="Seleccione..."
+                />
             </View>
             <View style={styles.field}>
-                <Text style={styles.label}>Carga Vehicular</Text>
-                <View style={styles.pickerContainer}>
-                    <Picker
-                        selectedValue={carga}
-                        onValueChange={setCarga}
-                        style={styles.picker}
-                    >
-                        <Picker.Item label="Seleccione..." value="" />
-                        {CARGA_VEHICULAR_OPCIONES.map(op => <Picker.Item key={op} label={op} value={op} />)}
-                    </Picker>
-                </View>
+                <CrossPlatformPicker
+                    label="Carga Vehicular"
+                    selectedValue={carga || null}
+                    onValueChange={(v) => setCarga(v || '')}
+                    options={cargaOptions}
+                    placeholder="Seleccione..."
+                />
             </View>
         </View>
     );
@@ -47,7 +41,4 @@ export default function ClimaCargaSelector({ clima, setClima, carga, setCarga }:
 const styles = StyleSheet.create({
     container: { flexDirection: 'row', gap: 10, marginVertical: 10 },
     field: { flex: 1 },
-    label: { fontSize: 12, fontWeight: 'bold', marginBottom: 4, color: '#666' },
-    pickerContainer: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, backgroundColor: 'white', overflow: 'hidden' },
-    picker: { height: 50, width: '100%' }
 });
