@@ -53,7 +53,7 @@ export default function FotoCaptura({
     setLoading(true);
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: 'images',
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.7,
@@ -79,7 +79,7 @@ export default function FotoCaptura({
     setLoading(true);
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images',
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.7,
