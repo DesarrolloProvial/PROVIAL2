@@ -1,9 +1,8 @@
 /**
- * FotoCaptura - Versión iOS Fix
- * 
- * Solución al problema de expo-image-picker colgándose en iOS
- * - Usa expo-camera directamente para cámara
- * - Usa expo-media-library para galería
+ * FotoCaptura - Componente para captura de fotos
+ *
+ * - Cámara: usa expo-camera para mayor control
+ * - Galería: usa expo-image-picker para selector nativo del sistema
  */
 
 import React, { useState, useRef } from 'react';
@@ -16,11 +15,9 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
-  Platform,
-  ScrollView,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as MediaLibrary from 'expo-media-library';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 
@@ -43,56 +40,26 @@ export default function FotoCaptura({
   const [loading, setLoading] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [cameraVisible, setCameraVisible] = useState(false);
-  const [galleryVisible, setGalleryVisible] = useState(false);
-  const [galleryPhotos, setGalleryPhotos] = useState<MediaLibrary.Asset[]>([]);
-  const [galleryLoading, setGalleryLoading] = useState(false);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const cameraRef = useRef<any>(null);
 
-  const solicitarPermisosCamara = async (): Promise<boolean> => {
+  const tomarFoto = async () => {
     try {
-      console.log('[FotoCaptura] Solicitando permisos de cámara...');
+      console.log('[FotoCaptura] Abriendo cámara...');
+      setModalVisible(false);
 
-      if (!cameraPermission) {
-        console.log('[FotoCaptura] Permisos no disponibles aún');
-        return false;
-      }
+      // Pequeña pausa para que el modal se cierre
+      await new Promise(resolve => setTimeout(resolve, 300));
 
-      if (!cameraPermission.granted) {
-        console.log('[FotoCaptura] Solicitando permisos...');
+      // Solicitar permisos de cámara
+      if (!cameraPermission?.granted) {
         const result = await requestCameraPermission();
         if (!result.granted) {
-          Alert.alert(
-            'Permisos requeridos',
-            'Se necesita permiso de cámara para tomar fotos.'
-          );
-          return false;
+          Alert.alert('Permisos requeridos', 'Se necesita permiso de cámara para tomar fotos.');
+          return;
         }
       }
 
-      console.log('[FotoCaptura] Permisos de cámara: OK');
-      return true;
-    } catch (error) {
-      console.error('[FotoCaptura] Error solicitando permisos de cámara:', error);
-      Alert.alert('Error', 'No se pudieron solicitar los permisos de cámara');
-      return false;
-    }
-  };
-
-  const tomarFoto = async () => {
-    try {
-      console.log('[FotoCaptura] Abriendo cámara personalizada...');
-      setModalVisible(false);
-
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      const tienePermisos = await solicitarPermisosCamara();
-      if (!tienePermisos) {
-        console.log('[FotoCaptura] Sin permisos de cámara');
-        return;
-      }
-
-      // Mostrar la cámara personalizada
       setCameraVisible(true);
     } catch (error: any) {
       console.error('[FotoCaptura] Error abriendo cámara:', error);
@@ -128,65 +95,29 @@ export default function FotoCaptura({
 
   const seleccionarDeGaleria = async () => {
     try {
-      console.log('[FotoCaptura] Abriendo galería con MediaLibrary...');
+      console.log('[FotoCaptura] Abriendo selector de galería nativo...');
       setModalVisible(false);
 
+      // Pequeña pausa para que el modal se cierre
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      // Solicitar permisos de media library
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permisos requeridos', 'Se necesita acceso a la galería');
-        return;
-      }
-
-      // Mostrar modal de galería y cargar fotos
-      setGalleryVisible(true);
-      setGalleryLoading(true);
-
-      console.log('[FotoCaptura] Cargando fotos de galería...');
-
-      // Obtener las últimas 50 fotos
-      const recentPhotos = await MediaLibrary.getAssetsAsync({
-        first: 50,
-        mediaType: MediaLibrary.MediaType.photo,
-        sortBy: [[MediaLibrary.SortBy.creationTime, false]],
+      // Usar el selector nativo del sistema
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 0.7,
       });
 
-      console.log('[FotoCaptura] Fotos encontradas:', recentPhotos.assets.length);
-      setGalleryPhotos(recentPhotos.assets);
-      setGalleryLoading(false);
+      console.log('[FotoCaptura] Resultado picker:', result.canceled ? 'cancelado' : 'seleccionado');
 
-      if (recentPhotos.assets.length === 0) {
-        Alert.alert('Galería vacía', 'No hay fotos disponibles');
-        setGalleryVisible(false);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const uri = result.assets[0].uri;
+        console.log('[FotoCaptura] URI seleccionada:', uri);
+        onFotoCapturada(uri);
       }
     } catch (error: any) {
       console.error('[FotoCaptura] Error con galería:', error);
       Alert.alert('Error', `No se pudo acceder a la galería: ${error.message}`);
-      setGalleryVisible(false);
-      setGalleryLoading(false);
-    }
-  };
-
-  const seleccionarFotoDeGaleria = async (asset: MediaLibrary.Asset) => {
-    try {
-      setGalleryLoading(true);
-      console.log('[FotoCaptura] Seleccionando foto:', asset.id);
-
-      // Obtener URI local de la foto
-      const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
-      const uri = assetInfo.localUri || assetInfo.uri;
-
-      console.log('[FotoCaptura] URI de foto:', uri);
-
-      setGalleryVisible(false);
-      setGalleryLoading(false);
-      onFotoCapturada(uri);
-    } catch (error: any) {
-      console.error('[FotoCaptura] Error seleccionando foto:', error);
-      Alert.alert('Error', 'No se pudo seleccionar la foto');
-      setGalleryLoading(false);
     }
   };
 
@@ -195,15 +126,8 @@ export default function FotoCaptura({
       'Eliminar foto',
       '¿Está seguro que desea eliminar esta foto?',
       [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Eliminar',
-          onPress: () => onFotoCapturada(''),
-          style: 'destructive',
-        },
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Eliminar', onPress: () => onFotoCapturada(''), style: 'destructive' },
       ]
     );
   };
@@ -219,10 +143,7 @@ export default function FotoCaptura({
           <TouchableOpacity onPress={() => setPreviewVisible(true)}>
             <Image source={{ uri: fotoActual }} style={styles.fotoPreview} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.eliminarButton}
-            onPress={eliminarFoto}
-          >
+          <TouchableOpacity style={styles.eliminarButton} onPress={eliminarFoto}>
             <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
             <Text style={styles.eliminarText}>Eliminar</Text>
           </TouchableOpacity>
@@ -258,18 +179,12 @@ export default function FotoCaptura({
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Seleccionar foto</Text>
 
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={tomarFoto}
-            >
+            <TouchableOpacity style={styles.modalButton} onPress={tomarFoto}>
               <Ionicons name="camera-outline" size={24} color={COLORS.primary} />
               <Text style={styles.modalButtonText}>Tomar foto</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={seleccionarDeGaleria}
-            >
+            <TouchableOpacity style={styles.modalButton} onPress={seleccionarDeGaleria}>
               <Ionicons name="images-outline" size={24} color={COLORS.primary} />
               <Text style={styles.modalButtonText}>Desde galería</Text>
             </TouchableOpacity>
@@ -361,52 +276,6 @@ export default function FotoCaptura({
                 <Text style={styles.permissionButtonText}>Cerrar</Text>
               </TouchableOpacity>
             </View>
-          )}
-        </View>
-      </Modal>
-
-      {/* Modal de galería personalizada */}
-      <Modal
-        animationType="slide"
-        transparent={false}
-        visible={galleryVisible}
-        onRequestClose={() => setGalleryVisible(false)}
-      >
-        <View style={styles.galleryContainer}>
-          {/* Header */}
-          <View style={styles.galleryHeader}>
-            <TouchableOpacity onPress={() => setGalleryVisible(false)}>
-              <Ionicons name="close" size={28} color={COLORS.text.primary} />
-            </TouchableOpacity>
-            <Text style={styles.galleryTitle}>Seleccionar foto</Text>
-            <View style={{ width: 28 }} />
-          </View>
-
-          {/* Grid de fotos */}
-          {galleryLoading ? (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              <ActivityIndicator size="large" color={COLORS.primary} />
-              <Text style={{ marginTop: 16, color: COLORS.text.secondary }}>
-                Cargando fotos...
-              </Text>
-            </View>
-          ) : (
-            <ScrollView style={styles.galleryScroll}>
-              <View style={styles.galleryGrid}>
-                {galleryPhotos.map((photo) => (
-                  <TouchableOpacity
-                    key={photo.id}
-                    style={styles.galleryPhotoWrapper}
-                    onPress={() => seleccionarFotoDeGaleria(photo)}
-                  >
-                    <Image
-                      source={{ uri: photo.uri }}
-                      style={styles.galleryPhoto}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
           )}
         </View>
       </Modal>
@@ -590,49 +459,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  // Estilos de selector de galería
-  galleryContainer: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-  },
-  galleryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  galleryTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.text.primary,
-  },
-  galleryScroll: {
-    flex: 1,
-  },
-  galleryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 2,
-  },
-  galleryPhotoWrapper: {
-    width: '33.333%',
-    aspectRatio: 1,
-    padding: 2,
-  },
-  galleryPhoto: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: COLORS.gray[100],
-  },
-  galleryPhotoLoading: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });
