@@ -2,7 +2,7 @@
  * CrossPlatformPicker - Selector compatible con iOS y Android
  *
  * - Android: Usa el Picker nativo (dropdown)
- * - iOS: Muestra un botón que abre un modal con el picker wheel
+ * - iOS: Muestra un botón que abre ActionSheet con picker wheel
  */
 
 import React, { useState } from 'react';
@@ -13,11 +13,15 @@ import {
   TouchableOpacity,
   Modal,
   Platform,
+  Pressable,
   SafeAreaView,
+  Dimensions,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export interface PickerOption {
   label: string;
@@ -98,7 +102,7 @@ export default function CrossPlatformPicker({
     );
   }
 
-  // En iOS, usar botón + modal
+  // En iOS, usar botón + modal fullscreen
   return (
     <View style={style}>
       {label && (
@@ -115,6 +119,7 @@ export default function CrossPlatformPicker({
         ]}
         onPress={openPicker}
         disabled={disabled}
+        activeOpacity={0.7}
       >
         <Text
           style={[
@@ -125,35 +130,37 @@ export default function CrossPlatformPicker({
         >
           {displayText}
         </Text>
-        <Ionicons name="chevron-down" size={20} color={COLORS.text.secondary} />
+        <Ionicons name="chevron-down" size={20} color="#666" />
       </TouchableOpacity>
 
       <Modal
         visible={modalVisible}
-        transparent={true}
+        transparent={false}
         animationType="slide"
+        presentationStyle="pageSheet"
         onRequestClose={handleCancel}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            {/* Header con botones */}
-            <View style={styles.modalHeader}>
-              <TouchableOpacity onPress={handleCancel} style={styles.modalButton}>
-                <Text style={styles.modalButtonCancel}>Cancelar</Text>
-              </TouchableOpacity>
+        <SafeAreaView style={styles.modalContainer}>
+          {/* Header con botones */}
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={handleCancel} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={styles.modalButtonCancel}>Cancelar</Text>
+            </TouchableOpacity>
 
-              <Text style={styles.modalTitle}>{label || 'Seleccionar'}</Text>
+            <Text style={styles.modalTitle}>{label || 'Seleccionar'}</Text>
 
-              <TouchableOpacity onPress={handleConfirm} style={styles.modalButton}>
-                <Text style={styles.modalButtonConfirm}>Listo</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity onPress={handleConfirm} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={styles.modalButtonConfirm}>Listo</Text>
+            </TouchableOpacity>
+          </View>
 
-            {/* Picker wheel */}
+          {/* Picker wheel - centrado */}
+          <View style={styles.pickerContainer}>
             <Picker
               selectedValue={tempValue}
               onValueChange={setTempValue}
               style={styles.iosPicker}
+              itemStyle={styles.iosPickerItem}
             >
               <Picker.Item label={placeholder} value={null} />
               {options.map((option, index) => (
@@ -165,7 +172,7 @@ export default function CrossPlatformPicker({
               ))}
             </Picker>
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     </View>
   );
@@ -191,6 +198,7 @@ const styles = StyleSheet.create({
   },
   androidPicker: {
     height: 50,
+    color: '#333',
   },
   // iOS styles
   iosButton: {
@@ -210,23 +218,16 @@ const styles = StyleSheet.create({
   },
   iosButtonText: {
     fontSize: 16,
-    color: COLORS.text.primary,
+    color: '#333',
     flex: 1,
   },
   iosPlaceholder: {
-    color: COLORS.text.secondary,
+    color: '#999',
   },
-  // Modal styles
-  modalOverlay: {
+  // Modal styles - iOS pageSheet
+  modalContainer: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 20,
+    backgroundColor: '#f2f2f7',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -234,28 +235,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  modalButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderBottomColor: '#e0e0e0',
   },
   modalButtonCancel: {
-    fontSize: 16,
-    color: COLORS.text.secondary,
+    fontSize: 17,
+    color: '#007AFF',
   },
   modalButtonConfirm: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: '#007AFF',
   },
   modalTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
-    color: COLORS.text.primary,
+    color: '#000',
+  },
+  pickerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    marginTop: 20,
+    marginHorizontal: 16,
+    borderRadius: 12,
   },
   iosPicker: {
+    width: '100%',
     height: 216,
+  },
+  iosPickerItem: {
+    fontSize: 20,
+    color: '#000',
   },
 });

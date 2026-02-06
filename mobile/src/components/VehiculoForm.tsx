@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, Modal, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { Controller, Control, useWatch } from 'react-hook-form';
 import {
     TextInput,
@@ -10,9 +10,8 @@ import {
     List,
     SegmentedButtons
 } from 'react-native-paper';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { PlacaInput } from './PlacaInput';
-import { COLORS } from '../constants/colors';
 
 interface VehiculoFormProps {
     control: Control<any>;
@@ -34,10 +33,9 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
     });
 
     // State para date pickers
-    const [showDatePicker, setShowDatePicker] = useState(false);
-    const [dateField, setDateField] = useState<string | null>(null);
-    const [tempDate, setTempDate] = useState<Date>(new Date());
-    const [dateOnChange, setDateOnChange] = useState<((date: Date) => void) | null>(null);
+    const [activeDatePicker, setActiveDatePicker] = useState<string | null>(null);
+    const [datePickerValue, setDatePickerValue] = useState<Date>(new Date());
+    const [datePickerOnChange, setDatePickerOnChange] = useState<((date: Date) => void) | null>(null);
 
     // Watch para mostrar secciones condicionales
     const cargado = useWatch({ control, name: `vehiculos.${index}.cargado` });
@@ -49,7 +47,23 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
         setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
     };
 
-    // Helper para renderizar date picker (compatible iOS/Android)
+    // Handler para el DateTimePicker nativo
+    const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+        if (Platform.OS === 'android') {
+            setActiveDatePicker(null);
+        }
+
+        if (event.type === 'set' && selectedDate && datePickerOnChange) {
+            datePickerOnChange(selectedDate);
+            if (Platform.OS === 'ios') {
+                setActiveDatePicker(null);
+            }
+        } else if (event.type === 'dismissed') {
+            setActiveDatePicker(null);
+        }
+    };
+
+    // Helper para renderizar date picker (usa el nativo del sistema)
     const renderDateField = (fieldName: string, label: string) => (
         <Controller
             control={control}
@@ -60,82 +74,32 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                     <Button
                         mode="outlined"
                         onPress={() => {
-                            setDateField(fieldName);
-                            setTempDate(value ? new Date(value) : new Date());
-                            setDateOnChange(() => onChange);
-                            setShowDatePicker(true);
+                            setDatePickerValue(value ? new Date(value) : new Date());
+                            setDatePickerOnChange(() => onChange);
+                            setActiveDatePicker(fieldName);
                         }}
                         icon="calendar"
                         style={styles.dateButton}
                     >
                         {value ? new Date(value).toLocaleDateString('es-GT') : 'Seleccionar Fecha'}
                     </Button>
+
+                    {/* DateTimePicker nativo - solo se muestra cuando este campo está activo */}
+                    {activeDatePicker === fieldName && (
+                        <DateTimePicker
+                            value={datePickerValue}
+                            mode="date"
+                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                            onChange={handleDateChange}
+                        />
+                    )}
                 </View>
             )}
         />
     );
 
-    // Render del DateTimePicker según plataforma
-    const renderDatePicker = () => {
-        if (!showDatePicker) return null;
-
-        if (Platform.OS === 'ios') {
-            return (
-                <Modal
-                    visible={showDatePicker}
-                    transparent={true}
-                    animationType="slide"
-                    onRequestClose={() => setShowDatePicker(false)}
-                >
-                    <View style={styles.dateModalOverlay}>
-                        <View style={styles.dateModalContent}>
-                            <View style={styles.dateModalHeader}>
-                                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                                    <Text style={styles.dateModalCancel}>Cancelar</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => {
-                                    if (dateOnChange) dateOnChange(tempDate);
-                                    setShowDatePicker(false);
-                                }}>
-                                    <Text style={styles.dateModalConfirm}>Listo</Text>
-                                </TouchableOpacity>
-                            </View>
-                            <DateTimePicker
-                                value={tempDate}
-                                mode="date"
-                                display="spinner"
-                                onChange={(event, date) => {
-                                    if (date) setTempDate(date);
-                                }}
-                                style={{ height: 200 }}
-                            />
-                        </View>
-                    </View>
-                </Modal>
-            );
-        }
-
-        // Android
-        return (
-            <DateTimePicker
-                value={tempDate}
-                mode="date"
-                display="default"
-                onChange={(event, date) => {
-                    setShowDatePicker(false);
-                    if (event.type === 'set' && date && dateOnChange) {
-                        dateOnChange(date);
-                    }
-                }}
-            />
-        );
-    };
-
     return (
         <View style={styles.container}>
-            {/* Date Picker Modal (iOS) or Native (Android) */}
-            {renderDatePicker()}
-
             <View style={styles.header}>
                 <Text style={styles.title}>Vehículo {index + 1}</Text>
                 <Button onPress={onRemove} textColor="red" mode="text">Eliminar</Button>
@@ -888,35 +852,5 @@ const styles = StyleSheet.create({
         color: '#666',
         marginBottom: 12,
         fontStyle: 'italic',
-    },
-    // iOS Date Picker Modal Styles
-    dateModalOverlay: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    },
-    dateModalContent: {
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingBottom: 20,
-    },
-    dateModalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    dateModalCancel: {
-        fontSize: 16,
-        color: '#666',
-    },
-    dateModalConfirm: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: COLORS.primary,
     },
 });

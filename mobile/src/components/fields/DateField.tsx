@@ -2,16 +2,14 @@
  * DateField Component
  *
  * Campo para selección de fecha y hora.
- * Soporta modos: date, time, datetime.
- * Compatible con iOS y Android.
+ * Usa el DateTimePicker nativo del sistema en ambas plataformas.
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Modal } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useTheme } from '../../core/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { COLORS } from '../../constants/colors';
 
 interface DateFieldProps {
     label: string;
@@ -40,40 +38,33 @@ export default function DateField({
 }: DateFieldProps) {
     const theme = useTheme();
     const [showPicker, setShowPicker] = useState(false);
-    const [tempDate, setTempDate] = useState<Date>(new Date());
+    const [showTimePicker, setShowTimePicker] = useState(false);
 
     // Parse value to Date object
     const dateValue = value ? new Date(value) : new Date();
     const hasValue = value !== null && value !== undefined && value !== '';
 
-    const openPicker = () => {
-        if (disabled) return;
-        setTempDate(dateValue);
-        setShowPicker(true);
-    };
-
-    const handleChange = (event: any, selectedDate?: Date) => {
+    const handleChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
         if (Platform.OS === 'android') {
-            // En Android, cerrar el picker inmediatamente
             setShowPicker(false);
-            if (event.type === 'set' && selectedDate) {
-                onChange(selectedDate);
-            }
-        } else {
-            // En iOS, solo actualizar el valor temporal
-            if (selectedDate) {
-                setTempDate(selectedDate);
-            }
+            setShowTimePicker(false);
         }
-    };
 
-    const handleIOSConfirm = () => {
-        onChange(tempDate);
-        setShowPicker(false);
-    };
-
-    const handleIOSCancel = () => {
-        setShowPicker(false);
+        if (event.type === 'set' && selectedDate) {
+            if (mode === 'datetime' && Platform.OS === 'android' && !showTimePicker) {
+                // En Android con datetime, primero fecha, luego hora
+                onChange(selectedDate);
+                setShowTimePicker(true);
+            } else {
+                onChange(selectedDate);
+                if (Platform.OS === 'ios') {
+                    setShowPicker(false);
+                }
+            }
+        } else if (event.type === 'dismissed') {
+            setShowPicker(false);
+            setShowTimePicker(false);
+        }
     };
 
     // Formato de visualización
@@ -101,82 +92,10 @@ export default function DateField({
         }
     };
 
-    // Renderizar picker según plataforma
-    const renderPicker = () => {
-        if (!showPicker) return null;
-
-        if (Platform.OS === 'ios') {
-            // iOS: Mostrar en modal con botones
-            return (
-                <Modal
-                    visible={showPicker}
-                    transparent={true}
-                    animationType="slide"
-                    onRequestClose={handleIOSCancel}
-                >
-                    <View style={styles.modalOverlay}>
-                        <View style={styles.modalContent}>
-                            {/* Header con botones */}
-                            <View style={styles.modalHeader}>
-                                <TouchableOpacity onPress={handleIOSCancel} style={styles.modalButton}>
-                                    <Text style={styles.modalButtonCancel}>Cancelar</Text>
-                                </TouchableOpacity>
-
-                                <Text style={styles.modalTitle}>{label}</Text>
-
-                                <TouchableOpacity onPress={handleIOSConfirm} style={styles.modalButton}>
-                                    <Text style={styles.modalButtonConfirm}>Listo</Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            {/* Picker */}
-                            <DateTimePicker
-                                value={tempDate}
-                                mode={mode === 'datetime' ? 'date' : mode}
-                                is24Hour={true}
-                                display="spinner"
-                                onChange={handleChange}
-                                minimumDate={minDate}
-                                maximumDate={maxDate}
-                                style={{ height: 200 }}
-                            />
-
-                            {/* Si es datetime, mostrar también el time picker */}
-                            {mode === 'datetime' && (
-                                <DateTimePicker
-                                    value={tempDate}
-                                    mode="time"
-                                    is24Hour={true}
-                                    display="spinner"
-                                    onChange={(event, date) => {
-                                        if (date) {
-                                            const newDate = new Date(tempDate);
-                                            newDate.setHours(date.getHours());
-                                            newDate.setMinutes(date.getMinutes());
-                                            setTempDate(newDate);
-                                        }
-                                    }}
-                                    style={{ height: 200 }}
-                                />
-                            )}
-                        </View>
-                    </View>
-                </Modal>
-            );
+    const openPicker = () => {
+        if (!disabled) {
+            setShowPicker(true);
         }
-
-        // Android: Picker nativo
-        return (
-            <DateTimePicker
-                value={dateValue}
-                mode={mode === 'datetime' ? 'date' : mode}
-                is24Hour={true}
-                display="default"
-                onChange={handleChange}
-                minimumDate={minDate}
-                maximumDate={maxDate}
-            />
-        );
     };
 
     return (
@@ -195,6 +114,7 @@ export default function DateField({
             <TouchableOpacity
                 onPress={openPicker}
                 disabled={disabled}
+                activeOpacity={0.7}
                 style={[
                     styles.inputContainer,
                     {
@@ -220,8 +140,29 @@ export default function DateField({
                 />
             </TouchableOpacity>
 
-            {/* Picker (platform-specific) */}
-            {renderPicker()}
+            {/* Native DateTimePicker */}
+            {showPicker && (
+                <DateTimePicker
+                    value={dateValue}
+                    mode={mode === 'datetime' ? 'date' : mode}
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    is24Hour={true}
+                    onChange={handleChange}
+                    minimumDate={minDate}
+                    maximumDate={maxDate}
+                />
+            )}
+
+            {/* Time picker para datetime en Android */}
+            {showTimePicker && Platform.OS === 'android' && (
+                <DateTimePicker
+                    value={dateValue}
+                    mode="time"
+                    display="default"
+                    is24Hour={true}
+                    onChange={handleChange}
+                />
+            )}
 
             {/* Helper/Error Text */}
             {(error || helperText) && (
@@ -254,44 +195,5 @@ const styles = StyleSheet.create({
     },
     helperText: {
         marginTop: 4,
-    },
-    // iOS Modal styles
-    modalOverlay: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    },
-    modalContent: {
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingBottom: 20,
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    modalButton: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-    },
-    modalButtonCancel: {
-        fontSize: 16,
-        color: '#666',
-    },
-    modalButtonConfirm: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: COLORS.primary,
-    },
-    modalTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
     },
 });
