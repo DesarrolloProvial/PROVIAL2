@@ -115,13 +115,8 @@ export default function FotoCaptura({
 
       console.log('[FotoCaptura] Abriendo selector de galería nativo...');
 
-      // Usar el selector nativo del sistema
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: false,
-        quality: 0.7,
-        exif: false,
-      });
+      // Usar el selector nativo del sistema - sin opciones para probar
+      const result = await ImagePicker.launchImageLibraryAsync();
 
       console.log('[FotoCaptura] Resultado picker:', JSON.stringify(result, null, 2));
 
