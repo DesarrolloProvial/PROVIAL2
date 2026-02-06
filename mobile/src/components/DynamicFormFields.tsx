@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import CrossPlatformPicker from './CrossPlatformPicker';
 import { COLORS } from '../constants/colors';
+import { catalogoStorage } from '../core/storage/catalogoStorage';
 
 interface Props {
     situacionNombre: string;
@@ -16,15 +17,24 @@ interface Props {
     unidades?: any[];
 }
 
-const TIPOS_VEHICULO = ['Automóvil', 'Pickup', 'Camioneta', 'Bus', 'Camión C-2', 'Camión C-3', 'Trailer', 'Moto'];
-
 export default function DynamicFormFields({ situacionNombre, formularioTipo, detalles, setDetalles, auxiliares, unidades }: Props) {
 
     // ==========================================
     // STATES LOCALES (Hooks siempre al inicio)
     // ==========================================
     const [velocidadInput, setVelocidadInput] = useState('');
-    const [tipoInput, setTipoInput] = useState('Automóvil');
+    const [tipoInput, setTipoInput] = useState('');
+    const [tiposVehiculo, setTiposVehiculo] = useState<string[]>([]);
+
+    useEffect(() => {
+        catalogoStorage.init().then(() => {
+            catalogoStorage.getTiposVehiculo().then(t => {
+                const nombres = t.map(x => x.nombre);
+                setTiposVehiculo(nombres);
+                if (nombres.length > 0 && !tipoInput) setTipoInput(nombres[0]);
+            });
+        });
+    }, []);
 
     const [llamadaOp, setLlamadaOp] = useState({ motivo: '', piloto: '', vehiculo: '' });
 
@@ -75,6 +85,16 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
                     }}
                     options={options}
                     placeholder="Seleccione..."
+                />
+                <CrossPlatformPicker
+                    label="Grupo"
+                    selectedValue={detalles.grupo}
+                    onValueChange={(v) => handleChange('grupo', v)}
+                    options={[
+                        { label: '1', value: 1 },
+                        { label: '2', value: 2 },
+                    ]}
+                    placeholder="Seleccione grupo..."
                 />
                 <TextInput style={styles.input} placeholder="Vehículos Involucrados (Cant)" keyboardType="numeric" value={detalles.vehiculos_involucrados} onChangeText={t => handleChange('vehiculos_involucrados', t)} />
                 <TextInput style={styles.input} placeholder="Personas Heridas (Cant)" keyboardType="numeric" value={detalles.heridos} onChangeText={t => handleChange('heridos', t)} />
@@ -129,7 +149,7 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
         return (
             <View style={styles.section}>
                 <Text style={styles.title}>Conteo Vehicular</Text>
-                {TIPOS_VEHICULO.map(tipo => (
+                {tiposVehiculo.map(tipo => (
                     <View key={tipo} style={styles.conteoRow}>
                         <Text style={styles.conteoLabel}>{tipo}</Text>
                         <View style={styles.conteoControls}>
@@ -149,7 +169,7 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
     // 2. TOMA DE VELOCIDAD
     if (situacionNombre === 'Toma de velocidad') {
         const registros = detalles.velocidades || [];
-        const tipoOptions = TIPOS_VEHICULO.map(t => ({ label: t, value: t }));
+        const tipoOptions = tiposVehiculo.map(t => ({ label: t, value: t }));
         return (
             <View style={styles.section}>
                 <Text style={styles.title}>Toma de Velocidad</Text>

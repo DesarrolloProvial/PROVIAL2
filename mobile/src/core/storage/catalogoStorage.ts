@@ -63,6 +63,11 @@ export interface CatalogoTipoEmergencia {
     nombre: string;
 }
 
+export interface CatalogoEtnia {
+    id: number;
+    nombre: string;
+}
+
 export interface SyncMetadata {
     catalogo: string;
     ultima_sincronizacion: string;
@@ -160,6 +165,13 @@ class CatalogoStorage {
 
             this.db.execSync(`
                 CREATE TABLE IF NOT EXISTS tipo_emergencia (
+                    id INTEGER PRIMARY KEY,
+                    nombre TEXT NOT NULL UNIQUE
+                )
+            `);
+
+            this.db.execSync(`
+                CREATE TABLE IF NOT EXISTS etnia (
                     id INTEGER PRIMARY KEY,
                     nombre TEXT NOT NULL UNIQUE
                 )
@@ -298,6 +310,42 @@ class CatalogoStorage {
         } catch (error) {
             console.error('[CATALOGOS] Error getTiposEmergencia:', error);
             return [];
+        }
+    }
+
+    /**
+     * Obtener todas las etnias
+     */
+    async getEtnias(): Promise<CatalogoEtnia[]> {
+        if (!this.db) return [];
+        try {
+            return this.db.getAllSync<CatalogoEtnia>('SELECT * FROM etnia ORDER BY nombre');
+        } catch (error) {
+            console.error('[CATALOGOS] Error getEtnias:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Insertar/Actualizar etnias (bulk)
+     */
+    async saveEtnias(etnias: CatalogoEtnia[]): Promise<void> {
+        if (!this.db) return;
+        try {
+            this.db.runSync('DELETE FROM etnia');
+            for (const etnia of etnias) {
+                this.db.runSync(
+                    'INSERT INTO etnia (id, nombre) VALUES (?, ?)',
+                    [etnia.id, etnia.nombre]
+                );
+            }
+            this.db.runSync(
+                `INSERT OR REPLACE INTO sync_metadata (catalogo, ultima_sincronizacion, version)
+                 VALUES ('etnia', datetime('now'), 1)`
+            );
+        } catch (error) {
+            console.error('[CATALOGOS] Error saveEtnias:', error);
+            throw error;
         }
     }
 
@@ -493,6 +541,7 @@ class CatalogoStorage {
             this.db.runSync('DELETE FROM tipo_hecho');
             this.db.runSync('DELETE FROM tipo_asistencia');
             this.db.runSync('DELETE FROM tipo_emergencia');
+            this.db.runSync('DELETE FROM etnia');
             this.db.runSync('DELETE FROM sync_metadata');
         } catch (error) {
             console.error('[CATALOGOS] Error clearAll:', error);

@@ -95,6 +95,7 @@ export function FieldRenderer({ field, control, formData, disabled }: FieldRende
                             <SelectField
                                 {...commonProps}
                                 options={field.options || []}
+                                formData={formData}
                             />
                         );
 

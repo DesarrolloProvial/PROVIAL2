@@ -260,6 +260,7 @@ export default function NuevaSituacionScreen() {
           hay_fallecidos: dd.fallecidos ? parseInt(dd.fallecidos, 10) > 0 : false,
           cantidad_fallecidos: dd.fallecidos ? parseInt(dd.fallecidos, 10) : 0,
           vehiculos_involucrados: dd.vehiculos_involucrados ? parseInt(dd.vehiculos_involucrados, 10) : null,
+          grupo: dd.grupo || null,
           // Detalles complejos (arrays de datos)
           detalles: detallesArray.length > 0 ? detallesArray : null,
           // Multimedia (URIs locales - se subirán a Cloudinary después)

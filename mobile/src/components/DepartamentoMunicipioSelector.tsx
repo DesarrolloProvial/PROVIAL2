@@ -1,20 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import CrossPlatformPicker from './CrossPlatformPicker';
-import { geografiaAPI } from '../services/api';
-
-interface Departamento {
-  id: number;
-  codigo: string;
-  nombre: string;
-}
-
-interface Municipio {
-  id: number;
-  codigo: string;
-  nombre: string;
-  departamento_id: number;
-}
+import { DEPARTAMENTOS, getMunicipios } from '../data/geografia';
 
 interface Props {
   departamentoValue?: number;
@@ -35,54 +22,29 @@ export const DepartamentoMunicipioSelector: React.FC<Props> = ({
   municipioLabel = 'Municipio',
   required = false,
 }) => {
-  const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
-  const [municipios, setMunicipios] = useState<Municipio[]>([]);
-  const [loadingDepartamentos, setLoadingDepartamentos] = useState(true);
-  const [loadingMunicipios, setLoadingMunicipios] = useState(false);
+  const departamentoOptions = useMemo(() =>
+    DEPARTAMENTOS.map(depto => ({
+      label: depto.nombre,
+      value: depto.id,
+    })),
+  []);
 
-  useEffect(() => {
-    loadDepartamentos();
-  }, []);
-
-  useEffect(() => {
-    if (departamentoValue) {
-      loadMunicipios(departamentoValue);
-    } else {
-      setMunicipios([]);
-      onMunicipioChange(undefined);
-    }
+  const municipioOptions = useMemo(() => {
+    if (!departamentoValue) return [];
+    return getMunicipios(departamentoValue).map(muni => ({
+      label: muni.nombre,
+      value: muni.id,
+    }));
   }, [departamentoValue]);
-
-  const loadDepartamentos = async () => {
-    try {
-      setLoadingDepartamentos(true);
-      const data = await geografiaAPI.getDepartamentos();
-      setDepartamentos(data);
-    } catch (error) {
-      console.error('[DepartamentoMunicipioSelector] Error al cargar departamentos:', error);
-    } finally {
-      setLoadingDepartamentos(false);
-    }
-  };
-
-  const loadMunicipios = async (departamentoId: number) => {
-    try {
-      setLoadingMunicipios(true);
-      const data = await geografiaAPI.getMunicipiosPorDepartamento(departamentoId);
-      setMunicipios(data);
-    } catch (error) {
-      console.error('[DepartamentoMunicipioSelector] Error al cargar municipios:', error);
-      setMunicipios([]);
-    } finally {
-      setLoadingMunicipios(false);
-    }
-  };
 
   const handleDepartamentoChange = (value: any) => {
     if (value === null || value === '') {
       onDepartamentoChange(undefined);
+      onMunicipioChange(undefined);
     } else {
-      onDepartamentoChange(typeof value === 'number' ? value : parseInt(value, 10));
+      const id = typeof value === 'number' ? value : parseInt(value, 10);
+      onDepartamentoChange(id);
+      onMunicipioChange(undefined);
     }
   };
 
@@ -94,46 +56,22 @@ export const DepartamentoMunicipioSelector: React.FC<Props> = ({
     }
   };
 
-  const departamentoOptions = departamentos.map(depto => ({
-    label: depto.nombre,
-    value: depto.id,
-  }));
-
-  const municipioOptions = municipios.map(muni => ({
-    label: muni.nombre,
-    value: muni.id,
-  }));
-
   return (
     <View style={styles.container}>
-      {/* Selector de Departamento */}
       <View style={styles.selectorContainer}>
-        {loadingDepartamentos ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" />
-            <Text style={styles.loadingText}>Cargando departamentos...</Text>
-          </View>
-        ) : (
-          <CrossPlatformPicker
-            label={departamentoLabel}
-            required={required}
-            selectedValue={departamentoValue || null}
-            onValueChange={handleDepartamentoChange}
-            options={departamentoOptions}
-            placeholder="Seleccionar departamento..."
-          />
-        )}
+        <CrossPlatformPicker
+          label={departamentoLabel}
+          required={required}
+          selectedValue={departamentoValue || null}
+          onValueChange={handleDepartamentoChange}
+          options={departamentoOptions}
+          placeholder="Seleccionar departamento..."
+        />
       </View>
 
-      {/* Selector de Municipio (solo visible si hay departamento seleccionado) */}
       {departamentoValue && (
         <View style={styles.selectorContainer}>
-          {loadingMunicipios ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" />
-              <Text style={styles.loadingText}>Cargando municipios...</Text>
-            </View>
-          ) : municipios.length > 0 ? (
+          {municipioOptions.length > 0 ? (
             <CrossPlatformPicker
               label={municipioLabel}
               required={required}
@@ -159,18 +97,6 @@ const styles = StyleSheet.create({
   },
   selectorContainer: {
     marginBottom: 10,
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 5,
-  },
-  loadingText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#666',
   },
   emptyContainer: {
     padding: 12,

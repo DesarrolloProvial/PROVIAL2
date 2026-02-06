@@ -13,13 +13,19 @@ import type {
     CatalogoTipoHecho,
     CatalogoTipoAsistencia,
     CatalogoTipoEmergencia,
+    CatalogoTipoVehiculo,
+    CatalogoMarcaVehiculo,
+    CatalogoEtnia,
 } from '../core/storage/catalogoStorage';
 
 interface CatalogosAuxiliaresResponse {
     tipos_hecho: CatalogoTipoHecho[];
-    subtipos_hecho: Array<{ id: number; tipo_hecho_id: number; codigo: string; nombre: string }>; // Vacío ahora
+    subtipos_hecho: Array<{ id: number; tipo_hecho_id: number; codigo: string; nombre: string }>;
     tipos_asistencia: CatalogoTipoAsistencia[];
     tipos_emergencia: CatalogoTipoEmergencia[];
+    tipos_vehiculo: CatalogoTipoVehiculo[];
+    marcas_vehiculo: CatalogoMarcaVehiculo[];
+    etnias: CatalogoEtnia[];
 }
 
 /**
@@ -29,7 +35,7 @@ export async function syncCatalogosAuxiliares(): Promise<boolean> {
     try {
         await catalogoStorage.init();
         const response = await api.get<CatalogosAuxiliaresResponse>('/situaciones/auxiliares');
-        const { tipos_hecho, tipos_asistencia, tipos_emergencia } = response.data;
+        const { tipos_hecho, tipos_asistencia, tipos_emergencia, tipos_vehiculo, marcas_vehiculo, etnias } = response.data;
 
         // Normalizar datos (convertir IDs a números) y guardar en SQLite
         if (tipos_hecho && tipos_hecho.length > 0) {
@@ -54,6 +60,31 @@ export async function syncCatalogosAuxiliares(): Promise<boolean> {
                 id: typeof t.id === 'string' ? parseInt(t.id, 10) : t.id,
             }));
             await catalogoStorage.saveTiposEmergencia(normalized);
+        }
+
+        // Catálogos básicos
+        if (tipos_vehiculo && tipos_vehiculo.length > 0) {
+            const normalized = tipos_vehiculo.map(t => ({
+                ...t,
+                id: typeof t.id === 'string' ? parseInt(t.id, 10) : t.id,
+            }));
+            await catalogoStorage.saveTiposVehiculo(normalized);
+        }
+
+        if (marcas_vehiculo && marcas_vehiculo.length > 0) {
+            const normalized = marcas_vehiculo.map(t => ({
+                ...t,
+                id: typeof t.id === 'string' ? parseInt(t.id, 10) : t.id,
+            }));
+            await catalogoStorage.saveMarcasVehiculo(normalized);
+        }
+
+        if (etnias && etnias.length > 0) {
+            const normalized = etnias.map(t => ({
+                ...t,
+                id: typeof t.id === 'string' ? parseInt(t.id, 10) : t.id,
+            }));
+            await catalogoStorage.saveEtnias(normalized);
         }
 
         return true;

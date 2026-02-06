@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { Controller, Control, useWatch } from 'react-hook-form';
 import {
@@ -12,6 +12,8 @@ import {
 } from 'react-native-paper';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { PlacaInput } from './PlacaInput';
+import SelectConOtro from './SelectConOtro';
+import { catalogoStorage } from '../core/storage/catalogoStorage';
 
 interface VehiculoFormProps {
     control: Control<any>;
@@ -20,6 +22,25 @@ interface VehiculoFormProps {
 }
 
 export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRemove }) => {
+    // Catálogos desde SQLite
+    const [tiposVehiculo, setTiposVehiculo] = useState<{label: string, value: string}[]>([]);
+    const [marcas, setMarcas] = useState<{label: string, value: string}[]>([]);
+    const [etnias, setEtnias] = useState<{label: string, value: string}[]>([]);
+
+    useEffect(() => {
+        catalogoStorage.init().then(() => {
+            catalogoStorage.getTiposVehiculo().then(t =>
+                setTiposVehiculo(t.map(x => ({ label: x.nombre, value: x.nombre })))
+            );
+            catalogoStorage.getMarcasVehiculo().then(m =>
+                setMarcas(m.map(x => ({ label: x.nombre, value: x.nombre })))
+            );
+            catalogoStorage.getEtnias().then(e =>
+                setEtnias(e.map(x => ({ label: x.nombre, value: x.nombre })))
+            );
+        });
+    }, []);
+
     // Estado para secciones expandidas/colapsadas
     const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
         preliminares: true, // Expandido por defecto
@@ -121,13 +142,12 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         control={control}
                         name={`vehiculos.${index}.tipo_vehiculo`}
                         render={({ field: { onChange, value } }) => (
-                            <TextInput
-                                label="Tipo Vehículo *"
+                            <SelectConOtro
+                                label="Tipo Vehículo"
                                 value={value || ''}
-                                onChangeText={onChange}
-                                mode="outlined"
-                                style={styles.input}
-                                placeholder="Ej: Automóvil, Motocicleta, Camión"
+                                onChange={onChange}
+                                options={tiposVehiculo}
+                                placeholder="Tipo Vehículo *"
                             />
                         )}
                     />
@@ -151,13 +171,15 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                             control={control}
                             name={`vehiculos.${index}.marca`}
                             render={({ field: { onChange, value } }) => (
-                                <TextInput
-                                    label="Marca"
-                                    value={value || ''}
-                                    onChangeText={onChange}
-                                    mode="outlined"
-                                    style={[styles.input, styles.half]}
-                                />
+                                <View style={styles.half}>
+                                    <SelectConOtro
+                                        label="Marca"
+                                        value={value || ''}
+                                        onChange={onChange}
+                                        options={marcas}
+                                        placeholder="Marca"
+                                    />
+                                </View>
                             )}
                         />
                     </View>
@@ -393,13 +415,12 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         control={control}
                         name={`vehiculos.${index}.etnia_piloto`}
                         render={({ field: { onChange, value } }) => (
-                            <TextInput
+                            <SelectConOtro
                                 label="Etnia del Piloto"
                                 value={value || ''}
-                                onChangeText={onChange}
-                                mode="outlined"
-                                placeholder="Ej: Ladino, Maya, Garífuna"
-                                style={styles.input}
+                                onChange={onChange}
+                                options={etnias}
+                                placeholder="Etnia del Piloto"
                             />
                         )}
                     />

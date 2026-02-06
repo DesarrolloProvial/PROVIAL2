@@ -133,72 +133,8 @@ export const ESTADOS_SITUACION = [
 // ========================================
 // CONSTANTES PARA FORMULARIOS DE INCIDENTES
 // ========================================
-
-// Tipos de vehículos (de PROVIALSinExcel.py línea 8)
-export const TIPOS_VEHICULO = [
-  'Motocicleta',
-  'Sedan',
-  'Pick-up',
-  'Camión',
-  'Bus',
-  'Cabezal',
-  'Jaula Cañera',
-  'Rastra',
-  'Bicicleta',
-  'Jeep',
-  'Bus escolar',
-  'Maquinaria',
-  'Bus turismo',
-  'Tractor',
-  'Ambulancia',
-  'Camionetilla',
-  'Pulman',
-  'Autopatrulla PNC',
-  'Bus extraurbano',
-  'Bus urbano',
-  'Camioneta agricola',
-  'Cisterna',
-  'Furgon',
-  'Mototaxi',
-  'Microbus',
-  'Motobicicleta',
-  'Plataforma',
-  'Panel',
-  'Unidad de PROVIAL',
-  'Grúa',
-  'Bus institucional',
-  'Cuatrimoto',
-  'Doble remolque',
-  'Tesla',
-  'Peaton',
-  'Fugado',
-  'Otro',
-].sort();
-
-// Marcas de vehículos (de PROVIALSinExcel.py línea 7)
-export const MARCAS_VEHICULO = [
-  'Toyota',
-  'Honda',
-  'Nissan',
-  'Jeep',
-  'BMW',
-  'Mitsubishi',
-  'Suzuki',
-  'Hyundai',
-  'Mazda',
-  'Chevrolet',
-  'Freightliner',
-  'International',
-  'Volvo',
-  'Italika',
-  'Kia',
-  'Volkswagen',
-  'Ford',
-  'Audi',
-  'JAC',
-  'Hino',
-  'Otro',
-].sort();
+// NOTA: TIPOS_VEHICULO y MARCAS_VEHICULO se cargan desde catalogoStorage (SQLite)
+// sincronizado del backend. Ver catalogSync.ts
 
 // Tipos de Hecho de Tránsito (de PROVIALSinExcel.py línea 226)
 export const TIPOS_HECHO_TRANSITO = [

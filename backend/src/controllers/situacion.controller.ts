@@ -67,6 +67,7 @@ export async function createSituacion(req: Request, res: Response) {
       danios_materiales,
       danios_infraestructura,
       descripcion_danios_infra,
+      grupo,
     } = req.body;
 
     const normalizeId = (val: any): number | null => {
@@ -191,6 +192,7 @@ export async function createSituacion(req: Request, res: Response) {
       danios_materiales,
       danios_infraestructura,
       danios_descripcion: descripcion_danios_infra,
+      grupo: grupo ? parseInt(grupo, 10) : null,
       fecha_hora_aviso: new Date(),
       fecha_hora_llegada: new Date()
     };
@@ -625,7 +627,12 @@ export async function getCatalogosAuxiliares(_req: Request, res: Response) {
       "SELECT id, nombre, icono, color FROM catalogo_tipo_situacion WHERE categoria = 'EMERGENCIA' AND activo = true ORDER BY nombre"
     );
 
-    return res.json({ tipos_hecho, tipos_asistencia, tipos_emergencia });
+    // Catálogos básicos (para sync mobile)
+    const tipos_vehiculo = await db.manyOrNone("SELECT id, nombre FROM tipo_vehiculo ORDER BY nombre");
+    const marcas_vehiculo = await db.manyOrNone("SELECT id, nombre FROM marca_vehiculo ORDER BY nombre");
+    const etnias = await db.manyOrNone("SELECT id, nombre FROM etnia WHERE activo = true ORDER BY nombre");
+
+    return res.json({ tipos_hecho, tipos_asistencia, tipos_emergencia, tipos_vehiculo, marcas_vehiculo, etnias });
   } catch (error: any) {
     console.error('Error getCatalogosAuxiliares:', error);
     return res.status(500).json({ error: error.message });

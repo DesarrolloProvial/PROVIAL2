@@ -21,10 +21,11 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
+import { catalogoStorage } from '../core/storage/catalogoStorage';
 
 export interface MedicionVelocidad {
     tipo_vehiculo: string;
-    velocidades: number[]; // Array de velocidades en km/h
+    velocidades: number[];
 }
 
 interface Props {
@@ -33,20 +34,21 @@ interface Props {
     readonly?: boolean;
 }
 
-// Tipos de vehículos comunes
-const TIPOS_VEHICULOS = [
-    { value: 'sedan', label: 'Sedán' },
-    { value: 'pickup', label: 'Pick-up' },
-    { value: 'camion', label: 'Camión' },
-    { value: 'bus', label: 'Bus' },
-    { value: 'motocicleta', label: 'Motocicleta' },
-    { value: 'panel', label: 'Panel' },
-];
-
 export default function TomadorVelocidad({ value, onChange, readonly = false }: Props) {
     const [mediciones, setMediciones] = useState<MedicionVelocidad[]>(value || []);
-    const [tipoSeleccionado, setTipoSeleccionado] = useState<string>('sedan');
+    const [tipoSeleccionado, setTipoSeleccionado] = useState<string>('');
     const [velocidadesInput, setVelocidadesInput] = useState<string>('');
+    const [tiposVehiculos, setTiposVehiculos] = useState<{ value: string; label: string }[]>([]);
+
+    useEffect(() => {
+        catalogoStorage.init().then(() => {
+            catalogoStorage.getTiposVehiculo().then(t => {
+                const tipos = t.map(x => ({ value: x.nombre, label: x.nombre }));
+                setTiposVehiculos(tipos);
+                if (tipos.length > 0 && !tipoSeleccionado) setTipoSeleccionado(tipos[0].value);
+            });
+        });
+    }, []);
 
     useEffect(() => {
         setMediciones(value || []);
@@ -114,7 +116,7 @@ export default function TomadorVelocidad({ value, onChange, readonly = false }: 
     };
 
     const tipoLabel = (tipo: string) => {
-        const encontrado = TIPOS_VEHICULOS.find(t => t.value === tipo);
+        const encontrado = tiposVehiculos.find(t => t.value === tipo);
         return encontrado ? encontrado.label : tipo;
     };
 
@@ -127,7 +129,7 @@ export default function TomadorVelocidad({ value, onChange, readonly = false }: 
                 <View style={styles.inputSection}>
                     <Text style={styles.label}>Tipo de Vehículo</Text>
                     <View style={styles.tiposContainer}>
-                        {TIPOS_VEHICULOS.map(tipo => (
+                        {tiposVehiculos.map(tipo => (
                             <TouchableOpacity
                                 key={tipo.value}
                                 style={[

@@ -14,9 +14,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
+import { catalogoStorage } from '../core/storage/catalogoStorage';
 
 export interface ConteoVehicular {
-    [tipoVehiculo: string]: number; // { 'sedan': 25, 'pickup': 12 }
+    [tipoVehiculo: string]: number;
 }
 
 interface Props {
@@ -25,22 +26,17 @@ interface Props {
     readonly?: boolean;
 }
 
-// Tipos de vehículos disponibles (catálogo simplificado)
-const TIPOS_VEHICULOS = [
-    { value: 'sedan', label: 'Sedán' },
-    { value: 'pickup', label: 'Pick-up' },
-    { value: 'camion', label: 'Camión' },
-    { value: 'bus', label: 'Bus' },
-    { value: 'panel', label: 'Panel' },
-    { value: 'motocicleta', label: 'Motocicleta' },
-    { value: 'microbus', label: 'Microbús' },
-    { value: 'camioneta', label: 'Camioneta' },
-    { value: 'trailer', label: 'Tráiler' },
-    { value: 'furgon', label: 'Furgón' },
-];
-
 export default function ContadorVehicular({ value, onChange, readonly = false }: Props) {
     const [conteos, setConteos] = useState<ConteoVehicular>(value || {});
+    const [tiposVehiculos, setTiposVehiculos] = useState<{ value: string; label: string }[]>([]);
+
+    useEffect(() => {
+        catalogoStorage.init().then(() => {
+            catalogoStorage.getTiposVehiculo().then(t => {
+                setTiposVehiculos(t.map(x => ({ value: x.nombre, label: x.nombre })));
+            });
+        });
+    }, []);
 
     useEffect(() => {
         setConteos(value || {});
@@ -73,12 +69,12 @@ export default function ContadorVehicular({ value, onChange, readonly = false }:
 
     // Filtrar: mostrar todos los tipos si no hay conteos, o solo los que tienen count > 0
     const tiposMostrar = Object.keys(conteos).length === 0
-        ? TIPOS_VEHICULOS
-        : TIPOS_VEHICULOS.filter(t => (conteos[t.value] || 0) > 0);
+        ? tiposVehiculos
+        : tiposVehiculos.filter(t => (conteos[t.value] || 0) > 0);
 
     // Agregar tipos que no están en el catálogo pero sí en el conteo
     const tiposExtra = Object.keys(conteos).filter(
-        key => !TIPOS_VEHICULOS.find(t => t.value === key)
+        key => !tiposVehiculos.find(t => t.value === key)
     );
 
     return (

@@ -73,6 +73,8 @@ export interface Situacion {
   danios_infraestructura?: boolean;
   danios_descripcion?: string | null;
 
+  grupo?: number | null;
+
   created_at: Date;
   updated_at: Date;
   creado_por: number;
@@ -147,7 +149,8 @@ export const SituacionModel = {
         heridos, fallecidos,
         tipo_pavimento, iluminacion, senalizacion, visibilidad,
         causa_probable, causa_especificar,
-        danios_materiales, danios_infraestructura, danios_descripcion
+        danios_materiales, danios_infraestructura, danios_descripcion,
+        grupo
       ) VALUES (
         $/tipo_situacion/, $/unidad_id/, $/salida_unidad_id/, $/turno_id/, $/asignacion_id/,
         $/ruta_id/, $/km/, $/sentido/, $/latitud/, $/longitud/,
@@ -158,7 +161,8 @@ export const SituacionModel = {
         $/heridos/, $/fallecidos/,
         $/tipo_pavimento/, $/iluminacion/, $/senalizacion/, $/visibilidad/,
         $/causa_probable/, $/causa_especificar/,
-        $/danios_materiales/, $/danios_infraestructura/, $/danios_descripcion/
+        $/danios_materiales/, $/danios_infraestructura/, $/danios_descripcion/,
+        $/grupo/
       ) RETURNING *
     `;
 
@@ -218,6 +222,8 @@ export const SituacionModel = {
       danios_materiales: data.danios_materiales ?? false,
       danios_infraestructura: data.danios_infraestructura ?? false,
       danios_descripcion: data.danios_descripcion ?? null,
+
+      grupo: data.grupo ?? null,
     };
 
     return db.one(qInsert, params);

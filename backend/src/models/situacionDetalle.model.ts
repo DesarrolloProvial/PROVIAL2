@@ -246,7 +246,7 @@ export const SituacionDetalleModel = {
             'aseguradora_id', va.aseguradora_id,
             'datos', va.datos,
             'aseguradora_nombre', a.nombre,
-            'aseguradora_codigo', a.codigo
+            'aseguradora_empresa', a.empresa
           ) ORDER BY va.created_at)
           FROM vehiculo_ajustador va
           LEFT JOIN aseguradora a ON va.aseguradora_id = a.id
@@ -387,7 +387,7 @@ export const SituacionDetalleModel = {
    */
   async getAjustadores(situacionId: number): Promise<any[]> {
     return db.manyOrNone(
-      `SELECT va.*, a.nombre as aseguradora_nombre, a.codigo as aseguradora_codigo,
+      `SELECT va.*, a.nombre as aseguradora_nombre, a.empresa as aseguradora_empresa,
               sv.situacion_id, sv.vehiculo_id
        FROM vehiculo_ajustador va
        LEFT JOIN aseguradora a ON va.aseguradora_id = a.id

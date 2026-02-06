@@ -3,19 +3,16 @@ import { db } from '../config/database';
 export interface Aseguradora {
   id: number;
   nombre: string;
-  codigo: string | null;
+  empresa: string | null;
   telefono: string | null;
-  email: string | null;
-  total_incidentes: number;
   activa: boolean;
   created_at: Date;
 }
 
 export interface CreateAseguradoraDTO {
   nombre: string;
-  codigo?: string;
+  empresa?: string;
   telefono?: string;
-  email?: string;
 }
 
 export const AseguradoraModel = {
@@ -47,14 +44,13 @@ export const AseguradoraModel = {
   // Crear o actualizar aseguradora (upsert por nombre)
   async upsert(data: CreateAseguradoraDTO): Promise<Aseguradora> {
     return db.one(
-      `INSERT INTO aseguradora (nombre, codigo, telefono, email)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO aseguradora (nombre, empresa, telefono)
+       VALUES ($1, $2, $3)
        ON CONFLICT (nombre) DO UPDATE SET
-         codigo = EXCLUDED.codigo,
-         telefono = EXCLUDED.telefono,
-         email = EXCLUDED.email
+         empresa = EXCLUDED.empresa,
+         telefono = EXCLUDED.telefono
        RETURNING *`,
-      [data.nombre, data.codigo || null, data.telefono || null, data.email || null]
+      [data.nombre, data.empresa || null, data.telefono || null]
     );
   },
 
@@ -103,17 +99,6 @@ export const AseguradoraModel = {
       nombre: data.nombre || existing.nombre,
       ...data
     } as CreateAseguradoraDTO);
-  },
-
-  // Buscar aseguradoras con más incidentes
-  async findTopByIncidentes(limit: number = 10): Promise<Aseguradora[]> {
-    return db.manyOrNone(
-      `SELECT * FROM aseguradora
-       WHERE total_incidentes > 0
-       ORDER BY total_incidentes DESC
-       LIMIT $1`,
-      [limit]
-    );
   },
 
   // Desactivar aseguradora

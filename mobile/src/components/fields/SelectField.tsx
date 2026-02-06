@@ -26,6 +26,7 @@ interface SelectFieldProps {
     disabled?: boolean;
     multiple?: boolean;
     placeholder?: string;
+    formData?: Record<string, any>;
 }
 
 export default function SelectField({
@@ -39,10 +40,14 @@ export default function SelectField({
     disabled,
     multiple,
     placeholder = 'Seleccionar...',
+    formData,
 }: SelectFieldProps) {
     const theme = useTheme();
     const [resolvedOptions, setResolvedOptions] = useState<FieldOption[]>([]);
     const [loading, setLoading] = useState(false);
+
+    // Extraer departamento_id para dependencia de municipios
+    const departamentoId = formData?.departamento_id;
 
     // Resolver opciones (si es ref a catálogo)
     useEffect(() => {
@@ -50,8 +55,14 @@ export default function SelectField({
             if (typeof options === 'string') {
                 setLoading(true);
                 try {
-                    const resolved = await CatalogResolver.resolveOptions(options);
-                    setResolvedOptions(resolved);
+                    // Caso especial: municipios depende de departamento_id
+                    if (options === '@catalogos.municipios' && departamentoId) {
+                        const resolved = await CatalogResolver.resolveMunicipiosByDepartamento(departamentoId);
+                        setResolvedOptions(resolved);
+                    } else {
+                        const resolved = await CatalogResolver.resolveOptions(options);
+                        setResolvedOptions(resolved);
+                    }
                 } catch (error) {
                     console.error('[SelectField] Error cargando opciones:', error);
                     setResolvedOptions([]);
@@ -64,7 +75,7 @@ export default function SelectField({
         };
 
         loadOptions();
-    }, [options]);
+    }, [options, departamentoId]);
 
     // Renderizado para selección múltiple (simplificado por ahora)
     if (multiple) {

@@ -137,6 +137,7 @@ export interface CreateSituacionData {
   // Otros
   area?: string;
   obstruccion?: any;
+  grupo?: number;
 
   // Multimedia (URIs locales)
   multimedia?: Array<{
