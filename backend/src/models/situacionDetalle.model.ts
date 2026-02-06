@@ -248,7 +248,7 @@ export const SituacionDetalleModel = {
             'aseguradora_nombre', a.nombre,
             'aseguradora_empresa', a.empresa
           ) ORDER BY va.created_at)
-          FROM vehiculo_ajustador va
+          FROM vehiculo_aseguradora va
           LEFT JOIN aseguradora a ON va.aseguradora_id = a.id
           WHERE va.situacion_vehiculo_id = sv.id),
           '[]'
@@ -268,7 +268,7 @@ export const SituacionDetalleModel = {
   },
 
   async deleteVehiculo(id: number): Promise<void> {
-    // CASCADE borra vehiculo_grua y vehiculo_ajustador automaticamente
+    // CASCADE borra vehiculo_grua y vehiculo_aseguradora automaticamente
     await db.none('DELETE FROM situacion_vehiculo WHERE id = $1', [id]);
   },
 
@@ -375,7 +375,7 @@ export const SituacionDetalleModel = {
     };
 
     return db.one(
-      `INSERT INTO vehiculo_ajustador (situacion_vehiculo_id, aseguradora_id, datos)
+      `INSERT INTO vehiculo_aseguradora (situacion_vehiculo_id, aseguradora_id, datos)
        VALUES ($1, $2, $3)
        RETURNING *`,
       [situacionVehiculoId, aseguradora_id, datosAjustador]
@@ -389,7 +389,7 @@ export const SituacionDetalleModel = {
     return db.manyOrNone(
       `SELECT va.*, a.nombre as aseguradora_nombre, a.empresa as aseguradora_empresa,
               sv.situacion_id, sv.vehiculo_id
-       FROM vehiculo_ajustador va
+       FROM vehiculo_aseguradora va
        LEFT JOIN aseguradora a ON va.aseguradora_id = a.id
        INNER JOIN situacion_vehiculo sv ON va.situacion_vehiculo_id = sv.id
        WHERE sv.situacion_id = $1
@@ -399,7 +399,7 @@ export const SituacionDetalleModel = {
   },
 
   async deleteAjustador(id: number): Promise<void> {
-    await db.none('DELETE FROM vehiculo_ajustador WHERE id = $1', [id]);
+    await db.none('DELETE FROM vehiculo_aseguradora WHERE id = $1', [id]);
   },
 
   // ==========================================
