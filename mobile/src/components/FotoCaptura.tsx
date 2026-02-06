@@ -15,6 +15,7 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
+  InteractionManager,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -44,27 +45,29 @@ export default function FotoCaptura({
   const cameraRef = useRef<any>(null);
 
   const tomarFoto = async () => {
-    try {
-      console.log('[FotoCaptura] Abriendo cámara...');
-      setModalVisible(false);
+    // Cerrar modal primero
+    setModalVisible(false);
 
-      // Pequeña pausa para que el modal se cierre
-      await new Promise(resolve => setTimeout(resolve, 300));
+    // Esperar a que terminen todas las animaciones/interacciones
+    InteractionManager.runAfterInteractions(async () => {
+      try {
+        console.log('[FotoCaptura] Abriendo cámara...');
 
-      // Solicitar permisos de cámara
-      if (!cameraPermission?.granted) {
-        const result = await requestCameraPermission();
-        if (!result.granted) {
-          Alert.alert('Permisos requeridos', 'Se necesita permiso de cámara para tomar fotos.');
-          return;
+        // Solicitar permisos de cámara
+        if (!cameraPermission?.granted) {
+          const result = await requestCameraPermission();
+          if (!result.granted) {
+            Alert.alert('Permisos requeridos', 'Se necesita permiso de cámara para tomar fotos.');
+            return;
+          }
         }
-      }
 
-      setCameraVisible(true);
-    } catch (error: any) {
-      console.error('[FotoCaptura] Error abriendo cámara:', error);
-      Alert.alert('Error', 'No se pudo abrir la cámara.');
-    }
+        setCameraVisible(true);
+      } catch (error: any) {
+        console.error('[FotoCaptura] Error abriendo cámara:', error);
+        Alert.alert('Error', 'No se pudo abrir la cámara.');
+      }
+    });
   };
 
   const capturarFoto = async () => {
@@ -94,50 +97,48 @@ export default function FotoCaptura({
   };
 
   const seleccionarDeGaleria = async () => {
-    try {
-      console.log('[FotoCaptura] Solicitando permisos de galería...');
-      setModalVisible(false);
+    // Cerrar modal primero
+    setModalVisible(false);
 
-      // Solicitar permisos explícitamente
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      console.log('[FotoCaptura] Estado de permisos:', status);
+    // Esperar a que terminen todas las animaciones/interacciones
+    InteractionManager.runAfterInteractions(async () => {
+      try {
+        console.log('[FotoCaptura] Solicitando permisos de galería...');
 
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permisos requeridos',
-          'Se necesita acceso a la galería para seleccionar fotos.'
-        );
-        return;
-      }
+        // Solicitar permisos - usar .granted (boolean) no status (string)
+        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        console.log('[FotoCaptura] Permisos granted:', permissionResult.granted);
 
-      // Pequeña pausa para que el modal se cierre
-      await new Promise(resolve => setTimeout(resolve, 300));
+        if (!permissionResult.granted) {
+          Alert.alert(
+            'Permisos requeridos',
+            'Se necesita acceso a la galería para seleccionar fotos.'
+          );
+          return;
+        }
 
-      console.log('[FotoCaptura] Abriendo selector de galería nativo...');
+        console.log('[FotoCaptura] Abriendo selector de galería nativo...');
 
-      // Usar el selector nativo del sistema - sin opciones para probar
-      const result = await ImagePicker.launchImageLibraryAsync();
-
-      console.log('[FotoCaptura] Resultado picker:', JSON.stringify(result, null, 2));
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const asset = result.assets[0];
-        console.log('[FotoCaptura] Asset seleccionado:', {
-          uri: asset.uri,
-          width: asset.width,
-          height: asset.height,
-          type: asset.type,
-          fileName: asset.fileName,
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: false,
+          quality: 0.7,
         });
-        onFotoCapturada(asset.uri);
-      } else {
-        console.log('[FotoCaptura] Selección cancelada o sin assets');
+
+        console.log('[FotoCaptura] Resultado picker:', JSON.stringify(result, null, 2));
+
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          const asset = result.assets[0];
+          console.log('[FotoCaptura] Asset seleccionado:', asset.uri);
+          onFotoCapturada(asset.uri);
+        } else {
+          console.log('[FotoCaptura] Selección cancelada');
+        }
+      } catch (error: any) {
+        console.error('[FotoCaptura] Error con galería:', error);
+        Alert.alert('Error', `No se pudo acceder a la galería: ${error.message}`);
       }
-    } catch (error: any) {
-      console.error('[FotoCaptura] Error con galería:', error);
-      console.error('[FotoCaptura] Error stack:', error.stack);
-      Alert.alert('Error', `No se pudo acceder a la galería: ${error.message}`);
-    }
+    });
   };
 
   const eliminarFoto = () => {
