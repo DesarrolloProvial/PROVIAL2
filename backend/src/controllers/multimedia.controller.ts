@@ -553,10 +553,70 @@ export async function guardarReferenciasCloudinary(req: Request, res: Response) 
   }
 }
 
+/**
+ * POST /api/multimedia/upload
+ * Subir una foto genérica a Cloudinary (para inspecciones, daños, etc.)
+ * No requiere situacion_id, devuelve URL de Cloudinary directamente
+ */
+export async function subirFotoGenerica(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se recibió ningún archivo' });
+    }
+
+    // Verificar que Cloudinary está configurado
+    if (!isCloudinaryConfiguredUnsigned()) {
+      console.error('[MULTIMEDIA] Cloudinary NO está configurado!');
+      return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
+    }
+
+    // Generar un ID único para el archivo
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 8);
+    const folder = req.body.folder || 'provial_general';
+    const publicId = `${folder}/${timestamp}_${randomId}`;
+
+    console.log(`[MULTIMEDIA] Subiendo foto genérica a Cloudinary: ${publicId}...`);
+
+    // Subir foto a Cloudinary usando función existente pero sin situacionId
+    const result = await uploadPhotoBuffer(
+      req.file.buffer,
+      0, // No hay situacion_id
+      1, // orden
+      publicId // usar como identificador
+    );
+
+    if (!result.success) {
+      console.error('[MULTIMEDIA] Error subiendo a Cloudinary:', result.error);
+      return res.status(500).json({ error: result.error });
+    }
+
+    console.log(`[MULTIMEDIA] Foto genérica subida: ${result.url}`);
+
+    return res.status(201).json({
+      success: true,
+      url: result.url,
+      thumbnailUrl: result.thumbnailUrl,
+      publicId: result.publicId,
+      size: result.size,
+      width: result.width,
+      height: result.height
+    });
+  } catch (error: any) {
+    console.error('Error al subir foto genérica:', error);
+    return res.status(500).json({ error: 'Error al subir la foto' });
+  }
+}
+
 export default {
   upload,
   subirFoto,
   subirVideo,
+  subirFotoGenerica,
   getMultimediaSituacion,
   getResumenMultimedia,
   eliminarMultimedia,

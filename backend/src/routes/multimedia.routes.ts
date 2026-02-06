@@ -17,6 +17,18 @@ router.use(authenticate);
 // ========================================
 
 /**
+ * POST /api/multimedia/upload
+ * Subir una foto genérica a Cloudinary (para inspecciones, daños, etc.)
+ * Devuelve URL de Cloudinary directamente
+ */
+router.post(
+  '/upload',
+  authorize('BRIGADA', 'ADMIN'),
+  multimediaController.upload.single('foto'),
+  multimediaController.subirFotoGenerica
+);
+
+/**
  * POST /api/multimedia/situacion/:situacionId/foto
  * Subir una foto a una situación
  * Solo brigadas pueden subir

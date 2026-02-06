@@ -120,7 +120,8 @@ export const Inspeccion360Controller = {
         observaciones_inspector,
         firma_inspector,
         fotos,
-        salida_id
+        salida_id,
+        danos // Nuevo: array de daños reportados
       } = req.body;
       const userId = (req as any).user?.userId;
 
@@ -128,7 +129,8 @@ export const Inspeccion360Controller = {
         userId,
         unidad_id,
         plantilla_id,
-        total_respuestas: respuestas?.length
+        total_respuestas: respuestas?.length,
+        total_danos: danos?.length || 0
       });
 
       if (!unidad_id || !plantilla_id || !respuestas) {
@@ -146,6 +148,32 @@ export const Inspeccion360Controller = {
       const unidadIdInt = parseInt(String(unidad_id), 10);
       const plantillaIdInt = parseInt(String(plantilla_id), 10);
       const salidaIdInt = salida_id ? parseInt(String(salida_id), 10) : undefined;
+
+      // Procesar daños: extraer fotos y agregar metadata a respuestas
+      let fotosFinales = fotos || [];
+      let respuestasFinales = [...(respuestas || [])];
+
+      if (danos && Array.isArray(danos) && danos.length > 0) {
+        // Extraer todas las fotos de daños
+        danos.forEach((dano: any) => {
+          if (dano.fotos && Array.isArray(dano.fotos)) {
+            dano.fotos.forEach((fotoUrl: string) => {
+              if (fotoUrl && !fotoUrl.startsWith('file://')) {
+                fotosFinales.push(fotoUrl);
+              }
+            });
+          }
+        });
+
+        // Agregar los daños como una respuesta especial para preservar la metadata
+        respuestasFinales.push({
+          codigo: 'DANOS_REPORTADOS',
+          valor: danos.length,
+          observacion: JSON.stringify(danos)
+        });
+
+        console.log(`[INSPECCION360] Procesados ${danos.length} daños con ${fotosFinales.length} fotos`);
+      }
 
       // Verificar si ya existe una inspección pendiente para esta unidad hoy
       const existePendiente = await Inspeccion360Model.obtenerInspeccionPendienteUnidad(unidadIdInt);
@@ -166,10 +194,10 @@ export const Inspeccion360Controller = {
         unidad_id: unidadIdInt,
         plantilla_id: plantillaIdInt,
         realizado_por: userId,
-        respuestas,
+        respuestas: respuestasFinales,
         observaciones_inspector,
         firma_inspector,
-        fotos
+        fotos: fotosFinales.length > 0 ? fotosFinales : undefined
       });
 
       console.log('Inspección creada en BD:', inspeccion.id);

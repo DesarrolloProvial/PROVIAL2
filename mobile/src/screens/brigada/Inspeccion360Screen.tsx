@@ -240,7 +240,7 @@ export default function Inspeccion360Screen() {
 
       const respuestasArray = Array.from(respuestas.values());
 
-      // Subir fotos primero si existen
+      // Subir fotos de respuestas primero si existen
       const respuestasConFotos = await Promise.all(
         respuestasArray.map(async (respuesta) => {
           if (respuesta.foto_url && respuesta.foto_url.startsWith('file://')) {
@@ -270,13 +270,47 @@ export default function Inspeccion360Screen() {
         })
       );
 
+      // Subir fotos de daños si existen
+      const danosConFotos = await Promise.all(
+        danos.map(async (dano) => {
+          if (dano.fotos.length === 0) return dano;
+
+          const fotosSubidas = await Promise.all(
+            dano.fotos.map(async (fotoUri) => {
+              if (fotoUri.startsWith('file://')) {
+                try {
+                  const formData = new FormData();
+                  formData.append('foto', {
+                    uri: fotoUri,
+                    type: 'image/jpeg',
+                    name: `dano_${dano.id}_${Date.now()}.jpg`,
+                  } as any);
+
+                  const uploadResponse = await api.post('/multimedia/upload', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                  });
+
+                  return uploadResponse.data.url;
+                } catch (uploadError) {
+                  console.error('Error subiendo foto de daño:', uploadError);
+                  return fotoUri; // Mantener URI local si falla
+                }
+              }
+              return fotoUri;
+            })
+          );
+
+          return { ...dano, fotos: fotosSubidas };
+        })
+      );
+
       const response = await api.post('/inspeccion360', {
         unidad_id: unidadId,
         plantilla_id: plantilla.id,
         respuestas: respuestasConFotos,
         observaciones_inspector: observacionesGenerales.trim() || undefined,
         firma_inspector: firmaInspector,
-        danos: sinDanos ? [] : danos, // Incluir daños
+        danos: sinDanos ? [] : danosConFotos, // Incluir daños con fotos subidas
       });
 
       // Verificar si fue auto-aprobada
