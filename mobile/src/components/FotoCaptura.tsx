@@ -48,23 +48,25 @@ export default function FotoCaptura({
   const tomarFoto = async () => {
     setModalVisible(false);
     const tienePermisos = await solicitarPermisos();
-    if (!tienePermisos) return;
+    if (!tienePermisos) {
+      console.log('[FotoCaptura] Sin permisos de cámara');
+      return;
+    }
 
     setLoading(true);
+    console.log('[FotoCaptura] Abriendo cámara...');
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [4, 3],
         quality: 0.7,
-        base64: false,
       });
 
+      console.log('[FotoCaptura] Resultado cámara:', result.canceled ? 'cancelado' : 'foto tomada');
       if (!result.canceled && result.assets[0]) {
         onFotoCapturada(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error tomando foto:', error);
+      console.error('[FotoCaptura] Error tomando foto:', error);
       Alert.alert('Error', 'No se pudo tomar la foto');
     } finally {
       setLoading(false);
@@ -74,23 +76,25 @@ export default function FotoCaptura({
   const seleccionarDeGaleria = async () => {
     setModalVisible(false);
     const tienePermisos = await solicitarPermisos();
-    if (!tienePermisos) return;
+    if (!tienePermisos) {
+      console.log('[FotoCaptura] Sin permisos de galería');
+      return;
+    }
 
     setLoading(true);
+    console.log('[FotoCaptura] Abriendo galería...');
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [4, 3],
         quality: 0.7,
-        base64: false,
       });
 
+      console.log('[FotoCaptura] Resultado galería:', result.canceled ? 'cancelado' : 'foto seleccionada');
       if (!result.canceled && result.assets[0]) {
         onFotoCapturada(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error seleccionando foto:', error);
+      console.error('[FotoCaptura] Error seleccionando foto:', error);
       Alert.alert('Error', 'No se pudo seleccionar la foto');
     } finally {
       setLoading(false);
