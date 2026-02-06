@@ -47,6 +47,10 @@ export default function FotoCaptura({
 
   const tomarFoto = async () => {
     setModalVisible(false);
+
+    // Pequeño delay para que el modal se cierre completamente
+    await new Promise(resolve => setTimeout(resolve, 300));
+
     const tienePermisos = await solicitarPermisos();
     if (!tienePermisos) {
       console.log('[FotoCaptura] Sin permisos de cámara');
@@ -57,7 +61,6 @@ export default function FotoCaptura({
     console.log('[FotoCaptura] Abriendo cámara...');
     try {
       const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
         quality: 0.7,
       });
 
@@ -75,6 +78,10 @@ export default function FotoCaptura({
 
   const seleccionarDeGaleria = async () => {
     setModalVisible(false);
+
+    // Pequeño delay para que el modal se cierre completamente
+    await new Promise(resolve => setTimeout(resolve, 300));
+
     const tienePermisos = await solicitarPermisos();
     if (!tienePermisos) {
       console.log('[FotoCaptura] Sin permisos de galería');
@@ -85,7 +92,6 @@ export default function FotoCaptura({
     console.log('[FotoCaptura] Abriendo galería...');
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
         quality: 0.7,
       });
 
