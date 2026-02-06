@@ -74,7 +74,8 @@ export async function takePhoto(): Promise<MediaFile | null> {
     }
 
     const result = await ImagePicker.launchCameraAsync({
-            allowsEditing: false,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
       quality: 1, // Capturar en máxima calidad, comprimir después
       exif: true,
     });
@@ -113,7 +114,8 @@ export async function pickPhoto(): Promise<MediaFile | null> {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-            allowsEditing: false,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
       quality: 1,
       exif: true,
     });
