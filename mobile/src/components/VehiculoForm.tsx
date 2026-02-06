@@ -424,6 +424,29 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                             />
                         )}
                     />
+
+                    {/* Sexo del Piloto */}
+                    <Controller
+                        control={control}
+                        name={`vehiculos.${index}.sexo_piloto`}
+                        render={({ field: { onChange, value } }) => (
+                            <View style={styles.input}>
+                                <RadioButton.Group onValueChange={onChange} value={value || ''}>
+                                    <Text style={{ fontWeight: '500', marginBottom: 4 }}>Sexo del Piloto</Text>
+                                    <View style={{ flexDirection: 'row', gap: 16 }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                            <RadioButton value="M" />
+                                            <Text>Masculino</Text>
+                                        </View>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                            <RadioButton value="F" />
+                                            <Text>Femenino</Text>
+                                        </View>
+                                    </View>
+                                </RadioButton.Group>
+                            </View>
+                        )}
+                    />
                 </View>
             </List.Accordion>
 

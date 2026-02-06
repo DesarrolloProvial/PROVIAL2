@@ -94,6 +94,7 @@ export const SituacionDetalleModel = {
         fecha_nacimiento: data.piloto_nacimiento,
         licencia_antiguedad: data.licencia_antiguedad,
         etnia: data.piloto_etnia,
+        sexo: data.sexo_piloto,
       });
       piloto_id = piloto.id;
     }

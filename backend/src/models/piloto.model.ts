@@ -9,6 +9,7 @@ export interface Piloto {
   licencia_antiguedad: number | null;
   fecha_nacimiento: Date | null;
   etnia: string | null;
+  sexo: string | null;
   total_incidentes: number;
   total_sanciones: number;
   primer_incidente: Date | null;
@@ -25,6 +26,7 @@ export interface CreatePilotoDTO {
   licencia_antiguedad?: number;
   fecha_nacimiento?: Date;
   etnia?: string;
+  sexo?: string;
 }
 
 export const PilotoModel = {
@@ -58,8 +60,8 @@ export const PilotoModel = {
     return db.one(
       `INSERT INTO piloto (
         nombre, licencia_tipo, licencia_numero, licencia_vencimiento,
-        licencia_antiguedad, fecha_nacimiento, etnia
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        licencia_antiguedad, fecha_nacimiento, etnia, sexo
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       ON CONFLICT (licencia_numero) DO UPDATE SET
         nombre = EXCLUDED.nombre,
         licencia_tipo = EXCLUDED.licencia_tipo,
@@ -67,6 +69,7 @@ export const PilotoModel = {
         licencia_antiguedad = EXCLUDED.licencia_antiguedad,
         fecha_nacimiento = EXCLUDED.fecha_nacimiento,
         etnia = EXCLUDED.etnia,
+        sexo = EXCLUDED.sexo,
         updated_at = NOW()
       RETURNING *`,
       [
@@ -76,7 +79,8 @@ export const PilotoModel = {
         data.licencia_vencimiento || null,
         data.licencia_antiguedad || null,
         data.fecha_nacimiento || null,
-        data.etnia || null
+        data.etnia || null,
+        data.sexo || null
       ]
     );
   },
