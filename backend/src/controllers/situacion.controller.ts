@@ -559,13 +559,57 @@ export async function cambiarTipoSituacion(req: Request, res: Response) {
 
 export async function getCatalogo(_req: Request, res: Response) {
   try {
-    const tipos = await db.manyOrNone('SELECT * FROM tipo_situacion WHERE activo = true ORDER BY orden');
-    const tiposHecho = await db.manyOrNone(
-      "SELECT id, nombre, icono, color FROM tipo_situacion_catalogo WHERE categoria = 'HECHO_TRANSITO' AND activo = true ORDER BY nombre"
-    );
-    const subtiposHecho: any[] = [];
+    // Tabla unificada: catalogo_tipo_situacion
+    const tipos = await db.manyOrNone(`
+      SELECT id, categoria, nombre, icono, color, formulario_tipo, orden
+      FROM catalogo_tipo_situacion
+      WHERE activo = true
+      ORDER BY categoria, orden, nombre
+    `);
 
-    return res.json({ tipos, tiposHecho, subtiposHecho });
+    // Nombres legibles por categoría
+    const categoriaNombres: Record<string, string> = {
+      'HECHO_TRANSITO': 'Accidentes',
+      'ASISTENCIA': 'Asistencia Vial',
+      'EMERGENCIA': 'Emergencias',
+      'OPERATIVO': 'Operativo',
+      'APOYO': 'Apoyo',
+      'ADMINISTRATIVO': 'Administrativo',
+    };
+
+    // Código para colores en el frontend
+    const categoriaCodigos: Record<string, string> = {
+      'HECHO_TRANSITO': 'ACCIDENTE',
+      'ASISTENCIA': 'ASISTENCIA',
+      'EMERGENCIA': 'EMERGENCIA',
+      'OPERATIVO': 'OPERATIVO',
+      'APOYO': 'APOYO',
+      'ADMINISTRATIVO': 'ADMINISTRATIVO',
+    };
+
+    // Agrupar por categoría
+    const categoriasMap = new Map<string, any>();
+    for (const tipo of tipos) {
+      const cat = tipo.categoria;
+      if (!categoriasMap.has(cat)) {
+        categoriasMap.set(cat, {
+          id: cat,
+          codigo: categoriaCodigos[cat] || cat,
+          nombre: categoriaNombres[cat] || cat,
+          tipos: [],
+        });
+      }
+      categoriasMap.get(cat).tipos.push({
+        id: tipo.id,
+        nombre: tipo.nombre,
+        icono: tipo.icono,
+        color: tipo.color,
+        formulario_tipo: tipo.formulario_tipo,
+      });
+    }
+
+    const catalogo = Array.from(categoriasMap.values());
+    return res.json(catalogo);
   } catch (error: any) {
     console.error('Error getCatalogo:', error);
     return res.status(500).json({ error: error.message });
@@ -574,15 +618,15 @@ export async function getCatalogo(_req: Request, res: Response) {
 
 export async function getCatalogosAuxiliares(_req: Request, res: Response) {
   try {
-    // Usar tipo_situacion_catalogo unificado
+    // Tabla unificada: catalogo_tipo_situacion
     const tipos_hecho = await db.manyOrNone(
-      "SELECT id, nombre, icono, color FROM tipo_situacion_catalogo WHERE categoria = 'HECHO_TRANSITO' AND activo = true ORDER BY nombre"
+      "SELECT id, nombre, icono, color FROM catalogo_tipo_situacion WHERE categoria = 'HECHO_TRANSITO' AND activo = true ORDER BY nombre"
     );
     const tipos_asistencia = await db.manyOrNone(
-      "SELECT id, nombre, icono, color FROM tipo_situacion_catalogo WHERE categoria = 'ASISTENCIA' AND activo = true ORDER BY nombre"
+      "SELECT id, nombre, icono, color FROM catalogo_tipo_situacion WHERE categoria = 'ASISTENCIA' AND activo = true ORDER BY nombre"
     );
     const tipos_emergencia = await db.manyOrNone(
-      "SELECT id, nombre, icono, color FROM tipo_situacion_catalogo WHERE categoria = 'EMERGENCIA' AND activo = true ORDER BY nombre"
+      "SELECT id, nombre, icono, color FROM catalogo_tipo_situacion WHERE categoria = 'EMERGENCIA' AND activo = true ORDER BY nombre"
     );
 
     return res.json({ tipos_hecho, tipos_asistencia, tipos_emergencia });

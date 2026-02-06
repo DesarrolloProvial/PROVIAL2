@@ -349,7 +349,7 @@ export default function NuevaSituacionScreen() {
             <Text style={styles.selectedTitle}>Detalles: {nombreTipoSeleccionado}</Text>
 
             {/* UBICACION */}
-            <View style={[styles.card, { zIndex: 100 }]}>
+            <View style={styles.card}>
               <Text style={styles.cardTitle}>Ubicación</Text>
 
               <DepartamentoMunicipioSelector
@@ -396,7 +396,7 @@ export default function NuevaSituacionScreen() {
 
             {/* CLIMA Y CARGA */}
             {!['Dejando personal administrativo', 'Comisión', 'Abastecimiento'].includes(nombreTipoSeleccionado) && (
-              <View style={[styles.card, { zIndex: 50 }]}>
+              <View style={styles.card}>
                 <ClimaCargaSelector
                   clima={clima} setClima={setClima}
                   carga={carga} setCarga={setCarga}

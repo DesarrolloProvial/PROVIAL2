@@ -342,7 +342,7 @@ export const SituacionModel = {
         (SELECT COUNT(*) FROM situacion_multimedia WHERE situacion_id = s.id AND tipo = 'VIDEO') as total_videos
       FROM situacion s
       LEFT JOIN ruta r ON s.ruta_id = r.id
-      LEFT JOIN tipo_situacion_catalogo tsc ON s.tipo_situacion_id = tsc.id
+      LEFT JOIN catalogo_tipo_situacion tsc ON s.tipo_situacion_id = tsc.id
       WHERE s.unidad_id = $/unidad_id/
       AND s.created_at >= CURRENT_DATE
     `;
