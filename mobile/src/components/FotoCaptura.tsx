@@ -95,28 +95,52 @@ export default function FotoCaptura({
 
   const seleccionarDeGaleria = async () => {
     try {
-      console.log('[FotoCaptura] Abriendo selector de galería nativo...');
+      console.log('[FotoCaptura] Solicitando permisos de galería...');
       setModalVisible(false);
+
+      // Solicitar permisos explícitamente
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      console.log('[FotoCaptura] Estado de permisos:', status);
+
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permisos requeridos',
+          'Se necesita acceso a la galería para seleccionar fotos.'
+        );
+        return;
+      }
 
       // Pequeña pausa para que el modal se cierre
       await new Promise(resolve => setTimeout(resolve, 300));
+
+      console.log('[FotoCaptura] Abriendo selector de galería nativo...');
 
       // Usar el selector nativo del sistema
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: false,
         quality: 0.7,
+        exif: false,
       });
 
-      console.log('[FotoCaptura] Resultado picker:', result.canceled ? 'cancelado' : 'seleccionado');
+      console.log('[FotoCaptura] Resultado picker:', JSON.stringify(result, null, 2));
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const uri = result.assets[0].uri;
-        console.log('[FotoCaptura] URI seleccionada:', uri);
-        onFotoCapturada(uri);
+        const asset = result.assets[0];
+        console.log('[FotoCaptura] Asset seleccionado:', {
+          uri: asset.uri,
+          width: asset.width,
+          height: asset.height,
+          type: asset.type,
+          fileName: asset.fileName,
+        });
+        onFotoCapturada(asset.uri);
+      } else {
+        console.log('[FotoCaptura] Selección cancelada o sin assets');
       }
     } catch (error: any) {
       console.error('[FotoCaptura] Error con galería:', error);
+      console.error('[FotoCaptura] Error stack:', error.stack);
       Alert.alert('Error', `No se pudo acceder a la galería: ${error.message}`);
     }
   };
