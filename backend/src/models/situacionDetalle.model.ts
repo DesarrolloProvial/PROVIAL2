@@ -213,10 +213,15 @@ export const SituacionDetalleModel = {
       }
     }
 
-    // 9. Si vienen personas (acompanantes/peatones), crear persona_accidente rows
-    if (data.personas && Array.isArray(data.personas)) {
-      for (const p of data.personas) {
-        await this.addPersona(situacionId, result.id, p);
+    // 9. Si vienen personas (acompanantes/peatones), guardar como JSON en situacion_vehiculo
+    if (data.personas && Array.isArray(data.personas) && data.personas.length > 0) {
+      try {
+        await db.none(
+          `UPDATE situacion_vehiculo SET datos_piloto = COALESCE(datos_piloto, '{}'::jsonb) || jsonb_build_object('personas', $2::jsonb) WHERE id = $1`,
+          [result.id, JSON.stringify(data.personas)]
+        );
+      } catch (e) {
+        console.warn('Error guardando personas en situacion_vehiculo:', e);
       }
     }
 
