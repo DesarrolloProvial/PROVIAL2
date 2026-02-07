@@ -197,6 +197,8 @@ export function useDraftSituacion() {
     tipo_situacion: TipoSituacion;
     tipo_situacion_id: number;
     unidad_codigo: string;
+    unidad_id?: number;
+    salida_id?: number;
     ruta_id: number;
     ruta_nombre?: string;
     km: number;
@@ -221,9 +223,9 @@ export function useDraftSituacion() {
         num_situacion_salida: 0, // 0 indica pendiente de sincronizar
         fecha: new Date().toISOString(),
         sede_id: 1, // Default (idealmente debería venir del AuthStore)
-        unidad_id: 0,
+        unidad_id: params.unidad_id || 0,
         unidad_codigo: params.unidad_codigo,
-        salida_id: 0,
+        salida_id: params.salida_id || 0,
         valido_hasta: new Date(Date.now() + 86400000).toISOString()
       };
     }
@@ -379,7 +381,11 @@ export function useDraftSituacion() {
         // Mantener ID determinista
         id: draft.id,
 
+        // Mapear salida_id a salida_unidad_id (backend espera este nombre)
+        salida_unidad_id: draft.salida_id || undefined,
+
         // Remover campos internos del draft que no necesita el backend
+        salida_id: undefined,
         multimedia: undefined, // Se sube después con endpoint separado
         estado: undefined,
         created_at: undefined,

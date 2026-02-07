@@ -518,6 +518,8 @@ export default function SituacionDinamicaScreen() {
                     tipo_situacion: tipoSituacion,
                     tipo_situacion_id: tipoSituacionId, // Asegurar que viaja el ID
                     unidad_codigo: salidaActiva!.unidad_codigo,
+                    unidad_id: salidaActiva!.unidad_id,
+                    salida_id: salidaActiva!.salida_id,
                     ruta_id: salidaActiva!.ruta_id,
                     ruta_nombre: salidaActiva!.ruta_codigo,
                     km: parseFloat(formData.km) || 0,
