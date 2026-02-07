@@ -141,75 +141,51 @@ export async function createSituacion(req: Request, res: Response) {
     }
 
     if (req.user!.rol === 'BRIGADA' && (!unidadFinal || !rutaFinal)) {
-      // 1. Intentar desde ubicacion_brigada
-      const ubicacionActual = await UbicacionBrigadaModel.getUbicacionActual(userId);
-      if (ubicacionActual) {
-        if (ubicacionActual.estado === 'PRESTADO') {
-          if (!unidadFinal) unidadFinal = ubicacionActual.unidad_actual_id;
-          const asig = await TurnoModel.getAsignacionActivaUnidad(unidadFinal);
-          if (asig) {
-            if (!turnoFinal) turnoFinal = asig.turno_id;
-            if (!asignacionFinal) asignacionFinal = asig.id;
-            if (!rutaFinal) rutaFinal = asig.ruta_activa_id || asig.ruta_id;
-          }
-        } else {
-          if (!unidadFinal) unidadFinal = ubicacionActual.unidad_actual_id || ubicacionActual.unidad_origen_id;
+      // 1. brigada_unidad: asignación permanente del usuario a una unidad
+      try {
+        const bu = await db.oneOrNone(`
+          SELECT bu.unidad_id, s.id as salida_id, s.ruta_inicial_id
+          FROM brigada_unidad bu
+          LEFT JOIN salida_unidad s ON s.unidad_id = bu.unidad_id
+            AND s.estado = 'EN_SALIDA'
+            AND DATE(s.fecha_hora_salida) = CURRENT_DATE
+          WHERE bu.brigada_id = $1 AND bu.activo = true
+          ORDER BY bu.created_at DESC LIMIT 1
+        `, [userId]);
+        if (bu) {
+          if (!unidadFinal) unidadFinal = bu.unidad_id;
+          if (!rutaFinal) rutaFinal = bu.ruta_inicial_id;
         }
-      }
+      } catch (e) { /* silencioso */ }
 
-      // 2. Intentar desde v_mi_asignacion_hoy (turno del día)
+      // 2. tripulacion_turno: asignación por turno del día
       if (!unidadFinal || !rutaFinal) {
         try {
-          const miAsig = await TurnoModel.getMiAsignacionHoy(userId);
-          if (miAsig) {
-            if (!unidadFinal) unidadFinal = miAsig.unidad_id;
-            if (!turnoFinal) turnoFinal = miAsig.turno_id;
-            if (!asignacionFinal) asignacionFinal = miAsig.asignacion_id;
-            if (!rutaFinal) rutaFinal = miAsig.ruta_id;
+          const tt = await db.oneOrNone(`
+            SELECT a.unidad_id, a.ruta_id, a.id as asignacion_id, a.turno_id
+            FROM tripulacion_turno tc
+            JOIN asignacion_unidad a ON tc.asignacion_id = a.id
+            JOIN turno t ON a.turno_id = t.id
+            WHERE tc.usuario_id = $1
+              AND t.estado IN ('PLANIFICADO', 'ACTIVO')
+              AND (t.fecha <= CURRENT_DATE AND (t.fecha_fin IS NULL OR t.fecha_fin >= CURRENT_DATE))
+              AND a.hora_entrada_real IS NULL
+            ORDER BY t.fecha DESC LIMIT 1
+          `, [userId]);
+          if (tt) {
+            if (!unidadFinal) unidadFinal = tt.unidad_id;
+            if (!rutaFinal) rutaFinal = tt.ruta_id;
+            if (!turnoFinal) turnoFinal = tt.turno_id;
+            if (!asignacionFinal) asignacionFinal = tt.asignacion_id;
           }
-        } catch (e) {
-          // Vista v_mi_asignacion_hoy puede no existir
-        }
+        } catch (e) { /* silencioso */ }
       }
 
-      // 3. Fallback: buscar desde salida_unidad activa del usuario (tripulación)
+      // 3. ubicacion_brigada (si está prestado a otra unidad)
       if (!unidadFinal) {
-        try {
-          const salidaInfo = await db.oneOrNone(`
-            SELECT s.unidad_id, s.id as salida_id, s.ruta_inicial_id
-            FROM salida_unidad s
-            WHERE s.estado = 'EN_SALIDA'
-              AND DATE(s.fecha_hora_salida) = CURRENT_DATE
-              AND (
-                s.tripulacion::text LIKE '%' || $1::text || '%'
-                OR s.unidad_id IN (
-                  SELECT bu.unidad_id FROM brigada_unidad bu
-                  WHERE bu.brigada_id = $1 AND bu.activo = true
-                )
-              )
-            ORDER BY s.fecha_hora_salida DESC
-            LIMIT 1
-          `, [userId]);
-          if (salidaInfo) {
-            unidadFinal = salidaInfo.unidad_id;
-            if (!rutaFinal) rutaFinal = salidaInfo.ruta_inicial_id;
-          }
-        } catch (e) {
-          // Fallback silencioso
-        }
-      }
-
-      // 4. Último fallback: brigada_unidad (asignación permanente)
-      if (!unidadFinal) {
-        try {
-          const bu = await db.oneOrNone(`
-            SELECT unidad_id FROM brigada_unidad
-            WHERE brigada_id = $1 AND activo = true
-            ORDER BY created_at DESC LIMIT 1
-          `, [userId]);
-          if (bu) unidadFinal = bu.unidad_id;
-        } catch (e) {
-          // Fallback silencioso
+        const ubicacionActual = await UbicacionBrigadaModel.getUbicacionActual(userId);
+        if (ubicacionActual) {
+          unidadFinal = ubicacionActual.unidad_actual_id || ubicacionActual.unidad_origen_id;
         }
       }
     }
