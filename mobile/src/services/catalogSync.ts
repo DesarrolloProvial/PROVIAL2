@@ -16,6 +16,8 @@ import type {
     CatalogoTipoVehiculo,
     CatalogoMarcaVehiculo,
     CatalogoEtnia,
+    CatalogoDispositivoSeguridad,
+    CatalogoCausaHecho,
 } from '../core/storage/catalogoStorage';
 
 interface CatalogosAuxiliaresResponse {
@@ -26,6 +28,8 @@ interface CatalogosAuxiliaresResponse {
     tipos_vehiculo: CatalogoTipoVehiculo[];
     marcas_vehiculo: CatalogoMarcaVehiculo[];
     etnias: CatalogoEtnia[];
+    dispositivos_seguridad: CatalogoDispositivoSeguridad[];
+    causas_hecho: CatalogoCausaHecho[];
 }
 
 /**
@@ -35,7 +39,7 @@ export async function syncCatalogosAuxiliares(): Promise<boolean> {
     try {
         await catalogoStorage.init();
         const response = await api.get<CatalogosAuxiliaresResponse>('/situaciones/auxiliares');
-        const { tipos_hecho, tipos_asistencia, tipos_emergencia, tipos_vehiculo, marcas_vehiculo, etnias } = response.data;
+        const { tipos_hecho, tipos_asistencia, tipos_emergencia, tipos_vehiculo, marcas_vehiculo, etnias, dispositivos_seguridad, causas_hecho } = response.data;
 
         // Normalizar datos (convertir IDs a números) y guardar en SQLite
         if (tipos_hecho && tipos_hecho.length > 0) {
@@ -85,6 +89,22 @@ export async function syncCatalogosAuxiliares(): Promise<boolean> {
                 id: typeof t.id === 'string' ? parseInt(t.id, 10) : t.id,
             }));
             await catalogoStorage.saveEtnias(normalized);
+        }
+
+        if (dispositivos_seguridad && dispositivos_seguridad.length > 0) {
+            const normalized = dispositivos_seguridad.map(t => ({
+                ...t,
+                id: typeof t.id === 'string' ? parseInt(t.id, 10) : t.id,
+            }));
+            await catalogoStorage.saveDispositivosSeguridad(normalized);
+        }
+
+        if (causas_hecho && causas_hecho.length > 0) {
+            const normalized = causas_hecho.map(t => ({
+                ...t,
+                id: typeof t.id === 'string' ? parseInt(t.id, 10) : t.id,
+            }));
+            await catalogoStorage.saveCausasHecho(normalized);
         }
 
         return true;

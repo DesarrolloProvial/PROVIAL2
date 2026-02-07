@@ -68,6 +68,16 @@ export interface CatalogoEtnia {
     nombre: string;
 }
 
+export interface CatalogoDispositivoSeguridad {
+    id: number;
+    nombre: string;
+}
+
+export interface CatalogoCausaHecho {
+    id: number;
+    nombre: string;
+}
+
 export interface SyncMetadata {
     catalogo: string;
     ultima_sincronizacion: string;
@@ -174,6 +184,20 @@ class CatalogoStorage {
                 CREATE TABLE IF NOT EXISTS etnia (
                     id INTEGER PRIMARY KEY,
                     nombre TEXT NOT NULL UNIQUE
+                )
+            `);
+
+            this.db.execSync(`
+                CREATE TABLE IF NOT EXISTS dispositivo_seguridad (
+                    id INTEGER PRIMARY KEY,
+                    nombre TEXT NOT NULL
+                )
+            `);
+
+            this.db.execSync(`
+                CREATE TABLE IF NOT EXISTS causa_hecho_transito (
+                    id INTEGER PRIMARY KEY,
+                    nombre TEXT NOT NULL
                 )
             `);
 
@@ -345,6 +369,78 @@ class CatalogoStorage {
             );
         } catch (error) {
             console.error('[CATALOGOS] Error saveEtnias:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtener todos los dispositivos de seguridad
+     */
+    async getDispositivosSeguridad(): Promise<CatalogoDispositivoSeguridad[]> {
+        if (!this.db) return [];
+        try {
+            return this.db.getAllSync<CatalogoDispositivoSeguridad>('SELECT * FROM dispositivo_seguridad ORDER BY nombre');
+        } catch (error) {
+            console.error('[CATALOGOS] Error getDispositivosSeguridad:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Insertar/Actualizar dispositivos de seguridad (bulk)
+     */
+    async saveDispositivosSeguridad(dispositivos: CatalogoDispositivoSeguridad[]): Promise<void> {
+        if (!this.db) return;
+        try {
+            this.db.runSync('DELETE FROM dispositivo_seguridad');
+            for (const d of dispositivos) {
+                this.db.runSync(
+                    'INSERT INTO dispositivo_seguridad (id, nombre) VALUES (?, ?)',
+                    [d.id, d.nombre]
+                );
+            }
+            this.db.runSync(
+                `INSERT OR REPLACE INTO sync_metadata (catalogo, ultima_sincronizacion, version)
+                 VALUES ('dispositivo_seguridad', datetime('now'), 1)`
+            );
+        } catch (error) {
+            console.error('[CATALOGOS] Error saveDispositivosSeguridad:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtener todas las causas de hecho de tránsito
+     */
+    async getCausasHecho(): Promise<CatalogoCausaHecho[]> {
+        if (!this.db) return [];
+        try {
+            return this.db.getAllSync<CatalogoCausaHecho>('SELECT * FROM causa_hecho_transito ORDER BY nombre');
+        } catch (error) {
+            console.error('[CATALOGOS] Error getCausasHecho:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Insertar/Actualizar causas de hecho de tránsito (bulk)
+     */
+    async saveCausasHecho(causas: CatalogoCausaHecho[]): Promise<void> {
+        if (!this.db) return;
+        try {
+            this.db.runSync('DELETE FROM causa_hecho_transito');
+            for (const c of causas) {
+                this.db.runSync(
+                    'INSERT INTO causa_hecho_transito (id, nombre) VALUES (?, ?)',
+                    [c.id, c.nombre]
+                );
+            }
+            this.db.runSync(
+                `INSERT OR REPLACE INTO sync_metadata (catalogo, ultima_sincronizacion, version)
+                 VALUES ('causa_hecho_transito', datetime('now'), 1)`
+            );
+        } catch (error) {
+            console.error('[CATALOGOS] Error saveCausasHecho:', error);
             throw error;
         }
     }
@@ -542,6 +638,8 @@ class CatalogoStorage {
             this.db.runSync('DELETE FROM tipo_asistencia');
             this.db.runSync('DELETE FROM tipo_emergencia');
             this.db.runSync('DELETE FROM etnia');
+            this.db.runSync('DELETE FROM dispositivo_seguridad');
+            this.db.runSync('DELETE FROM causa_hecho_transito');
             this.db.runSync('DELETE FROM sync_metadata');
         } catch (error) {
             console.error('[CATALOGOS] Error clearAll:', error);

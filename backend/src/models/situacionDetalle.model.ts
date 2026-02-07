@@ -99,32 +99,73 @@ export const SituacionDetalleModel = {
       piloto_id = piloto.id;
     }
 
-    // 3. Crear junction situacion_vehiculo
-    const result = await db.one(
-      `INSERT INTO situacion_vehiculo (
-        situacion_id, vehiculo_id, piloto_id,
-        estado_piloto, numero_poliza, personas_asistidas,
-        heridos_en_vehiculo, fallecidos_en_vehiculo,
-        danos_estimados, observaciones,
-        sancion, sancion_detalle, documentos_consignados
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-      RETURNING *`,
-      [
-        situacionId,
-        vehiculo.id,
-        piloto_id,
-        data.estado_piloto || null,
-        data.numero_poliza || null,
-        data.personas_asistidas || 0,
-        data.heridos_en_vehiculo || 0,
-        data.fallecidos_en_vehiculo || 0,
-        data.danos_estimados || null,
-        data.observaciones || null,
-        data.sancion || false,
-        data.sancion_detalle || null,
-        data.documentos_consignados || null,
-      ]
-    );
+    // 3. Construir datos_piloto snapshot JSON
+    const datos_piloto = data.datos_piloto || null;
+
+    // 4. Crear junction situacion_vehiculo (with fallback if new columns don't exist yet)
+    let result: any;
+    try {
+      result = await db.one(
+        `INSERT INTO situacion_vehiculo (
+          situacion_id, vehiculo_id, piloto_id,
+          estado_piloto, numero_poliza, personas_asistidas,
+          heridos_en_vehiculo, fallecidos_en_vehiculo,
+          danos_estimados, observaciones,
+          sancion, sancion_detalle, documentos_consignados,
+          datos_piloto, custodia_estado, custodia_datos
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        RETURNING *`,
+        [
+          situacionId,
+          vehiculo.id,
+          piloto_id,
+          data.estado_piloto || null,
+          data.numero_poliza || null,
+          data.personas_asistidas || 0,
+          data.heridos_en_vehiculo || 0,
+          data.fallecidos_en_vehiculo || 0,
+          data.danos_estimados || null,
+          data.observaciones || null,
+          data.sancion || false,
+          data.sancion_detalle || null,
+          data.documentos_consignados || null,
+          datos_piloto ? JSON.stringify(datos_piloto) : null,
+          data.custodia_estado || null,
+          data.custodia_datos ? JSON.stringify(data.custodia_datos) : null,
+        ]
+      );
+    } catch (insertErr: any) {
+      // Fallback: columns datos_piloto/custodia_estado/custodia_datos may not exist (migration 113 not run)
+      if (insertErr.message?.includes('datos_piloto') || insertErr.message?.includes('custodia_')) {
+        result = await db.one(
+          `INSERT INTO situacion_vehiculo (
+            situacion_id, vehiculo_id, piloto_id,
+            estado_piloto, numero_poliza, personas_asistidas,
+            heridos_en_vehiculo, fallecidos_en_vehiculo,
+            danos_estimados, observaciones,
+            sancion, sancion_detalle, documentos_consignados
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+          RETURNING *`,
+          [
+            situacionId,
+            vehiculo.id,
+            piloto_id,
+            data.estado_piloto || null,
+            data.numero_poliza || null,
+            data.personas_asistidas || 0,
+            data.heridos_en_vehiculo || 0,
+            data.fallecidos_en_vehiculo || 0,
+            data.danos_estimados || null,
+            data.observaciones || null,
+            data.sancion || false,
+            data.sancion_detalle || null,
+            data.documentos_consignados || null,
+          ]
+        );
+      } else {
+        throw insertErr;
+      }
+    }
 
     // 4. Si hay tarjeta de circulacion, agregarla (unica por vehiculo)
     if (data.tarjeta_circulacion) {
@@ -172,11 +213,67 @@ export const SituacionDetalleModel = {
       }
     }
 
+    // 9. Si vienen personas (acompanantes/peatones), crear persona_accidente rows
+    if (data.personas && Array.isArray(data.personas)) {
+      for (const p of data.personas) {
+        await this.addPersona(situacionId, result.id, p);
+      }
+    }
+
+    // 10. Si vienen dispositivos de seguridad, crear junction rows
+    if (data.dispositivos && Array.isArray(data.dispositivos)) {
+      await this.addDispositivos(result.id, data.dispositivos);
+    }
+
     return result;
   },
 
   /**
-   * Obtener vehiculos de una situacion (JOIN con maestros + gruas + ajustadores)
+   * Agregar persona (acompanante/peaton/pasajero) a un vehiculo en situacion
+   */
+  async addPersona(situacionId: number, situacionVehiculoId: number, data: any): Promise<any> {
+    return db.one(
+      `INSERT INTO persona_accidente (
+        situacion_id, situacion_vehiculo_id, nombre, dpi, edad, genero,
+        tipo_persona, estado, hospital_traslado, descripcion_lesiones, datos_json
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING *`,
+      [
+        situacionId,
+        situacionVehiculoId,
+        data.nombre || null,
+        data.dpi || null,
+        data.edad || null,
+        data.genero || null,
+        data.tipo_persona || 'ACOMPANANTE',
+        data.estado || 'ILESO',
+        data.hospital_traslado || null,
+        data.descripcion_lesiones || null,
+        data.datos_json ? JSON.stringify(data.datos_json) : null,
+      ]
+    );
+  },
+
+  /**
+   * Agregar dispositivos de seguridad a un vehiculo en situacion (bulk)
+   */
+  async addDispositivos(situacionVehiculoId: number, dispositivos: { id: number; estado: string }[]): Promise<void> {
+    try {
+      for (const d of dispositivos) {
+        await db.none(
+          `INSERT INTO situacion_vehiculo_dispositivo (situacion_vehiculo_id, dispositivo_seguridad_id, estado)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (situacion_vehiculo_id, dispositivo_seguridad_id) DO UPDATE SET estado = $3`,
+          [situacionVehiculoId, d.id, d.estado || 'FUNCIONANDO']
+        );
+      }
+    } catch (e) {
+      console.warn('addDispositivos failed (table may not exist):', e);
+    }
+  },
+
+  /**
+   * Obtener vehiculos de una situacion (JOIN con maestros + gruas + ajustadores + personas + dispositivos)
    */
   async getVehiculos(situacionId: number): Promise<any[]> {
     const query = `
@@ -193,6 +290,9 @@ export const SituacionDetalleModel = {
         sv.sancion,
         sv.sancion_detalle,
         sv.documentos_consignados,
+        sv.datos_piloto,
+        sv.custodia_estado,
+        sv.custodia_datos,
         sv.created_at,
 
         -- Vehiculo master
@@ -253,7 +353,39 @@ export const SituacionDetalleModel = {
           LEFT JOIN aseguradora a ON va.aseguradora_id = a.id
           WHERE va.situacion_vehiculo_id = sv.id),
           '[]'
-        ) as ajustadores
+        ) as ajustadores,
+
+        -- Personas asociadas a este vehiculo
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+            'id', pa.id,
+            'nombre', pa.nombre,
+            'dpi', pa.dpi,
+            'edad', pa.edad,
+            'genero', pa.genero,
+            'tipo_persona', pa.tipo_persona,
+            'estado', pa.estado,
+            'hospital_traslado', pa.hospital_traslado,
+            'descripcion_lesiones', pa.descripcion_lesiones
+          ) ORDER BY pa.id)
+          FROM persona_accidente pa
+          WHERE pa.situacion_vehiculo_id = sv.id),
+          '[]'
+        ) as personas,
+
+        -- Dispositivos de seguridad de este vehiculo
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+            'id', svd.id,
+            'dispositivo_id', svd.dispositivo_seguridad_id,
+            'nombre', ds.nombre,
+            'estado', svd.estado
+          ) ORDER BY ds.nombre)
+          FROM situacion_vehiculo_dispositivo svd
+          INNER JOIN dispositivo_seguridad ds ON svd.dispositivo_seguridad_id = ds.id
+          WHERE svd.situacion_vehiculo_id = sv.id),
+          '[]'
+        ) as dispositivos
 
       FROM situacion_vehiculo sv
       INNER JOIN vehiculo v ON sv.vehiculo_id = v.id

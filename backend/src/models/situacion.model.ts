@@ -75,6 +75,24 @@ export interface Situacion {
 
   grupo?: number | null;
 
+  // Acuerdo entre involucrados
+  acuerdo_involucrados?: boolean | null;
+  acuerdo_detalle?: string | null;
+
+  // Conteos detallados
+  ilesos?: number;
+  heridos_leves?: number;
+  heridos_graves?: number;
+  trasladados?: number;
+  fugados?: number;
+
+  // Condiciones de vía
+  via_estado?: string | null;
+  via_topografia?: string | null;
+  via_geometria?: string | null;
+  via_peralte?: string | null;
+  via_condicion?: string | null;
+
   created_at: Date;
   updated_at: Date;
   creado_por: number;
@@ -150,7 +168,10 @@ export const SituacionModel = {
         tipo_pavimento, iluminacion, senalizacion, visibilidad,
         causa_probable, causa_especificar,
         danios_materiales, danios_infraestructura, danios_descripcion,
-        grupo
+        grupo,
+        acuerdo_involucrados, acuerdo_detalle,
+        ilesos, heridos_leves, heridos_graves, trasladados, fugados,
+        via_estado, via_topografia, via_geometria, via_peralte, via_condicion
       ) VALUES (
         $/tipo_situacion/, $/unidad_id/, $/salida_unidad_id/, $/turno_id/, $/asignacion_id/,
         $/ruta_id/, $/km/, $/sentido/, $/latitud/, $/longitud/,
@@ -162,7 +183,10 @@ export const SituacionModel = {
         $/tipo_pavimento/, $/iluminacion/, $/senalizacion/, $/visibilidad/,
         $/causa_probable/, $/causa_especificar/,
         $/danios_materiales/, $/danios_infraestructura/, $/danios_descripcion/,
-        $/grupo/
+        $/grupo/,
+        $/acuerdo_involucrados/, $/acuerdo_detalle/,
+        $/ilesos/, $/heridos_leves/, $/heridos_graves/, $/trasladados/, $/fugados/,
+        $/via_estado/, $/via_topografia/, $/via_geometria/, $/via_peralte/, $/via_condicion/
       ) RETURNING *
     `;
 
@@ -224,9 +248,63 @@ export const SituacionModel = {
       danios_descripcion: data.danios_descripcion ?? null,
 
       grupo: data.grupo ?? null,
+
+      // Acuerdo
+      acuerdo_involucrados: data.acuerdo_involucrados ?? null,
+      acuerdo_detalle: data.acuerdo_detalle ?? null,
+
+      // Conteos detallados
+      ilesos: data.ilesos ?? 0,
+      heridos_leves: data.heridos_leves ?? 0,
+      heridos_graves: data.heridos_graves ?? 0,
+      trasladados: data.trasladados ?? 0,
+      fugados: data.fugados ?? 0,
+
+      // Condiciones de vía
+      via_estado: data.via_estado ?? null,
+      via_topografia: data.via_topografia ?? null,
+      via_geometria: data.via_geometria ?? null,
+      via_peralte: data.via_peralte ?? null,
+      via_condicion: data.via_condicion ?? null,
     };
 
-    return db.one(qInsert, params);
+    try {
+      return await db.one(qInsert, params);
+    } catch (err: any) {
+      // Fallback: if new columns from migration 117 don't exist yet, retry without them
+      if (err.message?.includes('acuerdo_involucrados') || err.message?.includes('ilesos') ||
+          err.message?.includes('via_estado') || err.message?.includes('heridos_leves')) {
+        const qFallback = `
+          INSERT INTO situacion (
+            tipo_situacion, unidad_id, salida_unidad_id, turno_id, asignacion_id,
+            ruta_id, km, sentido, latitud, longitud,
+            observaciones, creado_por, tipo_situacion_id,
+            clima, carga_vehicular, departamento_id, municipio_id, codigo_situacion, obstruccion_data,
+            origen, area,
+            fecha_hora_aviso, fecha_hora_llegada,
+            heridos, fallecidos,
+            tipo_pavimento, iluminacion, senalizacion, visibilidad,
+            causa_probable, causa_especificar,
+            danios_materiales, danios_infraestructura, danios_descripcion,
+            grupo
+          ) VALUES (
+            $/tipo_situacion/, $/unidad_id/, $/salida_unidad_id/, $/turno_id/, $/asignacion_id/,
+            $/ruta_id/, $/km/, $/sentido/, $/latitud/, $/longitud/,
+            $/observaciones/, $/creado_por/, $/tipo_situacion_id/,
+            $/clima/, $/carga_vehicular/, $/departamento_id/, $/municipio_id/, $/codigo_situacion/, $/obstruccion_data/,
+            $/origen/, $/area/,
+            $/fecha_hora_aviso/, $/fecha_hora_llegada/,
+            $/heridos/, $/fallecidos/,
+            $/tipo_pavimento/, $/iluminacion/, $/senalizacion/, $/visibilidad/,
+            $/causa_probable/, $/causa_especificar/,
+            $/danios_materiales/, $/danios_infraestructura/, $/danios_descripcion/,
+            $/grupo/
+          ) RETURNING *
+        `;
+        return db.one(qFallback, params);
+      }
+      throw err;
+    }
   },
 
   /**
@@ -246,7 +324,10 @@ export const SituacionModel = {
       'tipo_pavimento', 'iluminacion', 'senalizacion', 'visibilidad',
       'causa_probable', 'causa_especificar',
       'danios_materiales', 'danios_infraestructura', 'danios_descripcion',
-      'estado'
+      'estado',
+      'acuerdo_involucrados', 'acuerdo_detalle',
+      'ilesos', 'heridos_leves', 'heridos_graves', 'trasladados', 'fugados',
+      'via_estado', 'via_topografia', 'via_geometria', 'via_peralte', 'via_condicion'
     ];
 
     fields.forEach(field => {

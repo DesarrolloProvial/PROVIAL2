@@ -10,7 +10,9 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Switch,
 } from 'react-native';
+import { useForm } from 'react-hook-form';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useAuthStore } from '../../store/authStore';
 import { useSituacionesStore } from '../../store/situacionesStore';
@@ -30,6 +32,9 @@ import { DepartamentoMunicipioSelector } from '../../components/DepartamentoMuni
 import DynamicFormFields from '../../components/DynamicFormFields';
 import MultimediaCaptureOffline from '../../components/MultimediaCaptureOffline';
 import { MultimediaRef } from '../../services/draftStorage';
+import VehiculoManager from '../../components/VehiculoManager';
+import CausasSelector from '../../components/CausasSelector';
+import CondicionesVia from '../../components/CondicionesVia';
 
 type NuevaSituacionRouteProp = RouteProp<{
   NuevaSituacion: {
@@ -101,6 +106,16 @@ export default function NuevaSituacionScreen() {
   // State para multimedia
   const [multimedia, setMultimedia] = useState<MultimediaRef[]>([]);
   const [draftUuid] = useState(() => `temp-${Date.now()}`); // UUID temporal para el componente
+
+  // Hecho de tránsito: vehiculos form, causas, acuerdo, conteos
+  const vehiculosForm = useForm({ defaultValues: { vehiculos: [] as any[] } });
+  const [causasSeleccionadas, setCausasSeleccionadas] = useState<number[]>([]);
+  const [acuerdoInvolucrados, setAcuerdoInvolucrados] = useState(false);
+  const [acuerdoDetalle, setAcuerdoDetalle] = useState('');
+  const [conteosHT, setConteosHT] = useState({
+    ilesos: '0', heridos_leves: '0', heridos_graves: '0',
+    trasladados: '0', fallecidos: '0', fugados: '0',
+  });
 
   // Cargar catálogo al inicio y unidades activas
   useEffect(() => {
@@ -255,17 +270,87 @@ export default function NuevaSituacionScreen() {
           tipo_hecho_id: dd.tipo_hecho_id || null,
           tipo_asistencia_id: dd.tipo_asistencia_id || null,
           tipo_emergencia_id: dd.tipo_emergencia_id || null,
-          hay_heridos: dd.heridos ? parseInt(dd.heridos, 10) > 0 : false,
-          cantidad_heridos: dd.heridos ? parseInt(dd.heridos, 10) : 0,
-          hay_fallecidos: dd.fallecidos ? parseInt(dd.fallecidos, 10) > 0 : false,
-          cantidad_fallecidos: dd.fallecidos ? parseInt(dd.fallecidos, 10) : 0,
-          vehiculos_involucrados: dd.vehiculos_involucrados ? parseInt(dd.vehiculos_involucrados, 10) : null,
           grupo: dd.grupo || null,
           // Detalles complejos (arrays de datos)
           detalles: detallesArray.length > 0 ? detallesArray : null,
           // Multimedia (URIs locales - se subirán a Cloudinary después)
           multimedia: multimedia.length > 0 ? multimedia : null
         };
+
+        // Si es INCIDENTE, agregar datos completos de hecho de tránsito
+        const isIncidente = tipoSeleccionado === 'INCIDENTE';
+        if (isIncidente) {
+          // Vehiculos del form de react-hook-form
+          const vehiculosData = vehiculosForm.getValues('vehiculos') || [];
+          const vehiculosSerialized = vehiculosData.map((v: any) => ({
+            ...v,
+            tipo_vehiculo_id: null, // Se resuelve por nombre en backend
+            marca_id: null,
+            es_extranjero: v.placa_extranjera || false,
+            datos_piloto: {
+              estado_persona: v.estado_piloto || 'ILESO',
+              ebriedad: v.ebriedad || false,
+              traslado: v.hospital_traslado_piloto || null,
+              descripcion_lesiones: v.descripcion_lesiones_piloto || null,
+              causa_fallecimiento: v.causa_fallecimiento || null,
+              lugar_fallecimiento: v.lugar_fallecimiento || null,
+              consignado_por: v.consignado_por || null,
+            },
+            custodia_estado: v.custodia_estado || 'LIBRE',
+            custodia_datos: v.custodia_estado && v.custodia_estado !== 'LIBRE' ? {
+              autoridad: v.custodia_autoridad || null,
+              motivo: v.custodia_motivo || null,
+              destino: v.custodia_destino || null,
+            } : null,
+            // Sancion
+            sancion: v.tiene_sancion || false,
+            sancion_detalle: v.tiene_sancion ? {
+              articulo: v.sancion_articulo || null,
+              descripcion: v.sancion_descripcion || null,
+              monto: v.sancion_monto || null,
+            } : null,
+            // Documentos consignados
+            documentos_consignados: {
+              licencia: v.doc_consignado_licencia || false,
+              tarjeta_circulacion: v.doc_consignado_tarjeta_circulacion || false,
+              tarjeta_propiedad: v.doc_consignado_tarjeta || false,
+              licencia_transporte: v.doc_consignado_licencia_transporte || false,
+              tarjeta_operaciones: v.doc_consignado_tarjeta_operaciones || false,
+              poliza: v.doc_consignado_poliza || false,
+              consignado_por: v.doc_consignado_por || null,
+            },
+            // Contenedor
+            contenedor: v.tiene_contenedor || false,
+            contenedor_detalle: v.tiene_contenedor ? {
+              numero: v.contenedor_numero || null,
+              empresa: v.contenedor_empresa || null,
+            } : null,
+            // Bus
+            bus_extraurbano: v.es_bus || false,
+            bus_detalle: v.es_bus ? {
+              empresa: v.bus_empresa || null,
+              ruta: v.bus_ruta || null,
+              pasajeros: v.bus_pasajeros || null,
+            } : null,
+          }));
+          data.vehiculos = vehiculosSerialized;
+          data.causas = causasSeleccionadas.length > 0 ? causasSeleccionadas : null;
+          data.acuerdo_involucrados = acuerdoInvolucrados;
+          data.acuerdo_detalle = acuerdoInvolucrados ? acuerdoDetalle : null;
+          data.ilesos = parseInt(conteosHT.ilesos, 10) || 0;
+          data.heridos_leves = parseInt(conteosHT.heridos_leves, 10) || 0;
+          data.heridos_graves = parseInt(conteosHT.heridos_graves, 10) || 0;
+          data.trasladados = parseInt(conteosHT.trasladados, 10) || 0;
+          data.fallecidos = parseInt(conteosHT.fallecidos, 10) || 0;
+          data.fugados = parseInt(conteosHT.fugados, 10) || 0;
+          data.heridos = (parseInt(conteosHT.heridos_leves, 10) || 0) + (parseInt(conteosHT.heridos_graves, 10) || 0);
+          // Condiciones de vía desde detallesDinamicos
+          data.via_estado = dd.via_estado || null;
+          data.via_topografia = dd.via_topografia || null;
+          data.via_geometria = dd.via_geometria || null;
+          data.via_peralte = dd.via_peralte || null;
+          data.via_condicion = dd.via_condicion || null;
+        }
 
         await createSituacion(data);
       }
@@ -401,6 +486,85 @@ export default function NuevaSituacionScreen() {
               auxiliares={catalogosAuxiliares}
               unidades={unidadesList}
             />
+
+            {/* VEHICULOS - Solo para INCIDENTE */}
+            {tipoSeleccionado === 'INCIDENTE' && (
+              <>
+                <VehiculoManager
+                  control={vehiculosForm.control}
+                  name="vehiculos"
+                  required
+                  minVehiculos={1}
+                  label="Vehículos Involucrados"
+                />
+
+                {/* Conteos globales */}
+                <View style={styles.card}>
+                  <Text style={styles.cardTitle}>Conteo de Personas</Text>
+                  <View style={styles.row}>
+                    <View style={styles.half}>
+                      <Text style={styles.label}>Ilesos</Text>
+                      <TextInput style={styles.input} value={conteosHT.ilesos} onChangeText={t => setConteosHT(p => ({ ...p, ilesos: t }))} keyboardType="numeric" />
+                    </View>
+                    <View style={styles.half}>
+                      <Text style={styles.label}>Heridos Leves</Text>
+                      <TextInput style={styles.input} value={conteosHT.heridos_leves} onChangeText={t => setConteosHT(p => ({ ...p, heridos_leves: t }))} keyboardType="numeric" />
+                    </View>
+                  </View>
+                  <View style={styles.row}>
+                    <View style={styles.half}>
+                      <Text style={styles.label}>Heridos Graves</Text>
+                      <TextInput style={styles.input} value={conteosHT.heridos_graves} onChangeText={t => setConteosHT(p => ({ ...p, heridos_graves: t }))} keyboardType="numeric" />
+                    </View>
+                    <View style={styles.half}>
+                      <Text style={styles.label}>Trasladados</Text>
+                      <TextInput style={styles.input} value={conteosHT.trasladados} onChangeText={t => setConteosHT(p => ({ ...p, trasladados: t }))} keyboardType="numeric" />
+                    </View>
+                  </View>
+                  <View style={styles.row}>
+                    <View style={styles.half}>
+                      <Text style={styles.label}>Fallecidos</Text>
+                      <TextInput style={styles.input} value={conteosHT.fallecidos} onChangeText={t => setConteosHT(p => ({ ...p, fallecidos: t }))} keyboardType="numeric" />
+                    </View>
+                    <View style={styles.half}>
+                      <Text style={styles.label}>Fugados</Text>
+                      <TextInput style={styles.input} value={conteosHT.fugados} onChangeText={t => setConteosHT(p => ({ ...p, fugados: t }))} keyboardType="numeric" />
+                    </View>
+                  </View>
+                </View>
+
+                {/* Causas del hecho */}
+                <CausasSelector
+                  value={causasSeleccionadas}
+                  onChange={setCausasSeleccionadas}
+                />
+
+                {/* Condiciones de la vía */}
+                <CondicionesVia
+                  detalles={detallesDinamicos}
+                  setDetalles={setDetallesDinamicos}
+                />
+
+                {/* Acuerdo entre involucrados */}
+                <View style={styles.card}>
+                  <Text style={styles.cardTitle}>Acuerdo entre Involucrados</Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <Text>¿Hubo acuerdo?</Text>
+                    <Switch value={acuerdoInvolucrados} onValueChange={setAcuerdoInvolucrados} />
+                  </View>
+                  {acuerdoInvolucrados && (
+                    <TextInput
+                      style={[styles.input, styles.textArea]}
+                      placeholder="Detalle del acuerdo..."
+                      multiline
+                      numberOfLines={3}
+                      value={acuerdoDetalle}
+                      onChangeText={setAcuerdoDetalle}
+                    />
+                  )}
+                </View>
+              </>
+            )}
 
             {/* MULTIMEDIA - Solo para tipos que requieren evidencia */}
             {['INCIDENTE', 'ASISTENCIA_VEHICULAR', 'EMERGENCIA'].includes(tipoSeleccionado || '') && (

@@ -13,6 +13,9 @@ import {
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { PlacaInput } from './PlacaInput';
 import SelectConOtro from './SelectConOtro';
+import CrossPlatformPicker from './CrossPlatformPicker';
+import PersonaManager from './PersonaManager';
+import DispositivosSeguridad from './DispositivosSeguridad';
 import { catalogoStorage } from '../core/storage/catalogoStorage';
 
 interface VehiculoFormProps {
@@ -50,7 +53,10 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
         contenedor: false,
         bus: false,
         sancion: false,
-        documentos: false, // Documentos consignados
+        documentos: false,
+        personas: false,
+        dispositivos: false,
+        custodia: false,
     });
 
     // State para date pickers
@@ -63,6 +69,8 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
     const tieneContenedor = useWatch({ control, name: `vehiculos.${index}.tiene_contenedor` });
     const esBus = useWatch({ control, name: `vehiculos.${index}.es_bus` });
     const tieneSancion = useWatch({ control, name: `vehiculos.${index}.tiene_sancion` });
+    const estadoPiloto = useWatch({ control, name: `vehiculos.${index}.estado_piloto` });
+    const custodiaEstado = useWatch({ control, name: `vehiculos.${index}.custodia_estado` });
 
     const toggleSection = (section: string) => {
         setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -205,22 +213,139 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                     />
 
                     {/* Estado del Piloto */}
-                    <Text style={styles.label}>Estado del Piloto *</Text>
                     <Controller
                         control={control}
                         name={`vehiculos.${index}.estado_piloto`}
                         defaultValue="ILESO"
                         render={({ field: { onChange, value } }) => (
-                            <RadioButton.Group onValueChange={onChange} value={value || 'ILESO'}>
-                                <View style={styles.radioContainer}>
-                                    <RadioButton.Item label="Ileso" value="ILESO" mode="android" />
-                                    <RadioButton.Item label="Herido" value="HERIDO" mode="android" />
-                                    <RadioButton.Item label="Fallecido" value="FALLECIDO" mode="android" />
-                                    <RadioButton.Item label="Fugado" value="FUGADO" mode="android" />
-                                </View>
-                            </RadioButton.Group>
+                            <CrossPlatformPicker
+                                label="Estado del Piloto *"
+                                selectedValue={value || 'ILESO'}
+                                onValueChange={onChange}
+                                options={[
+                                    { label: 'Ileso', value: 'ILESO' },
+                                    { label: 'Herido', value: 'HERIDO' },
+                                    { label: 'Trasladado', value: 'TRASLADADO' },
+                                    { label: 'Fallecido', value: 'FALLECIDO' },
+                                    { label: 'Fugado', value: 'FUGADO' },
+                                    { label: 'Desconocido', value: 'DESCONOCIDO' },
+                                ]}
+                                placeholder="Seleccione..."
+                            />
                         )}
                     />
+
+                    {/* Ebriedad */}
+                    <View style={styles.switchRow}>
+                        <Text>¿Ebriedad del Piloto?</Text>
+                        <Controller
+                            control={control}
+                            name={`vehiculos.${index}.ebriedad`}
+                            render={({ field: { onChange, value } }) => (
+                                <Switch value={value || false} onValueChange={onChange} />
+                            )}
+                        />
+                    </View>
+
+                    {/* Hospital de traslado (condicional si HERIDO o TRASLADADO) */}
+                    {(estadoPiloto === 'TRASLADADO' || estadoPiloto === 'HERIDO') && (
+                        <>
+                            <Controller
+                                control={control}
+                                name={`vehiculos.${index}.hospital_traslado_piloto`}
+                                render={({ field: { onChange, value } }) => (
+                                    <TextInput
+                                        label="Hospital de Traslado"
+                                        value={value || ''}
+                                        onChangeText={onChange}
+                                        mode="outlined"
+                                        style={styles.input}
+                                    />
+                                )}
+                            />
+                            <Controller
+                                control={control}
+                                name={`vehiculos.${index}.descripcion_lesiones_piloto`}
+                                render={({ field: { onChange, value } }) => (
+                                    <TextInput
+                                        label="Descripción de Lesiones"
+                                        value={value || ''}
+                                        onChangeText={onChange}
+                                        mode="outlined"
+                                        multiline
+                                        numberOfLines={2}
+                                        style={styles.input}
+                                    />
+                                )}
+                            />
+                        </>
+                    )}
+
+                    {/* Datos de fallecido (condicional) */}
+                    {estadoPiloto === 'FALLECIDO' && (
+                        <>
+                            <Controller
+                                control={control}
+                                name={`vehiculos.${index}.causa_fallecimiento`}
+                                render={({ field: { onChange, value } }) => (
+                                    <TextInput
+                                        label="Causa Aparente de Fallecimiento"
+                                        value={value || ''}
+                                        onChangeText={onChange}
+                                        mode="outlined"
+                                        multiline
+                                        numberOfLines={2}
+                                        style={styles.input}
+                                    />
+                                )}
+                            />
+                            <Controller
+                                control={control}
+                                name={`vehiculos.${index}.lugar_fallecimiento`}
+                                render={({ field: { onChange, value } }) => (
+                                    <CrossPlatformPicker
+                                        label="Lugar de Fallecimiento"
+                                        selectedValue={value}
+                                        onValueChange={onChange}
+                                        options={[
+                                            { label: 'En el lugar del hecho', value: 'EN_LUGAR' },
+                                            { label: 'En traslado al hospital', value: 'EN_TRASLADO' },
+                                            { label: 'En el hospital', value: 'EN_HOSPITAL' },
+                                            { label: 'Otro', value: 'OTRO' },
+                                        ]}
+                                        placeholder="Seleccione..."
+                                    />
+                                )}
+                            />
+                            <Controller
+                                control={control}
+                                name={`vehiculos.${index}.hospital_traslado_piloto`}
+                                render={({ field: { onChange, value } }) => (
+                                    <TextInput
+                                        label="Hospital (si fue trasladado)"
+                                        value={value || ''}
+                                        onChangeText={onChange}
+                                        mode="outlined"
+                                        style={styles.input}
+                                    />
+                                )}
+                            />
+                            <Controller
+                                control={control}
+                                name={`vehiculos.${index}.consignado_por`}
+                                render={({ field: { onChange, value } }) => (
+                                    <TextInput
+                                        label="Consignado por (autoridad)"
+                                        value={value || ''}
+                                        onChangeText={onChange}
+                                        mode="outlined"
+                                        placeholder="Ej: MP, PNC"
+                                        style={styles.input}
+                                    />
+                                )}
+                            />
+                        </>
+                    )}
 
                     {/* Personas Asistidas */}
                     <Controller
@@ -810,6 +935,113 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                             />
                         )}
                     />
+                </View>
+            </List.Accordion>
+
+            {/* ============================================ */}
+            {/* SECCIÓN 9: PERSONAS / ACOMPAÑANTES */}
+            {/* ============================================ */}
+            <List.Accordion
+                title="Personas / Acompañantes"
+                expanded={expandedSections.personas}
+                onPress={() => toggleSection('personas')}
+                style={styles.accordion}
+                titleStyle={styles.accordionTitle}
+            >
+                <View style={styles.section}>
+                    <PersonaManager control={control} vehiculoIndex={index} />
+                </View>
+            </List.Accordion>
+
+            {/* ============================================ */}
+            {/* SECCIÓN 10: DISPOSITIVOS DE SEGURIDAD */}
+            {/* ============================================ */}
+            <List.Accordion
+                title="Dispositivos de Seguridad"
+                expanded={expandedSections.dispositivos}
+                onPress={() => toggleSection('dispositivos')}
+                style={styles.accordion}
+                titleStyle={styles.accordionTitle}
+            >
+                <View style={styles.section}>
+                    <DispositivosSeguridad control={control} vehiculoIndex={index} />
+                </View>
+            </List.Accordion>
+
+            {/* ============================================ */}
+            {/* SECCIÓN 11: CUSTODIA DEL VEHÍCULO */}
+            {/* ============================================ */}
+            <List.Accordion
+                title="Custodia del Vehículo"
+                expanded={expandedSections.custodia}
+                onPress={() => toggleSection('custodia')}
+                style={styles.accordion}
+                titleStyle={styles.accordionTitle}
+            >
+                <View style={styles.section}>
+                    <Controller
+                        control={control}
+                        name={`vehiculos.${index}.custodia_estado`}
+                        defaultValue="LIBRE"
+                        render={({ field: { onChange, value } }) => (
+                            <CrossPlatformPicker
+                                label="Estado de Custodia"
+                                selectedValue={value || 'LIBRE'}
+                                onValueChange={onChange}
+                                options={[
+                                    { label: 'Libre', value: 'LIBRE' },
+                                    { label: 'Consignado', value: 'CONSIGNADO' },
+                                    { label: 'Grúa', value: 'GRUA' },
+                                    { label: 'Liberado', value: 'LIBERADO' },
+                                ]}
+                                placeholder="Seleccione..."
+                            />
+                        )}
+                    />
+
+                    {custodiaEstado && custodiaEstado !== 'LIBRE' && (
+                        <>
+                            <Controller
+                                control={control}
+                                name={`vehiculos.${index}.custodia_autoridad`}
+                                render={({ field: { onChange, value } }) => (
+                                    <TextInput
+                                        label="Autoridad"
+                                        value={value || ''}
+                                        onChangeText={onChange}
+                                        mode="outlined"
+                                        style={styles.input}
+                                    />
+                                )}
+                            />
+                            <Controller
+                                control={control}
+                                name={`vehiculos.${index}.custodia_motivo`}
+                                render={({ field: { onChange, value } }) => (
+                                    <TextInput
+                                        label="Motivo"
+                                        value={value || ''}
+                                        onChangeText={onChange}
+                                        mode="outlined"
+                                        style={styles.input}
+                                    />
+                                )}
+                            />
+                            <Controller
+                                control={control}
+                                name={`vehiculos.${index}.custodia_destino`}
+                                render={({ field: { onChange, value } }) => (
+                                    <TextInput
+                                        label="Destino"
+                                        value={value || ''}
+                                        onChangeText={onChange}
+                                        mode="outlined"
+                                        style={styles.input}
+                                    />
+                                )}
+                            />
+                        </>
+                    )}
                 </View>
             </List.Accordion>
         </View>

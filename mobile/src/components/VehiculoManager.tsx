@@ -7,7 +7,7 @@
  * Fecha: 2026-01-22
  */
 
-import React, { useState } from 'react';
+import React, { useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Control, useFieldArray } from 'react-hook-form';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -54,6 +54,11 @@ export default function VehiculoManager({
             tiene_contenedor: false,
             es_bus: false,
             tiene_sancion: false,
+            estado_piloto: 'ILESO',
+            ebriedad: false,
+            personas: [],
+            dispositivos: [],
+            custodia_estado: 'LIBRE',
         });
     };
 
@@ -66,8 +71,10 @@ export default function VehiculoManager({
     };
 
     // Si no hay vehículos y es requerido, agregar uno automáticamente
+    const didAutoAppend = useRef(false);
     React.useEffect(() => {
-        if (fields.length === 0 && (required || minVehiculos > 0)) {
+        if (!didAutoAppend.current && fields.length === 0 && (required || minVehiculos > 0)) {
+            didAutoAppend.current = true;
             append({
                 tipo_vehiculo: '',
                 marca: '',
@@ -78,6 +85,11 @@ export default function VehiculoManager({
                 tiene_contenedor: false,
                 es_bus: false,
                 tiene_sancion: false,
+                estado_piloto: 'ILESO',
+                ebriedad: false,
+                personas: [],
+                dispositivos: [],
+                custodia_estado: 'LIBRE',
             });
         }
     }, []); // Solo ejecutar una vez al montar

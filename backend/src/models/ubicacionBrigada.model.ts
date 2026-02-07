@@ -61,18 +61,64 @@ export const UbicacionBrigadaModel = {
    * Obtener ubicación actual de un usuario
    */
   async getUbicacionActual(usuario_id: number): Promise<UbicacionActualBrigada | null> {
-    const query = `
-      SELECT * FROM v_ubicacion_actual_brigada
-      WHERE usuario_id = $1
-    `;
-    return db.oneOrNone(query, [usuario_id]);
+    try {
+      const query = `
+        SELECT
+          ub.usuario_id,
+          u.nombre_completo,
+          u.username,
+          ub.estado,
+          ub.unidad_actual_id,
+          ua.codigo as unidad_actual_codigo,
+          ub.unidad_origen_id,
+          uo.codigo as unidad_origen_codigo,
+          ub.punto_fijo_km,
+          ub.punto_fijo_sentido,
+          ub.punto_fijo_ruta_id,
+          r.codigo as punto_fijo_ruta_codigo,
+          ub.punto_fijo_latitud,
+          ub.punto_fijo_longitud,
+          ub.punto_fijo_descripcion,
+          ub.situacion_persistente_id,
+          ub.inicio_ubicacion,
+          ub.motivo
+        FROM ubicacion_brigada ub
+        INNER JOIN usuario u ON ub.usuario_id = u.id
+        LEFT JOIN unidad ua ON ub.unidad_actual_id = ua.id
+        LEFT JOIN unidad uo ON ub.unidad_origen_id = uo.id
+        LEFT JOIN ruta r ON ub.punto_fijo_ruta_id = r.id
+        WHERE ub.usuario_id = $1 AND ub.fin_ubicacion IS NULL
+        ORDER BY ub.created_at DESC
+        LIMIT 1
+      `;
+      return db.oneOrNone(query, [usuario_id]);
+    } catch {
+      return null;
+    }
   },
 
   /**
    * Obtener todas las ubicaciones activas
    */
   async getAllUbicacionesActivas(): Promise<UbicacionActualBrigada[]> {
-    return db.manyOrNone('SELECT * FROM v_ubicacion_actual_brigada ORDER BY nombre_completo');
+    const query = `
+      SELECT
+        ub.usuario_id, u.nombre_completo, u.username, ub.estado,
+        ub.unidad_actual_id, ua.codigo as unidad_actual_codigo,
+        ub.unidad_origen_id, uo.codigo as unidad_origen_codigo,
+        ub.punto_fijo_km, ub.punto_fijo_sentido, ub.punto_fijo_ruta_id,
+        r.codigo as punto_fijo_ruta_codigo,
+        ub.punto_fijo_latitud, ub.punto_fijo_longitud, ub.punto_fijo_descripcion,
+        ub.situacion_persistente_id, ub.inicio_ubicacion, ub.motivo
+      FROM ubicacion_brigada ub
+      INNER JOIN usuario u ON ub.usuario_id = u.id
+      LEFT JOIN unidad ua ON ub.unidad_actual_id = ua.id
+      LEFT JOIN unidad uo ON ub.unidad_origen_id = uo.id
+      LEFT JOIN ruta r ON ub.punto_fijo_ruta_id = r.id
+      WHERE ub.fin_ubicacion IS NULL
+      ORDER BY u.nombre_completo
+    `;
+    return db.manyOrNone(query);
   },
 
   /**
@@ -80,9 +126,21 @@ export const UbicacionBrigadaModel = {
    */
   async getUbicacionesByUnidad(unidad_id: number): Promise<UbicacionActualBrigada[]> {
     const query = `
-      SELECT * FROM v_ubicacion_actual_brigada
-      WHERE unidad_actual_id = $1
-      ORDER BY nombre_completo
+      SELECT
+        ub.usuario_id, u.nombre_completo, u.username, ub.estado,
+        ub.unidad_actual_id, ua.codigo as unidad_actual_codigo,
+        ub.unidad_origen_id, uo.codigo as unidad_origen_codigo,
+        ub.punto_fijo_km, ub.punto_fijo_sentido, ub.punto_fijo_ruta_id,
+        r.codigo as punto_fijo_ruta_codigo,
+        ub.punto_fijo_latitud, ub.punto_fijo_longitud, ub.punto_fijo_descripcion,
+        ub.situacion_persistente_id, ub.inicio_ubicacion, ub.motivo
+      FROM ubicacion_brigada ub
+      INNER JOIN usuario u ON ub.usuario_id = u.id
+      LEFT JOIN unidad ua ON ub.unidad_actual_id = ua.id
+      LEFT JOIN unidad uo ON ub.unidad_origen_id = uo.id
+      LEFT JOIN ruta r ON ub.punto_fijo_ruta_id = r.id
+      WHERE ub.unidad_actual_id = $1 AND ub.fin_ubicacion IS NULL
+      ORDER BY u.nombre_completo
     `;
     return db.manyOrNone(query, [unidad_id]);
   },

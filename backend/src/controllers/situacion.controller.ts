@@ -68,6 +68,21 @@ export async function createSituacion(req: Request, res: Response) {
       danios_infraestructura,
       descripcion_danios_infra,
       grupo,
+
+      // Nuevos campos hecho de tránsito
+      acuerdo_involucrados,
+      acuerdo_detalle,
+      ilesos,
+      heridos_leves,
+      heridos_graves,
+      trasladados,
+      fugados,
+      via_estado,
+      via_topografia,
+      via_geometria,
+      via_peralte,
+      via_condicion,
+      causas,
     } = req.body;
 
     const normalizeId = (val: any): number | null => {
@@ -194,7 +209,21 @@ export async function createSituacion(req: Request, res: Response) {
       danios_descripcion: descripcion_danios_infra,
       grupo: grupo ? parseInt(grupo, 10) : null,
       fecha_hora_aviso: new Date(),
-      fecha_hora_llegada: new Date()
+      fecha_hora_llegada: new Date(),
+
+      // Nuevos campos hecho de tránsito
+      acuerdo_involucrados: acuerdo_involucrados ?? null,
+      acuerdo_detalle: acuerdo_detalle ?? null,
+      ilesos: ilesos ?? 0,
+      heridos_leves: heridos_leves ?? 0,
+      heridos_graves: heridos_graves ?? 0,
+      trasladados: trasladados ?? 0,
+      fugados: fugados ?? 0,
+      via_estado: via_estado ?? null,
+      via_topografia: via_topografia ?? null,
+      via_geometria: via_geometria ?? null,
+      via_peralte: via_peralte ?? null,
+      via_condicion: via_condicion ?? null,
     };
 
     const situacion = await SituacionModel.create(dataToCreate);
@@ -218,6 +247,20 @@ export async function createSituacion(req: Request, res: Response) {
     if (autoridades && Array.isArray(autoridades)) {
       for (const a of autoridades) {
         await SituacionDetalleModel.addAutoridad(situacion.id, a);
+      }
+    }
+
+    // Persistir Causas del hecho de tránsito
+    if (causas && Array.isArray(causas) && causas.length > 0) {
+      try {
+        for (const causaId of causas) {
+          await db.none(
+            `INSERT INTO situacion_causa (situacion_id, causa_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+            [situacion.id, causaId]
+          );
+        }
+      } catch (e) {
+        console.warn('situacion_causa insert failed (table may not exist):', e);
       }
     }
 
@@ -632,7 +675,21 @@ export async function getCatalogosAuxiliares(_req: Request, res: Response) {
     const marcas_vehiculo = await db.manyOrNone("SELECT id, nombre FROM marca_vehiculo ORDER BY nombre");
     const etnias = await db.manyOrNone("SELECT id, nombre FROM etnia WHERE activo = true ORDER BY nombre");
 
-    return res.json({ tipos_hecho, tipos_asistencia, tipos_emergencia, tipos_vehiculo, marcas_vehiculo, etnias });
+    // Catálogos de hecho de tránsito (fault-tolerant: tables may not exist if migrations not run)
+    let dispositivos_seguridad: any[] = [];
+    let causas_hecho: any[] = [];
+    try {
+      dispositivos_seguridad = await db.manyOrNone("SELECT id, nombre FROM dispositivo_seguridad WHERE activo = true ORDER BY nombre");
+    } catch (e) {
+      console.warn('dispositivo_seguridad table not found, skipping');
+    }
+    try {
+      causas_hecho = await db.manyOrNone("SELECT id, nombre FROM causa_hecho_transito WHERE activo = true ORDER BY nombre");
+    } catch (e) {
+      console.warn('causa_hecho_transito table not found, skipping');
+    }
+
+    return res.json({ tipos_hecho, tipos_asistencia, tipos_emergencia, tipos_vehiculo, marcas_vehiculo, etnias, dispositivos_seguridad, causas_hecho });
   } catch (error: any) {
     console.error('Error getCatalogosAuxiliares:', error);
     return res.status(500).json({ error: error.message });

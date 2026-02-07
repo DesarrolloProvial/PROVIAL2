@@ -70,7 +70,7 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
     // RENDERS POR TIPO
     // ==========================================
 
-    // 0. INCIDENTE (ACCIDENTE)
+    // 0. INCIDENTE (ACCIDENTE) - Solo tipo_hecho y grupo, el resto va en VehiculoManager
     if (formularioTipo === 'INCIDENTE' || situacionNombre === 'Accidente de Tránsito') {
         const lista = auxiliares?.tipos_hecho || [];
         const options = lista.map((item: any) => ({ label: item.nombre, value: item.id }));
@@ -96,9 +96,6 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
                     ]}
                     placeholder="Seleccione grupo..."
                 />
-                <TextInput style={styles.input} placeholder="Vehículos Involucrados (Cant)" keyboardType="numeric" value={detalles.vehiculos_involucrados} onChangeText={t => handleChange('vehiculos_involucrados', t)} />
-                <TextInput style={styles.input} placeholder="Personas Heridas (Cant)" keyboardType="numeric" value={detalles.heridos} onChangeText={t => handleChange('heridos', t)} />
-                <TextInput style={styles.input} placeholder="Fallecidos (Cant)" keyboardType="numeric" value={detalles.fallecidos} onChangeText={t => handleChange('fallecidos', t)} />
             </View>
         );
     }

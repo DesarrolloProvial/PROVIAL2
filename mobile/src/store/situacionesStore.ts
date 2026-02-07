@@ -139,6 +139,22 @@ export interface CreateSituacionData {
   obstruccion?: any;
   grupo?: number;
 
+  // Hecho de tránsito - nuevos campos
+  acuerdo_involucrados?: boolean;
+  acuerdo_detalle?: string;
+  ilesos?: number;
+  heridos_leves?: number;
+  heridos_graves?: number;
+  trasladados?: number;
+  fugados?: number;
+  via_estado?: string;
+  via_topografia?: string;
+  via_geometria?: string;
+  via_peralte?: string;
+  via_condicion?: string;
+  causas?: number[];
+  vehiculos?: any[];
+
   // Multimedia (URIs locales)
   multimedia?: Array<{
     tipo: 'FOTO' | 'VIDEO';
