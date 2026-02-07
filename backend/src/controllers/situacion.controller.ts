@@ -126,6 +126,20 @@ export async function createSituacion(req: Request, res: Response) {
     let asignacionFinal = asignacion_id;
     let rutaFinal = ruta_id;
 
+    // Si no viene unidad_id pero sí salida_unidad_id, obtener unidad de la salida
+    if (!unidadFinal && salida_unidad_id) {
+      try {
+        const salida = await db.oneOrNone(
+          'SELECT unidad_id, ruta_inicial_id FROM salida_unidad WHERE id = $1',
+          [salida_unidad_id]
+        );
+        if (salida) {
+          unidadFinal = salida.unidad_id;
+          if (!rutaFinal) rutaFinal = salida.ruta_inicial_id;
+        }
+      } catch (e) { /* silencioso */ }
+    }
+
     if (req.user!.rol === 'BRIGADA' && (!unidadFinal || !rutaFinal)) {
       // 1. Intentar desde ubicacion_brigada
       const ubicacionActual = await UbicacionBrigadaModel.getUbicacionActual(userId);

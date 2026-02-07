@@ -86,6 +86,7 @@ export function useDraftSituacion() {
 
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const token = useAuthStore(state => state.token);
+  const salidaActiva = useAuthStore(state => state.salidaActiva);
 
   // Cargar draft al iniciar
   useEffect(() => {
@@ -361,8 +362,17 @@ export function useDraftSituacion() {
       };
 
       // Sanitizar payload: convertir "" a null para IDs y campos opcionales
+      // Usar salidaActiva como fallback si el draft tiene valores 0/falsy
+      const draftUnidadId = draft.unidad_id || salidaActiva?.unidad_id || undefined;
+      const draftSalidaId = draft.salida_id || salidaActiva?.salida_id || undefined;
+      const draftRutaId = draft.ruta_id || salidaActiva?.ruta_id || undefined;
+
       const payload = {
         ...draft,
+        // Asegurar unidad_id y salida_unidad_id reales
+        unidad_id: draftUnidadId,
+        ruta_id: draftRutaId,
+
         // IDs de catálogos: nunca enviar "" (string vacío)
         tipo_hecho_id: toIntOrNull(draft.tipo_hecho_id),
         tipo_asistencia_id: toIntOrNull(draft.tipo_asistencia_id),
@@ -382,7 +392,7 @@ export function useDraftSituacion() {
         id: draft.id,
 
         // Mapear salida_id a salida_unidad_id (backend espera este nombre)
-        salida_unidad_id: draft.salida_id || undefined,
+        salida_unidad_id: draftSalidaId,
 
         // Remover campos internos del draft que no necesita el backend
         salida_id: undefined,
