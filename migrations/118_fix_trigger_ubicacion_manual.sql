@@ -1,5 +1,5 @@
--- Fix trigger that references dropped column ubicacion_manual
--- (column was removed in migration 108 but trigger from 103 still references it)
+-- Fix trigger that references dropped columns (ubicacion_manual, descripcion)
+-- These were removed in migration 108 but trigger from 103 still referenced them
 
 CREATE OR REPLACE FUNCTION trigger_alerta_emergencia()
 RETURNS TRIGGER AS $$
@@ -20,7 +20,7 @@ BEGIN
             'CRITICA'::severidad_alerta,
             jsonb_build_object(
                 'situacion_id', NEW.id,
-                'descripcion', COALESCE(NEW.descripcion, ''),
+                'observaciones', COALESCE(NEW.observaciones, ''),
                 'ubicacion', v_ubicacion,
                 'coordenadas', jsonb_build_object('lat', NEW.latitud, 'lng', NEW.longitud)
             ),
