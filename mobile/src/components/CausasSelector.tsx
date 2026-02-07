@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Checkbox } from 'react-native-paper';
 import { catalogoStorage, CatalogoCausaHecho } from '../core/storage/catalogoStorage';
+import { syncCatalogosAuxiliares } from '../services/catalogSync';
 
 interface Props {
     value: number[];
@@ -12,11 +13,16 @@ export default function CausasSelector({ value, onChange }: Props) {
     const [causas, setCausas] = useState<CatalogoCausaHecho[]>([]);
 
     useEffect(() => {
-        catalogoStorage.init().then(() => {
-            catalogoStorage.getCausasHecho().then(items => {
-                if (items && items.length > 0) setCausas(items);
-            }).catch(() => {});
-        }).catch(() => {});
+        const load = async () => {
+            await catalogoStorage.init().catch(() => {});
+            let items = await catalogoStorage.getCausasHecho().catch(() => [] as CatalogoCausaHecho[]);
+            if (!items || items.length === 0) {
+                await syncCatalogosAuxiliares().catch(() => {});
+                items = await catalogoStorage.getCausasHecho().catch(() => [] as CatalogoCausaHecho[]);
+            }
+            if (items && items.length > 0) setCausas(items);
+        };
+        load();
     }, []);
 
     const selected = Array.isArray(value) ? value : [];

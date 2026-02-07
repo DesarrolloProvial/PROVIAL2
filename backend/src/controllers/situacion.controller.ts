@@ -440,9 +440,44 @@ export async function listSituaciones(req: Request, res: Response) {
 
 export async function getMiUnidadHoy(req: Request, res: Response) {
   const userId = req.user!.userId;
-  const asig = await TurnoModel.getMiAsignacionHoy(userId);
-  if (!asig) return res.json({ situaciones: [] });
-  const list = await SituacionModel.getMiUnidadHoy(asig.unidad_id);
+
+  // Buscar unidad del usuario con múltiples fallbacks
+  let unidadId: number | null = null;
+  let asig: any = null;
+
+  // 1. Intentar desde v_mi_asignacion_hoy
+  try {
+    asig = await TurnoModel.getMiAsignacionHoy(userId);
+    if (asig) unidadId = asig.unidad_id;
+  } catch (e) { /* vista puede no existir o estar vacía */ }
+
+  // 2. Fallback: brigada_unidad (asignación permanente)
+  if (!unidadId) {
+    try {
+      const bu = await db.oneOrNone(
+        'SELECT unidad_id FROM brigada_unidad WHERE brigada_id = $1 AND activo = true ORDER BY created_at DESC LIMIT 1',
+        [userId]
+      );
+      if (bu) unidadId = bu.unidad_id;
+    } catch (e) { /* silencioso */ }
+  }
+
+  // 3. Fallback: salida_unidad activa hoy
+  if (!unidadId) {
+    try {
+      const salida = await db.oneOrNone(`
+        SELECT s.unidad_id FROM salida_unidad s
+        WHERE s.estado = 'EN_SALIDA' AND DATE(s.fecha_hora_salida) = CURRENT_DATE
+          AND s.unidad_id IN (SELECT bu.unidad_id FROM brigada_unidad bu WHERE bu.brigada_id = $1 AND bu.activo = true)
+        LIMIT 1
+      `, [userId]);
+      if (salida) unidadId = salida.unidad_id;
+    } catch (e) { /* silencioso */ }
+  }
+
+  if (!unidadId) return res.json({ situaciones: [] });
+
+  const list = await SituacionModel.getMiUnidadHoy(unidadId);
   return res.json({ situaciones: list, asignacion: asig });
 }
 

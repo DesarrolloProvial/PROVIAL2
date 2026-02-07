@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Controller, Control } from 'react-hook-form';
 import { Checkbox } from 'react-native-paper';
 import { catalogoStorage, CatalogoDispositivoSeguridad } from '../core/storage/catalogoStorage';
+import { syncCatalogosAuxiliares } from '../services/catalogSync';
 
 interface Props {
     control: Control<any>;
@@ -20,11 +21,17 @@ export default function DispositivosSeguridad({ control, vehiculoIndex }: Props)
     const [catalogo, setCatalogo] = useState<CatalogoDispositivoSeguridad[]>([]);
 
     useEffect(() => {
-        catalogoStorage.init().then(() => {
-            catalogoStorage.getDispositivosSeguridad().then(items => {
-                if (items && items.length > 0) setCatalogo(items);
-            }).catch(() => {});
-        }).catch(() => {});
+        const load = async () => {
+            await catalogoStorage.init().catch(() => {});
+            let items = await catalogoStorage.getDispositivosSeguridad().catch(() => [] as CatalogoDispositivoSeguridad[]);
+            if (!items || items.length === 0) {
+                // Intentar sincronizar desde el backend
+                await syncCatalogosAuxiliares().catch(() => {});
+                items = await catalogoStorage.getDispositivosSeguridad().catch(() => [] as CatalogoDispositivoSeguridad[]);
+            }
+            if (items && items.length > 0) setCatalogo(items);
+        };
+        load();
     }, []);
 
     if (catalogo.length === 0) {
