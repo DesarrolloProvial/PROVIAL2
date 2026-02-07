@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 import { useAuthStore } from '../../store/authStore';
 import { useSituacionesStore } from '../../store/situacionesStore';
 import { COLORS } from '../../constants/colors';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { turnosAPI, salidasAPI } from '../../services/api';
 import RutaSelector from '../../components/RutaSelector';
 
@@ -34,6 +34,13 @@ export default function BrigadaHomeScreen() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Refrescar situaciones cuando la pantalla vuelve a estar en foco (ej: al volver de crear situación)
+  useFocusEffect(
+    useCallback(() => {
+      fetchMisSituacionesHoy();
+    }, [])
+  );
 
   const loadData = async () => {
     try {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import { useSituacionesStore, SituacionCompleta } from '../../store/situacionesS
 import { useAuthStore } from '../../store/authStore';
 import { COLORS } from '../../constants/colors';
 import { SITUACIONES_CONFIG, TipoSituacion } from '../../constants/situacionTypes';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import api, { ingresosAPI } from '../../services/api';
 
 type RegistroBitacora = {
@@ -67,6 +67,13 @@ export default function BitacoraScreen() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Refrescar al volver a esta pantalla
+  useFocusEffect(
+    useCallback(() => {
+      fetchMisSituacionesHoy();
+    }, [])
+  );
 
   const loadData = async () => {
     try {

@@ -139,12 +139,10 @@ export const TurnoModel = {
   },
 
   // Obtener mi asignación de hoy (para app móvil)
-  // SOLO muestra asignaciones LIBERADAS (no borradores)
   async getMiAsignacionHoy(usuarioId: number): Promise<MiAsignacionHoy | null> {
     return db.oneOrNone(
-      `SELECT * FROM v_mi_asignacion_hoy 
-       WHERE usuario_id = $1 
-       AND estado_nomina = 'LIBERADA'`,
+      `SELECT * FROM v_mi_asignacion_hoy
+       WHERE usuario_id = $1`,
       [usuarioId]
     );
   },
