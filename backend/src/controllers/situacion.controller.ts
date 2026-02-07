@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { SituacionModel } from '../models/situacion.model';
 import { SituacionDetalleModel } from '../models/situacionDetalle.model';
 import { MultimediaModel } from '../models/multimedia.model';
-import { TurnoModel } from '../models/turno.model';
 import { SalidaModel } from '../models/salida.model';
 import { UbicacionBrigadaModel } from '../models/ubicacionBrigada.model';
 import { db } from '../config/database';
