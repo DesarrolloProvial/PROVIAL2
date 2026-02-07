@@ -80,6 +80,41 @@ export default function BrigadaHomeScreen() {
     setRefreshing(false);
   };
 
+  const abrirEdicionSituacionActiva = () => {
+    if (!situacionActiva) return;
+
+    switch (situacionActiva.tipo_situacion) {
+      case 'INCIDENTE':
+        navigation.navigate('Incidente' as never, {
+          editMode: true,
+          situacionId: situacionActiva.id,
+          situacionData: situacionActiva
+        } as never);
+        return;
+      case 'ASISTENCIA_VEHICULAR':
+        navigation.navigate('Asistencia' as never, {
+          editMode: true,
+          situacionId: situacionActiva.id,
+          situacionData: situacionActiva
+        } as never);
+        return;
+      case 'EMERGENCIA':
+        navigation.navigate('Emergencia' as never, {
+          editMode: true,
+          situacionId: situacionActiva.id,
+          situacionData: situacionActiva
+        } as never);
+        return;
+      default:
+        navigation.navigate('NuevaSituacion' as never, {
+          editMode: true,
+          situacionId: situacionActiva.id,
+          situacionData: situacionActiva
+        } as never);
+        return;
+    }
+  };
+
   const handleCerrarSituacion = () => {
     if (!situacionActiva) return;
 
@@ -648,7 +683,11 @@ export default function BrigadaHomeScreen() {
             </View>
           </View>
         ) : situacionActiva ? (
-          <View style={[styles.card, styles.situacionActivaCard]}>
+          <TouchableOpacity
+            style={[styles.card, styles.situacionActivaCard]}
+            onPress={abrirEdicionSituacionActiva}
+            activeOpacity={0.7}
+          >
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Situación Activa</Text>
               <View style={[
@@ -679,25 +718,36 @@ export default function BrigadaHomeScreen() {
                   </Text>
                 </View>
               )}
-              {situacionActiva.descripcion && (
+              {situacionActiva.observaciones && (
                 <View style={styles.descriptionRow}>
-                  <Text style={styles.infoLabel}>Descripción:</Text>
-                  <Text style={styles.descripcionText}>{situacionActiva.descripcion}</Text>
+                  <Text style={styles.infoLabel}>Observaciones:</Text>
+                  <Text style={styles.descripcionText}>{situacionActiva.observaciones}</Text>
                 </View>
               )}
             </View>
-            <TouchableOpacity
-              style={styles.cerrarButton}
-              onPress={handleCerrarSituacion}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.cerrarButtonText}>Cerrar Situación</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+            <Text style={{ fontSize: 12, color: '#888', textAlign: 'center', marginBottom: 8 }}>
+              Toca para editar o completar datos
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                style={[styles.cerrarButton, { flex: 1, backgroundColor: COLORS.primary || '#1e40af' }]}
+                onPress={abrirEdicionSituacionActiva}
+              >
+                <Text style={styles.cerrarButtonText}>Editar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.cerrarButton, { flex: 1 }]}
+                onPress={handleCerrarSituacion}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.cerrarButtonText}>Cerrar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
         ) : (
           <View style={styles.card}>
             <Text style={styles.noSituacionText}>

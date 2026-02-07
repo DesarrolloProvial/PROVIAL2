@@ -206,11 +206,10 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
       const response = await api.get('/situaciones/mi-unidad/hoy');
       const situaciones = response.data.situaciones || [];
 
-      // Usar situacion_activa del backend (viene de tabla situacion_actual)
-      // Fallback: buscar en la lista la más reciente con estado ACTIVA
-      const activa = response.data.situacion_activa
-        || situaciones.find((s: SituacionCompleta) => s.estado === 'ACTIVA')
-        || null;
+      // Preferir la situación ACTIVA de la lista completa (tiene todos los campos)
+      // Fallback: usar situacion_activa del backend (tabla cache, datos mínimos)
+      const activaDeLista = situaciones.find((s: SituacionCompleta) => s.estado === 'ACTIVA') || null;
+      const activa = activaDeLista || response.data.situacion_activa || null;
 
       set({
         situacionesHoy: situaciones,
