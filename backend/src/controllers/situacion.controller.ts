@@ -98,6 +98,9 @@ export async function createSituacion(req: Request, res: Response) {
       tipo_situacion_id ?? tipo_hecho_id ?? tipo_asistencia_id ?? tipo_emergencia_id
     );
 
+    // Normalizar tipo_situacion: HECHO_TRANSITO -> INCIDENTE (constraint DB)
+    const tipo_situacion_final = tipo_situacion === 'HECHO_TRANSITO' ? 'INCIDENTE' : tipo_situacion;
+
     const tipo_pavimento_final = tipo_pavimento ?? material_via ?? null;
 
     // Consolidar heridos/fallecidos (soporta ambos formatos)
@@ -213,7 +216,7 @@ export async function createSituacion(req: Request, res: Response) {
     }
 
     const dataToCreate = {
-      tipo_situacion,
+      tipo_situacion: tipo_situacion_final,
       unidad_id: unidadFinal,
       salida_unidad_id: salidaFinal,
       turno_id: turnoFinal,
