@@ -206,8 +206,11 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
       const response = await api.get('/situaciones/mi-unidad/hoy');
       const situaciones = response.data.situaciones || [];
 
-      // Buscar situación activa (la más reciente con estado ACTIVA)
-      const activa = situaciones.find((s: SituacionCompleta) => s.estado === 'ACTIVA') || null;
+      // Usar situacion_activa del backend (viene de tabla situacion_actual)
+      // Fallback: buscar en la lista la más reciente con estado ACTIVA
+      const activa = response.data.situacion_activa
+        || situaciones.find((s: SituacionCompleta) => s.estado === 'ACTIVA')
+        || null;
 
       set({
         situacionesHoy: situaciones,

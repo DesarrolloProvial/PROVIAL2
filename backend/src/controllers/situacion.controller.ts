@@ -441,44 +441,48 @@ export async function listSituaciones(req: Request, res: Response) {
 export async function getMiUnidadHoy(req: Request, res: Response) {
   const userId = req.user!.userId;
 
-  // Buscar unidad del usuario con múltiples fallbacks
+  // 1. Buscar unidad directamente desde brigada_unidad (asignación permanente)
   let unidadId: number | null = null;
-  let asig: any = null;
-
-  // 1. Intentar desde v_mi_asignacion_hoy
   try {
-    asig = await TurnoModel.getMiAsignacionHoy(userId);
-    if (asig) unidadId = asig.unidad_id;
-  } catch (e) { /* vista puede no existir o estar vacía */ }
+    const bu = await db.oneOrNone(
+      'SELECT unidad_id FROM brigada_unidad WHERE brigada_id = $1 AND activo = true ORDER BY created_at DESC LIMIT 1',
+      [userId]
+    );
+    if (bu) unidadId = bu.unidad_id;
+  } catch (e) { console.warn('brigada_unidad lookup failed:', e); }
 
-  // 2. Fallback: brigada_unidad (asignación permanente)
+  // 2. Si no hay brigada_unidad, buscar por situaciones creadas hoy por este usuario
   if (!unidadId) {
     try {
-      const bu = await db.oneOrNone(
-        'SELECT unidad_id FROM brigada_unidad WHERE brigada_id = $1 AND activo = true ORDER BY created_at DESC LIMIT 1',
+      const s = await db.oneOrNone(
+        'SELECT unidad_id FROM situacion WHERE creado_por = $1 AND created_at >= CURRENT_DATE ORDER BY created_at DESC LIMIT 1',
         [userId]
       );
-      if (bu) unidadId = bu.unidad_id;
-    } catch (e) { /* silencioso */ }
+      if (s) unidadId = s.unidad_id;
+    } catch (e) { }
   }
 
-  // 3. Fallback: salida_unidad activa hoy
-  if (!unidadId) {
-    try {
-      const salida = await db.oneOrNone(`
-        SELECT s.unidad_id FROM salida_unidad s
-        WHERE s.estado = 'EN_SALIDA' AND DATE(s.fecha_hora_salida) = CURRENT_DATE
-          AND s.unidad_id IN (SELECT bu.unidad_id FROM brigada_unidad bu WHERE bu.brigada_id = $1 AND bu.activo = true)
-        LIMIT 1
-      `, [userId]);
-      if (salida) unidadId = salida.unidad_id;
-    } catch (e) { /* silencioso */ }
-  }
+  if (!unidadId) return res.json({ situaciones: [], situacion_activa: null });
 
-  if (!unidadId) return res.json({ situaciones: [] });
+  // 3. Consultar situacion_actual (cache de última situación activa por unidad)
+  let situacionActiva: any = null;
+  try {
+    situacionActiva = await db.oneOrNone(`
+      SELECT sa.*, s.numero_situacion, s.creado_por, s.observaciones,
+        r.codigo as ruta_codigo, r.nombre as ruta_nombre,
+        tsc.nombre as tipo_situacion_nombre, tsc.categoria as tipo_situacion_categoria
+      FROM situacion_actual sa
+      JOIN situacion s ON sa.situacion_id = s.id
+      LEFT JOIN ruta r ON sa.ruta_id = r.id
+      LEFT JOIN catalogo_tipo_situacion tsc ON s.tipo_situacion_id = tsc.id
+      WHERE sa.unidad_id = $1
+    `, [unidadId]);
+  } catch (e) { console.warn('situacion_actual lookup failed:', e); }
 
+  // 4. Traer lista de situaciones de hoy para la bitácora
   const list = await SituacionModel.getMiUnidadHoy(unidadId);
-  return res.json({ situaciones: list, asignacion: asig });
+
+  return res.json({ situaciones: list, situacion_activa: situacionActiva });
 }
 
 export async function getMapaSituaciones(_req: Request, res: Response) {
