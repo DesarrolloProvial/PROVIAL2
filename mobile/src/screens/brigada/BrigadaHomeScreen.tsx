@@ -749,15 +749,13 @@ export default function BrigadaHomeScreen() {
             </View>
           </TouchableOpacity>
         ) : (
-          <View style={styles.card}>
-            <Text style={styles.noSituacionText}>
+          <View style={[styles.card, { backgroundColor: '#fff3cd', borderLeftColor: '#ffc107', borderLeftWidth: 4 }]}>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 8 }}>
               No hay situación activa
             </Text>
-            {debugInfo && (
-              <Text style={{ fontSize: 10, color: '#999', marginTop: 8 }}>
-                DEBUG: {debugInfo}
-              </Text>
-            )}
+            <Text style={{ fontSize: 14, color: '#555' }}>
+              {debugInfo || 'Cargando...'}
+            </Text>
           </View>
         )}
 
