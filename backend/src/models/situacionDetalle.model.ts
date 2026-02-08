@@ -72,13 +72,32 @@ export const SituacionDetalleModel = {
    * Upsert vehiculo master por placa -> upsert piloto master por licencia -> crear junction
    */
   async addVehiculo(situacionId: number, data: any): Promise<SituacionVehiculo> {
-    // 1. Upsert vehiculo en tabla maestra (por placa)
+    // 1. Resolver tipo_vehiculo_id y marca_id desde nombre si no vienen como ID
+    let tipoVehiculoId = data.tipo_vehiculo_id || null;
+    if (!tipoVehiculoId && data.tipo_vehiculo) {
+      const tv = await db.oneOrNone(
+        'SELECT id FROM tipo_vehiculo WHERE LOWER(nombre) = LOWER($1)',
+        [data.tipo_vehiculo]
+      );
+      if (tv) tipoVehiculoId = tv.id;
+    }
+
+    let marcaId = data.marca_id || null;
+    if (!marcaId && data.marca) {
+      const mv = await db.oneOrNone(
+        'SELECT id FROM marca_vehiculo WHERE LOWER(nombre) = LOWER($1)',
+        [data.marca]
+      );
+      if (mv) marcaId = mv.id;
+    }
+
+    // 2. Upsert vehiculo en tabla maestra (por placa)
     const vehiculo = await VehiculoModel.upsert({
       placa: data.placa || '',
-      tipo_vehiculo_id: data.tipo_vehiculo_id,
-      marca_id: data.marca_id,
+      tipo_vehiculo_id: tipoVehiculoId,
+      marca_id: marcaId,
       color: data.color,
-      es_extranjero: data.es_extranjero || false,
+      es_extranjero: data.es_extranjero || data.placa_extranjera || false,
       cargado: data.cargado || false,
       tipo_carga: data.carga_tipo || data.tipo_carga,
     });

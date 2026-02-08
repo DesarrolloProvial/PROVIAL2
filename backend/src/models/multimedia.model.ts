@@ -92,7 +92,7 @@ export const MultimediaModel = {
     return db.any(`
       SELECT
         sm.*,
-        u.nombre as subido_por_nombre
+        u.nombre_completo as subido_por_nombre
       FROM situacion_multimedia sm
       LEFT JOIN usuario u ON sm.subido_por = u.id
       WHERE sm.situacion_id = $1

@@ -249,11 +249,12 @@ export default function SituacionDinamicaScreen() {
             console.log('[TRANSFORM] Vehiculos mapeados:', formValues.vehiculos.length);
         }
 
-        // Logs para debug de selects
-        console.log('[TRANSFORM] tipo_hecho_id:', formValues.tipo_hecho_id);
-        console.log('[TRANSFORM] tipo_asistencia_id:', formValues.tipo_asistencia_id);
-        console.log('[TRANSFORM] tipo_emergencia_id:', formValues.tipo_emergencia_id);
-        console.log('[TRANSFORM] tipo_situacion_id (DB):', data.tipo_situacion_id);
+        // Logs para debug de selects (con typeof para detectar string vs number)
+        console.log('[TRANSFORM] tipo_hecho_id:', formValues.tipo_hecho_id, 'typeof:', typeof formValues.tipo_hecho_id);
+        console.log('[TRANSFORM] tipo_asistencia_id:', formValues.tipo_asistencia_id, 'typeof:', typeof formValues.tipo_asistencia_id);
+        console.log('[TRANSFORM] tipo_emergencia_id:', formValues.tipo_emergencia_id, 'typeof:', typeof formValues.tipo_emergencia_id);
+        console.log('[TRANSFORM] tipo_situacion_id (DB):', data.tipo_situacion_id, 'typeof:', typeof data.tipo_situacion_id);
+        console.log('[TRANSFORM] multimedia count:', formValues.multimedia?.length || 0);
         console.log('[TRANSFORM] tipo_situacion:', data.tipo_situacion);
         if (formValues.vehiculos?.length > 0) {
             const v0 = formValues.vehiculos[0];
