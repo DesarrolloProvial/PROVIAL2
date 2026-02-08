@@ -440,7 +440,7 @@ export async function listSituaciones(req: Request, res: Response) {
 export async function getMiUnidadHoy(req: Request, res: Response) {
   const userId = req.user!.userId;
 
-  // 1. Buscar unidad directamente desde brigada_unidad (asignación permanente)
+  // 1. Buscar unidad del usuario desde brigada_unidad
   let unidadId: number | null = null;
   try {
     const bu = await db.oneOrNone(
@@ -450,7 +450,7 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
     if (bu) unidadId = bu.unidad_id;
   } catch (e) { console.warn('brigada_unidad lookup failed:', e); }
 
-  // 2. Si no hay brigada_unidad, buscar por situaciones creadas hoy por este usuario
+  // 2. Fallback: buscar por situaciones creadas hoy por este usuario
   if (!unidadId) {
     try {
       const s = await db.oneOrNone(
@@ -463,19 +463,33 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
 
   if (!unidadId) return res.json({ situaciones: [], situacion_activa: null });
 
-  // 3. Consultar situacion_actual (cache de última situación activa por unidad)
+  // 3. Consultar situacion_actual para ver si hay situación activa en esta unidad
   let situacionActiva: any = null;
   try {
-    situacionActiva = await db.oneOrNone(`
-      SELECT sa.*, s.numero_situacion, s.creado_por, s.observaciones,
-        r.codigo as ruta_codigo, r.nombre as ruta_nombre,
-        tsc.nombre as tipo_situacion_nombre, tsc.categoria as tipo_situacion_categoria
-      FROM situacion_actual sa
-      JOIN situacion s ON sa.situacion_id = s.id
-      LEFT JOIN ruta r ON sa.ruta_id = r.id
-      LEFT JOIN catalogo_tipo_situacion tsc ON s.tipo_situacion_id = tsc.id
-      WHERE sa.unidad_id = $1
-    `, [unidadId]);
+    const cache = await db.oneOrNone(
+      'SELECT situacion_id FROM situacion_actual WHERE unidad_id = $1',
+      [unidadId]
+    );
+
+    if (cache && cache.situacion_id) {
+      // Obtener la situación COMPLETA con todos los datos
+      const situacionCompleta = await SituacionModel.getById(cache.situacion_id);
+
+      if (situacionCompleta) {
+        // Traer detalles: vehículos, autoridades, multimedia
+        const detalles = await SituacionDetalleModel.getAllDetalles(cache.situacion_id);
+        const multimedia = await MultimediaModel.getBySituacionId(cache.situacion_id);
+
+        situacionActiva = {
+          ...situacionCompleta,
+          vehiculos_involucrados: detalles.vehiculos,
+          autoridades: detalles.autoridades,
+          gruas: detalles.gruas,
+          ajustadores: detalles.ajustadores,
+          multimedia
+        };
+      }
+    }
   } catch (e) { console.warn('situacion_actual lookup failed:', e); }
 
   // 4. Traer lista de situaciones de hoy para la bitácora
