@@ -465,23 +465,25 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
     } catch (e) { }
   }
 
-  if (!unidadId) return res.json({ situaciones: [], situacion_activa: null });
+  if (!unidadId) return res.json({ situaciones: [], situacion_activa: null, _d: 'sin_unidad' });
 
   // 3. Traer lista de situaciones de hoy (bitácora)
   const list = await SituacionModel.getMiUnidadHoy(unidadId);
 
   // 4. Buscar situación activa desde situacion_actual
   let situacionActiva: any = null;
+  let _d = `unidad=${unidadId},lista=${list.length}`;
   try {
     const cache = await db.oneOrNone(
       'SELECT situacion_id FROM situacion_actual WHERE unidad_id = $1',
       [unidadId]
     );
-    if (cache && cache.situacion_id) {
-      // Primero buscar en la lista (si es de hoy ya está ahí)
-      situacionActiva = list.find((s: any) => s.id === cache.situacion_id) || null;
+    _d += `,cache_sid=${cache?.situacion_id || 'null'}`;
 
-      // Si no está en la lista (fue creada otro día), consultarla directo con la misma query que funciona
+    if (cache && cache.situacion_id) {
+      situacionActiva = list.find((s: any) => s.id === cache.situacion_id) || null;
+      _d += `,en_lista=${!!situacionActiva}`;
+
       if (!situacionActiva) {
         situacionActiva = await db.oneOrNone(`
           SELECT s.*,
@@ -505,16 +507,19 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
           LEFT JOIN catalogo_tipo_situacion tsc ON s.tipo_situacion_id = tsc.id
           WHERE s.id = $1
         `, [cache.situacion_id]);
+        _d += `,query_directa=${situacionActiva ? 'id=' + situacionActiva.id : 'null'}`;
       }
     }
-  } catch (e) { }
-
-  // Fallback: primera ACTIVA en la lista
-  if (!situacionActiva) {
-    situacionActiva = list.find((s: any) => s.estado === 'ACTIVA') || null;
+  } catch (e: any) {
+    _d += `,ERROR=${e.message}`;
   }
 
-  return res.json({ situaciones: list, situacion_activa: situacionActiva });
+  if (!situacionActiva) {
+    situacionActiva = list.find((s: any) => s.estado === 'ACTIVA') || null;
+    _d += `,fallback=${!!situacionActiva}`;
+  }
+
+  return res.json({ situaciones: list, situacion_activa: situacionActiva, _d });
 }
 
 export async function getMapaSituaciones(_req: Request, res: Response) {
