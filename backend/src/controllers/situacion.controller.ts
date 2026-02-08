@@ -333,13 +333,8 @@ export async function getSituacion(req: Request, res: Response) {
     const situacion = await SituacionModel.getById(situacionId);
     if (!situacion) return res.status(404).json({ error: 'No encontrada' });
 
-    // Detalles y multimedia tolerantes a fallos
-    let detalles = { vehiculos: [], autoridades: [], gruas: [], ajustadores: [] };
-    try {
-      detalles = await SituacionDetalleModel.getAllDetalles(situacionId);
-    } catch (e: any) {
-      console.warn('[getSituacion] Error en getAllDetalles:', e.message);
-    }
+    // Detalles y multimedia - cada uno independiente
+    const detalles = await SituacionDetalleModel.getAllDetalles(situacionId);
 
     let multimedia: any[] = [];
     try {
@@ -347,6 +342,8 @@ export async function getSituacion(req: Request, res: Response) {
     } catch (e: any) {
       console.warn('[getSituacion] Error en multimedia:', e.message);
     }
+
+    console.log(`[getSituacion] id=${situacionId} tipo_situacion_id=${situacion.tipo_situacion_id} vehiculos=${detalles.vehiculos.length} multimedia=${multimedia.length}`);
 
     const situacionResponse = {
       ...situacion,

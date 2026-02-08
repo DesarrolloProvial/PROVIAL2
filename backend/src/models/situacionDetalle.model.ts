@@ -281,8 +281,8 @@ export const SituacionDetalleModel = {
    * Obtener vehiculos de una situacion (JOIN con maestros + gruas + ajustadores + personas + dispositivos)
    */
   async getVehiculos(situacionId: number): Promise<any[]> {
-    // Query base que solo usa columnas/tablas que siempre existen
-    const queryBase = `
+    // Query simple sin subqueries que puedan fallar por tablas inexistentes
+    const querySimple = `
       SELECT
         sv.id,
         sv.situacion_id,
@@ -318,39 +318,7 @@ export const SituacionDetalleModel = {
         p.licencia_vencimiento,
         p.licencia_antiguedad,
         p.fecha_nacimiento as piloto_nacimiento,
-        p.etnia as piloto_etnia,
-
-        -- Gruas asignadas a este vehiculo
-        COALESCE(
-          (SELECT json_agg(json_build_object(
-            'id', vg.id,
-            'grua_id', vg.grua_id,
-            'datos', vg.datos,
-            'grua_placa', g.placa,
-            'grua_nombre', g.nombre,
-            'grua_empresa', g.empresa,
-            'grua_tipo', g.tipo_grua
-          ) ORDER BY vg.created_at)
-          FROM vehiculo_grua vg
-          INNER JOIN grua g ON vg.grua_id = g.id
-          WHERE vg.situacion_vehiculo_id = sv.id),
-          '[]'
-        ) as gruas,
-
-        -- Ajustadores asignados a este vehiculo
-        COALESCE(
-          (SELECT json_agg(json_build_object(
-            'id', va.id,
-            'aseguradora_id', va.aseguradora_id,
-            'datos', va.datos,
-            'aseguradora_nombre', a.nombre,
-            'aseguradora_empresa', a.empresa
-          ) ORDER BY va.created_at)
-          FROM vehiculo_aseguradora va
-          LEFT JOIN aseguradora a ON va.aseguradora_id = a.id
-          WHERE va.situacion_vehiculo_id = sv.id),
-          '[]'
-        ) as ajustadores
+        p.etnia as piloto_etnia
 
       FROM situacion_vehiculo sv
       INNER JOIN vehiculo v ON sv.vehiculo_id = v.id
@@ -361,7 +329,7 @@ export const SituacionDetalleModel = {
       ORDER BY sv.created_at
     `;
 
-    return db.manyOrNone(queryBase, [situacionId]);
+    return db.manyOrNone(querySimple, [situacionId]);
   },
 
   async deleteVehiculo(id: number): Promise<void> {
@@ -542,12 +510,23 @@ export const SituacionDetalleModel = {
   // ==========================================
 
   async getAllDetalles(situacionId: number): Promise<SituacionDetallesCompletos> {
-    const [vehiculos, autoridades, gruas, ajustadores] = await Promise.all([
-      this.getVehiculos(situacionId),
-      this.getAutoridades(situacionId),
-      this.getGruas(situacionId),
-      this.getAjustadores(situacionId),
-    ]);
+    // Cada query es independiente - si una falla no afecta a las demás
+    let vehiculos: any[] = [];
+    let autoridades: any[] = [];
+    let gruas: any[] = [];
+    let ajustadores: any[] = [];
+
+    try { vehiculos = await this.getVehiculos(situacionId); }
+    catch (e: any) { console.warn('[getAllDetalles] getVehiculos falló:', e.message); }
+
+    try { autoridades = await this.getAutoridades(situacionId); }
+    catch (e: any) { console.warn('[getAllDetalles] getAutoridades falló:', e.message); }
+
+    try { gruas = await this.getGruas(situacionId); }
+    catch (e: any) { console.warn('[getAllDetalles] getGruas falló:', e.message); }
+
+    try { ajustadores = await this.getAjustadores(situacionId); }
+    catch (e: any) { console.warn('[getAllDetalles] getAjustadores falló:', e.message); }
 
     return { vehiculos, autoridades, gruas, ajustadores };
   },
