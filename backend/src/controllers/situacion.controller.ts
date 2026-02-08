@@ -469,40 +469,53 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
 
   // 3. Consultar situacion_actual para ver si hay situación activa en esta unidad
   let situacionActiva: any = null;
-  let debugBackend: any = { unidadId };
+  let debugBackend: any = { paso: '0_inicio', unidadId };
   try {
     const cache = await db.oneOrNone(
-      'SELECT * FROM situacion_actual WHERE unidad_id = $1',
+      'SELECT situacion_id FROM situacion_actual WHERE unidad_id = $1',
       [unidadId]
     );
-    debugBackend.cache = cache || 'NULL_NO_HAY_FILA';
+    debugBackend.paso = '1_cache';
+    debugBackend.situacion_id = cache?.situacion_id || 'NO_ENCONTRADO';
 
     if (cache && cache.situacion_id) {
-      const situacionCompleta = await SituacionModel.getById(cache.situacion_id);
-      debugBackend.situacion_found = !!situacionCompleta;
-      debugBackend.situacion_estado = situacionCompleta?.estado;
+      debugBackend.paso = '2_buscando_situacion';
+      try {
+        const situacionCompleta = await SituacionModel.getById(cache.situacion_id);
+        debugBackend.paso = '3_getById_ok';
+        debugBackend.encontrada = !!situacionCompleta;
+        debugBackend.estado = situacionCompleta?.estado || 'NULL';
 
-      if (situacionCompleta) {
-        const detalles = await SituacionDetalleModel.getAllDetalles(cache.situacion_id);
-        const multimedia = await MultimediaModel.getBySituacionId(cache.situacion_id);
+        if (situacionCompleta) {
+          debugBackend.paso = '4_buscando_detalles';
+          const detalles = await SituacionDetalleModel.getAllDetalles(cache.situacion_id);
+          const multimedia = await MultimediaModel.getBySituacionId(cache.situacion_id);
+          debugBackend.paso = '5_todo_ok';
+          debugBackend.fotos = multimedia?.length || 0;
 
-        situacionActiva = {
-          ...situacionCompleta,
-          vehiculos_involucrados: detalles.vehiculos,
-          autoridades: detalles.autoridades,
-          gruas: detalles.gruas,
-          ajustadores: detalles.ajustadores,
-          multimedia
-        };
+          situacionActiva = {
+            ...situacionCompleta,
+            vehiculos_involucrados: detalles.vehiculos,
+            autoridades: detalles.autoridades,
+            gruas: detalles.gruas,
+            ajustadores: detalles.ajustadores,
+            multimedia
+          };
+        }
+      } catch (e2: any) {
+        debugBackend.paso = 'ERROR_getById';
+        debugBackend.error_getById = e2.message;
       }
     }
   } catch (e: any) {
-    debugBackend.error = e.message || String(e);
+    debugBackend.paso = 'ERROR_cache';
+    debugBackend.error_cache = e.message;
   }
 
-  // 4. Traer lista de situaciones de hoy para la bitácora
+  // 4. Traer lista de situaciones de hoy
   const list = await SituacionModel.getMiUnidadHoy(unidadId);
   debugBackend.situaciones_hoy = list.length;
+  debugBackend.activa_final = situacionActiva ? situacionActiva.id : 'NULL';
 
   return res.json({ situaciones: list, situacion_activa: situacionActiva, _debug: debugBackend });
 }
