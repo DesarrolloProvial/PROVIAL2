@@ -467,10 +467,10 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
 
   if (!unidadId) return res.json({ situaciones: [], situacion_activa: null });
 
-  // 3. Traer lista de situaciones de hoy (misma query que usa bitácora, ya funciona)
+  // 3. Traer lista de situaciones de hoy (bitácora)
   const list = await SituacionModel.getMiUnidadHoy(unidadId);
 
-  // 4. Buscar situación activa: consultar situacion_actual y encontrarla en la lista
+  // 4. Buscar situación activa desde situacion_actual
   let situacionActiva: any = null;
   try {
     const cache = await db.oneOrNone(
@@ -478,12 +478,38 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
       [unidadId]
     );
     if (cache && cache.situacion_id) {
-      // Buscar en la lista ya cargada (tiene multimedia incluida)
+      // Primero buscar en la lista (si es de hoy ya está ahí)
       situacionActiva = list.find((s: any) => s.id === cache.situacion_id) || null;
+
+      // Si no está en la lista (fue creada otro día), consultarla directo con la misma query que funciona
+      if (!situacionActiva) {
+        situacionActiva = await db.oneOrNone(`
+          SELECT s.*,
+            r.codigo as ruta_codigo,
+            r.nombre as ruta_nombre,
+            tsc.nombre as tipo_situacion_nombre,
+            tsc.categoria as tipo_situacion_categoria,
+            s.tipo_pavimento as material_via,
+            COALESCE(
+              (SELECT json_agg(json_build_object(
+                'id', sm.id, 'tipo', sm.tipo, 'orden', sm.orden,
+                'url', sm.url_original, 'thumbnail', sm.url_thumbnail
+              ) ORDER BY sm.tipo, sm.orden)
+              FROM situacion_multimedia sm WHERE sm.situacion_id = s.id),
+              '[]'
+            ) as multimedia,
+            (SELECT COUNT(*) FROM situacion_multimedia WHERE situacion_id = s.id AND tipo = 'FOTO') as total_fotos,
+            (SELECT COUNT(*) FROM situacion_multimedia WHERE situacion_id = s.id AND tipo = 'VIDEO') as total_videos
+          FROM situacion s
+          LEFT JOIN ruta r ON s.ruta_id = r.id
+          LEFT JOIN catalogo_tipo_situacion tsc ON s.tipo_situacion_id = tsc.id
+          WHERE s.id = $1
+        `, [cache.situacion_id]);
+      }
     }
   } catch (e) { }
 
-  // Fallback: si no encontró por cache, buscar la primera ACTIVA en la lista
+  // Fallback: primera ACTIVA en la lista
   if (!situacionActiva) {
     situacionActiva = list.find((s: any) => s.estado === 'ACTIVA') || null;
   }
