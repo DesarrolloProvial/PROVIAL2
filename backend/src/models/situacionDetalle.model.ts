@@ -357,23 +357,8 @@ export const SituacionDetalleModel = {
           '[]'
         ) as ajustadores,
 
-        -- Personas asociadas a este vehiculo
-        COALESCE(
-          (SELECT json_agg(json_build_object(
-            'id', pa.id,
-            'nombre', pa.nombre,
-            'dpi', pa.dpi,
-            'edad', pa.edad,
-            'genero', pa.genero,
-            'tipo_persona', pa.tipo_persona,
-            'estado', pa.estado,
-            'hospital_traslado', pa.hospital_traslado,
-            'descripcion_lesiones', pa.descripcion_lesiones
-          ) ORDER BY pa.id)
-          FROM persona_accidente pa
-          WHERE pa.situacion_vehiculo_id = sv.id),
-          '[]'
-        ) as personas,
+        -- Personas: vienen en datos_piloto->>'personas' (JSON)
+        COALESCE(sv.datos_piloto->'personas', '[]'::jsonb) as personas,
 
         -- Dispositivos de seguridad de este vehiculo
         COALESCE(
