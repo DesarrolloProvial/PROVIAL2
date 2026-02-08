@@ -333,8 +333,20 @@ export async function getSituacion(req: Request, res: Response) {
     const situacion = await SituacionModel.getById(situacionId);
     if (!situacion) return res.status(404).json({ error: 'No encontrada' });
 
-    const detalles = await SituacionDetalleModel.getAllDetalles(situacionId);
-    const multimedia = await MultimediaModel.getBySituacionId(situacionId);
+    // Detalles y multimedia tolerantes a fallos
+    let detalles = { vehiculos: [], autoridades: [], gruas: [], ajustadores: [] };
+    try {
+      detalles = await SituacionDetalleModel.getAllDetalles(situacionId);
+    } catch (e: any) {
+      console.warn('[getSituacion] Error en getAllDetalles:', e.message);
+    }
+
+    let multimedia: any[] = [];
+    try {
+      multimedia = await MultimediaModel.getBySituacionId(situacionId);
+    } catch (e: any) {
+      console.warn('[getSituacion] Error en multimedia:', e.message);
+    }
 
     const situacionResponse = {
       ...situacion,
@@ -368,7 +380,7 @@ export async function updateSituacion(req: Request, res: Response) {
       danios_materiales, danios_infraestructura, descripcion_danios_infra,
       obstruccion,
       tipo_hecho_id, tipo_asistencia_id, tipo_emergencia_id,
-      vehiculos_involucrados,
+      vehiculos_involucrados, vehiculos,
       // Víctimas (consolidado)
       heridos,
       fallecidos,
@@ -410,8 +422,9 @@ export async function updateSituacion(req: Request, res: Response) {
     await SituacionModel.update(situacionId, updateData);
 
     // Persistir vehiculos actualizados en tablas relacionales
-    if (vehiculos_involucrados && Array.isArray(vehiculos_involucrados)) {
-      for (const v of vehiculos_involucrados) {
+    const vehiculosData = vehiculos_involucrados || vehiculos;
+    if (vehiculosData && Array.isArray(vehiculosData)) {
+      for (const v of vehiculosData) {
         await SituacionDetalleModel.addVehiculo(situacionId, v);
       }
     }
@@ -465,26 +478,24 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
     } catch (e) { }
   }
 
-  if (!unidadId) return res.json({ situaciones: [], situacion_activa: null, _d: 'sin_unidad' });
+  if (!unidadId) return res.json({ situaciones: [], situacion_activa: null });
 
   // 3. Traer lista de situaciones de hoy (bitácora)
   const list = await SituacionModel.getMiUnidadHoy(unidadId);
 
   // 4. Buscar situación activa desde situacion_actual
   let situacionActiva: any = null;
-  let _d = `unidad=${unidadId},lista=${list.length}`;
   try {
     const cache = await db.oneOrNone(
       'SELECT situacion_id FROM situacion_actual WHERE unidad_id = $1',
       [unidadId]
     );
-    _d += `,cache_sid=${cache?.situacion_id || 'null'}`;
 
     if (cache && cache.situacion_id) {
       situacionActiva = list.find((s: any) => s.id === cache.situacion_id) || null;
-      _d += `,en_lista=${!!situacionActiva}`;
 
       if (!situacionActiva) {
+        // Situación activa no está en la lista de hoy (puede ser de otro día)
         situacionActiva = await db.oneOrNone(`
           SELECT s.*,
             r.codigo as ruta_codigo,
@@ -507,19 +518,18 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
           LEFT JOIN catalogo_tipo_situacion tsc ON s.tipo_situacion_id = tsc.id
           WHERE s.id = $1
         `, [cache.situacion_id]);
-        _d += `,query_directa=${situacionActiva ? 'id=' + situacionActiva.id : 'null'}`;
       }
     }
   } catch (e: any) {
-    _d += `,ERROR=${e.message}`;
+    console.warn('[getMiUnidadHoy] Error buscando situacion activa:', e.message);
   }
 
+  // Fallback: primera situación ACTIVA en la lista de hoy
   if (!situacionActiva) {
     situacionActiva = list.find((s: any) => s.estado === 'ACTIVA') || null;
-    _d += `,fallback=${!!situacionActiva}`;
   }
 
-  return res.json({ situaciones: list, situacion_activa: situacionActiva, _d });
+  return res.json({ situaciones: list, situacion_activa: situacionActiva });
 }
 
 export async function getMapaSituaciones(_req: Request, res: Response) {

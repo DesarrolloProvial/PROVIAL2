@@ -374,6 +374,7 @@ export function useDraftSituacion() {
         ruta_id: draftRutaId,
 
         // IDs de catálogos: nunca enviar "" (string vacío)
+        tipo_situacion_id: toIntOrNull(draft.tipo_situacion_id),
         tipo_hecho_id: toIntOrNull(draft.tipo_hecho_id),
         tipo_asistencia_id: toIntOrNull(draft.tipo_asistencia_id),
         tipo_emergencia_id: toIntOrNull(draft.tipo_emergencia_id),

@@ -78,7 +78,6 @@ interface SituacionesState {
   isLoading: boolean;
   error: string | null;
   lastUpdate: Date | null;
-  debugInfo: string | null;
 
   // Actions
   fetchMisSituacionesHoy: () => Promise<void>;
@@ -196,7 +195,6 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
   isLoading: false,
   error: null,
   lastUpdate: null,
-  debugInfo: null,
 
   // ========================================
   // FETCH MIS SITUACIONES HOY
@@ -217,14 +215,11 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
         || situaciones.find((s: SituacionCompleta) => s.estado === 'ACTIVA')
         || null;
 
-      const debug = `${response.data._d || 'no_d'} | activa: ${activa ? 'id=' + activa.id : 'NULL'}`;
-
       set({
         situacionesHoy: situaciones,
         situacionActiva: activa,
         isLoading: false,
         lastUpdate: new Date(),
-        debugInfo: debug,
       });
     } catch (error: any) {
       const errorMessage =
@@ -233,7 +228,6 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
       set({
         error: errorMessage,
         isLoading: false,
-        debugInfo: `ERROR: ${error.response?.status || 'network'} - ${errorMessage}`,
       });
 
       console.error('Error al obtener situaciones:', error);

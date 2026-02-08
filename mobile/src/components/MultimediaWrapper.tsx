@@ -37,7 +37,8 @@ export default function MultimediaWrapper({
                 tipoSituacion="GENERIC"
                 readOnly={true}
                 onMultimediaChange={handleMultimediaChange}
-                manualMode={true} // Nuevo prop
+                manualMode={true}
+                initialMedia={value || []}
             />
         );
     }
@@ -47,7 +48,8 @@ export default function MultimediaWrapper({
             draftUuid={TEMP_DRAFT_ID}
             tipoSituacion="GENERIC"
             onMultimediaChange={handleMultimediaChange}
-            manualMode={true} // Nuevo prop
+            manualMode={true}
+            initialMedia={value || []}
         />
     );
 }

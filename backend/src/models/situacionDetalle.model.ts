@@ -281,7 +281,8 @@ export const SituacionDetalleModel = {
    * Obtener vehiculos de una situacion (JOIN con maestros + gruas + ajustadores + personas + dispositivos)
    */
   async getVehiculos(situacionId: number): Promise<any[]> {
-    const query = `
+    // Query base que solo usa columnas/tablas que siempre existen
+    const queryBase = `
       SELECT
         sv.id,
         sv.situacion_id,
@@ -295,9 +296,6 @@ export const SituacionDetalleModel = {
         sv.sancion,
         sv.sancion_detalle,
         sv.documentos_consignados,
-        sv.datos_piloto,
-        sv.custodia_estado,
-        sv.custodia_datos,
         sv.created_at,
 
         -- Vehiculo master
@@ -321,9 +319,6 @@ export const SituacionDetalleModel = {
         p.licencia_antiguedad,
         p.fecha_nacimiento as piloto_nacimiento,
         p.etnia as piloto_etnia,
-
-        -- Tarjeta de circulacion (datos en vehiculo master)
-        v.placa as tarjeta_circulacion,
 
         -- Gruas asignadas a este vehiculo
         COALESCE(
@@ -355,24 +350,7 @@ export const SituacionDetalleModel = {
           LEFT JOIN aseguradora a ON va.aseguradora_id = a.id
           WHERE va.situacion_vehiculo_id = sv.id),
           '[]'
-        ) as ajustadores,
-
-        -- Personas: vienen en datos_piloto->>'personas' (JSON)
-        COALESCE(sv.datos_piloto->'personas', '[]'::jsonb) as personas,
-
-        -- Dispositivos de seguridad de este vehiculo
-        COALESCE(
-          (SELECT json_agg(json_build_object(
-            'id', svd.id,
-            'dispositivo_id', svd.dispositivo_seguridad_id,
-            'nombre', ds.nombre,
-            'estado', svd.estado
-          ) ORDER BY ds.nombre)
-          FROM situacion_vehiculo_dispositivo svd
-          INNER JOIN dispositivo_seguridad ds ON svd.dispositivo_seguridad_id = ds.id
-          WHERE svd.situacion_vehiculo_id = sv.id),
-          '[]'
-        ) as dispositivos
+        ) as ajustadores
 
       FROM situacion_vehiculo sv
       INNER JOIN vehiculo v ON sv.vehiculo_id = v.id
@@ -383,7 +361,7 @@ export const SituacionDetalleModel = {
       ORDER BY sv.created_at
     `;
 
-    return db.manyOrNone(query, [situacionId]);
+    return db.manyOrNone(queryBase, [situacionId]);
   },
 
   async deleteVehiculo(id: number): Promise<void> {

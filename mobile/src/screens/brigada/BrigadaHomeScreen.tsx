@@ -19,7 +19,7 @@ import RutaSelector from '../../components/RutaSelector';
 export default function BrigadaHomeScreen() {
   const navigation = useNavigation();
   const { usuario, asignacion, salidaActiva, salidaHoy, ingresoActivo, verificarAcceso, refreshEstadoBrigada } = useAuthStore();
-  const { situacionActiva, fetchMisSituacionesHoy, cerrarSituacion, isLoading, debugInfo } = useSituacionesStore();
+  const { situacionActiva, fetchMisSituacionesHoy, cerrarSituacion, isLoading } = useSituacionesStore();
 
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -689,7 +689,7 @@ export default function BrigadaHomeScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Situación Activa (id: {situacionActiva.id || situacionActiva.situacion_id})</Text>
+              <Text style={styles.cardTitle}>Situación Activa</Text>
               <View style={[
                 styles.tipoBadge,
                 { backgroundColor: getTipoSituacionColor(situacionActiva.tipo_situacion) }
@@ -698,6 +698,12 @@ export default function BrigadaHomeScreen() {
               </View>
             </View>
             <View style={styles.cardContent}>
+              {situacionActiva.tipo_situacion_nombre && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Tipo:</Text>
+                  <Text style={styles.infoValue}>{situacionActiva.tipo_situacion_nombre}</Text>
+                </View>
+              )}
               {situacionActiva.numero_situacion && (
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>No. Situación:</Text>
@@ -749,12 +755,9 @@ export default function BrigadaHomeScreen() {
             </View>
           </TouchableOpacity>
         ) : (
-          <View style={[styles.card, { backgroundColor: '#fff3cd', borderLeftColor: '#ffc107', borderLeftWidth: 4 }]}>
-            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 8 }}>
+          <View style={styles.card}>
+            <Text style={styles.noSituacionText}>
               No hay situación activa
-            </Text>
-            <Text style={{ fontSize: 14, color: '#555' }}>
-              {debugInfo || 'Cargando...'}
             </Text>
           </View>
         )}

@@ -118,6 +118,19 @@ export default function SituacionDinamicaScreen() {
             formValues.tipo_emergencia_id = data.tipo_emergencia_id;
         }
 
+        // tipo_situacion_id (en DB es un campo único que almacena tipo_hecho/asistencia/emergencia)
+        // Mapear al campo específico del formulario según el tipo de situación
+        if (data.tipo_situacion_id && !formValues.tipo_hecho_id && !formValues.tipo_asistencia_id && !formValues.tipo_emergencia_id) {
+            const tipo = data.tipo_situacion || '';
+            if (tipo === 'INCIDENTE' || tipo === 'HECHO_TRANSITO') {
+                formValues.tipo_hecho_id = Number(data.tipo_situacion_id);
+            } else if (tipo === 'ASISTENCIA_VEHICULAR') {
+                formValues.tipo_asistencia_id = Number(data.tipo_situacion_id);
+            } else if (tipo === 'EMERGENCIA') {
+                formValues.tipo_emergencia_id = Number(data.tipo_situacion_id);
+            }
+        }
+
         // === COORDENADAS (DB planos -> Form objeto GPS) ===
         if (data.latitud && data.longitud) {
             formValues.coordenadas = {
@@ -148,6 +161,16 @@ export default function SituacionDinamicaScreen() {
             formValues.municipio_id = Number(data.municipio_id);
         }
 
+        // === GRUPO ===
+        if (data.grupo !== undefined && data.grupo !== null) {
+            formValues.grupo = Number(data.grupo);
+        }
+
+        // === TIPO_SITUACION_ID (catálogo) ===
+        if (data.tipo_situacion_id !== undefined && data.tipo_situacion_id !== null) {
+            formValues.tipo_situacion_id = Number(data.tipo_situacion_id);
+        }
+
         // === DETALLES (vienen organizados en objeto 'detalles') ===
         if (data.detalles) {
             // Datos específicos guardados en 'otros' (area, material, etc.)
@@ -155,7 +178,6 @@ export default function SituacionDinamicaScreen() {
                 const otros = data.detalles.otros;
                 if (otros.area) formValues.area = otros.area;
                 if (otros.material_via) formValues.material_via = otros.material_via;
-                // NOTE: These fields are now _id suffixed, but detalles.otros might have old format
                 if (otros.tipo_asistencia_id) formValues.tipo_asistencia_id = otros.tipo_asistencia_id;
                 if (otros.tipo_hecho_id) formValues.tipo_hecho_id = otros.tipo_hecho_id;
                 if (otros.tipo_emergencia_id) formValues.tipo_emergencia_id = otros.tipo_emergencia_id;
@@ -185,6 +207,30 @@ export default function SituacionDinamicaScreen() {
             if (data.detalles.subtipo) {
                 formValues.tipoIncidente = data.detalles.subtipo.subtipo;
             }
+        }
+
+        // === FORMATO PLANO del API getSituacion (vehiculos_involucrados, autoridades, multimedia) ===
+        if (data.vehiculos_involucrados && Array.isArray(data.vehiculos_involucrados) && data.vehiculos_involucrados.length > 0) {
+            formValues.vehiculos = data.vehiculos_involucrados;
+        }
+        if (data.autoridades && Array.isArray(data.autoridades) && data.autoridades.length > 0) {
+            formValues.autoridadesSeleccionadas = data.autoridades;
+        }
+        if (data.gruas && Array.isArray(data.gruas) && data.gruas.length > 0) {
+            formValues.gruas = data.gruas;
+        }
+        if (data.ajustadores && Array.isArray(data.ajustadores) && data.ajustadores.length > 0) {
+            formValues.ajustadores = data.ajustadores;
+        }
+        // Multimedia existente del servidor -> convertir a MultimediaRef
+        if (data.multimedia && Array.isArray(data.multimedia) && data.multimedia.length > 0) {
+            formValues.multimedia = data.multimedia.map((m: any) => ({
+                tipo: m.tipo,
+                uri: m.url || m.url_original || '',
+                orden: m.orden || 1,
+                id: m.id,
+                isExisting: true,
+            }));
         }
 
         console.log('[TRANSFORM] Valores transformados:', JSON.stringify(formValues, null, 2));
@@ -494,10 +540,11 @@ export default function SituacionDinamicaScreen() {
 
                 await api.patch(`/situaciones/${situacionId}`, payload);
 
-                // === SUBIR MULTIMEDIA (si hay nuevos archivos) ===
-                if (formData.multimedia && Array.isArray(formData.multimedia) && formData.multimedia.length > 0) {
-                    console.log(`📸 [EDIT] Subiendo ${formData.multimedia.length} archivos multimedia...`);
-                    await subirMultimediaEdicion(situacionId, formData.multimedia);
+                // === SUBIR MULTIMEDIA (solo archivos nuevos, no re-subir existentes) ===
+                const nuevaMultimedia = (formData.multimedia || []).filter((m: any) => !m.isExisting);
+                if (nuevaMultimedia.length > 0) {
+                    console.log(`📸 [EDIT] Subiendo ${nuevaMultimedia.length} archivos nuevos...`);
+                    await subirMultimediaEdicion(situacionId, nuevaMultimedia);
                 }
 
                 Alert.alert(
