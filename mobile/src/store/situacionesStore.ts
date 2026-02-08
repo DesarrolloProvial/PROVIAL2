@@ -217,7 +217,7 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
         || situaciones.find((s: SituacionCompleta) => s.estado === 'ACTIVA')
         || null;
 
-      const debug = `unidad_enviada: ${salidaActiva?.unidad_id || 'ninguna'} | situaciones: ${situaciones.length} | activa_backend: ${response.data.situacion_activa ? 'id=' + response.data.situacion_activa.id + ' estado=' + response.data.situacion_activa.estado : 'null'} | activa_final: ${activa ? 'id=' + activa.id : 'null'}`;
+      const debug = `unidad: ${salidaActiva?.unidad_id || 'ninguna'} | _debug: ${JSON.stringify(response.data._debug || 'no_debug')}`;
 
       set({
         situacionesHoy: situaciones,

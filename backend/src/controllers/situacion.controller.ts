@@ -469,23 +469,22 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
 
   // 3. Consultar situacion_actual para ver si hay situación activa en esta unidad
   let situacionActiva: any = null;
+  let debugBackend: any = { unidadId };
   try {
     const cache = await db.oneOrNone(
-      'SELECT situacion_id FROM situacion_actual WHERE unidad_id = $1',
+      'SELECT * FROM situacion_actual WHERE unidad_id = $1',
       [unidadId]
     );
-    console.log(`[MI_UNIDAD_HOY] situacion_actual cache for unidad ${unidadId}:`, cache);
+    debugBackend.cache = cache || 'NULL_NO_HAY_FILA';
 
     if (cache && cache.situacion_id) {
-      // Obtener la situación COMPLETA con todos los datos
       const situacionCompleta = await SituacionModel.getById(cache.situacion_id);
-      console.log(`[MI_UNIDAD_HOY] situacion completa id=${cache.situacion_id}, found=${!!situacionCompleta}, estado=${situacionCompleta?.estado}`);
+      debugBackend.situacion_found = !!situacionCompleta;
+      debugBackend.situacion_estado = situacionCompleta?.estado;
 
       if (situacionCompleta) {
-        // Traer detalles: vehículos, autoridades, multimedia
         const detalles = await SituacionDetalleModel.getAllDetalles(cache.situacion_id);
         const multimedia = await MultimediaModel.getBySituacionId(cache.situacion_id);
-        console.log(`[MI_UNIDAD_HOY] detalles: vehiculos=${detalles.vehiculos?.length}, multimedia=${multimedia?.length}`);
 
         situacionActiva = {
           ...situacionCompleta,
@@ -497,13 +496,15 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
         };
       }
     }
-  } catch (e) { console.warn('[MI_UNIDAD_HOY] situacion_actual lookup failed:', e); }
+  } catch (e: any) {
+    debugBackend.error = e.message || String(e);
+  }
 
   // 4. Traer lista de situaciones de hoy para la bitácora
   const list = await SituacionModel.getMiUnidadHoy(unidadId);
-  console.log(`[MI_UNIDAD_HOY] situaciones hoy: ${list.length}, situacionActiva: ${situacionActiva ? situacionActiva.id : 'null'}`);
+  debugBackend.situaciones_hoy = list.length;
 
-  return res.json({ situaciones: list, situacion_activa: situacionActiva });
+  return res.json({ situaciones: list, situacion_activa: situacionActiva, _debug: debugBackend });
 }
 
 export async function getMapaSituaciones(_req: Request, res: Response) {
