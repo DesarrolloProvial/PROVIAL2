@@ -268,7 +268,12 @@ export default function SituacionDinamicaScreen() {
                         const response = await api.get(`/situaciones/${situacionId}`);
                         if (response.data?.situacion) {
                             datosCompletos = response.data.situacion;
-                            console.log('[SITUACION] Datos completos de API:', JSON.stringify(datosCompletos, null, 2));
+                            // Debug: mostrar qué vino del API
+                            const dbg = datosCompletos._debug_edit;
+                            if (dbg) {
+                                console.log(`[EDIT-DEBUG] tipo_situacion_id=${dbg.tipo_situacion_id}, vehiculos=${dbg.vehiculos_count}, multimedia=${dbg.multimedia_count}`);
+                                Alert.alert('Debug API', `tipo_sit_id: ${dbg.tipo_situacion_id}\nvehiculos: ${dbg.vehiculos_count}\nmultimedia: ${dbg.multimedia_count}`);
+                            }
                         }
                     } catch (apiError) {
                         console.warn('[SITUACION] No se pudieron cargar detalles de API, usando datos locales:', apiError);

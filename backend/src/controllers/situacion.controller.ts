@@ -351,7 +351,12 @@ export async function getSituacion(req: Request, res: Response) {
       autoridades: detalles.autoridades,
       gruas: detalles.gruas,
       ajustadores: detalles.ajustadores,
-      multimedia
+      multimedia,
+      _debug_edit: {
+        tipo_situacion_id: situacion.tipo_situacion_id,
+        vehiculos_count: detalles.vehiculos.length,
+        multimedia_count: multimedia.length,
+      }
     };
 
     return res.json({ situacion: situacionResponse });
