@@ -86,20 +86,27 @@ export default function SelectField({
         loadOptions();
     }, [options, departamentoId]);
 
-    // Después de cargar opciones: si el valor fue borrado por el Picker, restaurarlo
+    // Diagnóstico: log cuando cambia el valor o las opciones
+    useEffect(() => {
+        if (resolvedOptions.length > 0 || value != null) {
+            const optionValues = resolvedOptions.map(o => `${o.value}(${typeof o.value})`).join(',');
+            console.log(`[SelectField:${label}] value=${value} (${typeof value}) | preserved=${preservedValueRef.current} | options=[${optionValues}] | loading=${loading}`);
+        }
+    }, [value, resolvedOptions.length, loading]);
+
+    // Después de cargar opciones: si el valor fue borrado, restaurarlo
     useEffect(() => {
         if (!loading && resolvedOptions.length > 0 && preservedValueRef.current != null && preservedValueRef.current !== '') {
             const currentIsEmpty = value === null || value === undefined || value === '';
             if (currentIsEmpty) {
-                // El Picker borró el valor - restaurar si hay match en opciones
                 const match = resolvedOptions.some(o => String(o.value) === String(preservedValueRef.current));
                 if (match) {
-                    console.log('[SelectField] Restaurando valor preservado:', preservedValueRef.current);
+                    console.log(`[SelectField:${label}] Restaurando valor preservado:`, preservedValueRef.current);
                     onChange(preservedValueRef.current);
                 }
             }
         }
-    }, [loading, resolvedOptions.length]);
+    }, [loading, resolvedOptions.length, value]);
 
     // Renderizado para selección múltiple (simplificado por ahora)
     if (multiple) {
@@ -149,7 +156,22 @@ export default function SelectField({
                 ) : (
                     <Picker
                         selectedValue={value}
-                        onValueChange={onChange}
+                        onValueChange={(v) => {
+                            // Si el Picker intenta poner null pero tenemos un valor preservado
+                            // que coincide con una opción, restaurar en vez de borrar
+                            if (v === null && preservedValueRef.current != null && preservedValueRef.current !== '') {
+                                const match = resolvedOptions.some(o => String(o.value) === String(preservedValueRef.current));
+                                if (match) {
+                                    onChange(preservedValueRef.current);
+                                    return;
+                                }
+                            }
+                            onChange(v);
+                            // Actualizar el ref si el usuario selecciona algo válido
+                            if (v !== null && v !== undefined && v !== '') {
+                                preservedValueRef.current = v;
+                            }
+                        }}
                         enabled={!disabled}
                         style={styles.picker}
                     >
