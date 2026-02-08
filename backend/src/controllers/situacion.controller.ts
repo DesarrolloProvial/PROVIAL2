@@ -334,7 +334,7 @@ export async function getSituacion(req: Request, res: Response) {
     if (!situacion) return res.status(404).json({ error: 'No encontrada' });
 
     // Detalles y multimedia tolerantes a fallos
-    let detalles = { vehiculos: [], autoridades: [], gruas: [], ajustadores: [] };
+    let detalles: any = { vehiculos: [], autoridades: [], gruas: [], ajustadores: [] };
     try {
       detalles = await SituacionDetalleModel.getAllDetalles(situacionId);
     } catch (e: any) {
