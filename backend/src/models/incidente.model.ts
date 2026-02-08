@@ -621,12 +621,11 @@ export const IncidenteModel = {
         p.etnia as piloto_etnia,
 
         -- Tarjeta de circulación
-        tc.numero_tc as tarjeta_circulacion
+        v.placa as tarjeta_circulacion
 
       FROM incidente_vehiculo iv
       INNER JOIN vehiculo v ON iv.vehiculo_id = v.id
       LEFT JOIN piloto p ON iv.piloto_id = p.id
-      LEFT JOIN tarjeta_circulacion tc ON tc.vehiculo_id = v.id
       WHERE iv.incidente_id = $1
       ORDER BY iv.created_at
     `;
