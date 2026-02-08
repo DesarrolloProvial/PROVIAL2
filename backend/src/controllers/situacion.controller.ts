@@ -439,32 +439,32 @@ export async function listSituaciones(req: Request, res: Response) {
 
 export async function getMiUnidadHoy(req: Request, res: Response) {
   const userId = req.user!.userId;
-  console.log(`[MI_UNIDAD_HOY] userId=${userId}, rol=${req.user!.rol}`);
 
-  // 1. Buscar unidad del usuario desde brigada_unidad
-  let unidadId: number | null = null;
-  try {
-    const bu = await db.oneOrNone(
-      'SELECT unidad_id FROM brigada_unidad WHERE brigada_id = $1 AND activo = true ORDER BY created_at DESC LIMIT 1',
-      [userId]
-    );
-    console.log(`[MI_UNIDAD_HOY] brigada_unidad result:`, bu);
-    if (bu) unidadId = bu.unidad_id;
-  } catch (e) { console.warn('[MI_UNIDAD_HOY] brigada_unidad lookup failed:', e); }
+  // 1. Si el mobile envía unidad_id como query param, usar directamente
+  let unidadId: number | null = req.query.unidad_id ? Number(req.query.unidad_id) : null;
 
-  // 2. Fallback: buscar por situaciones creadas hoy por este usuario
+  // 2. Buscar en brigada_unidad
+  if (!unidadId) {
+    try {
+      const bu = await db.oneOrNone(
+        'SELECT unidad_id FROM brigada_unidad WHERE brigada_id = $1 AND activo = true ORDER BY created_at DESC LIMIT 1',
+        [userId]
+      );
+      if (bu) unidadId = bu.unidad_id;
+    } catch (e) { }
+  }
+
+  // 3. Fallback: última situación creada por este usuario (sin filtro de fecha)
   if (!unidadId) {
     try {
       const s = await db.oneOrNone(
-        'SELECT unidad_id FROM situacion WHERE creado_por = $1 AND created_at >= CURRENT_DATE ORDER BY created_at DESC LIMIT 1',
+        'SELECT unidad_id FROM situacion WHERE creado_por = $1 ORDER BY created_at DESC LIMIT 1',
         [userId]
       );
-      console.log(`[MI_UNIDAD_HOY] situacion fallback result:`, s);
       if (s) unidadId = s.unidad_id;
-    } catch (e) { console.warn('[MI_UNIDAD_HOY] situacion fallback failed:', e); }
+    } catch (e) { }
   }
 
-  console.log(`[MI_UNIDAD_HOY] unidadId final=${unidadId}`);
   if (!unidadId) return res.json({ situaciones: [], situacion_activa: null });
 
   // 3. Consultar situacion_actual para ver si hay situación activa en esta unidad

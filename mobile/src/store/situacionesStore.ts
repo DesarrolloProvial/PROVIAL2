@@ -205,7 +205,10 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await api.get('/situaciones/mi-unidad/hoy');
+      // Importar salidaActiva para enviar unidad_id
+      const { salidaActiva } = require('./authStore').useAuthStore.getState();
+      const unidadParam = salidaActiva?.unidad_id ? `?unidad_id=${salidaActiva.unidad_id}` : '';
+      const response = await api.get(`/situaciones/mi-unidad/hoy${unidadParam}`);
       const situaciones = response.data.situaciones || [];
 
       // Usar situacion_activa del backend (viene completa con multimedia, vehículos, etc.)
@@ -214,7 +217,7 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
         || situaciones.find((s: SituacionCompleta) => s.estado === 'ACTIVA')
         || null;
 
-      const debug = `resp keys: ${Object.keys(response.data).join(',')} | situaciones: ${situaciones.length} | activa_backend: ${response.data.situacion_activa ? 'id=' + response.data.situacion_activa.id + ' estado=' + response.data.situacion_activa.estado : 'null'} | activa_final: ${activa ? 'id=' + activa.id : 'null'}`;
+      const debug = `unidad_enviada: ${salidaActiva?.unidad_id || 'ninguna'} | situaciones: ${situaciones.length} | activa_backend: ${response.data.situacion_activa ? 'id=' + response.data.situacion_activa.id + ' estado=' + response.data.situacion_activa.estado : 'null'} | activa_final: ${activa ? 'id=' + activa.id : 'null'}`;
 
       set({
         situacionesHoy: situaciones,
