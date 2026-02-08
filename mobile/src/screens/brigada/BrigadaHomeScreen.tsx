@@ -19,7 +19,7 @@ import RutaSelector from '../../components/RutaSelector';
 export default function BrigadaHomeScreen() {
   const navigation = useNavigation();
   const { usuario, asignacion, salidaActiva, salidaHoy, ingresoActivo, verificarAcceso, refreshEstadoBrigada } = useAuthStore();
-  const { situacionActiva, fetchMisSituacionesHoy, cerrarSituacion, isLoading } = useSituacionesStore();
+  const { situacionActiva, fetchMisSituacionesHoy, cerrarSituacion, isLoading, debugInfo } = useSituacionesStore();
 
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -689,7 +689,7 @@ export default function BrigadaHomeScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Situación Activa</Text>
+              <Text style={styles.cardTitle}>Situación Activa (id: {situacionActiva.id || situacionActiva.situacion_id})</Text>
               <View style={[
                 styles.tipoBadge,
                 { backgroundColor: getTipoSituacionColor(situacionActiva.tipo_situacion) }
@@ -753,6 +753,11 @@ export default function BrigadaHomeScreen() {
             <Text style={styles.noSituacionText}>
               No hay situación activa
             </Text>
+            {debugInfo && (
+              <Text style={{ fontSize: 10, color: '#999', marginTop: 8 }}>
+                DEBUG: {debugInfo}
+              </Text>
+            )}
           </View>
         )}
 
