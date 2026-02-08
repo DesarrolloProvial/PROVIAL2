@@ -281,55 +281,59 @@ export const SituacionDetalleModel = {
    * Obtener vehiculos de una situacion (JOIN con maestros + gruas + ajustadores + personas + dispositivos)
    */
   async getVehiculos(situacionId: number): Promise<any[]> {
-    // Query simple sin subqueries que puedan fallar por tablas inexistentes
-    const querySimple = `
-      SELECT
-        sv.id,
-        sv.situacion_id,
-        sv.estado_piloto,
-        sv.numero_poliza,
-        sv.personas_asistidas,
-        sv.heridos_en_vehiculo,
-        sv.fallecidos_en_vehiculo,
-        sv.danos_estimados,
-        sv.observaciones,
-        sv.sancion,
-        sv.sancion_detalle,
-        sv.documentos_consignados,
-        sv.created_at,
-
-        -- Vehiculo master
-        v.id as vehiculo_id,
-        v.placa,
-        v.tipo_vehiculo_id,
-        v.marca_id,
-        v.color,
-        v.es_extranjero,
-        v.cargado,
-        v.tipo_carga,
-        tv.nombre as tipo_vehiculo_nombre,
-        mv.nombre as marca_nombre,
-
-        -- Piloto master
-        p.id as piloto_id,
-        p.nombre as nombre_piloto,
-        p.licencia_numero,
-        p.licencia_tipo,
-        p.licencia_vencimiento,
-        p.licencia_antiguedad,
-        p.fecha_nacimiento as piloto_nacimiento,
-        p.etnia as piloto_etnia
-
-      FROM situacion_vehiculo sv
-      INNER JOIN vehiculo v ON sv.vehiculo_id = v.id
-      LEFT JOIN tipo_vehiculo tv ON v.tipo_vehiculo_id = tv.id
-      LEFT JOIN marca_vehiculo mv ON v.marca_id = mv.id
-      LEFT JOIN piloto p ON sv.piloto_id = p.id
-      WHERE sv.situacion_id = $1
-      ORDER BY sv.created_at
-    `;
-
-    return db.manyOrNone(querySimple, [situacionId]);
+    // Intentar query con tarjeta_circulacion, fallback sin ella
+    try {
+      const query = `
+        SELECT
+          sv.id, sv.situacion_id, sv.estado_piloto, sv.numero_poliza,
+          sv.personas_asistidas, sv.heridos_en_vehiculo, sv.fallecidos_en_vehiculo,
+          sv.danos_estimados, sv.observaciones, sv.sancion, sv.sancion_detalle,
+          sv.documentos_consignados, sv.created_at,
+          v.id as vehiculo_id, v.placa, v.tipo_vehiculo_id, v.marca_id,
+          v.color, v.es_extranjero, v.cargado, v.tipo_carga,
+          tv.nombre as tipo_vehiculo_nombre, tv.nombre as tipo_vehiculo,
+          mv.nombre as marca_nombre, mv.nombre as marca,
+          p.id as piloto_id, p.nombre as nombre_piloto, p.licencia_numero,
+          p.licencia_tipo, p.licencia_vencimiento, p.licencia_antiguedad,
+          p.fecha_nacimiento as piloto_nacimiento, p.etnia as piloto_etnia,
+          tc.numero as tarjeta_circulacion, tc.nit,
+          tc.nombre_propietario, tc.direccion_propietario, tc.modelo as anio
+        FROM situacion_vehiculo sv
+        INNER JOIN vehiculo v ON sv.vehiculo_id = v.id
+        LEFT JOIN tipo_vehiculo tv ON v.tipo_vehiculo_id = tv.id
+        LEFT JOIN marca_vehiculo mv ON v.marca_id = mv.id
+        LEFT JOIN piloto p ON sv.piloto_id = p.id
+        LEFT JOIN tarjeta_circulacion tc ON tc.vehiculo_id = v.id
+        WHERE sv.situacion_id = $1
+        ORDER BY sv.created_at
+      `;
+      return await db.manyOrNone(query, [situacionId]);
+    } catch (e: any) {
+      console.warn('[getVehiculos] Query con TC falló, intentando sin TC:', e.message);
+      // Fallback sin tarjeta_circulacion
+      const querySimple = `
+        SELECT
+          sv.id, sv.situacion_id, sv.estado_piloto, sv.numero_poliza,
+          sv.personas_asistidas, sv.heridos_en_vehiculo, sv.fallecidos_en_vehiculo,
+          sv.danos_estimados, sv.observaciones, sv.sancion, sv.sancion_detalle,
+          sv.documentos_consignados, sv.created_at,
+          v.id as vehiculo_id, v.placa, v.tipo_vehiculo_id, v.marca_id,
+          v.color, v.es_extranjero, v.cargado, v.tipo_carga,
+          tv.nombre as tipo_vehiculo_nombre, tv.nombre as tipo_vehiculo,
+          mv.nombre as marca_nombre, mv.nombre as marca,
+          p.id as piloto_id, p.nombre as nombre_piloto, p.licencia_numero,
+          p.licencia_tipo, p.licencia_vencimiento, p.licencia_antiguedad,
+          p.fecha_nacimiento as piloto_nacimiento, p.etnia as piloto_etnia
+        FROM situacion_vehiculo sv
+        INNER JOIN vehiculo v ON sv.vehiculo_id = v.id
+        LEFT JOIN tipo_vehiculo tv ON v.tipo_vehiculo_id = tv.id
+        LEFT JOIN marca_vehiculo mv ON v.marca_id = mv.id
+        LEFT JOIN piloto p ON sv.piloto_id = p.id
+        WHERE sv.situacion_id = $1
+        ORDER BY sv.created_at
+      `;
+      return db.manyOrNone(querySimple, [situacionId]);
+    }
   },
 
   async deleteVehiculo(id: number): Promise<void> {
