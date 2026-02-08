@@ -467,57 +467,28 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
 
   if (!unidadId) return res.json({ situaciones: [], situacion_activa: null });
 
-  // 3. Consultar situacion_actual para ver si hay situación activa en esta unidad
+  // 3. Traer lista de situaciones de hoy (misma query que usa bitácora, ya funciona)
+  const list = await SituacionModel.getMiUnidadHoy(unidadId);
+
+  // 4. Buscar situación activa: consultar situacion_actual y encontrarla en la lista
   let situacionActiva: any = null;
-  let debugBackend: any = { paso: '0_inicio', unidadId };
   try {
     const cache = await db.oneOrNone(
       'SELECT situacion_id FROM situacion_actual WHERE unidad_id = $1',
       [unidadId]
     );
-    debugBackend.paso = '1_cache';
-    debugBackend.situacion_id = cache?.situacion_id || 'NO_ENCONTRADO';
-
     if (cache && cache.situacion_id) {
-      debugBackend.paso = '2_buscando_situacion';
-      try {
-        const situacionCompleta = await SituacionModel.getById(cache.situacion_id);
-        debugBackend.paso = '3_getById_ok';
-        debugBackend.encontrada = !!situacionCompleta;
-        debugBackend.estado = situacionCompleta?.estado || 'NULL';
-
-        if (situacionCompleta) {
-          debugBackend.paso = '4_buscando_detalles';
-          const detalles = await SituacionDetalleModel.getAllDetalles(cache.situacion_id);
-          const multimedia = await MultimediaModel.getBySituacionId(cache.situacion_id);
-          debugBackend.paso = '5_todo_ok';
-          debugBackend.fotos = multimedia?.length || 0;
-
-          situacionActiva = {
-            ...situacionCompleta,
-            vehiculos_involucrados: detalles.vehiculos,
-            autoridades: detalles.autoridades,
-            gruas: detalles.gruas,
-            ajustadores: detalles.ajustadores,
-            multimedia
-          };
-        }
-      } catch (e2: any) {
-        debugBackend.paso = 'ERROR_getById';
-        debugBackend.error_getById = e2.message;
-      }
+      // Buscar en la lista ya cargada (tiene multimedia incluida)
+      situacionActiva = list.find((s: any) => s.id === cache.situacion_id) || null;
     }
-  } catch (e: any) {
-    debugBackend.paso = 'ERROR_cache';
-    debugBackend.error_cache = e.message;
+  } catch (e) { }
+
+  // Fallback: si no encontró por cache, buscar la primera ACTIVA en la lista
+  if (!situacionActiva) {
+    situacionActiva = list.find((s: any) => s.estado === 'ACTIVA') || null;
   }
 
-  // 4. Traer lista de situaciones de hoy
-  const list = await SituacionModel.getMiUnidadHoy(unidadId);
-  debugBackend.situaciones_hoy = list.length;
-  debugBackend.activa_final = situacionActiva ? situacionActiva.id : 'NULL';
-
-  return res.json({ situaciones: list, situacion_activa: situacionActiva, _debug: debugBackend });
+  return res.json({ situaciones: list, situacion_activa: situacionActiva });
 }
 
 export async function getMapaSituaciones(_req: Request, res: Response) {
