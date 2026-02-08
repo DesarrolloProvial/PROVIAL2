@@ -226,11 +226,38 @@ export default function SituacionDinamicaScreen() {
         if (data.multimedia && Array.isArray(data.multimedia) && data.multimedia.length > 0) {
             formValues.multimedia = data.multimedia.map((m: any) => ({
                 tipo: m.tipo,
-                uri: m.url || m.url_original || '',
+                uri: m.url_original || m.url || m.thumbnail || '',
                 orden: m.orden || 1,
                 id: m.id,
                 isExisting: true,
             }));
+            console.log('[TRANSFORM] Multimedia existente:', formValues.multimedia.length, 'archivos');
+        }
+
+        // === MAPEAR campos de vehiculos del API al formato del form ===
+        if (formValues.vehiculos && Array.isArray(formValues.vehiculos)) {
+            formValues.vehiculos = formValues.vehiculos.map((v: any) => ({
+                ...v,
+                // Selects usan nombre (string), no ID
+                tipo_vehiculo: v.tipo_vehiculo || v.tipo_vehiculo_nombre || '',
+                marca: v.marca || v.marca_nombre || '',
+                // Piloto
+                nombre_piloto: v.nombre_piloto || '',
+                fecha_nacimiento_piloto: v.piloto_nacimiento || v.fecha_nacimiento_piloto || null,
+                etnia_piloto: v.piloto_etnia || v.etnia_piloto || '',
+            }));
+            console.log('[TRANSFORM] Vehiculos mapeados:', formValues.vehiculos.length);
+        }
+
+        // Logs para debug de selects
+        console.log('[TRANSFORM] tipo_hecho_id:', formValues.tipo_hecho_id);
+        console.log('[TRANSFORM] tipo_asistencia_id:', formValues.tipo_asistencia_id);
+        console.log('[TRANSFORM] tipo_emergencia_id:', formValues.tipo_emergencia_id);
+        console.log('[TRANSFORM] tipo_situacion_id (DB):', data.tipo_situacion_id);
+        console.log('[TRANSFORM] tipo_situacion:', data.tipo_situacion);
+        if (formValues.vehiculos?.length > 0) {
+            const v0 = formValues.vehiculos[0];
+            console.log('[TRANSFORM] Vehiculo[0] tipo_vehiculo:', v0.tipo_vehiculo, '| marca:', v0.marca);
         }
 
         console.log('[TRANSFORM] Valores transformados:', JSON.stringify(formValues, null, 2));
@@ -268,11 +295,7 @@ export default function SituacionDinamicaScreen() {
                         const response = await api.get(`/situaciones/${situacionId}`);
                         if (response.data?.situacion) {
                             datosCompletos = response.data.situacion;
-                            console.log('[EDIT] API respondió:',
-                                'tipo_situacion_id=', datosCompletos.tipo_situacion_id,
-                                'vehiculos=', datosCompletos.vehiculos_involucrados?.length || 0,
-                                'multimedia=', datosCompletos.multimedia?.length || 0
-                            );
+                            console.log('[SITUACION] Datos completos de API:', JSON.stringify(datosCompletos, null, 2));
                         }
                     } catch (apiError) {
                         console.warn('[SITUACION] No se pudieron cargar detalles de API, usando datos locales:', apiError);

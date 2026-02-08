@@ -176,7 +176,7 @@ export const SituacionDetalleModel = {
           nit: data.nit ? BigInt(data.nit) : null,
           direccion_propietario: data.direccion_propietario || null,
           nombre_propietario: data.nombre_propietario || null,
-          modelo: data.anio || null,
+          modelo: data.modelo || data.anio || null,
         });
       } catch {
         // Tarjeta ya existe - ignorar
@@ -281,59 +281,87 @@ export const SituacionDetalleModel = {
    * Obtener vehiculos de una situacion (JOIN con maestros + gruas + ajustadores + personas + dispositivos)
    */
   async getVehiculos(situacionId: number): Promise<any[]> {
-    // Intentar query con tarjeta_circulacion, fallback sin ella
-    try {
-      const query = `
-        SELECT
-          sv.id, sv.situacion_id, sv.estado_piloto, sv.numero_poliza,
-          sv.personas_asistidas, sv.heridos_en_vehiculo, sv.fallecidos_en_vehiculo,
-          sv.danos_estimados, sv.observaciones, sv.sancion, sv.sancion_detalle,
-          sv.documentos_consignados, sv.created_at,
-          v.id as vehiculo_id, v.placa, v.tipo_vehiculo_id, v.marca_id,
-          v.color, v.es_extranjero, v.cargado, v.tipo_carga,
-          tv.nombre as tipo_vehiculo_nombre, tv.nombre as tipo_vehiculo,
-          mv.nombre as marca_nombre, mv.nombre as marca,
-          p.id as piloto_id, p.nombre as nombre_piloto, p.licencia_numero,
-          p.licencia_tipo, p.licencia_vencimiento, p.licencia_antiguedad,
-          p.fecha_nacimiento as piloto_nacimiento, p.etnia as piloto_etnia,
-          tc.numero as tarjeta_circulacion, tc.nit,
-          tc.nombre_propietario, tc.direccion_propietario, tc.modelo as anio
-        FROM situacion_vehiculo sv
-        INNER JOIN vehiculo v ON sv.vehiculo_id = v.id
-        LEFT JOIN tipo_vehiculo tv ON v.tipo_vehiculo_id = tv.id
-        LEFT JOIN marca_vehiculo mv ON v.marca_id = mv.id
-        LEFT JOIN piloto p ON sv.piloto_id = p.id
-        LEFT JOIN tarjeta_circulacion tc ON tc.vehiculo_id = v.id
-        WHERE sv.situacion_id = $1
-        ORDER BY sv.created_at
-      `;
-      return await db.manyOrNone(query, [situacionId]);
-    } catch (e: any) {
-      console.warn('[getVehiculos] Query con TC falló, intentando sin TC:', e.message);
-      // Fallback sin tarjeta_circulacion
-      const querySimple = `
-        SELECT
-          sv.id, sv.situacion_id, sv.estado_piloto, sv.numero_poliza,
-          sv.personas_asistidas, sv.heridos_en_vehiculo, sv.fallecidos_en_vehiculo,
-          sv.danos_estimados, sv.observaciones, sv.sancion, sv.sancion_detalle,
-          sv.documentos_consignados, sv.created_at,
-          v.id as vehiculo_id, v.placa, v.tipo_vehiculo_id, v.marca_id,
-          v.color, v.es_extranjero, v.cargado, v.tipo_carga,
-          tv.nombre as tipo_vehiculo_nombre, tv.nombre as tipo_vehiculo,
-          mv.nombre as marca_nombre, mv.nombre as marca,
-          p.id as piloto_id, p.nombre as nombre_piloto, p.licencia_numero,
-          p.licencia_tipo, p.licencia_vencimiento, p.licencia_antiguedad,
-          p.fecha_nacimiento as piloto_nacimiento, p.etnia as piloto_etnia
-        FROM situacion_vehiculo sv
-        INNER JOIN vehiculo v ON sv.vehiculo_id = v.id
-        LEFT JOIN tipo_vehiculo tv ON v.tipo_vehiculo_id = tv.id
-        LEFT JOIN marca_vehiculo mv ON v.marca_id = mv.id
-        LEFT JOIN piloto p ON sv.piloto_id = p.id
-        WHERE sv.situacion_id = $1
-        ORDER BY sv.created_at
-      `;
-      return db.manyOrNone(querySimple, [situacionId]);
-    }
+    // Query base que solo usa columnas/tablas que siempre existen
+    const queryBase = `
+      SELECT
+        sv.id,
+        sv.situacion_id,
+        sv.estado_piloto,
+        sv.numero_poliza,
+        sv.personas_asistidas,
+        sv.heridos_en_vehiculo,
+        sv.fallecidos_en_vehiculo,
+        sv.danos_estimados,
+        sv.observaciones,
+        sv.sancion,
+        sv.sancion_detalle,
+        sv.documentos_consignados,
+        sv.created_at,
+
+        -- Vehiculo master
+        v.id as vehiculo_id,
+        v.placa,
+        v.tipo_vehiculo_id,
+        v.marca_id,
+        v.color,
+        v.es_extranjero,
+        v.cargado,
+        v.tipo_carga,
+        tv.nombre as tipo_vehiculo_nombre,
+        mv.nombre as marca_nombre,
+
+        -- Piloto master
+        p.id as piloto_id,
+        p.nombre as nombre_piloto,
+        p.licencia_numero,
+        p.licencia_tipo,
+        p.licencia_vencimiento,
+        p.licencia_antiguedad,
+        p.fecha_nacimiento as piloto_nacimiento,
+        p.etnia as piloto_etnia,
+
+        -- Gruas asignadas a este vehiculo
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+            'id', vg.id,
+            'grua_id', vg.grua_id,
+            'datos', vg.datos,
+            'grua_placa', g.placa,
+            'grua_nombre', g.nombre,
+            'grua_empresa', g.empresa,
+            'grua_tipo', g.tipo_grua
+          ) ORDER BY vg.created_at)
+          FROM vehiculo_grua vg
+          INNER JOIN grua g ON vg.grua_id = g.id
+          WHERE vg.situacion_vehiculo_id = sv.id),
+          '[]'
+        ) as gruas,
+
+        -- Ajustadores asignados a este vehiculo
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+            'id', va.id,
+            'aseguradora_id', va.aseguradora_id,
+            'datos', va.datos,
+            'aseguradora_nombre', a.nombre,
+            'aseguradora_empresa', a.empresa
+          ) ORDER BY va.created_at)
+          FROM vehiculo_aseguradora va
+          LEFT JOIN aseguradora a ON va.aseguradora_id = a.id
+          WHERE va.situacion_vehiculo_id = sv.id),
+          '[]'
+        ) as ajustadores
+
+      FROM situacion_vehiculo sv
+      INNER JOIN vehiculo v ON sv.vehiculo_id = v.id
+      LEFT JOIN tipo_vehiculo tv ON v.tipo_vehiculo_id = tv.id
+      LEFT JOIN marca_vehiculo mv ON v.marca_id = mv.id
+      LEFT JOIN piloto p ON sv.piloto_id = p.id
+      WHERE sv.situacion_id = $1
+      ORDER BY sv.created_at
+    `;
+
+    return db.manyOrNone(queryBase, [situacionId]);
   },
 
   async deleteVehiculo(id: number): Promise<void> {
@@ -514,23 +542,12 @@ export const SituacionDetalleModel = {
   // ==========================================
 
   async getAllDetalles(situacionId: number): Promise<SituacionDetallesCompletos> {
-    // Cada query es independiente - si una falla no afecta a las demás
-    let vehiculos: any[] = [];
-    let autoridades: any[] = [];
-    let gruas: any[] = [];
-    let ajustadores: any[] = [];
-
-    try { vehiculos = await this.getVehiculos(situacionId); }
-    catch (e: any) { console.warn('[getAllDetalles] getVehiculos falló:', e.message); }
-
-    try { autoridades = await this.getAutoridades(situacionId); }
-    catch (e: any) { console.warn('[getAllDetalles] getAutoridades falló:', e.message); }
-
-    try { gruas = await this.getGruas(situacionId); }
-    catch (e: any) { console.warn('[getAllDetalles] getGruas falló:', e.message); }
-
-    try { ajustadores = await this.getAjustadores(situacionId); }
-    catch (e: any) { console.warn('[getAllDetalles] getAjustadores falló:', e.message); }
+    const [vehiculos, autoridades, gruas, ajustadores] = await Promise.all([
+      this.getVehiculos(situacionId),
+      this.getAutoridades(situacionId),
+      this.getGruas(situacionId),
+      this.getAjustadores(situacionId),
+    ]);
 
     return { vehiculos, autoridades, gruas, ajustadores };
   },
