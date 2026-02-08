@@ -44,7 +44,7 @@ export default function SelectField({
 }: SelectFieldProps) {
     const theme = useTheme();
     const [resolvedOptions, setResolvedOptions] = useState<FieldOption[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(typeof options === 'string'); // start loading if catalog ref
 
     // Extraer departamento_id para dependencia de municipios
     const departamentoId = formData?.departamento_id;
@@ -115,12 +115,17 @@ export default function SelectField({
                 }
             ]}>
                 <Picker
+                    key={`picker-${resolvedOptions.length}`}
                     selectedValue={value}
-                    onValueChange={onChange}
+                    onValueChange={(v) => {
+                        // No permitir que el Picker sobreescriba el valor mientras carga opciones
+                        if (loading) return;
+                        onChange(v);
+                    }}
                     enabled={!disabled && !loading}
                     style={styles.picker}
                 >
-                    <Picker.Item label={placeholder} value={null} color={theme.components.input.placeholderColor} />
+                    <Picker.Item label={loading ? 'Cargando...' : placeholder} value={null} color={theme.components.input.placeholderColor} />
                     {resolvedOptions.map(option => (
                         <Picker.Item
                             key={String(option.value)}
