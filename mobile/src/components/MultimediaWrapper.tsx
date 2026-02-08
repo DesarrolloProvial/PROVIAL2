@@ -1,9 +1,9 @@
 /**
  * MultimediaWrapper
- *
+ * 
  * Wrapper para integrar MultimediaCaptureOffline con react-hook-form.
  * Permite capturar fotos y videos y guardar las referencias en el formulario.
- *
+ * 
  * Fecha: 2026-01-23
  */
 
@@ -24,25 +24,31 @@ export default function MultimediaWrapper({
 }: Props) {
     const handleMultimediaChange = React.useCallback((media: MultimediaRef[]) => {
         onChange(media);
-    }, [onChange]);
+    }, [onChange]); // Solo recrear si onChange cambia (que idealmente no debería)
 
-    // Memoizar initialMedia para evitar re-renders infinitos
-    // Solo usar value como initialMedia si tiene items (edit mode con datos existentes)
-    const stableInitialMedia = React.useMemo(() => {
-        if (value && value.length > 0) return value;
-        return [];
-    }, [value && value.length]); // Solo cambia si la cantidad cambia
-
+    // Usamos un ID dummy porque en manualMode no importará
     const TEMP_DRAFT_ID = 'manual-mode';
+
+    if (readonly) {
+        return (
+            <MultimediaCaptureOffline
+                draftUuid={TEMP_DRAFT_ID}
+                tipoSituacion="GENERIC"
+                readOnly={true}
+                onMultimediaChange={handleMultimediaChange}
+                manualMode={true}
+                initialMedia={value || []}
+            />
+        );
+    }
 
     return (
         <MultimediaCaptureOffline
             draftUuid={TEMP_DRAFT_ID}
             tipoSituacion="GENERIC"
-            readOnly={readonly}
             onMultimediaChange={handleMultimediaChange}
             manualMode={true}
-            initialMedia={stableInitialMedia}
+            initialMedia={value || []}
         />
     );
 }

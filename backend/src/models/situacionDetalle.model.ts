@@ -338,6 +338,14 @@ export const SituacionDetalleModel = {
         p.licencia_antiguedad,
         p.fecha_nacimiento as piloto_nacimiento,
         p.etnia as piloto_etnia,
+        p.sexo as sexo_piloto,
+
+        -- Tarjeta de circulacion
+        tc.numero as tarjeta_circulacion,
+        tc.nit,
+        tc.nombre_propietario,
+        tc.direccion_propietario,
+        tc.modelo,
 
         -- Gruas asignadas a este vehiculo
         COALESCE(
@@ -376,6 +384,9 @@ export const SituacionDetalleModel = {
       LEFT JOIN tipo_vehiculo tv ON v.tipo_vehiculo_id = tv.id
       LEFT JOIN marca_vehiculo mv ON v.marca_id = mv.id
       LEFT JOIN piloto p ON sv.piloto_id = p.id
+      LEFT JOIN LATERAL (
+        SELECT * FROM tarjeta_circulacion WHERE vehiculo_id = v.id ORDER BY fecha_registro DESC LIMIT 1
+      ) tc ON true
       WHERE sv.situacion_id = $1
       ORDER BY sv.created_at
     `;

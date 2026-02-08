@@ -91,7 +91,7 @@ export default function SituacionDinamicaScreen() {
 
     // Helper para transformar datos de DB a Formulario
     const transformarDatosParaFormulario = (data: any) => {
-        console.log('[TRANSFORM] Datos de entrada:', JSON.stringify(data, null, 2));
+        console.log('[TRANSFORM] Datos de entrada: id=', data.id, 'tipo=', data.tipo_situacion, 'tipo_situacion_id=', data.tipo_situacion_id);
         const formValues: Record<string, any> = {};
 
         // === CAMPOS BÁSICOS ===
@@ -245,23 +245,20 @@ export default function SituacionDinamicaScreen() {
                 nombre_piloto: v.nombre_piloto || '',
                 fecha_nacimiento_piloto: v.piloto_nacimiento || v.fecha_nacimiento_piloto || null,
                 etnia_piloto: v.piloto_etnia || v.etnia_piloto || '',
+                sexo_piloto: v.sexo_piloto || '',
+                // Tarjeta de circulacion
+                tarjeta_circulacion: v.tarjeta_circulacion || '',
+                nit: v.nit || '',
+                nombre_propietario: v.nombre_propietario || '',
+                direccion_propietario: v.direccion_propietario || '',
+                modelo: v.modelo || '',
             }));
             console.log('[TRANSFORM] Vehiculos mapeados:', formValues.vehiculos.length);
         }
 
-        // Logs para debug de selects (con typeof para detectar string vs number)
-        console.log('[TRANSFORM] tipo_hecho_id:', formValues.tipo_hecho_id, 'typeof:', typeof formValues.tipo_hecho_id);
-        console.log('[TRANSFORM] tipo_asistencia_id:', formValues.tipo_asistencia_id, 'typeof:', typeof formValues.tipo_asistencia_id);
-        console.log('[TRANSFORM] tipo_emergencia_id:', formValues.tipo_emergencia_id, 'typeof:', typeof formValues.tipo_emergencia_id);
-        console.log('[TRANSFORM] tipo_situacion_id (DB):', data.tipo_situacion_id, 'typeof:', typeof data.tipo_situacion_id);
-        console.log('[TRANSFORM] multimedia count:', formValues.multimedia?.length || 0);
-        console.log('[TRANSFORM] tipo_situacion:', data.tipo_situacion);
-        if (formValues.vehiculos?.length > 0) {
-            const v0 = formValues.vehiculos[0];
-            console.log('[TRANSFORM] Vehiculo[0] tipo_vehiculo:', v0.tipo_vehiculo, '| marca:', v0.marca);
-        }
-
-        console.log('[TRANSFORM] Valores transformados:', JSON.stringify(formValues, null, 2));
+        console.log('[TRANSFORM] Resumen: tipo_hecho_id=', formValues.tipo_hecho_id,
+            'vehiculos=', formValues.vehiculos?.length || 0,
+            'multimedia=', formValues.multimedia?.length || 0);
         return formValues;
     };
 
