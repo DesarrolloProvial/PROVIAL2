@@ -439,6 +439,7 @@ export async function listSituaciones(req: Request, res: Response) {
 
 export async function getMiUnidadHoy(req: Request, res: Response) {
   const userId = req.user!.userId;
+  console.log(`[MI_UNIDAD_HOY] userId=${userId}, rol=${req.user!.rol}`);
 
   // 1. Buscar unidad del usuario desde brigada_unidad
   let unidadId: number | null = null;
@@ -447,8 +448,9 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
       'SELECT unidad_id FROM brigada_unidad WHERE brigada_id = $1 AND activo = true ORDER BY created_at DESC LIMIT 1',
       [userId]
     );
+    console.log(`[MI_UNIDAD_HOY] brigada_unidad result:`, bu);
     if (bu) unidadId = bu.unidad_id;
-  } catch (e) { console.warn('brigada_unidad lookup failed:', e); }
+  } catch (e) { console.warn('[MI_UNIDAD_HOY] brigada_unidad lookup failed:', e); }
 
   // 2. Fallback: buscar por situaciones creadas hoy por este usuario
   if (!unidadId) {
@@ -457,10 +459,12 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
         'SELECT unidad_id FROM situacion WHERE creado_por = $1 AND created_at >= CURRENT_DATE ORDER BY created_at DESC LIMIT 1',
         [userId]
       );
+      console.log(`[MI_UNIDAD_HOY] situacion fallback result:`, s);
       if (s) unidadId = s.unidad_id;
-    } catch (e) { }
+    } catch (e) { console.warn('[MI_UNIDAD_HOY] situacion fallback failed:', e); }
   }
 
+  console.log(`[MI_UNIDAD_HOY] unidadId final=${unidadId}`);
   if (!unidadId) return res.json({ situaciones: [], situacion_activa: null });
 
   // 3. Consultar situacion_actual para ver si hay situación activa en esta unidad
@@ -470,15 +474,18 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
       'SELECT situacion_id FROM situacion_actual WHERE unidad_id = $1',
       [unidadId]
     );
+    console.log(`[MI_UNIDAD_HOY] situacion_actual cache for unidad ${unidadId}:`, cache);
 
     if (cache && cache.situacion_id) {
       // Obtener la situación COMPLETA con todos los datos
       const situacionCompleta = await SituacionModel.getById(cache.situacion_id);
+      console.log(`[MI_UNIDAD_HOY] situacion completa id=${cache.situacion_id}, found=${!!situacionCompleta}, estado=${situacionCompleta?.estado}`);
 
       if (situacionCompleta) {
         // Traer detalles: vehículos, autoridades, multimedia
         const detalles = await SituacionDetalleModel.getAllDetalles(cache.situacion_id);
         const multimedia = await MultimediaModel.getBySituacionId(cache.situacion_id);
+        console.log(`[MI_UNIDAD_HOY] detalles: vehiculos=${detalles.vehiculos?.length}, multimedia=${multimedia?.length}`);
 
         situacionActiva = {
           ...situacionCompleta,
@@ -490,10 +497,11 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
         };
       }
     }
-  } catch (e) { console.warn('situacion_actual lookup failed:', e); }
+  } catch (e) { console.warn('[MI_UNIDAD_HOY] situacion_actual lookup failed:', e); }
 
   // 4. Traer lista de situaciones de hoy para la bitácora
   const list = await SituacionModel.getMiUnidadHoy(unidadId);
+  console.log(`[MI_UNIDAD_HOY] situaciones hoy: ${list.length}, situacionActiva: ${situacionActiva ? situacionActiva.id : 'null'}`);
 
   return res.json({ situaciones: list, situacion_activa: situacionActiva });
 }
