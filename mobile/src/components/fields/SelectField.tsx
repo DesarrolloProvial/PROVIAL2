@@ -1,15 +1,15 @@
 /**
  * SelectField Component
- * 
+ *
  * Campo de selección (dropdown) reutilizable para el FormBuilder.
  * Soporta selección única y múltiple, con opciones desde catálogos.
- * 
+ *
  * Fecha: 2026-01-22
  * FASE 1 - DÍA 2
  */
 
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useTheme } from '../../core/theme';
 import { FieldOption } from '../../core/FormBuilder/types';
@@ -44,7 +44,17 @@ export default function SelectField({
 }: SelectFieldProps) {
     const theme = useTheme();
     const [resolvedOptions, setResolvedOptions] = useState<FieldOption[]>([]);
-    const [loading, setLoading] = useState(typeof options === 'string'); // start loading if catalog ref
+    const [loading, setLoading] = useState(typeof options === 'string');
+
+    // Guardar el valor que viene del form para protegerlo del Picker
+    const preservedValueRef = useRef<any>(value);
+
+    // Actualizar ref cuando el valor cambia externamente (form reset, edición)
+    useEffect(() => {
+        if (value !== null && value !== undefined && value !== '') {
+            preservedValueRef.current = value;
+        }
+    }, [value]);
 
     // Extraer departamento_id para dependencia de municipios
     const departamentoId = formData?.departamento_id;
@@ -55,7 +65,6 @@ export default function SelectField({
             if (typeof options === 'string') {
                 setLoading(true);
                 try {
-                    // Caso especial: municipios depende de departamento_id
                     if (options === '@catalogos.municipios' && departamentoId) {
                         const resolved = await CatalogResolver.resolveMunicipiosByDepartamento(departamentoId);
                         setResolvedOptions(resolved);
@@ -76,6 +85,21 @@ export default function SelectField({
 
         loadOptions();
     }, [options, departamentoId]);
+
+    // Después de cargar opciones: si el valor fue borrado por el Picker, restaurarlo
+    useEffect(() => {
+        if (!loading && resolvedOptions.length > 0 && preservedValueRef.current != null && preservedValueRef.current !== '') {
+            const currentIsEmpty = value === null || value === undefined || value === '';
+            if (currentIsEmpty) {
+                // El Picker borró el valor - restaurar si hay match en opciones
+                const match = resolvedOptions.some(o => String(o.value) === String(preservedValueRef.current));
+                if (match) {
+                    console.log('[SelectField] Restaurando valor preservado:', preservedValueRef.current);
+                    onChange(preservedValueRef.current);
+                }
+            }
+        }
+    }, [loading, resolvedOptions.length]);
 
     // Renderizado para selección múltiple (simplificado por ahora)
     if (multiple) {
@@ -104,7 +128,7 @@ export default function SelectField({
                 {required && <Text style={{ color: theme.colors.danger }}> *</Text>}
             </Text>
 
-            {/* Picker */}
+            {/* Picker o Loading */}
             <View style={[
                 styles.pickerContainer,
                 {
@@ -114,27 +138,32 @@ export default function SelectField({
                     borderRadius: theme.components.input.borderRadius,
                 }
             ]}>
-                <Picker
-                    key={`picker-${resolvedOptions.length}`}
-                    selectedValue={value}
-                    onValueChange={(v) => {
-                        // No permitir que el Picker sobreescriba el valor mientras carga opciones
-                        if (loading) return;
-                        onChange(v);
-                    }}
-                    enabled={!disabled && !loading}
-                    style={styles.picker}
-                >
-                    <Picker.Item label={loading ? 'Cargando...' : placeholder} value={null} color={theme.components.input.placeholderColor} />
-                    {resolvedOptions.map(option => (
-                        <Picker.Item
-                            key={String(option.value)}
-                            label={option.label}
-                            value={option.value}
-                            enabled={!option.disabled}
-                        />
-                    ))}
-                </Picker>
+                {loading ? (
+                    // NO montar el Picker mientras carga opciones - evita que borre el valor
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="small" color={theme.colors.primary} />
+                        <Text style={[styles.loadingText, { color: theme.colors.text.secondary }]}>
+                            Cargando opciones...
+                        </Text>
+                    </View>
+                ) : (
+                    <Picker
+                        selectedValue={value}
+                        onValueChange={onChange}
+                        enabled={!disabled}
+                        style={styles.picker}
+                    >
+                        <Picker.Item label={placeholder} value={null} color={theme.components.input.placeholderColor} />
+                        {resolvedOptions.map(option => (
+                            <Picker.Item
+                                key={String(option.value)}
+                                label={option.label}
+                                value={option.value}
+                                enabled={!option.disabled}
+                            />
+                        ))}
+                    </Picker>
+                )}
             </View>
 
             {/* Helper/Error Text */}
@@ -164,6 +193,16 @@ const styles = StyleSheet.create({
     },
     picker: {
         height: 48,
+    },
+    loadingContainer: {
+        height: 48,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        gap: 8,
+    },
+    loadingText: {
+        fontSize: 14,
     },
     helperText: {
         marginTop: 4,
