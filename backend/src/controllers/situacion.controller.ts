@@ -431,8 +431,16 @@ export async function updateSituacion(req: Request, res: Response) {
     await SituacionModel.update(situacionId, updateData);
 
     // Persistir vehiculos actualizados en tablas relacionales
+    // Primero eliminar los existentes para evitar duplicados al editar
     const vehiculosData = vehiculos_involucrados || vehiculos;
     if (vehiculosData && Array.isArray(vehiculosData)) {
+      const existentes = await db.manyOrNone(
+        'SELECT id FROM situacion_vehiculo WHERE situacion_id = $1',
+        [situacionId]
+      );
+      for (const sv of existentes) {
+        await SituacionDetalleModel.deleteVehiculo(sv.id);
+      }
       for (const v of vehiculosData) {
         await SituacionDetalleModel.addVehiculo(situacionId, v);
       }
