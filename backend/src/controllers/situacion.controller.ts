@@ -504,7 +504,7 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
   let situacionActiva: any = null;
   try {
     const cache = await db.oneOrNone(
-      'SELECT situacion_id FROM situacion_actual WHERE unidad_id = $1',
+      "SELECT situacion_id FROM situacion_actual WHERE unidad_id = $1 AND estado = 'ACTIVA'",
       [unidadId]
     );
 
