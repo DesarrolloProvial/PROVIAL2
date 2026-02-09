@@ -515,8 +515,10 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
             COALESCE(
               (SELECT json_agg(json_build_object(
                 'id', sm.id, 'tipo', sm.tipo, 'orden', sm.orden,
-                'url', sm.url_original, 'thumbnail', sm.url_thumbnail
-              ) ORDER BY sm.tipo, sm.orden)
+                'url', sm.url_original, 'thumbnail', sm.url_thumbnail,
+                'infografia_numero', sm.infografia_numero,
+                'infografia_titulo', sm.infografia_titulo
+              ) ORDER BY sm.infografia_numero, sm.tipo, sm.orden)
               FROM situacion_multimedia sm WHERE sm.situacion_id = s.id),
               '[]'
             ) as multimedia,
@@ -710,7 +712,6 @@ export async function getResumenUnidades(_req: Request, res: Response) {
       FROM unidad u
       INNER JOIN salida_unidad su ON u.id = su.unidad_id
         AND su.estado = 'EN_SALIDA'
-        AND DATE(su.fecha_hora_salida) = CURRENT_DATE
       LEFT JOIN sede se ON u.sede_id = se.id
       LEFT JOIN situacion_actual sa ON u.id = sa.unidad_id
       WHERE u.activa = true
