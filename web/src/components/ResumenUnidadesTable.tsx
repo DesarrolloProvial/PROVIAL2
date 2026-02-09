@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import SituacionIcon from './SituacionIcon';
 
 
 interface ResumenUnidad {
@@ -20,6 +21,9 @@ interface ResumenUnidad {
   combustible_fraccion: string | null;
   situacion_descripcion: string | null;
   situacion_fecha: string | null;
+  situacion_icono: string | null;
+  situacion_color: string | null;
+  situacion_nombre: string | null;
 }
 
 // Colores por sede (mismo que en DashboardPage)
@@ -207,11 +211,12 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
                   {unidad.tipo_situacion ? (
                     <div className="space-y-1">
                       <span
-                        className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getTipoSituacionBadgeClass(
+                        className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${getTipoSituacionBadgeClass(
                           unidad.tipo_situacion
                         )}`}
                       >
-                        {unidad.tipo_situacion.replace(/_/g, ' ')}
+                        <SituacionIcon icono={unidad.situacion_icono} color={unidad.situacion_color} size={14} />
+                        {unidad.situacion_nombre || unidad.tipo_situacion.replace(/_/g, ' ')}
                       </span>
                       <div>
                         <span

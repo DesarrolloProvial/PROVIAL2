@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { RefreshCw, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut, Search } from 'lucide-react';
 import { useDashboardSocket } from '../hooks/useSocket';
 import ResumenUnidadesTable from '../components/ResumenUnidadesTable';
+import SituacionIcon from '../components/SituacionIcon';
 import { useAuthStore } from '../store/authStore';
 
 // Fix para iconos de Leaflet
@@ -394,8 +395,9 @@ export default function COPMapaPage() {
               </div>
 
               {unidad.tipo_situacion && (
-                <p className="text-sm font-medium text-gray-700 mb-1">
-                  {getTipoSituacionLabel(unidad.tipo_situacion)}
+                <p className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                  <SituacionIcon icono={unidad.situacion_icono} color={unidad.situacion_color} size={16} />
+                  {unidad.situacion_nombre || getTipoSituacionLabel(unidad.tipo_situacion)}
                 </p>
               )}
 
@@ -496,8 +498,9 @@ export default function COPMapaPage() {
                     <p className="text-xs text-gray-500 mb-2">📍 Sede: {unidad.sede_nombre}</p>
                   )}
                   {unidad.tipo_situacion && (
-                    <p className="font-semibold text-gray-700 mb-2">
-                      {unidad.tipo_situacion?.replace(/_/g, ' ')}
+                    <p className="font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                      <SituacionIcon icono={unidad.situacion_icono} color={unidad.situacion_color} size={14} />
+                      {unidad.situacion_nombre || unidad.tipo_situacion?.replace(/_/g, ' ')}
                     </p>
                   )}
                   <div className="text-sm space-y-1">
