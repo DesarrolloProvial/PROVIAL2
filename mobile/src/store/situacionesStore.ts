@@ -241,8 +241,10 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
+      console.log('[CATALOGO] Fetching /situaciones/catalogo...');
       const response = await api.get('/situaciones/catalogo');
       const catalogoRaw = response.data || [];
+      console.log('[CATALOGO] Respuesta:', Array.isArray(catalogoRaw) ? `${catalogoRaw.length} categorias` : typeof catalogoRaw, JSON.stringify(catalogoRaw).substring(0, 200));
 
       // Lista de tipos a ELIMINAR del menú (se reportan en pantallas dedicadas o están prohibidos)
       const tiposProhibidos = [
@@ -298,12 +300,14 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
         }) || []
       })).filter((cat: any) => cat.tipos.length > 0); // Remover categorías vacías
 
+      console.log('[CATALOGO] Después de filtrar:', catalogoFiltrado.length, 'categorías,', catalogoFiltrado.map((c: any) => `${c.nombre}(${c.tipos.length})`).join(', '));
+
       set({
         catalogo: catalogoFiltrado,
         isLoading: false,
       });
     } catch (error: any) {
-      console.error('Error al obtener catálogo:', error);
+      console.error('[CATALOGO] Error al obtener catálogo:', error?.response?.status, error?.response?.data, error?.message);
       set({ isLoading: false });
     }
   },
