@@ -460,6 +460,9 @@ export const SituacionModel = {
             u.tipo_unidad,
             sa.ruta_codigo
         FROM unidad u
+        INNER JOIN salida_unidad su ON u.id = su.unidad_id
+          AND su.estado = 'EN_SALIDA'
+          AND DATE(su.fecha_hora_salida) = CURRENT_DATE
         LEFT JOIN situacion_actual sa ON u.id = sa.unidad_id
         WHERE u.activa = true
         ORDER BY u.codigo
