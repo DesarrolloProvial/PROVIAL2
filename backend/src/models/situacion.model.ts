@@ -485,22 +485,53 @@ export const SituacionModel = {
   async getBitacoraUnidad(unidad_id: number, filters: any): Promise<any[]> {
     const params: any = { unidad_id };
     const limit = filters.limit ? parseInt(filters.limit) : 50;
-    const offset = filters.offset ? parseInt(filters.offset) : 0;
 
-    // Filtros de fecha opcionales
-    let dateFilter = '';
-    if (filters.fecha_desde) {
-      dateFilter += ' AND created_at >= $/fecha_desde/';
-      params.fecha_desde = filters.fecha_desde;
-    }
-    if (filters.fecha_hasta) {
-      dateFilter += ' AND created_at <= $/fecha_hasta/';
-      params.fecha_hasta = filters.fecha_hasta;
-    }
-
-    // UNION de situaciones + actividades + salidas
+    // Paso 1: obtener las salidas recientes de la unidad (ancla todo lo demás)
     const query = `
-      (
+      WITH salidas AS (
+        SELECT su.id, su.unidad_id, su.estado, su.fecha_hora_salida, su.fecha_hora_regreso,
+               su.ruta_inicial_id, su.km_inicial, su.combustible_inicial, su.km_final,
+               su.combustible_final, su.tripulacion, su.observaciones_salida,
+               su.observaciones_regreso, su.finalizada_por
+        FROM salida_unidad su
+        WHERE su.unidad_id = $/unidad_id/
+        ORDER BY su.fecha_hora_salida DESC
+        LIMIT ${limit}
+      )
+      -- UNION: salidas + situaciones de esas salidas + actividades de esas salidas
+      SELECT * FROM (
+        -- 1) Las salidas como registros de jornada
+        SELECT
+          sal.id,
+          'SALIDA' as tipo_registro,
+          CASE sal.estado WHEN 'EN_SALIDA' THEN 'INICIO_JORNADA' ELSE 'FIN_JORNADA' END as tipo_situacion,
+          CASE sal.estado WHEN 'EN_SALIDA' THEN 'Inicio de Jornada' ELSE 'Fin de Jornada' END as subtipo_nombre,
+          sal.estado,
+          sal.observaciones_salida as descripcion,
+          sal.observaciones_regreso as observaciones,
+          sal.fecha_hora_salida as created_at,
+          r.codigo as ruta_codigo,
+          sal.km_inicial as km,
+          NULL::text as sentido,
+          sal.id as salida_id,
+          u.codigo as unidad_codigo,
+          u.tipo_unidad,
+          uf.nombre_completo as creado_por_nombre,
+          NULL::text as icono,
+          NULL::text as color,
+          sal.fecha_hora_salida,
+          r.codigo as salida_ruta_codigo,
+          sal.km_inicial as salida_km_inicial,
+          sal.combustible_inicial as salida_combustible_inicial,
+          sal.tripulacion
+        FROM salidas sal
+        LEFT JOIN unidad u ON sal.unidad_id = u.id
+        LEFT JOIN ruta r ON sal.ruta_inicial_id = r.id
+        LEFT JOIN usuario uf ON sal.finalizada_por = uf.id
+
+        UNION ALL
+
+        -- 2) Situaciones vinculadas a esas salidas
         SELECT
           s.id,
           'SITUACION' as tipo_registro,
@@ -510,107 +541,61 @@ export const SituacionModel = {
           s.observaciones as descripcion,
           s.observaciones,
           s.created_at,
-          s.ruta_id,
           r.codigo as ruta_codigo,
           s.km,
           s.sentido,
-          NULL::numeric as combustible,
           s.salida_unidad_id as salida_id,
-          s.unidad_id,
           u.codigo as unidad_codigo,
           u.tipo_unidad,
           us.nombre_completo as creado_por_nombre,
           cts.icono as icono,
           cts.color as color,
-          NULL::text as datos,
           NULL::timestamptz as fecha_hora_salida,
           NULL::text as salida_ruta_codigo,
           NULL::numeric as salida_km_inicial,
           NULL::numeric as salida_combustible_inicial,
           NULL::jsonb as tripulacion
         FROM situacion s
+        INNER JOIN salidas sal ON s.salida_unidad_id = sal.id
         LEFT JOIN unidad u ON s.unidad_id = u.id
         LEFT JOIN ruta r ON s.ruta_id = r.id
         LEFT JOIN catalogo_tipo_situacion cts ON s.tipo_situacion_id = cts.id
         LEFT JOIN usuario us ON s.creado_por = us.id
-        WHERE s.unidad_id = $/unidad_id/
-        ${dateFilter}
-      )
-      UNION ALL
-      (
+
+        UNION ALL
+
+        -- 3) Actividades vinculadas a esas salidas
         SELECT
           a.id,
           'ACTIVIDAD' as tipo_registro,
           cts.nombre as tipo_situacion,
           cts.nombre as subtipo_nombre,
           a.estado,
-          NULL::text as descripcion,
+          a.observaciones as descripcion,
           a.observaciones,
           a.created_at,
-          a.ruta_id,
           r.codigo as ruta_codigo,
           a.km,
           a.sentido,
-          NULL::numeric as combustible,
           a.salida_unidad_id as salida_id,
-          a.unidad_id,
           u.codigo as unidad_codigo,
           u.tipo_unidad,
           us.nombre_completo as creado_por_nombre,
           cts.icono as icono,
           cts.color as color,
-          a.datos::text as datos,
           NULL::timestamptz as fecha_hora_salida,
           NULL::text as salida_ruta_codigo,
           NULL::numeric as salida_km_inicial,
           NULL::numeric as salida_combustible_inicial,
           NULL::jsonb as tripulacion
         FROM actividad a
+        INNER JOIN salidas sal ON a.salida_unidad_id = sal.id
         LEFT JOIN unidad u ON a.unidad_id = u.id
         LEFT JOIN ruta r ON a.ruta_id = r.id
         LEFT JOIN catalogo_tipo_situacion cts ON a.tipo_actividad_id = cts.id
         LEFT JOIN usuario us ON a.creado_por = us.id
-        WHERE a.unidad_id = $/unidad_id/
-        ${dateFilter}
-      )
-      UNION ALL
-      (
-        SELECT
-          su.id,
-          'SALIDA' as tipo_registro,
-          CASE su.estado WHEN 'EN_SALIDA' THEN 'INICIO_JORNADA' ELSE 'FIN_JORNADA' END as tipo_situacion,
-          CASE su.estado WHEN 'EN_SALIDA' THEN 'Inicio de Jornada' ELSE 'Fin de Jornada' END as subtipo_nombre,
-          su.estado,
-          su.observaciones_salida as descripcion,
-          su.observaciones_regreso as observaciones,
-          su.fecha_hora_salida as created_at,
-          su.ruta_inicial_id as ruta_id,
-          r.codigo as ruta_codigo,
-          su.km_inicial as km,
-          NULL::text as sentido,
-          su.combustible_inicial as combustible,
-          su.id as salida_id,
-          su.unidad_id,
-          u.codigo as unidad_codigo,
-          u.tipo_unidad,
-          uf.nombre_completo as creado_por_nombre,
-          NULL::text as icono,
-          NULL::text as color,
-          NULL::text as datos,
-          su.fecha_hora_salida,
-          r.codigo as salida_ruta_codigo,
-          su.km_inicial as salida_km_inicial,
-          su.combustible_inicial as salida_combustible_inicial,
-          su.tripulacion
-        FROM salida_unidad su
-        LEFT JOIN unidad u ON su.unidad_id = u.id
-        LEFT JOIN ruta r ON su.ruta_inicial_id = r.id
-        LEFT JOIN usuario uf ON su.finalizada_por = uf.id
-        WHERE su.unidad_id = $/unidad_id/
-        ${dateFilter.replace(/created_at/g, 'su.fecha_hora_salida')}
-      )
+      ) combined
       ORDER BY created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
     `;
 
     return db.manyOrNone(query, params);
