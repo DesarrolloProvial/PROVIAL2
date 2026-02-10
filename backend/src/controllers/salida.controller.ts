@@ -3,6 +3,8 @@ import { SalidaModel } from '../models/salida.model';
 import { GrupoModel } from '../models/grupo.model';
 import { TurnoModel } from '../models/turno.model';
 import { Inspeccion360Model } from '../models/inspeccion360.model';
+import { ActividadModel } from '../models/actividad.model';
+import { db } from '../config/database';
 import { emitUnidadCambioEstado, UnidadEvent } from '../services/socket.service';
 
 // Helper para convertir fracciones de combustible a decimal
@@ -422,6 +424,10 @@ export async function finalizarSalida(req: Request, res: Response) {
     const { id } = req.params;
     const { km_final, combustible_final, observaciones_regreso } = req.body;
 
+    // Cerrar actividades y desvincular de la salida antes de finalizar
+    await db.none(`UPDATE actividad SET estado = 'CERRADA', closed_at = NOW() WHERE salida_unidad_id = $1 AND estado = 'ACTIVA'`, [parseInt(id)]);
+    await db.none(`UPDATE actividad SET salida_unidad_id = NULL WHERE salida_unidad_id = $1`, [parseInt(id)]);
+
     const success = await SalidaModel.finalizarSalida({
       salida_id: parseInt(id),
       km_final,
@@ -482,6 +488,13 @@ export async function finalizarMiSalida(req: Request, res: Response) {
         message: 'No se encontró una salida activa para finalizar'
       });
     }
+
+    // Cerrar actividades activas y desvincular de la salida
+    await ActividadModel.cerrarActivasDeUnidad(miSalida.unidad_id);
+    await db.none(
+      `UPDATE actividad SET salida_unidad_id = NULL WHERE salida_unidad_id = $1`,
+      [miSalida.salida_id]
+    );
 
     const success = await SalidaModel.finalizarSalida({
       salida_id: miSalida.salida_id,
@@ -559,6 +572,13 @@ export async function finalizarJornadaCompleta(req: Request, res: Response) {
         message: 'Para finalizar la jornada, debes haber ingresado con motivo "Finalización Jornada"'
       });
     }
+
+    // Cerrar actividades activas de la unidad y desvincular de la salida
+    await ActividadModel.cerrarActivasDeUnidad(miSalida.unidad_id);
+    await db.none(
+      `UPDATE actividad SET salida_unidad_id = NULL WHERE salida_unidad_id = $1`,
+      [miSalida.salida_id]
+    );
 
     // Llamar a la función de PostgreSQL que hace todo el trabajo
     const resultado = await SalidaModel.finalizarJornadaCompleta({

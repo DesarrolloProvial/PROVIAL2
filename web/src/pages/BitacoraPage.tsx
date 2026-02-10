@@ -15,6 +15,13 @@ const TIPOS_SITUACION = [
     { value: 'OTROS', color: 'bg-gray-100 text-gray-700' },
 ];
 
+// Colores por tipo de registro
+const TIPO_REGISTRO_STYLE: Record<string, { dot: string; border: string; bg: string; badge: string }> = {
+    SITUACION: { dot: 'bg-red-500', border: 'border-red-200', bg: 'bg-red-50', badge: 'bg-red-100 text-red-700' },
+    ACTIVIDAD: { dot: 'bg-blue-500', border: 'border-blue-200', bg: 'bg-blue-50', badge: 'bg-blue-100 text-blue-700' },
+    SALIDA: { dot: 'bg-emerald-500', border: 'border-emerald-200', bg: 'bg-emerald-50', badge: 'bg-emerald-100 text-emerald-700' },
+};
+
 interface Tripulante {
     usuario_id: number;
     nombre_completo: string;
@@ -64,9 +71,11 @@ export default function BitacoraPage() {
         }
     }, [bitacora, unidadInfo]);
 
-    // Navegar a página de edición
-    const handleEditClick = (situacion: any) => {
-        navigate(`/editar-situacion/${situacion.id}`);
+    // Navegar a página de edición (solo para situaciones)
+    const handleEditClick = (item: any) => {
+        if (item.tipo_registro === 'SITUACION') {
+            navigate(`/editar-situacion/${item.id}`);
+        }
     };
 
 
@@ -93,10 +102,14 @@ export default function BitacoraPage() {
         return found?.color || 'bg-gray-100 text-gray-700';
     };
 
+    const getRegistroStyle = (item: any) => {
+        return TIPO_REGISTRO_STYLE[item.tipo_registro] || TIPO_REGISTRO_STYLE.SITUACION;
+    };
+
     if (!unidadId) return <div>Error: No se especificó unidad</div>;
 
-    // Agrupar situaciones por salida
-    const salidaActual = bitacora.length > 0 ? bitacora[0] : null;
+    // Buscar la salida activa en los registros de la bitácora
+    const salidaActual = bitacora.find((item: any) => item.tipo_registro === 'SALIDA' && item.estado === 'EN_SALIDA') || null;
 
     return (
         <div className="min-h-screen bg-gray-100 p-6">
@@ -194,7 +207,7 @@ export default function BitacoraPage() {
 
                 {/* Timeline de Situaciones */}
                 <div className="bg-white rounded-xl shadow-sm p-6">
-                    <h2 className="text-lg font-semibold text-gray-800 mb-4">Historial de Situaciones</h2>
+                    <h2 className="text-lg font-semibold text-gray-800 mb-4">Historial de Actividad</h2>
 
                     {isLoading ? (
                         <div className="text-center py-12 text-gray-500">
@@ -210,32 +223,57 @@ export default function BitacoraPage() {
                         </div>
                     ) : (
                         <div className="relative border-l-2 border-gray-200 ml-4 space-y-6">
-                            {bitacora.map((item: any) => (
-                                <div key={item.id} className="relative pl-8">
+                            {bitacora.map((item: any) => {
+                                const style = getRegistroStyle(item);
+                                const isSalida = item.tipo_registro === 'SALIDA';
+                                const isActividad = item.tipo_registro === 'ACTIVIDAD';
+
+                                return (
+                                <div key={`${item.tipo_registro}-${item.id}`} className="relative pl-8">
                                     {/* Dot */}
-                                    <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-white ${item.estado === 'ACTIVA' ? 'bg-green-500' : 'bg-gray-400'
-                                        }`}></div>
+                                    <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-white ${
+                                        item.estado === 'ACTIVA' || item.estado === 'EN_SALIDA' ? style.dot : 'bg-gray-400'
+                                    }`}></div>
 
                                     {/* Content Card */}
                                     <div
-                                        className={`rounded-lg p-4 border cursor-pointer hover:shadow-md transition-shadow ${item.estado === 'ACTIVA'
-                                            ? 'bg-green-50 border-green-200'
-                                            : 'bg-gray-50 border-gray-200'
-                                            }`}
-                                        onClick={() => handleEditClick(item)}
+                                        className={`rounded-lg p-4 border ${!isSalida ? 'cursor-pointer hover:shadow-md' : ''} transition-shadow ${
+                                            item.estado === 'ACTIVA' || item.estado === 'EN_SALIDA'
+                                                ? `${style.bg} ${style.border}`
+                                                : 'bg-gray-50 border-gray-200'
+                                        }`}
+                                        onClick={() => !isSalida && handleEditClick(item)}
                                     >
                                         {/* Header */}
                                         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                                             <div className="flex items-center gap-2">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${getTipoColor(item.tipo_situacion)}`}>
-                                                    {item.subtipo_nombre || item.tipo_situacion.replace(/_/g, ' ')}
+                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
+                                                    item.color
+                                                        ? ''
+                                                        : isSalida
+                                                            ? style.badge
+                                                            : getTipoColor(item.tipo_situacion)
+                                                }`} style={item.color ? { backgroundColor: `${item.color}20`, color: item.color } : undefined}>
+                                                    {item.subtipo_nombre || item.tipo_situacion?.replace(/_/g, ' ') || 'Sin tipo'}
                                                 </span>
-                                                <span className="text-sm font-medium text-gray-500">
-                                                    #{item.numero_situacion || item.id}
-                                                </span>
-                                                {item.estado === 'ACTIVA' && (
+                                                {isActividad && (
+                                                    <span className="px-1.5 py-0.5 text-[10px] rounded bg-blue-50 text-blue-600 font-medium">
+                                                        ACT
+                                                    </span>
+                                                )}
+                                                {isSalida && (
+                                                    <span className="px-1.5 py-0.5 text-[10px] rounded bg-emerald-50 text-emerald-600 font-medium">
+                                                        JORNADA
+                                                    </span>
+                                                )}
+                                                {!isSalida && (
+                                                    <span className="text-sm font-medium text-gray-500">
+                                                        #{item.id}
+                                                    </span>
+                                                )}
+                                                {(item.estado === 'ACTIVA' || item.estado === 'EN_SALIDA') && (
                                                     <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full">
-                                                        ACTIVA
+                                                        {item.estado === 'EN_SALIDA' ? 'EN CURSO' : 'ACTIVA'}
                                                     </span>
                                                 )}
                                             </div>
@@ -248,12 +286,22 @@ export default function BitacoraPage() {
                                         {/* Contenido */}
                                         <div className="grid md:grid-cols-2 gap-4">
                                             <div>
+                                                {isSalida && item.tripulacion && item.tripulacion.length > 0 && (
+                                                    <div className="flex flex-wrap gap-2 mb-2">
+                                                        {item.tripulacion.map((t: Tripulante, idx: number) => (
+                                                            <span key={idx} className="inline-flex items-center gap-1 text-xs bg-white px-2 py-1 rounded border border-emerald-200">
+                                                                <span className="font-semibold text-emerald-700">{t.rol_tripulacion}:</span>
+                                                                <span>{t.nombre_completo}</span>
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
                                                 <p className="font-medium text-gray-900">
-                                                    {item.descripcion || 'Sin descripción'}
+                                                    {item.descripcion || item.observaciones || (isSalida ? 'Salida de unidad' : 'Sin descripción')}
                                                 </p>
-                                                {item.observaciones && (
+                                                {item.descripcion && item.observaciones && (
                                                     <p className="text-sm text-gray-600 mt-1 italic">
-                                                        "{item.observaciones}"
+                                                        &quot;{item.observaciones}&quot;
                                                     </p>
                                                 )}
                                             </div>
@@ -280,7 +328,8 @@ export default function BitacoraPage() {
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
