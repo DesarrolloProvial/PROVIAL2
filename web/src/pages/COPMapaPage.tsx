@@ -11,20 +11,61 @@ import ResumenUnidadesTable from '../components/ResumenUnidadesTable';
 import SituacionIcon from '../components/SituacionIcon';
 import { useAuthStore } from '../store/authStore';
 
+// Emoji corto por nombre de icono MDI (para el pin del mapa)
+const MDI_EMOJI: Record<string, string> = {
+  'car-crash': '💥', 'car-impact': '💥', 'car-side': '🔄', 'road-variant': '🚗',
+  'tire': '🛞', 'tow-truck': '🚛', 'car-off': '🚫',
+  'car-brake-alert': '⚠', 'car-police': '🚔', 'car-wash': '🧼', 'car-multiple': '🚗',
+  'police-station': '📍', 'map-marker-radius': '📍', 'traffic-cone': '🔶',
+  'counter': '🔢', 'speedometer': '⏱', 'traffic-light': '🚦',
+  'eye-check': '👁', 'clipboard-check': '📋', 'file-document': '📄', 'file-sign': '📝',
+  'police-badge': '🛡', 'police-badge-outline': '🛡', 'shield-account': '🛡',
+  'account-group': '👥', 'account-switch': '🔄', 'stop-circle': '⛔',
+  'road-barrier': '🚧', 'bullhorn': '📢', 'scale': '⚖',
+  'truck-wide': '🚚', 'truck-cargo-container': '🚚', 'package-down': '📦',
+  'weight': '⚖', 'axis-arrow': '🔧',
+  'gavel': '⚖', 'road-worker': '🔧', 'bike': '🚲', 'run': '🏃', 'run-fast': '🏃',
+  'swim': '🏊', 'fire': '🔥', 'fire-truck': '🔥', 'bank': '🏛',
+  'toilet': '🚻', 'atm': '💳', 'food': '🍽', 'wrench-clock': '🔧',
+  'oil': '💧', 'tree': '🌳', 'landslide': '⛰', 'waves': '🌊',
+  'slope-downhill': '⛰', 'arrow-down-bold-box': '⬇', 'table-row-remove': '⛰',
+  'water': '💧', 'home-flood': '🌊', 'water-alert': '💧', 'volcano': '🌋',
+  'image-filter-hdr': '⛰', 'pistol': '🔫', 'account-injury': '🤕', 'coffin': '⚰',
+  'home-city': '🏘', 'airplane': '✈', 'car-emergency': '🚨',
+  'traffic-cone-off': '🔶',
+};
+
 // Fix para iconos de Leaflet
-const createCustomIcon = (color: string) => {
+const createCustomIcon = (color: string, emoji?: string) => {
+  const displayEmoji = emoji || '';
   const svgIcon = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="41" viewBox="0 0 25 41">
-      <path fill="${color}" d="M12.5 0C5.6 0 0 5.6 0 12.5c0 8.3 12.5 28.5 12.5 28.5S25 20.8 25 12.5C25 5.6 19.4 0 12.5 0zm0 18c-3 0-5.5-2.5-5.5-5.5S9.5 7 12.5 7s5.5 2.5 5.5 5.5S15.5 18 12.5 18z"/>
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="46" viewBox="0 0 32 46">
+      <path fill="${color}" stroke="#fff" stroke-width="1.5" d="M16 1C7.7 1 1 7.7 1 16c0 10.5 15 29 15 29s15-18.5 15-29C31 7.7 24.3 1 16 1z"/>
+      <circle cx="16" cy="16" r="10" fill="#fff" fill-opacity="0.9"/>
+      <text x="16" y="21" text-anchor="middle" font-size="13">${displayEmoji}</text>
     </svg>
   `;
 
   return new Icon({
     iconUrl: `data:image/svg+xml;base64,${btoa(svgIcon)}`,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
+    iconSize: [32, 46],
+    iconAnchor: [16, 46],
+    popupAnchor: [0, -40],
   });
+};
+
+// Cache de iconos para no recrear en cada render
+const iconCache = new Map<string, ReturnType<typeof createCustomIcon>>();
+const getIconForUnidad = (unidad: any) => {
+  const color = unidad.situacion_color || COLORES_SEDE[unidad.sede_id] || '#6B7280';
+  const mdiIcon = unidad.situacion_icono || unidad.icono || null;
+  const emoji = mdiIcon ? (MDI_EMOJI[mdiIcon] || '') : '';
+  const key = `${color}-${emoji}`;
+
+  if (!iconCache.has(key)) {
+    iconCache.set(key, createCustomIcon(color, emoji));
+  }
+  return iconCache.get(key)!;
 };
 
 // Colores por sede
@@ -52,10 +93,6 @@ const SEDES_NOMBRES: Record<number, string> = {
   9: 'Río Dulce',
 };
 
-const getIconBySede = (sedeId: number | null) => {
-  const color = sedeId ? (COLORES_SEDE[sedeId] || '#6B7280') : '#6B7280';
-  return createCustomIcon(color);
-};
 
 
 
@@ -222,7 +259,7 @@ export default function COPMapaPage() {
         // Filtro por sede
         const pasaSede = filters.sedes.length === 0 || (u.sede_id && filters.sedes.includes(u.sede_id));
         // Filtro por estado (solo activas si está activado)
-        const pasaEstado = !filters.soloActivas || u.situacion_estado === 'ACTIVA';
+        const pasaEstado = !filters.soloActivas || u.estado_situacion === 'ACTIVA';
         return pasaSede && pasaEstado;
       })
     : [];
@@ -376,7 +413,7 @@ export default function COPMapaPage() {
               className={`bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition cursor-pointer border-l-4 ${
                 selectedUnidad?.unidad_id === unidad.unidad_id
                   ? 'border-blue-500 bg-blue-50'
-                  : unidad.situacion_estado === 'ACTIVA'
+                  : unidad.estado_situacion === 'ACTIVA'
                     ? 'border-red-400'
                     : 'border-green-400'
               }`}
@@ -387,17 +424,20 @@ export default function COPMapaPage() {
                 </span>
                 <span
                   className={`px-2 py-1 rounded-full text-xs font-medium ${getEstadoBadgeColor(
-                    unidad.situacion_estado
+                    unidad.estado_situacion
                   )}`}
                 >
-                  {unidad.situacion_estado || 'EN RUTA'}
+                  {unidad.estado_situacion || 'EN RUTA'}
                 </span>
               </div>
 
-              {unidad.tipo_situacion && (
+              {(unidad.situacion_nombre || unidad.ultima_situacion) && (
                 <p className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
                   <SituacionIcon icono={unidad.situacion_icono} color={unidad.situacion_color} size={16} />
-                  {unidad.situacion_nombre || getTipoSituacionLabel(unidad.tipo_situacion)}
+                  {unidad.situacion_nombre || getTipoSituacionLabel(unidad.ultima_situacion)}
+                  {unidad.tipo_registro === 'ACTIVIDAD' && (
+                    <span className="text-[10px] bg-blue-100 text-blue-700 px-1 rounded">ACT</span>
+                  )}
                 </p>
               )}
 
@@ -412,9 +452,17 @@ export default function COPMapaPage() {
                 {unidad.sede_nombre && (
                   <p>🏢 {unidad.sede_nombre}</p>
                 )}
-                {unidad.situacion_descripcion && (
-                  <p className="italic text-gray-500 truncate">
-                    {unidad.situacion_descripcion}
+                {unidad.clima && (
+                  <p>🌤 {unidad.clima}{unidad.carga_vehicular ? ` · 🚗 ${unidad.carga_vehicular}` : ''}</p>
+                )}
+                {unidad.observaciones && (
+                  <p className="italic text-gray-500 truncate" title={unidad.observaciones}>
+                    💬 {unidad.observaciones}
+                  </p>
+                )}
+                {unidad.created_at && (
+                  <p className="text-gray-400">
+                    🕐 {new Date(unidad.created_at).toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 )}
               </div>
@@ -481,7 +529,7 @@ export default function COPMapaPage() {
             <Marker
               key={`unidad-${unidad.unidad_id}`}
               position={[lat, lng]}
-              icon={getIconBySede(unidad.sede_id)}
+              icon={getIconForUnidad(unidad)}
             >
               <Popup>
                 <div className="p-2 min-w-[250px]">
@@ -497,14 +545,16 @@ export default function COPMapaPage() {
                   {unidad.sede_nombre && (
                     <p className="text-xs text-gray-500 mb-2">📍 Sede: {unidad.sede_nombre}</p>
                   )}
-                  {unidad.tipo_situacion && (
+                  {(unidad.situacion_nombre || unidad.ultima_situacion) && (
                     <p className="font-semibold text-gray-700 mb-2 flex items-center gap-1">
                       <SituacionIcon icono={unidad.situacion_icono} color={unidad.situacion_color} size={14} />
-                      {unidad.situacion_nombre || unidad.tipo_situacion?.replace(/_/g, ' ')}
+                      {unidad.situacion_nombre || getTipoSituacionLabel(unidad.ultima_situacion)}
+                      {unidad.tipo_registro === 'ACTIVIDAD' && (
+                        <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">ACTIVIDAD</span>
+                      )}
                     </p>
                   )}
                   <div className="text-sm space-y-1">
-                    {/* Ruta activa o ruta de situación */}
                     {(unidad.ruta_activa_codigo || unidad.ruta_codigo) && (
                       <p>
                         🛣️ {unidad.ruta_activa_codigo || unidad.ruta_codigo}{' '}
@@ -512,20 +562,36 @@ export default function COPMapaPage() {
                         {unidad.sentido && `(${unidad.sentido})`}
                       </p>
                     )}
-                    {unidad.situacion_estado && (
+                    {unidad.estado_situacion && (
                       <p>
                         Estado:{' '}
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          unidad.situacion_estado === 'ACTIVA'
+                          unidad.estado_situacion === 'ACTIVA'
                             ? 'bg-green-100 text-green-800'
                             : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {unidad.situacion_estado}
+                          {unidad.estado_situacion}
                         </span>
                       </p>
                     )}
 
-                    {unidad.situacion_descripcion && <p className="mt-2 text-gray-700">{unidad.situacion_descripcion}</p>}
+                    {unidad.clima && (
+                      <p>🌤 Clima: {unidad.clima}</p>
+                    )}
+                    {unidad.carga_vehicular && (
+                      <p>🚗 Carga: {unidad.carga_vehicular}</p>
+                    )}
+                    {unidad.obstruccion_data && (
+                      <p>🚧 Obstrucción: {typeof unidad.obstruccion_data === 'string' ? unidad.obstruccion_data : JSON.stringify(unidad.obstruccion_data)}</p>
+                    )}
+                    {unidad.observaciones && (
+                      <p className="mt-1 text-gray-700 italic">💬 {unidad.observaciones}</p>
+                    )}
+                    {unidad.created_at && (
+                      <p className="text-gray-400 text-xs">
+                        🕐 {new Date(unidad.created_at).toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    )}
 
                     {/* Galería de fotos */}
                     {unidad.fotos && unidad.fotos.length > 0 && (

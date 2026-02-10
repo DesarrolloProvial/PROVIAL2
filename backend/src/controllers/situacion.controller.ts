@@ -703,6 +703,8 @@ export async function getResumenUnidades(_req: Request, res: Response) {
         u.tipo_unidad,
         u.sede_id,
         se.nombre as sede_nombre,
+
+        -- Datos de situacion_actual (cache)
         sa.situacion_id,
         sa.tipo_situacion as ultima_situacion,
         sa.estado as estado_situacion,
@@ -710,13 +712,43 @@ export async function getResumenUnidades(_req: Request, res: Response) {
         sa.longitud,
         sa.km,
         sa.sentido,
+        sa.ruta_id as sa_ruta_id,
         sa.ruta_codigo,
         sa.situacion_created_at,
+        sa.icono,
+
+        -- Actividad
+        sa.actividad_id,
+        sa.actividad_tipo_nombre,
+        sa.actividad_estado,
+        sa.actividad_created_at,
+
+        -- Datos extra de la situación (si es situacion)
+        s_ref.observaciones as situacion_observaciones,
+        s_ref.clima,
+        s_ref.carga_vehicular,
+        s_ref.obstruccion_data,
+
+        -- Datos extra de la actividad (si es actividad)
+        a_ref.observaciones as actividad_observaciones,
+        a_ref.datos as actividad_datos,
+
+        -- Catálogo situación
+        cts_sit.icono as situacion_icono,
+        cts_sit.color as situacion_color,
+        cts_sit.nombre as situacion_nombre,
+
+        -- Catálogo actividad
+        cts_act.icono as tipo_actividad_icono,
+        cts_act.color as tipo_actividad_color,
+        cts_act.nombre as tipo_actividad_nombre,
+
+        -- Multimedia (solo para situaciones)
         CASE WHEN sa.situacion_id IS NOT NULL THEN
           (SELECT sm.url_thumbnail
            FROM situacion_multimedia sm
            WHERE sm.situacion_id = sa.situacion_id AND sm.tipo = 'FOTO'
-           ORDER BY sm.orden LIMIT 1)
+           ORDER BY sm.infografia_numero, sm.orden LIMIT 1)
         ELSE NULL END as foto_preview,
         CASE WHEN sa.situacion_id IS NOT NULL THEN
           (SELECT COUNT(*)::int
@@ -728,29 +760,51 @@ export async function getResumenUnidades(_req: Request, res: Response) {
             'id', sm.id,
             'url', sm.url_original,
             'thumbnail', sm.url_thumbnail,
-            'orden', sm.orden
-          ) ORDER BY sm.orden)
+            'orden', sm.orden,
+            'infografia_numero', sm.infografia_numero,
+            'infografia_titulo', sm.infografia_titulo
+          ) ORDER BY sm.infografia_numero, sm.orden)
            FROM situacion_multimedia sm
            WHERE sm.situacion_id = sa.situacion_id AND sm.tipo = 'FOTO')
-        ELSE NULL END as fotos,
-        cts.icono as situacion_icono,
-        cts.color as situacion_color,
-        cts.nombre as situacion_nombre,
-        sa.actividad_id,
-        sa.actividad_tipo_nombre,
-        sa.actividad_estado,
-        sa.actividad_created_at
+        ELSE NULL END as fotos
+
       FROM unidad u
       INNER JOIN salida_unidad su ON u.id = su.unidad_id
         AND su.estado = 'EN_SALIDA'
       LEFT JOIN sede se ON u.sede_id = se.id
-      LEFT JOIN situacion_actual sa ON u.id = sa.unidad_id AND sa.estado = 'ACTIVA'
+      LEFT JOIN situacion_actual sa ON u.id = sa.unidad_id
       LEFT JOIN situacion s_ref ON sa.situacion_id = s_ref.id
-      LEFT JOIN catalogo_tipo_situacion cts ON s_ref.tipo_situacion_id = cts.id
+      LEFT JOIN catalogo_tipo_situacion cts_sit ON s_ref.tipo_situacion_id = cts_sit.id
+      LEFT JOIN actividad a_ref ON sa.actividad_id = a_ref.id
+      LEFT JOIN catalogo_tipo_situacion cts_act ON a_ref.tipo_actividad_id = cts_act.id
       WHERE u.activa = true
       ORDER BY u.codigo
     `);
-    return res.json({ resumen });
+
+    // Unificar campos: determinar si la info actual es situacion o actividad
+    const resumenFinal = resumen.map((r: any) => {
+      const esSituacion = !!r.situacion_id;
+      const esActividad = !esSituacion && !!r.actividad_id;
+
+      return {
+        ...r,
+        // Icono/color/nombre unificados
+        situacion_icono: esSituacion ? r.situacion_icono : (r.tipo_actividad_icono || r.icono || null),
+        situacion_color: esSituacion ? r.situacion_color : (r.tipo_actividad_color || null),
+        situacion_nombre: esSituacion ? r.situacion_nombre : (r.tipo_actividad_nombre || r.actividad_tipo_nombre || null),
+        ultima_situacion: esSituacion ? r.ultima_situacion : (r.tipo_actividad_nombre || r.actividad_tipo_nombre || null),
+        // Observaciones unificadas
+        observaciones: esSituacion ? r.situacion_observaciones : (esActividad ? r.actividad_observaciones : null),
+        // Estado unificado: si tiene algo activo
+        estado_situacion: esSituacion ? r.estado_situacion : (esActividad ? r.actividad_estado : null),
+        // Tipo: 'SITUACION' o 'ACTIVIDAD' para que el frontend sepa
+        tipo_registro: esSituacion ? 'SITUACION' : (esActividad ? 'ACTIVIDAD' : null),
+        // Timestamp unificado
+        created_at: esSituacion ? r.situacion_created_at : (esActividad ? r.actividad_created_at : null),
+      };
+    });
+
+    return res.json({ resumen: resumenFinal });
   } catch (error: any) {
     console.error('Error getResumenUnidades:', error);
     return res.status(500).json({ error: error.message });

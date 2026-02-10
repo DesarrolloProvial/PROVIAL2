@@ -455,19 +455,27 @@ export const SituacionModel = {
             sa.km,
             sa.sentido,
             sa.situacion_created_at as created_at,
+            sa.icono,
+            sa.actividad_id,
+            sa.actividad_tipo_nombre,
+            sa.actividad_estado,
+            sa.actividad_created_at,
             u.id as unidad_id,
             u.codigo as unidad_codigo,
             u.tipo_unidad,
+            u.sede_id,
             sa.ruta_codigo,
-            cts.icono as situacion_icono,
-            cts.color as situacion_color,
-            cts.nombre as situacion_nombre
+            COALESCE(cts_sit.icono, cts_act.icono, sa.icono) as situacion_icono,
+            COALESCE(cts_sit.color, cts_act.color) as situacion_color,
+            COALESCE(cts_sit.nombre, cts_act.nombre, sa.actividad_tipo_nombre) as situacion_nombre
         FROM unidad u
         INNER JOIN salida_unidad su ON u.id = su.unidad_id
           AND su.estado = 'EN_SALIDA'
-        LEFT JOIN situacion_actual sa ON u.id = sa.unidad_id AND sa.estado = 'ACTIVA'
+        LEFT JOIN situacion_actual sa ON u.id = sa.unidad_id
         LEFT JOIN situacion s_ref ON sa.situacion_id = s_ref.id
-        LEFT JOIN catalogo_tipo_situacion cts ON s_ref.tipo_situacion_id = cts.id
+        LEFT JOIN catalogo_tipo_situacion cts_sit ON s_ref.tipo_situacion_id = cts_sit.id
+        LEFT JOIN actividad a_ref ON sa.actividad_id = a_ref.id
+        LEFT JOIN catalogo_tipo_situacion cts_act ON a_ref.tipo_actividad_id = cts_act.id
         WHERE u.activa = true
         ORDER BY u.codigo
     `;
