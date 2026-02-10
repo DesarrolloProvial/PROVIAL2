@@ -38,6 +38,73 @@ export default function FormularioHechoTransito({ situacion, incidente, onDataCh
     const [departamentos, setDepartamentos] = useState<any[]>([]);
     const [municipios, setMunicipios] = useState<any[]>([]);
 
+    // Mapear vehiculos del backend al formato del form
+    const mapVehiculos = () => {
+        const vehs = incidente?.vehiculos || situacion.vehiculos_involucrados || [];
+        return vehs.map((v: any) => ({
+            tipo_vehiculo: v.tipo_vehiculo || v.tipo_vehiculo_nombre || '',
+            color: v.color || '',
+            marca: v.marca || v.marca_nombre || '',
+            placa: v.placa || '',
+            estado_piloto: v.estado_piloto || 'ILESO',
+            personas_asistidas: v.personas_asistidas || 0,
+            nombre_piloto: v.nombre_piloto || '',
+            licencia_numero: v.licencia_numero || '',
+            numero_poliza: v.numero_poliza || '',
+            heridos_en_vehiculo: v.heridos_en_vehiculo || 0,
+            fallecidos_en_vehiculo: v.fallecidos_en_vehiculo || 0,
+            danos_estimados: v.danos_estimados || '',
+            observaciones: v.observaciones || '',
+            // Gruas/ajustadores anidados en cada vehiculo
+            gruas: v.gruas || [],
+            ajustadores: v.ajustadores || [],
+        }));
+    };
+
+    // Extraer gruas de situacion (vienen anidadas en vehiculos o como array top-level)
+    const mapGruas = () => {
+        if (incidente?.gruas) return incidente.gruas;
+        const topLevel = situacion.gruas || [];
+        if (topLevel.length > 0) return topLevel.map((g: any) => ({
+            nombre: g.nombre || g.grua_nombre || '',
+            telefono: g.telefono || '',
+            placa: g.placa || g.grua_placa || '',
+            empresa: g.empresa || g.grua_empresa || '',
+        }));
+        return [];
+    };
+
+    // Extraer ajustadores
+    const mapAjustadores = () => {
+        if (incidente?.ajustadores) return incidente.ajustadores;
+        const topLevel = situacion.ajustadores || [];
+        if (topLevel.length > 0) return topLevel.map((a: any) => ({
+            nombre: a.datos?.nombre || a.nombre || '',
+            telefono: a.datos?.telefono || a.telefono || '',
+            aseguradora: a.aseguradora_nombre || a.empresa || '',
+        }));
+        return [];
+    };
+
+    // Extraer autoridades (array de strings tipo 'PNC', 'PMT', etc.)
+    const mapAutoridades = () => {
+        if (incidente?.autoridades_seleccionadas) return incidente.autoridades_seleccionadas;
+        const auths = situacion.autoridades || [];
+        if (auths.length > 0) return auths.map((a: any) => a.tipo || a);
+        return [];
+    };
+
+    // Mapear obstruccion
+    const mapObstruccion = () => {
+        if (incidente?.obstruye) return incidente.obstruye;
+        const obs = situacion.obstruccion_data;
+        if (obs) {
+            if (typeof obs === 'string') return obs;
+            return obs.obstruye || obs.tipo || '';
+        }
+        return '';
+    };
+
     const [formData, setFormData] = useState({
         // General
         departamento_id: incidente?.departamento_id || situacion.departamento_id || '',
@@ -49,24 +116,43 @@ export default function FormularioHechoTransito({ situacion, incidente, onDataCh
         tipo_hecho: incidente?.tipo_hecho || '',
 
         // Boleta
-        area: incidente?.area || '',
-        material_via: incidente?.material_via || '',
-        no_grupo_operativo: incidente?.no_grupo_operativo || '',
-        obstruye: incidente?.obstruye || '',
+        area: incidente?.area || situacion.area || '',
+        material_via: incidente?.material_via || situacion.tipo_pavimento || '',
+        no_grupo_operativo: incidente?.no_grupo_operativo || situacion.grupo || '',
+        obstruye: mapObstruccion(),
 
         // Vehículos
-        vehiculos: incidente?.vehiculos || [],
+        vehiculos: mapVehiculos(),
 
         // Recursos
-        gruas: incidente?.gruas || [],
-        ajustadores: incidente?.ajustadores || [],
-        autoridades: incidente?.autoridades_seleccionadas || [],
+        gruas: mapGruas(),
+        ajustadores: mapAjustadores(),
+        autoridades: mapAutoridades(),
         socorro: incidente?.socorro_seleccionado || [],
 
+        // Vía
+        iluminacion: situacion.iluminacion || '',
+        senalizacion: situacion.senalizacion || '',
+        visibilidad: situacion.visibilidad || '',
+        via_estado: situacion.via_estado || '',
+        causa_probable: situacion.causa_probable || '',
+
+        // Víctimas
+        ilesos: situacion.ilesos ?? null,
+        heridos_leves: situacion.heridos_leves ?? null,
+        heridos_graves: situacion.heridos_graves ?? null,
+        fallecidos: situacion.fallecidos ?? null,
+        trasladados: situacion.trasladados ?? null,
+        fugados: situacion.fugados ?? null,
+
+        // Acuerdo
+        acuerdo_involucrados: situacion.acuerdo_involucrados ?? false,
+        acuerdo_detalle: situacion.acuerdo_detalle || '',
+
         // Otros
-        danios_materiales: incidente?.danios_materiales || false,
-        danios_infraestructura: incidente?.danios_infraestructura || false,
-        descripcion_danios_infra: incidente?.descripcion_danios_infra || '',
+        danios_materiales: incidente?.danios_materiales ?? situacion.danios_materiales ?? false,
+        danios_infraestructura: incidente?.danios_infraestructura ?? situacion.danios_infraestructura ?? false,
+        descripcion_danios_infra: incidente?.descripcion_danios_infra || situacion.danios_descripcion || '',
         observaciones: incidente?.observaciones || situacion.observaciones || '',
     });
 
@@ -280,6 +366,98 @@ export default function FormularioHechoTransito({ situacion, incidente, onDataCh
                                     <option value="DENSO">Denso</option>
                                     <option value="CONGESTIONADO">Congestionado</option>
                                 </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Condiciones de Vía */}
+                    <div>
+                        <h3 className="text-md font-semibold text-gray-800 mb-4">Condiciones de Vía</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Iluminación</label>
+                                <select value={formData.iluminacion || ''} onChange={(e) => handleChange('iluminacion', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Seleccione...</option>
+                                    <option value="DIA">Día</option>
+                                    <option value="NOCHE_CON_LUZ">Noche con luz</option>
+                                    <option value="NOCHE_SIN_LUZ">Noche sin luz</option>
+                                    <option value="AMANECER">Amanecer</option>
+                                    <option value="ATARDECER">Atardecer</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Señalización</label>
+                                <select value={formData.senalizacion || ''} onChange={(e) => handleChange('senalizacion', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Seleccione...</option>
+                                    <option value="BUENA">Buena</option>
+                                    <option value="REGULAR">Regular</option>
+                                    <option value="DEFICIENTE">Deficiente</option>
+                                    <option value="INEXISTENTE">Inexistente</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Visibilidad</label>
+                                <select value={formData.visibilidad || ''} onChange={(e) => handleChange('visibilidad', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Seleccione...</option>
+                                    <option value="BUENA">Buena</option>
+                                    <option value="REGULAR">Regular</option>
+                                    <option value="MALA">Mala</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Estado de Vía</label>
+                                <select value={formData.via_estado || ''} onChange={(e) => handleChange('via_estado', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Seleccione...</option>
+                                    <option value="BUENO">Bueno</option>
+                                    <option value="REGULAR">Regular</option>
+                                    <option value="MALO">Malo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Causa Probable</label>
+                                <input type="text" value={formData.causa_probable || ''} onChange={(e) => handleChange('causa_probable', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Causa probable del hecho" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Víctimas */}
+                    <div>
+                        <h3 className="text-md font-semibold text-gray-800 mb-4">Víctimas</h3>
+                        <div className="grid grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Ilesos</label>
+                                <input type="number" min="0" value={formData.ilesos ?? ''} onChange={(e) => handleChange('ilesos', e.target.value ? Number(e.target.value) : null)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Heridos Leves</label>
+                                <input type="number" min="0" value={formData.heridos_leves ?? ''} onChange={(e) => handleChange('heridos_leves', e.target.value ? Number(e.target.value) : null)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Heridos Graves</label>
+                                <input type="number" min="0" value={formData.heridos_graves ?? ''} onChange={(e) => handleChange('heridos_graves', e.target.value ? Number(e.target.value) : null)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Fallecidos</label>
+                                <input type="number" min="0" value={formData.fallecidos ?? ''} onChange={(e) => handleChange('fallecidos', e.target.value ? Number(e.target.value) : null)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Trasladados</label>
+                                <input type="number" min="0" value={formData.trasladados ?? ''} onChange={(e) => handleChange('trasladados', e.target.value ? Number(e.target.value) : null)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Fugados</label>
+                                <input type="number" min="0" value={formData.fugados ?? ''} onChange={(e) => handleChange('fugados', e.target.value ? Number(e.target.value) : null)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
                             </div>
                         </div>
                     </div>

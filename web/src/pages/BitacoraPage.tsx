@@ -71,10 +71,12 @@ export default function BitacoraPage() {
         }
     }, [bitacora, unidadInfo]);
 
-    // Navegar a página de edición (solo para situaciones)
+    // Navegar a página de detalle según tipo
     const handleEditClick = (item: any) => {
         if (item.tipo_registro === 'SITUACION') {
             navigate(`/editar-situacion/${item.id}`);
+        } else if (item.tipo_registro === 'ACTIVIDAD') {
+            navigate(`/ver-actividad/${item.id}`);
         }
     };
 

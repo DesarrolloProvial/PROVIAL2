@@ -26,6 +26,7 @@ import COPSituacionesPage from './pages/COPSituacionesPage';
 import AdminHubPage from './pages/AdminHubPage';
 import DashboardEjecutivoPage from './pages/DashboardEjecutivoPage';
 import EditarSituacionPage from './pages/EditarSituacionPage';
+import VerActividadPage from './pages/VerActividadPage';
 
 // Crear QueryClient
 const queryClient = new QueryClient({
@@ -173,6 +174,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <EditarSituacionPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ver-actividad/:id"
+            element={
+              <ProtectedRoute>
+                <VerActividadPage />
               </ProtectedRoute>
             }
           />
