@@ -722,6 +722,7 @@ export async function getResumenUnidades(_req: Request, res: Response) {
         sa.actividad_tipo_nombre,
         sa.actividad_estado,
         sa.actividad_created_at,
+        sa.updated_at as sa_updated_at,
 
         -- Datos extra de la situación (si es situacion)
         s_ref.observaciones as situacion_observaciones,

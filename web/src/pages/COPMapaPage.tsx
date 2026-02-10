@@ -920,7 +920,7 @@ export default function COPMapaPage() {
                 <div>
                   <p className="text-xs text-gray-500">Con Situación Activa</p>
                   <p className="text-lg font-bold text-red-600">
-                    {filteredUnidades.filter((u: any) => u.situacion_estado === 'ACTIVA').length}
+                    {filteredUnidades.filter((u: any) => u.estado_situacion === 'ACTIVA').length}
                   </p>
                 </div>
                 <div>

@@ -11,16 +11,17 @@ interface ResumenUnidad {
   sede_id: number | null;
   sede_nombre: string;
   situacion_id: number | null;
-  tipo_situacion: string | null;
-  situacion_estado: string | null;
+  actividad_id: number | null;
+  ultima_situacion: string | null;
+  estado_situacion: string | null;
+  tipo_registro: 'SITUACION' | 'ACTIVIDAD' | null;
+  created_at: string | null;
+  sa_updated_at: string | null;
   km: number | null;
   sentido: string | null;
   ruta_codigo: string | null;
   ruta_activa_codigo: string | null;
-  combustible: number | null;
-  combustible_fraccion: string | null;
-  situacion_descripcion: string | null;
-  situacion_fecha: string | null;
+  observaciones: string | null;
   situacion_icono: string | null;
   situacion_color: string | null;
   situacion_nombre: string | null;
@@ -48,13 +49,6 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
   const [search, setSearch] = useState('');
   const [soloActivas, setSoloActivas] = useState(true); // Por defecto, solo mostrar activas
   const navigate = useNavigate();
-
-  // Debug: Log cuando cambian los datos
-  console.log('📊 [TABLE] Resumen recibido:', {
-    length: resumen?.length || 0,
-    isArray: Array.isArray(resumen),
-    firstItem: resumen?.[0]
-  });
 
   const formatHora = (fecha: string | null) => {
     if (!fecha) return '-';
@@ -93,8 +87,8 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
       u.sede_nombre?.toLowerCase().includes(searchLower) ||
       u.placa?.toLowerCase().includes(searchLower);
 
-    // Filtro de solo activas (unidades con situación activa)
-    const isActiva = u.situacion_estado === 'ACTIVA' || u.tipo_situacion !== null;
+    // Filtro de solo activas (unidades con situación o actividad activa)
+    const isActiva = u.estado_situacion === 'ACTIVA' || u.ultima_situacion !== null;
 
     if (soloActivas) {
       return matchesSearch && isActiva;
@@ -102,15 +96,8 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
     return matchesSearch;
   });
 
-  console.log('📊 [TABLE] Filtrado:', {
-    total: resumen?.length || 0,
-    filtered: filteredResumen.length,
-    soloActivas,
-    search
-  });
-
   // Contar unidades activas para el contador
-  const unidadesActivas = resumen.filter(u => u.situacion_estado === 'ACTIVA' || u.tipo_situacion !== null).length;
+  const unidadesActivas = resumen.filter(u => u.estado_situacion === 'ACTIVA' || u.ultima_situacion !== null).length;
 
   return (
     <div className="bg-white rounded-lg shadow">
@@ -208,28 +195,38 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
 
                 {/* Situación Actual */}
                 <td className="px-4 py-4">
-                  {unidad.tipo_situacion ? (
+                  {unidad.ultima_situacion ? (
                     <div className="space-y-1">
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${getTipoSituacionBadgeClass(
-                          unidad.tipo_situacion
+                          unidad.ultima_situacion
                         )}`}
                       >
                         <SituacionIcon icono={unidad.situacion_icono} color={unidad.situacion_color} size={14} />
-                        {unidad.situacion_nombre || unidad.tipo_situacion.replace(/_/g, ' ')}
+                        {unidad.situacion_nombre || unidad.ultima_situacion.replace(/_/g, ' ')}
                       </span>
-                      <div>
+                      <div className="flex items-center gap-1">
                         <span
                           className={`inline-block px-2 py-0.5 text-xs rounded-full ${getEstadoBadgeClass(
-                            unidad.situacion_estado
+                            unidad.estado_situacion
                           )}`}
                         >
-                          {unidad.situacion_estado}
+                          {unidad.estado_situacion || 'EN RUTA'}
                         </span>
+                        {unidad.tipo_registro === 'ACTIVIDAD' && (
+                          <span className="inline-block px-1.5 py-0.5 text-[10px] rounded bg-blue-50 text-blue-600 font-medium">
+                            ACT
+                          </span>
+                        )}
                       </div>
+                      {unidad.observaciones && (
+                        <div className="text-[11px] text-gray-500 truncate max-w-[180px]" title={unidad.observaciones}>
+                          {unidad.observaciones}
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-400">Sin situación</span>
+                    <span className="text-sm text-gray-400">Sin actividad</span>
                   )}
                 </td>
 
@@ -268,9 +265,25 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
 
                 {/* Última Hora */}
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    {formatHora(unidad.situacion_fecha)}
-                  </div>
+                  {(unidad.sa_updated_at || unidad.created_at) ? (
+                    <div>
+                      <div className="text-sm text-gray-900">
+                        {formatHora(unidad.sa_updated_at || unidad.created_at)}
+                      </div>
+                      <div className="text-[11px] text-gray-400">
+                        {(() => {
+                          const fecha = unidad.sa_updated_at || unidad.created_at;
+                          if (!fecha) return '';
+                          const d = new Date(fecha);
+                          const hoy = new Date();
+                          if (d.toDateString() === hoy.toDateString()) return 'Hoy';
+                          return d.toLocaleDateString('es-GT', { day: '2-digit', month: 'short' });
+                        })()}
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-400">-</span>
+                  )}
                 </td>
 
                 {/* Acciones */}
