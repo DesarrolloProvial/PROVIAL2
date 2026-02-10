@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { situacionesAPI, api } from '../services/api';
-import { ArrowLeft, RefreshCw, MapPin, Users, Truck, Clock, Fuel } from 'lucide-react';
+import { ArrowLeft, RefreshCw, MapPin, Users, Truck, Clock } from 'lucide-react';
 import Inspeccion360Historial from '../components/Inspeccion360Historial';
 
 // Tipos de situación para colores
@@ -288,16 +288,21 @@ export default function BitacoraPage() {
                                         {/* Contenido */}
                                         <div className="grid md:grid-cols-2 gap-4">
                                             <div>
-                                                {isSalida && item.tripulacion && item.tripulacion.length > 0 && (
-                                                    <div className="flex flex-wrap gap-2 mb-2">
-                                                        {item.tripulacion.map((t: Tripulante, idx: number) => (
-                                                            <span key={idx} className="inline-flex items-center gap-1 text-xs bg-white px-2 py-1 rounded border border-emerald-200">
-                                                                <span className="font-semibold text-emerald-700">{t.rol_tripulacion}:</span>
-                                                                <span>{t.nombre_completo}</span>
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                )}
+                                                {(() => {
+                                                    const trip = typeof item.tripulacion === 'string'
+                                                        ? JSON.parse(item.tripulacion || '[]')
+                                                        : (item.tripulacion || []);
+                                                    return trip.length > 0 ? (
+                                                        <div className="flex flex-wrap gap-2 mb-2">
+                                                            {trip.map((t: Tripulante, idx: number) => (
+                                                                <span key={idx} className="inline-flex items-center gap-1 text-xs bg-white px-2 py-1 rounded border border-emerald-200">
+                                                                    <span className="font-semibold text-emerald-700">{t.rol_tripulacion}:</span>
+                                                                    <span>{t.nombre_completo}</span>
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    ) : null;
+                                                })()}
                                                 <p className="font-medium text-gray-900">
                                                     {item.descripcion || item.observaciones || (isSalida ? 'Salida de unidad' : 'Sin descripción')}
                                                 </p>
@@ -306,6 +311,20 @@ export default function BitacoraPage() {
                                                         &quot;{item.observaciones}&quot;
                                                     </p>
                                                 )}
+                                                {/* Datos JSONB para actividades */}
+                                                {isActividad && item.datos && (() => {
+                                                    const d = typeof item.datos === 'string' ? JSON.parse(item.datos || '{}') : (item.datos || {});
+                                                    const keys = Object.keys(d).filter(k => d[k] !== null && d[k] !== '' && d[k] !== undefined);
+                                                    return keys.length > 0 ? (
+                                                        <div className="flex flex-wrap gap-2 mt-2">
+                                                            {keys.map(k => (
+                                                                <span key={k} className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                                                                    {k.replace(/_/g, ' ')}: {typeof d[k] === 'object' ? JSON.stringify(d[k]) : String(d[k])}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    ) : null;
+                                                })()}
                                             </div>
 
                                             <div className="space-y-1 text-sm">
@@ -313,12 +332,6 @@ export default function BitacoraPage() {
                                                     <div className="flex items-center gap-2 text-gray-600">
                                                         <MapPin className="w-4 h-4 text-gray-400" />
                                                         <span>{item.ruta_codigo} Km {item.km} {item.sentido && `(${item.sentido})`}</span>
-                                                    </div>
-                                                )}
-                                                {item.combustible && (
-                                                    <div className="flex items-center gap-2 text-gray-600">
-                                                        <Fuel className="w-4 h-4 text-gray-400" />
-                                                        <span>Combustible: {item.combustible}%</span>
                                                     </div>
                                                 )}
                                                 {item.creado_por_nombre && (

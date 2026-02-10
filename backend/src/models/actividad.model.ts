@@ -100,12 +100,17 @@ export const ActividadModel = {
         cts.categoria as tipo_actividad_categoria,
         cts.icono as tipo_actividad_icono,
         cts.color as tipo_actividad_color,
-        us.nombre_completo as creado_por_nombre
+        us.nombre_completo as creado_por_nombre,
+        su.tripulacion,
+        su.fecha_hora_salida,
+        ru.codigo as salida_ruta_codigo
       FROM actividad a
       LEFT JOIN unidad u ON a.unidad_id = u.id
       LEFT JOIN ruta r ON a.ruta_id = r.id
       LEFT JOIN catalogo_tipo_situacion cts ON a.tipo_actividad_id = cts.id
       LEFT JOIN usuario us ON a.creado_por = us.id
+      LEFT JOIN salida_unidad su ON a.salida_unidad_id = su.id
+      LEFT JOIN ruta ru ON su.ruta_inicial_id = ru.id
       WHERE a.id = $1
     `;
     return db.oneOrNone(query, [id]);

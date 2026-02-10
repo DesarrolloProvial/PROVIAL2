@@ -1,7 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
-import { ArrowLeft, Loader2, MapPin, Clock, User } from 'lucide-react';
+import { ArrowLeft, Loader2, MapPin, Clock, User, Users, Truck } from 'lucide-react';
+
+interface Tripulante {
+    usuario_id: number;
+    nombre_completo: string;
+    rol_tripulacion: string;
+}
 
 export default function VerActividadPage() {
     const { id } = useParams<{ id: string }>();
@@ -44,6 +50,10 @@ export default function VerActividadPage() {
 
     const datos = typeof actividad.datos === 'string' ? JSON.parse(actividad.datos || '{}') : (actividad.datos || {});
     const datosKeys = Object.keys(datos).filter(k => datos[k] !== null && datos[k] !== '' && datos[k] !== undefined);
+
+    const tripulacion: Tripulante[] = typeof actividad.tripulacion === 'string'
+        ? JSON.parse(actividad.tripulacion || '[]')
+        : (actividad.tripulacion || []);
 
     return (
         <div className="min-h-screen bg-gray-100">
@@ -117,8 +127,35 @@ export default function VerActividadPage() {
                                 <span className="ml-2 font-medium">{actividad.tipo_actividad_categoria}</span>
                             </div>
                         )}
+                        {actividad.salida_ruta_codigo && (
+                            <div className="flex items-center gap-2">
+                                <Truck className="w-4 h-4 text-gray-400" />
+                                <div>
+                                    <span className="text-gray-500">Ruta de salida:</span>
+                                    <span className="ml-2 font-medium">{actividad.salida_ruta_codigo}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
+
+                {/* Tripulacion */}
+                {tripulacion.length > 0 && (
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Users className="w-5 h-5 text-green-600" />
+                            <h2 className="text-lg font-semibold text-gray-800">Tripulacion</h2>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                            {tripulacion.map((t, idx) => (
+                                <div key={idx} className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
+                                    <span className="text-xs font-semibold text-green-700 uppercase">{t.rol_tripulacion}:</span>
+                                    <span className="text-sm text-gray-800">{t.nombre_completo}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Observaciones */}
                 {actividad.observaciones && (
