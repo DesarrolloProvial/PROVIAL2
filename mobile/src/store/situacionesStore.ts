@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import api from '../services/api';
 import { API_URL } from '../constants/config';
 import { TipoSituacion, EstadoSituacion, TipoDetalle } from '../constants/situacionTypes';
+import { actividadApi, ActividadCompleta, CreateActividadData } from '../services/actividadApi';
 
 // ========================================
 // INTERFACES
@@ -79,6 +80,10 @@ interface SituacionesState {
   error: string | null;
   lastUpdate: Date | null;
 
+  // Actividades operativas
+  actividadesHoy: ActividadCompleta[];
+  actividadActiva: ActividadCompleta | null;
+
   // Actions
   fetchMisSituacionesHoy: () => Promise<void>;
   fetchCatalogo: () => Promise<void>;
@@ -89,6 +94,10 @@ interface SituacionesState {
   cambiarTipoSituacion: (id: number, nuevoTipo: 'INCIDENTE' | 'ASISTENCIA_VEHICULAR', motivo?: string) => Promise<void>;
   refreshSituaciones: () => Promise<void>;
   clearError: () => void;
+
+  // Actividad actions
+  createActividad: (data: CreateActividadData) => Promise<ActividadCompleta>;
+  cerrarActividad: (id: number) => Promise<void>;
 }
 
 export interface CreateSituacionData {
@@ -196,6 +205,10 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
   error: null,
   lastUpdate: null,
 
+  // Actividades
+  actividadesHoy: [],
+  actividadActiva: null,
+
   // ========================================
   // FETCH MIS SITUACIONES HOY
   // ========================================
@@ -215,9 +228,15 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
         || situaciones.find((s: SituacionCompleta) => s.estado === 'ACTIVA')
         || null;
 
+      // Actividades del mismo endpoint
+      const actividades = response.data.actividades || [];
+      const actividadActiva = response.data.actividad_activa || null;
+
       set({
         situacionesHoy: situaciones,
         situacionActiva: activa,
+        actividadesHoy: actividades,
+        actividadActiva: actividadActiva,
         isLoading: false,
         lastUpdate: new Date(),
       });
@@ -483,6 +502,65 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
   // ========================================
   refreshSituaciones: async () => {
     await get().fetchMisSituacionesHoy();
+  },
+
+  // ========================================
+  // CREATE ACTIVIDAD
+  // ========================================
+  createActividad: async (data: CreateActividadData) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      console.log('[STORE] Creando actividad:', JSON.stringify(data, null, 2));
+      const actividad = await actividadApi.crear(data);
+      console.log('[STORE] Actividad creada:', actividad);
+
+      // Actualizar lista local
+      const actividadesActuales = get().actividadesHoy;
+      set({
+        actividadesHoy: [actividad, ...actividadesActuales],
+        actividadActiva: actividad.estado === 'ACTIVA' ? actividad : get().actividadActiva,
+        // Limpiar situación activa (backend ya la cerró)
+        situacionActiva: null,
+        isLoading: false,
+        lastUpdate: new Date(),
+      });
+
+      return actividad;
+    } catch (error: any) {
+      console.error('[STORE] Error al crear actividad:', error);
+      const errorMessage = error.message || 'Error al crear actividad';
+      set({ error: errorMessage, isLoading: false });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // ========================================
+  // CERRAR ACTIVIDAD
+  // ========================================
+  cerrarActividad: async (id: number) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const actividad = await actividadApi.cerrar(id);
+
+      const actividadesActualizadas = get().actividadesHoy.map((a) =>
+        a.id === id ? { ...a, estado: 'CERRADA' as const, closed_at: actividad.closed_at } : a
+      );
+
+      const nuevaActiva = get().actividadActiva?.id === id ? null : get().actividadActiva;
+
+      set({
+        actividadesHoy: actividadesActualizadas,
+        actividadActiva: nuevaActiva,
+        isLoading: false,
+        lastUpdate: new Date(),
+      });
+    } catch (error: any) {
+      const errorMessage = error.message || 'Error al cerrar actividad';
+      set({ error: errorMessage, isLoading: false });
+      throw new Error(errorMessage);
+    }
   },
 
   // ========================================

@@ -153,7 +153,8 @@ export async function uploadPhotoBuffer(
   buffer: Buffer,
   situacionId: number,
   orden?: number,
-  codigoSituacion?: string
+  codigoSituacion?: string,
+  infografiaNumero: number = 1
 ): Promise<{
   success: boolean;
   url?: string;
@@ -171,11 +172,11 @@ export async function uploadPhotoBuffer(
 
   try {
     // Nombre según convención:
-    // Con código: 20260121-1-030-70-86-50-4_F1 (fecha-sede-unidad-tipo-ruta-km-num_Foto#)
-    // Sin código: SIT_32_F1_1769436762168 (fallback con ID)
+    // Con código: 20260121-1-030-70-86-50-4_I1_F1 (fecha-sede-unidad-tipo-ruta-km-num_Inf#_Foto#)
+    // Sin código: SIT_32_I1_F1_1769436762168 (fallback con ID)
     const publicId = codigoSituacion
-      ? `${codigoSituacion}_F${orden || 1}`
-      : `SIT_${situacionId}_F${orden || 1}_${Date.now()}`;
+      ? `${codigoSituacion}_I${infografiaNumero}_F${orden || 1}`
+      : `SIT_${situacionId}_I${infografiaNumero}_F${orden || 1}_${Date.now()}`;
 
     console.log(`[CLOUDINARY] Subiendo foto con preset "${UPLOAD_PRESET}", public_id: ${publicId}`);
 
@@ -185,7 +186,7 @@ export async function uploadPhotoBuffer(
           upload_preset: UPLOAD_PRESET,
           public_id: publicId,
           resource_type: 'image',
-          tags: ['provial_app', `situacion_${situacionId}`]
+          tags: ['provial_app', `situacion_${situacionId}`, `infografia_${infografiaNumero}`]
         },
         (error, result) => {
           if (error) reject(error);
@@ -227,7 +228,8 @@ export async function uploadPhotoBuffer(
 export async function uploadVideoBuffer(
   buffer: Buffer,
   situacionId: number,
-  codigoSituacion?: string
+  codigoSituacion?: string,
+  infografiaNumero: number = 1
 ): Promise<{
   success: boolean;
   url?: string;
@@ -243,11 +245,11 @@ export async function uploadVideoBuffer(
 
   try {
     // Nombre según convención:
-    // Con código: 20260121-1-030-70-86-50-4_V1 (fecha-sede-unidad-tipo-ruta-km-num_Video)
-    // Sin código: SIT_32_V1_1769436762168 (fallback con ID)
+    // Con código: 20260121-1-030-70-86-50-4_I1_V (fecha-sede-unidad-tipo-ruta-km-num_Inf#_Video)
+    // Sin código: SIT_32_I1_V_1769436762168 (fallback con ID)
     const publicId = codigoSituacion
-      ? `${codigoSituacion}_V1`
-      : `SIT_${situacionId}_V1_${Date.now()}`;
+      ? `${codigoSituacion}_I${infografiaNumero}_V`
+      : `SIT_${situacionId}_I${infografiaNumero}_V_${Date.now()}`;
 
     console.log(`[CLOUDINARY] Subiendo video con preset "${UPLOAD_PRESET}", public_id: ${publicId}`);
 
@@ -257,7 +259,7 @@ export async function uploadVideoBuffer(
           upload_preset: UPLOAD_PRESET,
           public_id: publicId,
           resource_type: 'video',
-          tags: ['provial_app', `situacion_${situacionId}`]
+          tags: ['provial_app', `situacion_${situacionId}`, `infografia_${infografiaNumero}`]
         },
         (error, result) => {
           if (error) reject(error);

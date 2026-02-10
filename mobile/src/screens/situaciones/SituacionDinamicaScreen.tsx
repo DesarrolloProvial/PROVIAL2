@@ -72,6 +72,7 @@ export default function SituacionDinamicaScreen() {
         resolverConflictoEsperar,
     } = useDraftSituacion();
 
+
     // Estado local
     const [config, setConfig] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -80,6 +81,8 @@ export default function SituacionDinamicaScreen() {
     const [coordenadas, setCoordenadas] = useState<{ latitud: number; longitud: number } | null>(null);
     const [obteniendoUbicacion, setObteniendoUbicacion] = useState(false);
     const [initialValues, setInitialValues] = useState<any>({});
+    const [protectedFields, setProtectedFields] = useState<string[]>([]); // NEW: Track fields with existing data
+
 
     // Header Title
     useLayoutEffect(() => {
@@ -304,6 +307,17 @@ export default function SituacionDinamicaScreen() {
                 console.log('[SITUACION] Datos transformados para edición:', JSON.stringify(transformed, null, 2));
                 setInitialValues(transformed);
 
+                // NEW: Identify fields with existing data to protect
+                const fieldsWithData = Object.keys(transformed).filter(key => {
+                    const value = transformed[key];
+                    // Consider field as having data if it's not null/undefined/empty
+                    if (value === null || value === undefined || value === '') return false;
+                    if (Array.isArray(value)) return value.length > 0;
+                    return true;
+                });
+                console.log('[PROTECTION] Fields with existing data:', fieldsWithData);
+                setProtectedFields(fieldsWithData);
+
                 // Si hay coordenadas, actualizarlas también
                 if (datosCompletos.latitud && datosCompletos.longitud) {
                     setCoordenadas({
@@ -441,18 +455,32 @@ export default function SituacionDinamicaScreen() {
         console.log(`📸 [MULTIMEDIA-EDIT] Subiendo ${multimedia.length} archivos a situacion ${situacionId}`);
 
         for (const media of multimedia) {
+            console.log(`🔍 [DEBUG-UPLOAD] Procesando item: Tipo=${media.tipo}, URI=${media.uri}`);
+
+            // FIX: Saltar archivos ya subidos (http/https, placeholders o marcados como SUBIDO)
+            if (media.uri && (
+                media.uri.startsWith('http') ||
+                media.uri === 'infografia://placeholder' ||
+                (media as any).estado === 'SUBIDO' ||
+                (media as any).estado === 'COMPLETO'
+            )) {
+                console.log(`⏩ [MULTIMEDIA-EDIT] Saltando archivo ya procesado: ${media.uri} (Estado: ${(media as any).estado})`);
+                continue;
+            }
+
             const tipo = media.tipo as 'FOTO' | 'VIDEO';
             const uri = media.uri;
 
             // Construir objeto MediaFile compatible con el servicio
-            const guessMime = (uri: string, tipo: 'FOTO' | 'VIDEO') => {
+            const guessMime = (uri: string | undefined, tipo: 'FOTO' | 'VIDEO') => {
                 if (tipo === 'VIDEO') return 'video/mp4';
+                if (!uri) return 'image/jpeg';
                 if (uri.toLowerCase().endsWith('.png')) return 'image/png';
                 return 'image/jpeg';
             };
 
-            const buildName = (uri: string, tipo: 'FOTO' | 'VIDEO', orden?: number) => {
-                const ext = tipo === 'VIDEO' ? 'mp4' : uri.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
+            const buildName = (uri: string | undefined, tipo: 'FOTO' | 'VIDEO', orden?: number) => {
+                const ext = tipo === 'VIDEO' ? 'mp4' : (uri && uri.toLowerCase().endsWith('.png')) ? 'png' : 'jpg';
                 return tipo === 'VIDEO' ? `video_${Date.now()}.${ext}` : `foto_${orden ?? 1}_${Date.now()}.${ext}`;
             };
 
@@ -481,6 +509,16 @@ export default function SituacionDinamicaScreen() {
 
                 if (result.success) {
                     console.log(`✅ [MULTIMEDIA-EDIT] ${tipo} subida OK -> ID: ${result.id}, URL: ${result.url}`);
+
+                    // ACTUALIZAR ESTADO LOCAL PARA EVITAR RE-SUBIDA IMMEDIATA
+                    // Modificamos el objeto 'media' directamente para que si el loop o una nueva llamada
+                    // usa esta misma referencia, sepa que ya está subido.
+                    (media as any).estado = 'SUBIDO';
+                    if (result.url) {
+                        (media as any).uri = result.url;
+                        media.uri = result.url;
+                    }
+
                 } else {
                     console.error(`❌ [MULTIMEDIA-EDIT] ${tipo} FALLÓ:`, result.error);
                 }
@@ -672,6 +710,38 @@ export default function SituacionDinamicaScreen() {
     };
 
     /**
+     * Handler for protected field edit confirmation
+     * Shows alert when user tries to edit a field with existing data
+     */
+    const handleProtectedFieldEdit = (fieldName: string, fieldLabel: string): Promise<boolean> => {
+        return new Promise((resolve) => {
+            Alert.alert(
+                'Confirmar Edición',
+                `¿Seguro que deseas editar "${fieldLabel}"?\n\nEsta informaci\u00f3n ya fue registrada anteriormente. Los cambios podr\u00edan afectar la integridad de los datos.`,
+                [
+                    {
+                        text: 'Cancelar',
+                        onPress: () => {
+                            console.log(`[PROTECTION] User cancelled edit of field: ${fieldName}`);
+                            resolve(false);
+                        },
+                        style: 'cancel'
+                    },
+                    {
+                        text: 'Editar',
+                        onPress: () => {
+                            console.log(`[PROTECTION] User confirmed edit of field: ${fieldName}`);
+                            resolve(true);
+                        },
+                        style: 'destructive'
+                    }
+                ],
+                { cancelable: false }
+            );
+        });
+    };
+
+    /**
      * Modal de draft pendiente
      */
     const renderPendingModal = () => (
@@ -853,6 +923,8 @@ export default function SituacionDinamicaScreen() {
                 onSubmit={handleSubmit}
                 loading={sending}
                 initialValues={initialValues}
+                protectedFields={protectedFields} // NEW: Pass protected fields
+                onProtectedFieldEdit={handleProtectedFieldEdit} // NEW: Pass confirmation handler
             />
 
             {renderPendingModal()}

@@ -261,6 +261,8 @@ export interface FormBuilderProps {
     onError?: (errors: Record<string, string>) => void;
     loading?: boolean;
     disabled?: boolean;
+    protectedFields?: string[]; // NEW: Fields that have existing data and require confirmation to edit
+    onProtectedFieldEdit?: (fieldName: string, fieldLabel: string) => Promise<boolean>; // NEW: Callback for edit confirmation
 }
 
 // ============================================
@@ -275,4 +277,6 @@ export interface FieldRendererProps {
     control: any; // react-hook-form Control
     formData: any;
     disabled?: boolean;
+    protectedFields?: string[]; // NEW: Fields that require confirmation to edit
+    onProtectedFieldEdit?: (fieldName: string, fieldLabel: string) => Promise<boolean>; // NEW: Callback for edit confirmation
 }

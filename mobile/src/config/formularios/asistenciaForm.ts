@@ -271,6 +271,7 @@ export const asistenciaVehicularForm: FormConfig = {
         carga_vehicular: 'FLUIDO',
         area: 'RURAL',
         material_via: 'ASFALTO',
+        multimedia: [], // Inicializar como array vacío
     },
 
     // Validación

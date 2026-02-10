@@ -17,6 +17,9 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useAuthStore } from '../../store/authStore';
 import { useSituacionesStore } from '../../store/situacionesStore';
 import { useTestMode } from '../../context/TestModeContext';
+
+// Tipos de formulario que van a la tabla actividad (no situacion)
+const FORMULARIOS_ACTIVIDAD = ['ACTIVIDAD', 'NOVEDAD'];
 import { COLORS } from '../../constants/colors';
 import {
   TipoSituacion,
@@ -32,6 +35,8 @@ import { DepartamentoMunicipioSelector } from '../../components/DepartamentoMuni
 import DynamicFormFields from '../../components/DynamicFormFields';
 import MultimediaCaptureOffline from '../../components/MultimediaCaptureOffline';
 import { MultimediaRef } from '../../services/draftStorage';
+import InfografiaManager from '../../components/InfografiaManager';
+import { Infografia } from '../../types/multimedia';
 import VehiculoManager from '../../components/VehiculoManager';
 import CausasSelector from '../../components/CausasSelector';
 import CondicionesVia from '../../components/CondicionesVia';
@@ -59,6 +64,7 @@ export default function NuevaSituacionScreen() {
   const { salidaActiva } = useAuthStore();
   const {
     createSituacion,
+    createActividad,
     fetchMisSituacionesHoy,
     isLoading,
     fetchCatalogo,
@@ -77,6 +83,7 @@ export default function NuevaSituacionScreen() {
   const [tipoSeleccionado, setTipoSeleccionado] = useState<TipoSituacion | null>(null);
   const [tipoSituacionId, setTipoSituacionId] = useState<number | null>(null);
   const [nombreTipoSeleccionado, setNombreTipoSeleccionado] = useState<string>('');
+  const [formularioTipo, setFormularioTipo] = useState<string>(''); // ACTIVIDAD, NOVEDAD, INCIDENTE, etc.
 
   const [km, setKm] = useState('');
   const [sentido, setSentido] = useState('');
@@ -103,8 +110,17 @@ export default function NuevaSituacionScreen() {
   // State para unidades (Supervisión)
   const [unidadesList, setUnidadesList] = useState<any[]>([]);
 
-  // State para multimedia
-  const [multimedia, setMultimedia] = useState<MultimediaRef[]>([]);
+  // State para multimedia/infografías
+  const [multimedia, setMultimedia] = useState<MultimediaRef[]>([]); // Mantener por compatibilidad si es necesario, o eliminar
+  const [infografias, setInfografias] = useState<Infografia[]>([
+    {
+      numero: 1,
+      titulo: 'Infografía 1',
+      fotos: [],
+      video: null,
+      created_at: new Date().toISOString(),
+    }
+  ]);
   const [draftUuid] = useState(() => `temp-${Date.now()}`); // UUID temporal para el componente
 
   // Hecho de tránsito: vehiculos form, causas, acuerdo, conteos
@@ -165,6 +181,66 @@ export default function NuevaSituacionScreen() {
       if (situacionData.carga_vehicular) setCarga(situacionData.carga_vehicular);
       if (situacionData.departamento_id) setDeptoId(situacionData.departamento_id);
       if (situacionData.municipio_id) setMuniId(situacionData.municipio_id);
+
+      // Cargar infografías desde multimedia existente
+      if (situacionData.multimedia && Array.isArray(situacionData.multimedia) && situacionData.multimedia.length > 0) {
+        // Agrupar multimedia por infografia_numero
+        const multimediaAgrupada = situacionData.multimedia.reduce((acc: any, item: any) => {
+          const infNum = item.infografia_numero || 1;
+          if (!acc[infNum]) {
+            acc[infNum] = {
+              numero: infNum,
+              titulo: item.infografia_titulo || `Infografía ${infNum}`,
+              fotos: [],
+              video: null,
+              created_at: new Date().toISOString(),
+            };
+          }
+
+          if (item.tipo === 'FOTO') {
+            acc[infNum].fotos.push({
+              orden: item.orden || acc[infNum].fotos.length + 1,
+              uri: item.url || item.url_original,
+              filename: item.nombre_archivo || `foto_${item.orden}.jpg`,
+              url_original: item.url_original,
+              url_thumbnail: item.thumbnail || item.url_thumbnail,
+              cloudinary_id: item.public_id,
+              estado: 'SUBIDO' as const,
+              latitud: item.latitud,
+              longitud: item.longitud,
+            });
+          } else if (item.tipo === 'VIDEO' && !acc[infNum].video) {
+            acc[infNum].video = {
+              uri: item.url || item.url_original,
+              filename: item.nombre_archivo || 'video.mp4',
+              url_original: item.url_original,
+              cloudinary_id: item.public_id,
+              duracion_segundos: item.duracion_segundos,
+              estado: 'SUBIDO' as const,
+              latitud: item.latitud,
+              longitud: item.longitud,
+            };
+          }
+
+          return acc;
+        }, {});
+
+        // Convertir a array y ordenar por número
+        const infografiasArray = Object.values(multimediaAgrupada).sort((a: any, b: any) => a.numero - b.numero);
+
+        if (infografiasArray.length > 0) {
+          setInfografias(infografiasArray as Infografia[]);
+        }
+      } else {
+        // Si no hay multimedia existente en modo edición, inicializar con una infografía vacía
+        setInfografias([{
+          numero: 1,
+          titulo: 'Infografía 1',
+          fotos: [],
+          video: null,
+          created_at: new Date().toISOString(),
+        }]);
+      }
     }
   }, [editMode, situacionData]);
 
@@ -190,6 +266,7 @@ export default function NuevaSituacionScreen() {
   const seleccionarTipoDesdeCatalogo = (tipo: any, categoriaCodigo: string) => {
     setTipoSituacionId(tipo.id);
     setNombreTipoSeleccionado(tipo.nombre);
+    setFormularioTipo(tipo.formulario_tipo || '');
 
     let tipoMacro: TipoSituacion = 'OTROS';
     switch (tipo.formulario_tipo) {
@@ -201,6 +278,17 @@ export default function NuevaSituacionScreen() {
       default: tipoMacro = 'OTROS';
     }
     setTipoSeleccionado(tipoMacro);
+
+    // Inicializar infografías si es un tipo que requiere evidencia
+    if (['INCIDENTE', 'ASISTENCIA_VEHICULAR', 'EMERGENCIA'].includes(tipoMacro) && infografias.length === 0) {
+      setInfografias([{
+        numero: 1,
+        titulo: 'Escena Principal',
+        fotos: [],
+        video: null,
+        created_at: new Date().toISOString()
+      }]);
+    }
   };
 
   const handleCrearSituacion = async () => {
@@ -226,7 +314,44 @@ export default function NuevaSituacionScreen() {
           municipio_id: muniId || null,
         };
         await api.patch(`/situaciones/${situacionId}`, data);
+      } else if (FORMULARIOS_ACTIVIDAD.includes(formularioTipo)) {
+        // ============================================
+        // ACTIVIDAD OPERATIVA -> POST /api/actividades
+        // ============================================
+        const dd = detallesDinamicos as any;
+
+        // Construir datos JSONB específicos del tipo
+        const datosEspecificos: Record<string, any> = {};
+        if (nombreTipoSeleccionado === 'Conteo vehicular' && dd.conteos) {
+          datosEspecificos.conteos = dd.conteos;
+        } else if (nombreTipoSeleccionado === 'Toma de velocidad' && dd.velocidades) {
+          datosEspecificos.velocidades = dd.velocidades;
+        } else if (nombreTipoSeleccionado === 'Consignación') {
+          if (dd.numero_documento) datosEspecificos.numero_documento = dd.numero_documento;
+          if (dd.motivo) datosEspecificos.motivo = dd.motivo;
+        } else if (dd.empresa || dd.piloto || dd.institucion || dd.llamadas_detalles) {
+          // Otros datos dinámicos van al JSONB
+          Object.assign(datosEspecificos, detallesDinamicos);
+        }
+
+        const actividadData = {
+          tipo_actividad_id: tipoSituacionId!,
+          unidad_id: salidaActiva!.unidad_id,
+          salida_unidad_id: salidaActiva!.salida_id,
+          ruta_id: salidaActiva?.ruta_id ?? null,
+          km: km ? parseFloat(km) : null,
+          sentido: sentido || null,
+          latitud: latitud ? parseFloat(latitud) : null,
+          longitud: longitud ? parseFloat(longitud) : null,
+          observaciones: observaciones || null,
+          datos: Object.keys(datosEspecificos).length > 0 ? datosEspecificos : {},
+        };
+
+        await createActividad(actividadData);
       } else {
+        // ============================================
+        // SITUACION COMPLEJA -> POST /api/situaciones
+        // ============================================
         // Extraer campos de detallesDinamicos para enviar a nivel raíz
         const dd = detallesDinamicos as any;
 
@@ -274,7 +399,8 @@ export default function NuevaSituacionScreen() {
           // Detalles complejos (arrays de datos)
           detalles: detallesArray.length > 0 ? detallesArray : null,
           // Multimedia (URIs locales - se subirán a Cloudinary después)
-          multimedia: multimedia.length > 0 ? multimedia : null
+          multimedia: multimedia.length > 0 ? multimedia : null,
+          infografias: infografias.length > 0 ? infografias : null
         };
 
         // Si es INCIDENTE, agregar datos completos de hecho de tránsito
@@ -352,10 +478,51 @@ export default function NuevaSituacionScreen() {
           data.via_condicion = dd.via_condicion || null;
         }
 
-        await createSituacion(data);
+        const nuevaSituacion = await createSituacion(data);
+
+        // Iniciar subida de infografías en segundo plano
+        if (infografias.length > 0 && nuevaSituacion?.id) {
+          // Aplanar todas las fotos y videos de todas las infografías
+          const allMedia: any[] = infografias.flatMap(inf => {
+            const fotos = inf.fotos.map(f => ({
+              uri: f.uri,
+              tipo: 'FOTO',
+              orden: f.orden,
+              infografia_numero: inf.numero,
+              infografia_titulo: inf.titulo,
+              latitud: f.latitud,
+              longitud: f.longitud
+            }));
+
+            const videos = [];
+            if (inf.video) {
+              videos.push({
+                uri: inf.video.uri,
+                tipo: 'VIDEO',
+                infografia_numero: inf.numero,
+                infografia_titulo: inf.titulo,
+                duracion_segundos: inf.video.duracion_segundos
+              });
+            }
+
+            return [...fotos, ...videos];
+          });
+
+          if (allMedia.length > 0) {
+            console.log(`[NuevaSituacion] Iniciando subida de ${allMedia.length} archivos multimedia...`);
+            // No esperamos a que termine, se ejecuta en "segundo plano"
+            // Importar dinámicamente para evitar ciclos si fuera necesario, o usar el import estático
+            require('../../services/multimediaSync').uploadSituacionMultimedia(nuevaSituacion.id, allMedia)
+              .then((res: any) => console.log('[NuevaSituacion] Subida completada', res))
+              .catch((err: any) => console.error('[NuevaSituacion] Error en subida background', err));
+          }
+        }
+
+
       }
 
-      Alert.alert('Éxito', 'Situación guardada', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+      const mensajeExito = FORMULARIOS_ACTIVIDAD.includes(formularioTipo) ? 'Actividad registrada' : 'Situación guardada';
+      Alert.alert('Éxito', mensajeExito, [{ text: 'OK', onPress: () => navigation.goBack() }]);
     } catch (error: any) {
       console.error('❌ ERROR COMPLETO AL CREAR SITUACIÓN:', JSON.stringify(error, null, 2));
       console.error('❌ ERROR RESPONSE:', error?.response?.data);
@@ -567,15 +734,21 @@ export default function NuevaSituacionScreen() {
             )}
 
             {/* MULTIMEDIA - Solo para tipos que requieren evidencia */}
-            {['INCIDENTE', 'ASISTENCIA_VEHICULAR', 'EMERGENCIA'].includes(tipoSeleccionado || '') && (
-              <MultimediaCaptureOffline
-                draftUuid={draftUuid}
-                tipoSituacion={tipoSeleccionado || 'OTROS'}
-                manualMode={true}
-                initialMedia={multimedia}
-                onMultimediaChange={setMultimedia}
-              />
-            )}
+            {/* MULTIMEDIA - Solo para tipos que requieren evidencia */}
+            {(() => {
+              const shouldShow = ['INCIDENTE', 'ASISTENCIA_VEHICULAR', 'EMERGENCIA'].includes(tipoSeleccionado || '');
+              console.log('🔍 DEBUG MULTIMEDIA:', { tipoSeleccionado, shouldShow, infografias });
+              return shouldShow;
+            })() && (
+                <View style={[styles.card, { backgroundColor: '#FFFF00' }]}>
+                  <Text style={styles.cardTitle}>Evidencia Multimedia</Text>
+                  <InfografiaManager
+                    situacionId={draftUuid}
+                    infografias={infografias}
+                    onChange={setInfografias}
+                  />
+                </View>
+              )}
 
             {/* OBSERVACIONES */}
             <View style={styles.card}>

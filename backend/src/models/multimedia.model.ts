@@ -7,6 +7,8 @@ import { db } from '../config/database';
 export interface MultimediaRecord {
   id: number;
   situacion_id: number;
+  infografia_numero: number;
+  infografia_titulo: string | null;
   tipo: 'FOTO' | 'VIDEO';
   orden: number | null;
   url_original: string;
@@ -25,6 +27,8 @@ export interface MultimediaRecord {
 
 export interface CreateMultimediaParams {
   situacion_id: number;
+  infografia_numero?: number;
+  infografia_titulo?: string;
   tipo: 'FOTO' | 'VIDEO';
   orden?: number | null;
   url_original: string;
@@ -56,18 +60,20 @@ export const MultimediaModel = {
   async create(params: CreateMultimediaParams): Promise<number> {
     const result = await db.one(`
       INSERT INTO situacion_multimedia (
-        situacion_id, tipo, orden, url_original, url_thumbnail,
+        situacion_id, infografia_numero, infografia_titulo, tipo, orden, url_original, url_thumbnail,
         nombre_archivo, mime_type, tamanio_bytes,
         ancho, alto, duracion_segundos,
         latitud, longitud, subido_por
       ) VALUES (
         $1, $2, $3, $4, $5,
-        $6, $7, $8,
-        $9, $10, $11,
-        $12, $13, $14
+        $6, $7, $8, $9, $10,
+        $11, $12, $13,
+        $14, $15, $16
       ) RETURNING id
     `, [
       params.situacion_id,
+      params.infografia_numero || 1,
+      params.infografia_titulo || null,
       params.tipo,
       params.orden || null,
       params.url_original,
@@ -96,7 +102,7 @@ export const MultimediaModel = {
       FROM situacion_multimedia sm
       LEFT JOIN usuario u ON sm.subido_por = u.id
       WHERE sm.situacion_id = $1
-      ORDER BY sm.tipo, sm.orden, sm.created_at
+      ORDER BY sm.infografia_numero, sm.tipo, sm.orden, sm.created_at
     `, [situacionId]);
   },
 
@@ -121,6 +127,7 @@ export const MultimediaModel = {
 
   /**
    * Verificar si la multimedia está completa para una situación
+   * @deprecated Usar validación por infografía en el futuro
    */
   async verificarCompletitud(situacionId: number): Promise<{
     fotos_subidas: number;
@@ -136,26 +143,26 @@ export const MultimediaModel = {
   },
 
   /**
-   * Obtener siguiente orden disponible para foto
+   * Obtener siguiente orden disponible para foto en una infografía específica
    */
-  async getSiguienteOrdenFoto(situacionId: number): Promise<number> {
+  async getSiguienteOrdenFoto(situacionId: number, infografiaNumero: number = 1): Promise<number> {
     const result = await db.oneOrNone(`
       SELECT COALESCE(MAX(orden), 0) + 1 as siguiente
       FROM situacion_multimedia
-      WHERE situacion_id = $1 AND tipo = 'FOTO'
-    `, [situacionId]);
+      WHERE situacion_id = $1 AND infografia_numero = $2 AND tipo = 'FOTO'
+    `, [situacionId, infografiaNumero]);
     return result?.siguiente || 1;
   },
 
   /**
-   * Verificar si ya existe video para la situación
+   * Verificar si ya existe video para la situación e infografía
    */
-  async existeVideo(situacionId: number): Promise<boolean> {
+  async existeVideo(situacionId: number, infografiaNumero: number = 1): Promise<boolean> {
     const result = await db.oneOrNone(`
       SELECT id FROM situacion_multimedia
-      WHERE situacion_id = $1 AND tipo = 'VIDEO'
+      WHERE situacion_id = $1 AND infografia_numero = $2 AND tipo = 'VIDEO'
       LIMIT 1
-    `, [situacionId]);
+    `, [situacionId, infografiaNumero]);
     return !!result;
   },
 

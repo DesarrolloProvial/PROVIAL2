@@ -37,6 +37,7 @@ import passwordResetRoutes from './passwordReset.routes';
 import rolesRoutes from './roles.routes';
 import cloudinaryRoutes from './cloudinary.routes';
 import draftsRoutes from './drafts.routes';
+import actividadRoutes from './actividad.routes';
 
 
 const router = Router();
@@ -154,6 +155,9 @@ router.use('/cloudinary', cloudinaryRoutes);
 
 // Drafts offline-first
 router.use('/drafts', draftsRoutes);
+
+// Actividades operativas (patrullaje, puesto fijo, comida, etc.)
+router.use('/actividades', actividadRoutes);
 
 
 export default router;

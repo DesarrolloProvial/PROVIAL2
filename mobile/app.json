@@ -70,7 +70,8 @@
           "savePhotosPermission": "Permitir a Provial guardar fotos en tu galería.",
           "isAccessMediaLocationEnabled": true
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "eas": {

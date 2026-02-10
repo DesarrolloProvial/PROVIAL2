@@ -25,6 +25,8 @@ export function FormBuilder({
     onChange,
     loading,
     disabled,
+    protectedFields, // NEW
+    onProtectedFieldEdit, // NEW
 }: FormBuilderProps) {
     const theme = useTheme();
     const [activeTab, setActiveTab] = useState(config.tabs?.[0]?.id || 'default');
@@ -57,10 +59,19 @@ export function FormBuilder({
 
     const formData = watch();
 
+    // Track previous formData para evitar llamadas innecesarias a onChange
+    const prevFormDataRef = useRef<string>('');
+
     // Emit onChange cuando cambia el form
     useEffect(() => {
         if (onChange && isDirty) {
-            onChange(formData);
+            const currentFormDataStr = JSON.stringify(formData);
+
+            // Solo llamar onChange si los datos realmente cambiaron
+            if (currentFormDataStr !== prevFormDataRef.current) {
+                prevFormDataRef.current = currentFormDataStr;
+                onChange(formData);
+            }
         }
     }, [formData, isDirty, onChange]);
 
@@ -126,6 +137,8 @@ export function FormBuilder({
                                 control={control}
                                 formData={formData}
                                 disabled={disabled}
+                                protectedFields={protectedFields} // NEW
+                                onProtectedFieldEdit={onProtectedFieldEdit} // NEW
                             />
                         ))}
                     </View>

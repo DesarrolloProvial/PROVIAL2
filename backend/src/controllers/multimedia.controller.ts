@@ -44,7 +44,9 @@ export async function subirFoto(req: Request, res: Response) {
     }
 
     const { situacionId } = req.params;
-    const { latitud, longitud } = req.body;
+    const { latitud, longitud, infografia_numero, infografia_titulo } = req.body;
+
+    const infografiaNumero = infografia_numero ? parseInt(infografia_numero, 10) : 1;
 
     if (!req.file) {
       return res.status(400).json({ error: 'No se recibió ningún archivo' });
@@ -60,12 +62,12 @@ export async function subirFoto(req: Request, res: Response) {
       return res.status(404).json({ error: 'Situación no encontrada' });
     }
 
-    // Verificar límite de fotos
-    const ordenSiguiente = await MultimediaModel.getSiguienteOrdenFoto(parseInt(situacionId));
+    // Verificar límite de fotos por infografía
+    const ordenSiguiente = await MultimediaModel.getSiguienteOrdenFoto(parseInt(situacionId), infografiaNumero);
     if (ordenSiguiente > 3) {
       return res.status(400).json({
         error: 'Límite de fotos alcanzado',
-        message: 'Ya se subieron las 3 fotos permitidas para esta situación'
+        message: `Ya se subieron las 3 fotos permitidas para la infografía ${infografiaNumero}`
       });
     }
 
@@ -75,13 +77,14 @@ export async function subirFoto(req: Request, res: Response) {
       return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
     }
 
-    // Subir foto a Cloudinary usando el código determinista
-    console.log(`[MULTIMEDIA] Subiendo foto a Cloudinary para situación ${situacionId} (${situacion.codigo_situacion})...`);
+    // Subir foto a Cloudinary usando el código determinista y número de infografía
+    console.log(`[MULTIMEDIA] Subiendo foto a Cloudinary para situación ${situacionId} Infografía ${infografiaNumero}...`);
     const result = await uploadPhotoBuffer(
       req.file.buffer,
       parseInt(situacionId),
       ordenSiguiente,
-      situacion.codigo_situacion // Usar código determinista para nombrar archivo
+      situacion.codigo_situacion, // Usar código determinista para nombrar archivo
+      infografiaNumero
     );
 
     if (!result.success) {
@@ -94,6 +97,8 @@ export async function subirFoto(req: Request, res: Response) {
     // Guardar referencia en BD
     const multimediaId = await MultimediaModel.create({
       situacion_id: parseInt(situacionId),
+      infografia_numero: infografiaNumero,
+      infografia_titulo: infografia_titulo || null,
       tipo: 'FOTO',
       orden: ordenSiguiente,
       url_original: result.url!,
@@ -108,15 +113,16 @@ export async function subirFoto(req: Request, res: Response) {
       subido_por: req.user.userId
     });
 
-    // Verificar completitud
+    // Verificar completitud (Legacy check, maybe update later)
     const completitud = await MultimediaModel.verificarCompletitud(parseInt(situacionId));
 
-    console.log(`[MULTIMEDIA] Foto ${ordenSiguiente}/3 subida para situación ${situacionId} por usuario ${req.user.userId}`);
+    console.log(`[MULTIMEDIA] Foto ${ordenSiguiente}/3 (Inf ${infografiaNumero}) subida para situación ${situacionId}`);
 
     return res.status(201).json({
       message: `Foto ${ordenSiguiente} de 3 subida correctamente`,
       multimedia: {
         id: multimediaId,
+        infografia_numero: infografiaNumero,
         orden: ordenSiguiente,
         url: result.url,
         thumbnailUrl: result.thumbnailUrl,
@@ -143,7 +149,9 @@ export async function subirVideo(req: Request, res: Response) {
     }
 
     const { situacionId } = req.params;
-    const { latitud, longitud, duracion_segundos } = req.body;
+    const { latitud, longitud, duracion_segundos, infografia_numero, infografia_titulo } = req.body;
+
+    const infografiaNumero = infografia_numero ? parseInt(infografia_numero, 10) : 1;
 
     if (!req.file) {
       return res.status(400).json({ error: 'No se recibió ningún archivo' });
@@ -159,12 +167,12 @@ export async function subirVideo(req: Request, res: Response) {
       return res.status(404).json({ error: 'Situación no encontrada' });
     }
 
-    // Verificar si ya existe video
-    const existeVideo = await MultimediaModel.existeVideo(parseInt(situacionId));
+    // Verificar si ya existe video para esta infografía
+    const existeVideo = await MultimediaModel.existeVideo(parseInt(situacionId), infografiaNumero);
     if (existeVideo) {
       return res.status(400).json({
         error: 'Ya existe un video',
-        message: 'Solo se permite un video por situación. Elimina el existente primero.'
+        message: `Solo se permite un video por infografía. Elimina el existente en la infografía ${infografiaNumero} primero.`
       });
     }
 
@@ -175,11 +183,12 @@ export async function subirVideo(req: Request, res: Response) {
     }
 
     // Subir video a Cloudinary usando el código determinista
-    console.log(`[MULTIMEDIA] Subiendo video a Cloudinary para situación ${situacionId} (${situacion.codigo_situacion})...`);
+    console.log(`[MULTIMEDIA] Subiendo video a Cloudinary para situación ${situacionId} Infografía ${infografiaNumero}...`);
     const result = await uploadVideoBuffer(
       req.file.buffer,
       parseInt(situacionId),
-      situacion.codigo_situacion // Usar código determinista para nombrar archivo
+      situacion.codigo_situacion, // Usar código determinista para nombrar archivo
+      infografiaNumero
     );
 
     if (!result.success) {
@@ -192,6 +201,8 @@ export async function subirVideo(req: Request, res: Response) {
     // Guardar referencia en BD
     const multimediaId = await MultimediaModel.create({
       situacion_id: parseInt(situacionId),
+      infografia_numero: infografiaNumero,
+      infografia_titulo: infografia_titulo || null,
       tipo: 'VIDEO',
       url_original: result.url!,
       nombre_archivo: result.publicId || `video_${Date.now()}`,
@@ -212,6 +223,7 @@ export async function subirVideo(req: Request, res: Response) {
       message: 'Video subido correctamente',
       multimedia: {
         id: multimediaId,
+        infografia_numero: infografiaNumero,
         url: result.url,
         size: result.size
       },
@@ -498,7 +510,7 @@ export async function guardarReferenciasCloudinary(req: Request, res: Response) 
     const resultados = [];
 
     for (const archivo of archivos) {
-      const { url, public_id, tipo, orden } = archivo;
+      const { url, public_id, tipo, orden, infografia_numero, infografia_titulo } = archivo;
 
       if (!url || !tipo) {
         resultados.push({ url, error: 'Faltan campos requeridos (url, tipo)' });
@@ -506,15 +518,19 @@ export async function guardarReferenciasCloudinary(req: Request, res: Response) 
       }
 
       try {
+        const infografiaNumero = infografia_numero ? parseInt(infografia_numero, 10) : 1;
+
         // Determinar orden si es foto y no viene especificado
         let ordenFinal = orden;
         if (tipo === 'FOTO' && !ordenFinal) {
-          ordenFinal = await MultimediaModel.getSiguienteOrdenFoto(parseInt(situacionId));
+          ordenFinal = await MultimediaModel.getSiguienteOrdenFoto(parseInt(situacionId), infografiaNumero);
         }
 
         // Guardar referencia en BD
         const multimediaId = await MultimediaModel.create({
           situacion_id: parseInt(situacionId),
+          infografia_numero: infografiaNumero,
+          infografia_titulo: infografia_titulo || null,
           tipo: tipo as 'FOTO' | 'VIDEO',
           orden: ordenFinal,
           url_original: url,

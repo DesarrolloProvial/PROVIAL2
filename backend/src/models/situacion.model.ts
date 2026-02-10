@@ -273,7 +273,7 @@ export const SituacionModel = {
     } catch (err: any) {
       // Fallback: if new columns from migration 117 don't exist yet, retry without them
       if (err.message?.includes('acuerdo_involucrados') || err.message?.includes('ilesos') ||
-          err.message?.includes('via_estado') || err.message?.includes('heridos_leves')) {
+        err.message?.includes('via_estado') || err.message?.includes('heridos_leves')) {
         const qFallback = `
           INSERT INTO situacion (
             tipo_situacion, unidad_id, salida_unidad_id, turno_id, asignacion_id,
@@ -479,7 +479,12 @@ export const SituacionModel = {
   },
 
   async cerrar(id: number, actualizado_por: number, obs?: string): Promise<Situacion> {
-    return this.update(id, { estado: 'CERRADA', actualizado_por, observaciones: obs } as any);
+    return this.update(id, {
+      estado: 'CERRADA',
+      actualizado_por,
+      observaciones: obs,
+      fecha_hora_finalizacion: new Date()
+    } as any);
   }
 };
 

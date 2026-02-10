@@ -4,6 +4,7 @@ import { SituacionDetalleModel } from '../models/situacionDetalle.model';
 import { MultimediaModel } from '../models/multimedia.model';
 import { SalidaModel } from '../models/salida.model';
 import { UbicacionBrigadaModel } from '../models/ubicacionBrigada.model';
+import { ActividadModel } from '../models/actividad.model';
 import { db } from '../config/database';
 import {
   emitSituacionNueva,
@@ -548,7 +549,22 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
     situacionActiva = list.find((s: any) => s.estado === 'ACTIVA') || null;
   }
 
-  return res.json({ situaciones: list, situacion_activa: situacionActiva });
+  // También buscar actividad activa de esta unidad
+  let actividadActiva: any = null;
+  let actividadesHoy: any[] = [];
+  try {
+    actividadesHoy = await ActividadModel.getByUnidadHoy(unidadId);
+    actividadActiva = actividadesHoy.find((a: any) => a.estado === 'ACTIVA') || null;
+  } catch (e: any) {
+    console.warn('[getMiUnidadHoy] Error buscando actividades:', e.message);
+  }
+
+  return res.json({
+    situaciones: list,
+    situacion_activa: situacionActiva,
+    actividades: actividadesHoy,
+    actividad_activa: actividadActiva,
+  });
 }
 
 export async function getMapaSituaciones(_req: Request, res: Response) {
@@ -719,7 +735,11 @@ export async function getResumenUnidades(_req: Request, res: Response) {
         ELSE NULL END as fotos,
         cts.icono as situacion_icono,
         cts.color as situacion_color,
-        cts.nombre as situacion_nombre
+        cts.nombre as situacion_nombre,
+        sa.actividad_id,
+        sa.actividad_tipo_nombre,
+        sa.actividad_estado,
+        sa.actividad_created_at
       FROM unidad u
       INNER JOIN salida_unidad su ON u.id = su.unidad_id
         AND su.estado = 'EN_SALIDA'

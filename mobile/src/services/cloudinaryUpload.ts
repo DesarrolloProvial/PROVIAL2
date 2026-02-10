@@ -141,7 +141,10 @@ export async function uploadMultimedia(
       // Determinar tipo y generar public_id siguiendo el naming convention
       const fileType = media.tipo === 'VIDEO' ? 'video' : 'image';
       const index = media.orden || (i + 1);
-      const publicId = `${situacionId}_${media.tipo}_${index}`;
+      const infografiaNum = (media as any).infografia_numero || 1;
+
+      // PublicId format: SITID_INF#_TIPO_INDEX
+      const publicId = `${situacionId}_I${infografiaNum}_${media.tipo}_${index}`;
 
       // Obtener firma del backend
       const signedParams = await getSignedUploadParams(

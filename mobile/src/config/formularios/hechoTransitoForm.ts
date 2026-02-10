@@ -298,6 +298,7 @@ export const hechoTransitoForm: FormConfig = {
         area: 'RURAL',
         material_via: 'ASFALTO',
         es_realmente_asistencia: false,
+        multimedia: [], // Inicializar como array vacío para evitar undefined
     },
 
     validateOnBlur: true,

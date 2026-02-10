@@ -44,6 +44,8 @@ export interface MultimediaRef {
   tipo: 'FOTO' | 'VIDEO';
   uri: string;
   orden?: number; // Solo para fotos (1, 2, 3)
+  infografia_numero?: number; // Agrupador de evidencia
+  infografia_titulo?: string; // Título opcional
   // Metadata opcional para subida
   latitud?: number;
   longitud?: number;
