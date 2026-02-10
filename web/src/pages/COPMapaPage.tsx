@@ -47,7 +47,7 @@ const createCustomIcon = (color: string, emoji?: string) => {
   `;
 
   return new Icon({
-    iconUrl: `data:image/svg+xml;base64,${btoa(svgIcon)}`,
+    iconUrl: `data:image/svg+xml,${encodeURIComponent(svgIcon)}`,
     iconSize: [32, 46],
     iconAnchor: [16, 46],
     popupAnchor: [0, -40],
@@ -104,7 +104,7 @@ const createPersistenteIcon = () => {
     </svg>
   `;
   return new Icon({
-    iconUrl: `data:image/svg+xml;base64,${btoa(svgIcon)}`,
+    iconUrl: `data:image/svg+xml,${encodeURIComponent(svgIcon)}`,
     iconSize: [40, 40],
     iconAnchor: [20, 40],
     popupAnchor: [0, -40],
