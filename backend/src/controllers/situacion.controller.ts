@@ -744,7 +744,7 @@ export async function getResumenUnidades(_req: Request, res: Response) {
       INNER JOIN salida_unidad su ON u.id = su.unidad_id
         AND su.estado = 'EN_SALIDA'
       LEFT JOIN sede se ON u.sede_id = se.id
-      LEFT JOIN situacion_actual sa ON u.id = sa.unidad_id
+      LEFT JOIN situacion_actual sa ON u.id = sa.unidad_id AND sa.estado = 'ACTIVA'
       LEFT JOIN situacion s_ref ON sa.situacion_id = s_ref.id
       LEFT JOIN catalogo_tipo_situacion cts ON s_ref.tipo_situacion_id = cts.id
       WHERE u.activa = true
