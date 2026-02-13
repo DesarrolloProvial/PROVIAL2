@@ -388,16 +388,19 @@ export async function updateSituacion(req: Request, res: Response) {
       km, sentido, latitud, longitud, observaciones,
       area, material_via, clima, carga_vehicular,
       danios_materiales, danios_infraestructura, descripcion_danios_infra,
-      obstruccion,
+      obstruccion, obstruye,
       tipo_hecho_id, tipo_asistencia_id, tipo_emergencia_id,
       vehiculos_involucrados, vehiculos,
+      gruas: gruasData, ajustadores: ajustadoresData, autoridades: autoridadesData,
       // Víctimas (consolidado)
       heridos,
       fallecidos,
+      ilesos, heridos_leves, heridos_graves, trasladados, fugados,
       // Legacy
       hay_heridos, cantidad_heridos, hay_fallecidos, cantidad_fallecidos,
       causa_probable, causa_especificar,
-      tipo_pavimento, iluminacion, senalizacion, visibilidad,
+      tipo_pavimento, iluminacion, senalizacion, visibilidad, via_estado,
+      acuerdo_involucrados, acuerdo_detalle,
     } = req.body;
 
     const normalizeId = (v: any): number | null => {
@@ -414,6 +417,9 @@ export async function updateSituacion(req: Request, res: Response) {
     const heridosFinal = heridos ?? (hay_heridos ? (cantidad_heridos || 1) : undefined);
     const fallecidosFinal = fallecidos ?? (hay_fallecidos ? (cantidad_fallecidos || 1) : undefined);
 
+    // Normalizar obstruccion (puede venir como 'obstruccion' o 'obstruye')
+    const obstruccionFinal = obstruccion || (obstruye ? { obstruye } : undefined);
+
     const updateData: any = {
       actualizado_por: userId,
       km, sentido, latitud, longitud, observaciones,
@@ -421,12 +427,14 @@ export async function updateSituacion(req: Request, res: Response) {
       tipo_pavimento: material_via || tipo_pavimento,
       clima, carga_vehicular,
       danios_materiales, danios_infraestructura, danios_descripcion: descripcion_danios_infra,
-      obstruccion_data: obstruccion,
+      obstruccion_data: obstruccionFinal,
       tipo_situacion_id: tipo_situacion_id_final,
       heridos: heridosFinal,
       fallecidos: fallecidosFinal,
       causa_probable, causa_especificar,
-      iluminacion, senalizacion, visibilidad,
+      iluminacion, senalizacion, visibilidad, via_estado,
+      ilesos, heridos_leves, heridos_graves, trasladados, fugados,
+      acuerdo_involucrados, acuerdo_detalle,
     };
 
     await SituacionModel.update(situacionId, updateData);
@@ -447,6 +455,52 @@ export async function updateSituacion(req: Request, res: Response) {
       }
     }
 
+    // Persistir autoridades
+    if (autoridadesData && Array.isArray(autoridadesData) && autoridadesData.length > 0) {
+      // Borrar existentes
+      const authExist = await db.manyOrNone(
+        'SELECT id FROM autoridad WHERE situacion_id = $1',
+        [situacionId]
+      );
+      for (const a of authExist) {
+        await SituacionDetalleModel.deleteAutoridad(a.id);
+      }
+      // Insertar nuevas
+      for (const a of autoridadesData) {
+        const tipo = typeof a === 'string' ? a : (a.tipo || a);
+        await SituacionDetalleModel.addAutoridad(situacionId, { tipo });
+      }
+    }
+
+    // Persistir gruas (top-level, vinculadas al primer vehiculo)
+    if (gruasData && Array.isArray(gruasData) && gruasData.length > 0) {
+      const primerSv = await db.oneOrNone(
+        'SELECT id FROM situacion_vehiculo WHERE situacion_id = $1 LIMIT 1',
+        [situacionId]
+      );
+      if (primerSv) {
+        // Borrar gruas existentes del primer vehiculo
+        await db.none('DELETE FROM vehiculo_grua WHERE situacion_vehiculo_id = $1', [primerSv.id]);
+        for (const g of gruasData) {
+          await SituacionDetalleModel.addGrua(primerSv.id, g);
+        }
+      }
+    }
+
+    // Persistir ajustadores (top-level, vinculados al primer vehiculo)
+    if (ajustadoresData && Array.isArray(ajustadoresData) && ajustadoresData.length > 0) {
+      const primerSv = await db.oneOrNone(
+        'SELECT id FROM situacion_vehiculo WHERE situacion_id = $1 LIMIT 1',
+        [situacionId]
+      );
+      if (primerSv) {
+        await db.none('DELETE FROM vehiculo_aseguradora WHERE situacion_vehiculo_id = $1', [primerSv.id]);
+        for (const a of ajustadoresData) {
+          await SituacionDetalleModel.addAjustador(primerSv.id, a);
+        }
+      }
+    }
+
     const full = await SituacionModel.getById(situacionId);
     if (full) emitSituacionActualizada(full as any);
 
@@ -454,7 +508,7 @@ export async function updateSituacion(req: Request, res: Response) {
 
   } catch (error: any) {
     console.error('Error update:', error);
-    return res.status(500).json({ error: 'Error interno' });
+    return res.status(500).json({ error: error.message || 'Error interno' });
   }
 }
 
