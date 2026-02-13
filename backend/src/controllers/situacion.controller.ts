@@ -215,6 +215,18 @@ export async function createSituacion(req: Request, res: Response) {
       if (sal) salidaFinal = sal.salida_id;
     }
 
+    // Validar que departamento_id y municipio_id existan en DB antes de usarlos
+    let deptoIdFinal = normalizeId(departamento_id);
+    let muniIdFinal = normalizeId(municipio_id);
+    if (deptoIdFinal) {
+      const deptoExists = await db.oneOrNone('SELECT id FROM departamento WHERE id = $1', [deptoIdFinal]);
+      if (!deptoExists) deptoIdFinal = null;
+    }
+    if (muniIdFinal) {
+      const muniExists = await db.oneOrNone('SELECT id FROM municipio WHERE id = $1', [muniIdFinal]);
+      if (!muniExists) muniIdFinal = null;
+    }
+
     const dataToCreate = {
       tipo_situacion: tipo_situacion_final,
       unidad_id: unidadFinal,
@@ -233,8 +245,8 @@ export async function createSituacion(req: Request, res: Response) {
       tipo_situacion_id: tipo_situacion_id_final,
       clima,
       carga_vehicular,
-      departamento_id: normalizeId(departamento_id),
-      municipio_id: normalizeId(municipio_id),
+      departamento_id: deptoIdFinal,
+      municipio_id: muniIdFinal,
       obstruccion_data: obstruccion,
       area,
       tipo_pavimento: tipo_pavimento_final,
@@ -401,6 +413,7 @@ export async function updateSituacion(req: Request, res: Response) {
       causa_probable, causa_especificar,
       tipo_pavimento, iluminacion, senalizacion, visibilidad, via_estado,
       acuerdo_involucrados, acuerdo_detalle,
+      departamento_id, municipio_id,
     } = req.body;
 
     const normalizeId = (v: any): number | null => {
@@ -420,6 +433,18 @@ export async function updateSituacion(req: Request, res: Response) {
     // Normalizar obstruccion (puede venir como 'obstruccion' o 'obstruye')
     const obstruccionFinal = obstruccion || (obstruye ? { obstruye } : undefined);
 
+    // Validar FK de departamento/municipio
+    let deptoIdFinal = normalizeId(departamento_id);
+    let muniIdFinal = normalizeId(municipio_id);
+    if (deptoIdFinal) {
+      const deptoExists = await db.oneOrNone('SELECT id FROM departamento WHERE id = $1', [deptoIdFinal]);
+      if (!deptoExists) deptoIdFinal = null;
+    }
+    if (muniIdFinal) {
+      const muniExists = await db.oneOrNone('SELECT id FROM municipio WHERE id = $1', [muniIdFinal]);
+      if (!muniExists) muniIdFinal = null;
+    }
+
     const updateData: any = {
       actualizado_por: userId,
       km, sentido, latitud, longitud, observaciones,
@@ -435,6 +460,8 @@ export async function updateSituacion(req: Request, res: Response) {
       iluminacion, senalizacion, visibilidad, via_estado,
       ilesos, heridos_leves, heridos_graves, trasladados, fugados,
       acuerdo_involucrados, acuerdo_detalle,
+      departamento_id: deptoIdFinal,
+      municipio_id: muniIdFinal,
     };
 
     await SituacionModel.update(situacionId, updateData);
