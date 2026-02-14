@@ -137,7 +137,9 @@ async function loadCatalogs(): Promise<Catalogs> {
     db.manyOrNone('SELECT id, codigo_boleta FROM sede WHERE codigo_boleta IS NOT NULL'),
   ]);
 
-  const norm = (s: string) => s.trim().toUpperCase().replace(/_/g, ' ');
+  const norm = (s: string) => s.trim().toUpperCase().replace(/_/g, ' ')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quitar tildes/acentos
+    .replace(/[?]+/g, ''); // quitar caracteres rotos de encoding
 
   const cat: Catalogs = {
     departamentos: new Map(deptos.map((d: any) => [norm(d.nombre), d.id])),
@@ -165,7 +167,7 @@ async function loadCatalogs(): Promise<Catalogs> {
 
 async function lookupOrCreateTipoVehiculo(cat: Catalogs, nombre: string): Promise<number | null> {
   if (isNull(nombre)) return null;
-  const key = nombre.trim().toUpperCase();
+  const key = stripAccents(nombre.trim().toUpperCase());
   if (cat.tiposVehiculo.has(key)) return cat.tiposVehiculo.get(key)!;
   const result = await db.one(
     `INSERT INTO tipo_vehiculo (nombre, categoria) VALUES ($1, $2)
@@ -178,7 +180,7 @@ async function lookupOrCreateTipoVehiculo(cat: Catalogs, nombre: string): Promis
 
 async function lookupOrCreateMarca(cat: Catalogs, nombre: string): Promise<number | null> {
   if (isNull(nombre)) return null;
-  const key = nombre.trim().toUpperCase();
+  const key = stripAccents(nombre.trim().toUpperCase());
   if (cat.marcas.has(key)) return cat.marcas.get(key)!;
   const result = await db.one(
     `INSERT INTO marca_vehiculo (nombre) VALUES ($1)
@@ -189,14 +191,20 @@ async function lookupOrCreateMarca(cat: Catalogs, nombre: string): Promise<numbe
   return result.id;
 }
 
+function stripAccents(s: string): string {
+  return s
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quitar tildes/acentos
+    .replace(/[^A-Z0-9\s\-\/\.]/g, ''); // quitar cualquier caracter no alfanumérico residual
+}
+
 function lookupDepartamento(cat: Catalogs, nombre: string): number | null {
   if (isNull(nombre)) return null;
-  return cat.departamentos.get(nombre.trim().toUpperCase().replace(/_/g, ' ')) ?? null;
+  return cat.departamentos.get(stripAccents(nombre.trim().toUpperCase().replace(/_/g, ' '))) ?? null;
 }
 
 function lookupMunicipio(cat: Catalogs, nombre: string, deptoId: number | null): number | null {
   if (isNull(nombre)) return null;
-  const candidates = cat.municipios.get(nombre.trim().toUpperCase());
+  const candidates = cat.municipios.get(stripAccents(nombre.trim().toUpperCase()));
   if (!candidates || candidates.length === 0) return null;
   if (deptoId) {
     const match = candidates.find(c => c.departamento_id === deptoId);
@@ -219,7 +227,7 @@ function lookupRuta(cat: Catalogs, codigo: string): number | null {
 
 function lookupTipoSituacion(cat: Catalogs, nombre: string): number | null {
   if (isNull(nombre)) return null;
-  const key = nombre.trim().toUpperCase();
+  const key = stripAccents(nombre.trim().toUpperCase());
   if (cat.tiposSituacion.has(key)) return cat.tiposSituacion.get(key)!;
   const entries = Array.from(cat.tiposSituacion.entries());
   for (const [catKey, id] of entries) {
@@ -230,7 +238,7 @@ function lookupTipoSituacion(cat: Catalogs, nombre: string): number | null {
 
 function lookupDispositivo(cat: Catalogs, nombre: string): number | null {
   if (isNull(nombre)) return null;
-  const key = nombre.trim().toUpperCase();
+  const key = stripAccents(nombre.trim().toUpperCase());
   if (cat.dispositivos.has(key)) return cat.dispositivos.get(key)!;
   const entries = Array.from(cat.dispositivos.entries());
   for (const [catKey, id] of entries) {
