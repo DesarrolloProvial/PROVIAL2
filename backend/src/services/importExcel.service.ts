@@ -327,13 +327,14 @@ async function processRow(
   const rutaId = lookupRuta(cat, rutaCodigo || '');
   const tipoSituacionId = lookupTipoSituacion(cat, tipoAccidente || '');
 
-  // Track missing lookups (solo valores que parecen datos reales: min 2 chars, al menos 1 letra)
+  // Track missing lookups con ubicación (solo valores que parecen datos reales)
   const _r = result as any;
   const looksReal = (v: string | null) => v !== null && v.length >= 2 && /[A-Za-z]/.test(v);
-  if (looksReal(deptoName) && !deptoId) (_r._missingDeptos as Set<string>).add(deptoName!);
-  if (looksReal(muniName) && !muniId) (_r._missingMunis as Set<string>).add(muniName!);
-  if (looksReal(rutaCodigo) && !rutaId) (_r._missingRutas as Set<string>).add(rutaCodigo!);
-  if (looksReal(tipoAccidente) && !tipoSituacionId) (_r._missingSit as Set<string>).add(tipoAccidente!);
+  const loc = `${mesName} fila ${rowIndex + 1}`;
+  if (looksReal(deptoName) && !deptoId) (_r._missingDeptos as Map<string, string[]>).set(deptoName!, [...((_r._missingDeptos as Map<string, string[]>).get(deptoName!) || []), loc]);
+  if (looksReal(muniName) && !muniId) (_r._missingMunis as Map<string, string[]>).set(muniName!, [...((_r._missingMunis as Map<string, string[]>).get(muniName!) || []), loc]);
+  if (looksReal(rutaCodigo) && !rutaId) (_r._missingRutas as Map<string, string[]>).set(rutaCodigo!, [...((_r._missingRutas as Map<string, string[]>).get(rutaCodigo!) || []), loc]);
+  if (looksReal(tipoAccidente) && !tipoSituacionId) (_r._missingSit as Map<string, string[]>).set(tipoAccidente!, [...((_r._missingSit as Map<string, string[]>).get(tipoAccidente!) || []), loc]);
 
   // Campos finales
   const causaProbable = cleanStr(row[FINAL_COLS_START]);
@@ -560,14 +561,14 @@ export async function importExcelData(
     },
   };
 
-  // Internal sets for dedup
-  const _sets = {
-    _missingDeptos: new Set<string>(),
-    _missingMunis: new Set<string>(),
-    _missingRutas: new Set<string>(),
-    _missingSit: new Set<string>(),
+  // Internal maps for dedup con ubicaciones
+  const _maps = {
+    _missingDeptos: new Map<string, string[]>(),
+    _missingMunis: new Map<string, string[]>(),
+    _missingRutas: new Map<string, string[]>(),
+    _missingSit: new Map<string, string[]>(),
   };
-  Object.assign(result, _sets);
+  Object.assign(result, _maps);
 
   for (const mes of mesesAProcesar) {
     const ws = wb.Sheets[mes];
@@ -589,11 +590,13 @@ export async function importExcelData(
     }
   }
 
-  // Convert sets to arrays
-  result.missingDepartamentos = Array.from((result as any)._missingDeptos || []);
-  result.missingMunicipios = Array.from((result as any)._missingMunis || []);
-  result.missingRutas = Array.from((result as any)._missingRutas || []);
-  result.missingTiposSituacion = Array.from((result as any)._missingSit || []);
+  // Convert maps to arrays con ubicación: "VALOR (ENE fila 5, MAR fila 12)"
+  const mapToArr = (m: Map<string, string[]>) =>
+    Array.from(m.entries()).map(([val, locs]) => `${val} (${locs.slice(0, 5).join(', ')}${locs.length > 5 ? ` +${locs.length - 5} mas` : ''})`);
+  result.missingDepartamentos = mapToArr((result as any)._missingDeptos || new Map());
+  result.missingMunicipios = mapToArr((result as any)._missingMunis || new Map());
+  result.missingRutas = mapToArr((result as any)._missingRutas || new Map());
+  result.missingTiposSituacion = mapToArr((result as any)._missingSit || new Map());
 
   return result;
 }
