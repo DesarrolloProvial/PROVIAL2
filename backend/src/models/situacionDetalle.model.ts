@@ -131,8 +131,9 @@ export const SituacionDetalleModel = {
           heridos_en_vehiculo, fallecidos_en_vehiculo,
           danos_estimados, observaciones,
           sancion, sancion_detalle, documentos_consignados,
-          datos_piloto, custodia_estado, custodia_datos
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+          datos_piloto, custodia_estado, custodia_datos,
+          edad_conductor, trasladados_en_vehiculo
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
         RETURNING *`,
         [
           situacionId,
@@ -151,6 +152,8 @@ export const SituacionDetalleModel = {
           datos_piloto ? JSON.stringify(datos_piloto) : null,
           data.custodia_estado || null,
           data.custodia_datos ? JSON.stringify(data.custodia_datos) : null,
+          data.edad_conductor ?? null,
+          data.trasladados_en_vehiculo ?? 0,
         ]
       );
     } catch (insertErr: any) {

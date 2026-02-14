@@ -93,6 +93,10 @@ export interface Situacion {
   via_peralte?: string | null;
   via_condicion?: string | null;
 
+  // Import
+  codigo_boleta?: string | null;
+  origen_datos?: string;
+
   created_at: Date;
   updated_at: Date;
   creado_por: number;
@@ -171,7 +175,8 @@ export const SituacionModel = {
         grupo,
         acuerdo_involucrados, acuerdo_detalle,
         ilesos, heridos_leves, heridos_graves, trasladados, fugados,
-        via_estado, via_topografia, via_geometria, via_peralte, via_condicion
+        via_estado, via_topografia, via_geometria, via_peralte, via_condicion,
+        codigo_boleta, origen_datos, created_at
       ) VALUES (
         $/tipo_situacion/, $/unidad_id/, $/salida_unidad_id/, $/turno_id/, $/asignacion_id/,
         $/ruta_id/, $/km/, $/sentido/, $/latitud/, $/longitud/,
@@ -186,7 +191,8 @@ export const SituacionModel = {
         $/grupo/,
         $/acuerdo_involucrados/, $/acuerdo_detalle/,
         $/ilesos/, $/heridos_leves/, $/heridos_graves/, $/trasladados/, $/fugados/,
-        $/via_estado/, $/via_topografia/, $/via_geometria/, $/via_peralte/, $/via_condicion/
+        $/via_estado/, $/via_topografia/, $/via_geometria/, $/via_peralte/, $/via_condicion/,
+        $/codigo_boleta/, $/origen_datos/, COALESCE($/created_at/, NOW())
       ) RETURNING *
     `;
 
@@ -266,6 +272,11 @@ export const SituacionModel = {
       via_geometria: data.via_geometria ?? null,
       via_peralte: data.via_peralte ?? null,
       via_condicion: data.via_condicion ?? null,
+
+      // Import
+      codigo_boleta: data.codigo_boleta ?? null,
+      origen_datos: data.origen_datos ?? 'APP',
+      created_at: data.created_at ?? null,
     };
 
     try {

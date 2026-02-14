@@ -27,6 +27,7 @@ import AdminHubPage from './pages/AdminHubPage';
 import DashboardEjecutivoPage from './pages/DashboardEjecutivoPage';
 import EditarSituacionPage from './pages/EditarSituacionPage';
 import VerActividadPage from './pages/VerActividadPage';
+import ImportExcelPage from './pages/ImportExcelPage';
 
 // Crear QueryClient
 const queryClient = new QueryClient({
@@ -326,6 +327,14 @@ function App() {
             element={
               <SuperAdminRoute>
                 <ControlAccesoPage />
+              </SuperAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/import-excel"
+            element={
+              <SuperAdminRoute>
+                <ImportExcelPage />
               </SuperAdminRoute>
             }
           />

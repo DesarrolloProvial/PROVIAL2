@@ -38,6 +38,7 @@ import rolesRoutes from './roles.routes';
 import cloudinaryRoutes from './cloudinary.routes';
 import draftsRoutes from './drafts.routes';
 import actividadRoutes from './actividad.routes';
+import importExcelRoutes from './importExcel.routes';
 
 
 const router = Router();
@@ -158,6 +159,9 @@ router.use('/drafts', draftsRoutes);
 
 // Actividades operativas (patrullaje, puesto fijo, comida, etc.)
 router.use('/actividades', actividadRoutes);
+
+// Importación de datos Excel (Estadísticas históricas)
+router.use('/admin', importExcelRoutes);
 
 
 export default router;
