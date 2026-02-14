@@ -23,6 +23,14 @@ interface ImportResult {
   missingMunicipios: string[];
   missingRutas: string[];
   missingTiposSituacion: string[];
+  debug?: {
+    catalogKeys: {
+      departamentos: string[];
+      municipios: string[];
+      rutas: string[];
+      tiposSituacion: string[];
+    };
+  };
   catalogStats: {
     departamentos: number;
     municipios: number;
