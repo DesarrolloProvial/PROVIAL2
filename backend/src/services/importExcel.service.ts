@@ -132,7 +132,7 @@ async function loadCatalogs(): Promise<Catalogs> {
     db.manyOrNone('SELECT id, codigo FROM ruta'),
     db.manyOrNone('SELECT id, nombre FROM tipo_vehiculo'),
     db.manyOrNone('SELECT id, nombre FROM marca_vehiculo'),
-    db.manyOrNone("SELECT id, nombre FROM catalogo_tipo_situacion WHERE formulario_tipo = 'SITUACION'"),
+    db.manyOrNone("SELECT id, nombre FROM catalogo_tipo_situacion"),
     db.manyOrNone('SELECT id, nombre FROM dispositivo_seguridad'),
     db.manyOrNone('SELECT id, codigo_boleta FROM sede WHERE codigo_boleta IS NOT NULL'),
   ]);
@@ -216,9 +216,10 @@ function isSimilar(a: string, b: string): boolean {
   if (a.includes(b) || b.includes(a)) return true;
   // Comparar sin vocales (consonantes como esqueleto)
   const consonants = (s: string) => s.replace(/[AEIOU]/g, '');
-  if (consonants(a) === consonants(b) && a.length > 4) return true;
-  // Diferencia máxima de 2 caracteres en longitud y prefijo largo compartido
-  if (Math.abs(a.length - b.length) <= 2 && a.length >= 5) {
+  const ca = consonants(a), cb = consonants(b);
+  if (ca === cb && ca.length >= 3) return true;
+  // Diferencia máxima de 2 caracteres en longitud y mayoría de posiciones iguales
+  if (Math.abs(a.length - b.length) <= 3 && a.length >= 4) {
     const minLen = Math.min(a.length, b.length);
     let matches = 0;
     for (let i = 0; i < minLen; i++) {
@@ -291,8 +292,14 @@ function lookupTipoSituacion(cat: Catalogs, nombre: string): number | null {
   const key = stripAccents(nombre.trim().toUpperCase());
   if (cat.tiposSituacion.has(key)) return cat.tiposSituacion.get(key)!;
   const entries = Array.from(cat.tiposSituacion.entries());
+  // Contiene
   for (const [catKey, id] of entries) {
     if (catKey.includes(key) || key.includes(catKey)) return id;
+  }
+  // Fuzzy por consonantes/similitud
+  const inputLetters = lettersOnly(nombre);
+  for (const [catKey, id] of entries) {
+    if (isSimilar(lettersOnly(catKey), inputLetters)) return id;
   }
   return null;
 }
