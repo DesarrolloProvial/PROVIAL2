@@ -17,6 +17,7 @@ interface ImportResult {
   skipped: number;
   errors: number;
   vehiclesCreated: number;
+  skippedRows: string[];
   errorDetails: string[];
   missingDepartamentos: string[];
   missingMunicipios: string[];
@@ -266,6 +267,20 @@ export default function ImportExcelPage() {
                 {r.missingTiposSituacion.length > 0 && (
                   <MissingList label="Tipos situacion" items={r.missingTiposSituacion} />
                 )}
+              </div>
+            )}
+
+            {/* Skipped rows */}
+            {r.skippedRows && r.skippedRows.length > 0 && (
+              <div className="bg-orange-50 rounded-xl border border-orange-200 p-6">
+                <h3 className="font-semibold text-orange-800 mb-3">
+                  Filas saltadas - sin sede/boleta ({r.skippedRows.length})
+                </h3>
+                <div className="max-h-60 overflow-y-auto space-y-1">
+                  {r.skippedRows.map((e, i) => (
+                    <p key={i} className="text-xs text-orange-700 font-mono">{e}</p>
+                  ))}
+                </div>
               </div>
             )}
 

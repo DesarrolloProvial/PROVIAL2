@@ -107,7 +107,7 @@ function parseBoolean(val: any): boolean {
 
 function normalizeRutaCodigo(val: any): string | null {
   if (isNull(val)) return null;
-  return String(val).trim().toUpperCase().replace(/\s+(SUR|NORTE|ORIENTE|OCCIDENTE)$/i, '').trim();
+  return stripAccents(String(val).trim().toUpperCase().replace(/\s+(SUR|NORTE|ORIENTE|OCCIDENTE)$/i, '').trim());
 }
 
 // ============================================================
@@ -260,6 +260,7 @@ export interface ImportResult {
   totalRows: number;
   inserted: number;
   skipped: number;
+  skippedRows: string[];
   errors: number;
   vehiclesCreated: number;
   errorDetails: string[];
@@ -293,7 +294,16 @@ async function processRow(
 ): Promise<void> {
   const sede = cleanStr(row[0]);
   const boleta = cleanStr(row[1]);
-  if (!sede || !boleta) return;
+  if (!sede || !boleta) {
+    // Verificar si la fila tiene datos en otras columnas (no es fila vacía)
+    const hasOtherData = row.slice(2, 10).some((c: any) => c !== '' && c !== null && c !== undefined);
+    if (hasOtherData) {
+      result.skippedRows.push(
+        `${mesName} fila ${rowIndex + 1}: sede="${row[0] ?? ''}" boleta="${row[1] ?? ''}" depto="${row[3] ?? ''}" muni="${row[4] ?? ''}" ruta="${row[7] ?? ''}"`
+      );
+    }
+    return;
+  }
 
   const codigoBoleta = `${sede}-${boleta}`;
 
@@ -317,12 +327,13 @@ async function processRow(
   const rutaId = lookupRuta(cat, rutaCodigo || '');
   const tipoSituacionId = lookupTipoSituacion(cat, tipoAccidente || '');
 
-  // Track missing lookups
-  const missingDeptos = result as any;
-  if (deptoName && !deptoId) (missingDeptos._missingDeptos as Set<string>).add(deptoName);
-  if (muniName && !muniId) (missingDeptos._missingMunis as Set<string>).add(muniName);
-  if (rutaCodigo && !rutaId) (missingDeptos._missingRutas as Set<string>).add(rutaCodigo);
-  if (tipoAccidente && !tipoSituacionId) (missingDeptos._missingSit as Set<string>).add(tipoAccidente);
+  // Track missing lookups (solo valores que parecen datos reales: min 2 chars, al menos 1 letra)
+  const _r = result as any;
+  const looksReal = (v: string | null) => v !== null && v.length >= 2 && /[A-Za-z]/.test(v);
+  if (looksReal(deptoName) && !deptoId) (_r._missingDeptos as Set<string>).add(deptoName!);
+  if (looksReal(muniName) && !muniId) (_r._missingMunis as Set<string>).add(muniName!);
+  if (looksReal(rutaCodigo) && !rutaId) (_r._missingRutas as Set<string>).add(rutaCodigo!);
+  if (looksReal(tipoAccidente) && !tipoSituacionId) (_r._missingSit as Set<string>).add(tipoAccidente!);
 
   // Campos finales
   const causaProbable = cleanStr(row[FINAL_COLS_START]);
@@ -539,7 +550,7 @@ export async function importExcelData(
   const mesesAProcesar = mesFilter ? [mesFilter.toUpperCase()] : MESES;
 
   const result: ImportResult = {
-    totalRows: 0, inserted: 0, skipped: 0, errors: 0, vehiclesCreated: 0,
+    totalRows: 0, inserted: 0, skipped: 0, skippedRows: [], errors: 0, vehiclesCreated: 0,
     errorDetails: [],
     missingDepartamentos: [], missingMunicipios: [], missingRutas: [], missingTiposSituacion: [],
     catalogStats: {
