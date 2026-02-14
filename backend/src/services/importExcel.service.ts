@@ -190,34 +190,88 @@ async function lookupOrCreateMarca(cat: Catalogs, nombre: string): Promise<numbe
 }
 
 function stripAccents(s: string): string {
-  // Primero normalizar a NFC para unificar, luego NFD para descomponer
-  let result = s.normalize('NFC').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  // Reemplazos manuales por si NFD no descompone correctamente
-  result = result
-    .replace(/[áàäâãå]/gi, (m) => m === m.toUpperCase() ? 'A' : 'a')
-    .replace(/[éèëê]/gi, (m) => m === m.toUpperCase() ? 'E' : 'e')
-    .replace(/[íìïî]/gi, (m) => m === m.toUpperCase() ? 'I' : 'i')
-    .replace(/[óòöôõ]/gi, (m) => m === m.toUpperCase() ? 'O' : 'o')
-    .replace(/[úùüû]/gi, (m) => m === m.toUpperCase() ? 'U' : 'u')
-    .replace(/[ñ]/gi, (m) => m === m.toUpperCase() ? 'N' : 'n');
+  // Reemplazos manuales PRIMERO (antes de NFD, por si NFD falla en el entorno)
+  let result = s
+    .replace(/[ÁÀÄÂÃÅáàäâãå]/g, (m) => m === m.toLowerCase() ? 'a' : 'A')
+    .replace(/[ÉÈËÊéèëê]/g, (m) => m === m.toLowerCase() ? 'e' : 'E')
+    .replace(/[ÍÌÏÎíìïî]/g, (m) => m === m.toLowerCase() ? 'i' : 'I')
+    .replace(/[ÓÒÖÔÕóòöôõ]/g, (m) => m === m.toLowerCase() ? 'o' : 'O')
+    .replace(/[ÚÙÜÛúùüû]/g, (m) => m === m.toLowerCase() ? 'u' : 'U')
+    .replace(/[Ññ]/g, (m) => m === 'ñ' ? 'n' : 'N');
+  // NFD como respaldo para cualquier otro acento
+  result = result.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   // Quitar cualquier caracter no alfanumérico residual
   return result.replace(/[^A-Z0-9\s\-\/\.]/g, '');
 }
 
-function lookupDepartamento(cat: Catalogs, nombre: string): number | null {
-  if (isNull(nombre)) return null;
-  return cat.departamentos.get(stripAccents(nombre.trim().toUpperCase().replace(/_/g, ' '))) ?? null;
+// Solo letras A-Z para comparación fuzzy (ignora espacios, tildes corruptas, etc.)
+function lettersOnly(s: string): string {
+  return stripAccents(s.toUpperCase()).replace(/[^A-Z]/g, '');
 }
 
-function lookupMunicipio(cat: Catalogs, nombre: string, deptoId: number | null): number | null {
+// Similitud: cuenta letras diferentes entre dos strings (simple diff por posición)
+function isSimilar(a: string, b: string): boolean {
+  if (a === b) return true;
+  // Si uno contiene al otro
+  if (a.includes(b) || b.includes(a)) return true;
+  // Comparar sin vocales (consonantes como esqueleto)
+  const consonants = (s: string) => s.replace(/[AEIOU]/g, '');
+  if (consonants(a) === consonants(b) && a.length > 4) return true;
+  // Diferencia máxima de 2 caracteres en longitud y prefijo largo compartido
+  if (Math.abs(a.length - b.length) <= 2 && a.length >= 5) {
+    const minLen = Math.min(a.length, b.length);
+    let matches = 0;
+    for (let i = 0; i < minLen; i++) {
+      if (a[i] === b[i]) matches++;
+    }
+    if (matches >= minLen - 2) return true;
+  }
+  return false;
+}
+
+function lookupDepartamento(cat: Catalogs, nombre: string): number | null {
   if (isNull(nombre)) return null;
-  const candidates = cat.municipios.get(stripAccents(nombre.trim().toUpperCase()));
-  if (!candidates || candidates.length === 0) return null;
+  const key = stripAccents(nombre.trim().toUpperCase().replace(/_/g, ' '));
+  // Intento exacto
+  if (cat.departamentos.has(key)) return cat.departamentos.get(key)!;
+  // Fuzzy: solo letras
+  const inputLetters = lettersOnly(nombre);
+  const entries = Array.from(cat.departamentos.entries());
+  for (const [catKey, id] of entries) {
+    if (lettersOnly(catKey) === inputLetters) return id;
+  }
+  // Fuzzy: similitud (encoding corrupto en BD puede perder 1-2 letras)
+  for (const [catKey, id] of entries) {
+    if (isSimilar(lettersOnly(catKey), inputLetters)) return id;
+  }
+  return null;
+}
+
+function pickMuni(candidates: { id: number; departamento_id: number }[], deptoId: number | null): number {
   if (deptoId) {
     const match = candidates.find(c => c.departamento_id === deptoId);
     if (match) return match.id;
   }
   return candidates[0].id;
+}
+
+function lookupMunicipio(cat: Catalogs, nombre: string, deptoId: number | null): number | null {
+  if (isNull(nombre)) return null;
+  const key = stripAccents(nombre.trim().toUpperCase());
+  // Intento exacto
+  const candidates = cat.municipios.get(key);
+  if (candidates && candidates.length > 0) return pickMuni(candidates, deptoId);
+  // Fuzzy: solo letras
+  const inputLetters = lettersOnly(nombre);
+  const allEntries = Array.from(cat.municipios.entries());
+  for (const [catKey, munis] of allEntries) {
+    if (lettersOnly(catKey) === inputLetters) return pickMuni(munis, deptoId);
+  }
+  // Fuzzy: similitud (encoding corrupto en BD puede perder 1-2 letras)
+  for (const [catKey, munis] of allEntries) {
+    if (isSimilar(lettersOnly(catKey), inputLetters)) return pickMuni(munis, deptoId);
+  }
+  return null;
 }
 
 function lookupRuta(cat: Catalogs, codigo: string): number | null {
