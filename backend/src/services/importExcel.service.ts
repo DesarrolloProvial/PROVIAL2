@@ -190,18 +190,31 @@ async function lookupOrCreateMarca(cat: Catalogs, nombre: string): Promise<numbe
 }
 
 function stripAccents(s: string): string {
-  // Reemplazos manuales PRIMERO (antes de NFD, por si NFD falla en el entorno)
-  let result = s
-    .replace(/[ÁÀÄÂÃÅáàäâãå]/g, (m) => m === m.toLowerCase() ? 'a' : 'A')
-    .replace(/[ÉÈËÊéèëê]/g, (m) => m === m.toLowerCase() ? 'e' : 'E')
-    .replace(/[ÍÌÏÎíìïî]/g, (m) => m === m.toLowerCase() ? 'i' : 'I')
-    .replace(/[ÓÒÖÔÕóòöôõ]/g, (m) => m === m.toLowerCase() ? 'o' : 'O')
-    .replace(/[ÚÙÜÛúùüû]/g, (m) => m === m.toLowerCase() ? 'u' : 'U')
-    .replace(/[Ññ]/g, (m) => m === 'ñ' ? 'n' : 'N');
-  // NFD como respaldo para cualquier otro acento
-  result = result.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  // Quitar cualquier caracter no alfanumérico residual
-  return result.replace(/[^A-Z0-9\s\-\/\.]/g, '');
+  let result = '';
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c >= 192 && c <= 197) result += 'A';       // À Á Â Ã Ä Å
+    else if (c >= 224 && c <= 229) result += 'a';   // à á â ã ä å
+    else if (c >= 200 && c <= 203) result += 'E';   // È É Ê Ë
+    else if (c >= 232 && c <= 235) result += 'e';   // è é ê ë
+    else if (c >= 204 && c <= 207) result += 'I';   // Ì Í Î Ï
+    else if (c >= 236 && c <= 239) result += 'i';   // ì í î ï
+    else if (c >= 210 && c <= 214) result += 'O';   // Ò Ó Ô Õ Ö
+    else if (c >= 242 && c <= 246) result += 'o';   // ò ó ô õ ö
+    else if (c >= 217 && c <= 220) result += 'U';   // Ù Ú Û Ü
+    else if (c >= 249 && c <= 252) result += 'u';   // ù ú û ü
+    else if (c === 209) result += 'N';               // Ñ
+    else if (c === 241) result += 'n';               // ñ
+    else if (
+      (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || // A-Z a-z
+      (c >= 48 && c <= 57) ||                           // 0-9
+      c === 32 || c === 45 || c === 47 || c === 46      // espacio - / .
+    ) {
+      result += s[i];
+    }
+    // cualquier otro caracter se ignora
+  }
+  return result;
 }
 
 // Solo letras A-Z para comparación fuzzy (ignora espacios, tildes corruptas, etc.)
