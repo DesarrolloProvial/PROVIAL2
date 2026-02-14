@@ -190,9 +190,18 @@ async function lookupOrCreateMarca(cat: Catalogs, nombre: string): Promise<numbe
 }
 
 function stripAccents(s: string): string {
-  return s
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quitar tildes/acentos
-    .replace(/[^A-Z0-9\s\-\/\.]/g, ''); // quitar cualquier caracter no alfanumérico residual
+  // Primero normalizar a NFC para unificar, luego NFD para descomponer
+  let result = s.normalize('NFC').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  // Reemplazos manuales por si NFD no descompone correctamente
+  result = result
+    .replace(/[áàäâãå]/gi, (m) => m === m.toUpperCase() ? 'A' : 'a')
+    .replace(/[éèëê]/gi, (m) => m === m.toUpperCase() ? 'E' : 'e')
+    .replace(/[íìïî]/gi, (m) => m === m.toUpperCase() ? 'I' : 'i')
+    .replace(/[óòöôõ]/gi, (m) => m === m.toUpperCase() ? 'O' : 'o')
+    .replace(/[úùüû]/gi, (m) => m === m.toUpperCase() ? 'U' : 'u')
+    .replace(/[ñ]/gi, (m) => m === m.toUpperCase() ? 'N' : 'n');
+  // Quitar cualquier caracter no alfanumérico residual
+  return result.replace(/[^A-Z0-9\s\-\/\.]/g, '');
 }
 
 function lookupDepartamento(cat: Catalogs, nombre: string): number | null {
