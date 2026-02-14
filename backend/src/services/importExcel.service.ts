@@ -137,9 +137,7 @@ async function loadCatalogs(): Promise<Catalogs> {
     db.manyOrNone('SELECT id, codigo_boleta FROM sede WHERE codigo_boleta IS NOT NULL'),
   ]);
 
-  const norm = (s: string) => s.trim().toUpperCase().replace(/_/g, ' ')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quitar tildes/acentos
-    .replace(/[?]+/g, ''); // quitar caracteres rotos de encoding
+  const norm = (s: string) => stripAccents(s.trim().toUpperCase().replace(/_/g, ' '));
 
   const cat: Catalogs = {
     departamentos: new Map(deptos.map((d: any) => [norm(d.nombre), d.id])),
