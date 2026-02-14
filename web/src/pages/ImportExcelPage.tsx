@@ -250,6 +250,21 @@ export default function ImportExcelPage() {
               </div>
             </div>
 
+            {/* Debug: catalog keys loaded from DB */}
+            {r.debug?.catalogKeys && (
+              <details className="bg-gray-50 rounded-xl border p-4">
+                <summary className="cursor-pointer font-semibold text-gray-700 text-sm">
+                  Debug: claves normalizadas cargadas de la BD (click para expandir)
+                </summary>
+                <div className="mt-3 space-y-2 text-xs font-mono max-h-60 overflow-y-auto">
+                  <div><span className="font-semibold">Departamentos:</span> {r.debug.catalogKeys.departamentos.join(', ')}</div>
+                  <div><span className="font-semibold">Rutas:</span> {r.debug.catalogKeys.rutas.join(', ')}</div>
+                  <div><span className="font-semibold">Tipos situacion:</span> {r.debug.catalogKeys.tiposSituacion.join(', ')}</div>
+                  <div><span className="font-semibold">Municipios (primeros 50):</span> {r.debug.catalogKeys.municipios.join(', ')}</div>
+                </div>
+              </details>
+            )}
+
             {/* Missing catalogs */}
             {(r.missingDepartamentos.length > 0 || r.missingMunicipios.length > 0 ||
               r.missingRutas.length > 0 || r.missingTiposSituacion.length > 0) && (

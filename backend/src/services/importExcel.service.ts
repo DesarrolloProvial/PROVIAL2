@@ -268,6 +268,14 @@ export interface ImportResult {
   missingMunicipios: string[];
   missingRutas: string[];
   missingTiposSituacion: string[];
+  debug: {
+    catalogKeys: {
+      departamentos: string[];
+      municipios: string[];
+      rutas: string[];
+      tiposSituacion: string[];
+    };
+  };
   catalogStats: {
     departamentos: number;
     municipios: number;
@@ -554,6 +562,14 @@ export async function importExcelData(
     totalRows: 0, inserted: 0, skipped: 0, skippedRows: [], errors: 0, vehiclesCreated: 0,
     errorDetails: [],
     missingDepartamentos: [], missingMunicipios: [], missingRutas: [], missingTiposSituacion: [],
+    debug: {
+      catalogKeys: {
+        departamentos: Array.from(cat.departamentos.keys()),
+        municipios: Array.from(cat.municipios.keys()).slice(0, 50),
+        rutas: Array.from(cat.rutas.keys()),
+        tiposSituacion: Array.from(cat.tiposSituacion.keys()),
+      },
+    },
     catalogStats: {
       departamentos: cat.departamentos.size, municipios: cat.municipios.size,
       rutas: cat.rutas.size, tiposVehiculo: cat.tiposVehiculo.size,
