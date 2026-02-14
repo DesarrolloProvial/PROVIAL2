@@ -342,11 +342,15 @@ async function processRow(
   const rutaId = lookupRuta(cat, rutaCodigo || '');
   const tipoSituacionId = lookupTipoSituacion(cat, tipoAccidente || '');
 
-  // Track missing lookups con ubicación (solo valores que parecen datos reales)
+  // Track missing lookups con ubicación y valor normalizado para debug
   const _r = result as any;
   const looksReal = (v: string | null) => v !== null && v.length >= 2 && /[A-Za-z]/.test(v);
   const loc = `${mesName} fila ${rowIndex + 1}`;
-  if (looksReal(deptoName) && !deptoId) (_r._missingDeptos as Map<string, string[]>).set(deptoName!, [...((_r._missingDeptos as Map<string, string[]>).get(deptoName!) || []), loc]);
+  if (looksReal(deptoName) && !deptoId) {
+    const normKey = stripAccents(deptoName!.trim().toUpperCase().replace(/_/g, ' '));
+    const debugKey = `${deptoName} [norm=${normKey}]`;
+    (_r._missingDeptos as Map<string, string[]>).set(debugKey, [...((_r._missingDeptos as Map<string, string[]>).get(debugKey) || []), loc]);
+  }
   if (looksReal(muniName) && !muniId) (_r._missingMunis as Map<string, string[]>).set(muniName!, [...((_r._missingMunis as Map<string, string[]>).get(muniName!) || []), loc]);
   if (looksReal(rutaCodigo) && !rutaId) (_r._missingRutas as Map<string, string[]>).set(rutaCodigo!, [...((_r._missingRutas as Map<string, string[]>).get(rutaCodigo!) || []), loc]);
   if (looksReal(tipoAccidente) && !tipoSituacionId) (_r._missingSit as Map<string, string[]>).set(tipoAccidente!, [...((_r._missingSit as Map<string, string[]>).get(tipoAccidente!) || []), loc]);
