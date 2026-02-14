@@ -77,7 +77,7 @@ export default function AdminHubPage() {
       title: 'Importar Excel',
       description: 'Importar datos historicos de accidentologia desde archivos Excel',
       icon: <FileSpreadsheet className="w-8 h-8" />,
-      path: '/admin/import-excel',
+      path: '/super-admin/import-excel',
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200',
     },

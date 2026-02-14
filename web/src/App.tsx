@@ -331,7 +331,7 @@ function App() {
             }
           />
           <Route
-            path="/admin/import-excel"
+            path="/super-admin/import-excel"
             element={
               <SuperAdminRoute>
                 <ImportExcelPage />
