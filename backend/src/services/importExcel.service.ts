@@ -915,6 +915,22 @@ export async function importExcelData(
 
     // Detectar columnas finales desde el header de esta hoja
     const headerRow = data[0];
+
+    // DEBUG: dump headers no vacios desde columna 100+ para primera hoja procesada
+    if (result.debug.detectedColumns && Object.keys(result.debug.detectedColumns).length === 0) {
+      const headerDump: string[] = [];
+      for (let c = 0; c < headerRow.length; c++) {
+        const v = headerRow[c];
+        if (v !== '' && v !== null && v !== undefined) {
+          // Solo desde col 400+ para no saturar, y todas las de 0-17
+          if (c <= 17 || c >= 400) {
+            headerDump.push(`[${c}]="${String(v).substring(0, 30)}"`);
+          }
+        }
+      }
+      result.errorDetails.push(`HEADERS ${mes}: ${headerDump.join(', ')}`);
+    }
+
     const fc = detectFinalColumns(headerRow);
     if (!fc) {
       result.errorDetails.push(`${mes}: No se detectaron headers de columnas finales, saltando hoja`);
@@ -925,6 +941,10 @@ export async function importExcelData(
     if (result.debug.detectedColumns) {
       result.debug.detectedColumns[mes] = {
         causaProbable: fc.causaProbable,
+        tipoPavimento: fc.tipoPavimento,
+        clima: fc.clima,
+        chapa: fc.chapa,
+        brigada: fc.brigada,
         unidad: fc.unidad,
         observaciones: fc.observaciones,
       };
