@@ -23,6 +23,7 @@ interface ImportResult {
   missingMunicipios: string[];
   missingRutas: string[];
   missingTiposSituacion: string[];
+  missingUnidades: string[];
   debug?: {
     catalogKeys: {
       departamentos: string[];
@@ -275,7 +276,8 @@ export default function ImportExcelPage() {
 
             {/* Missing catalogs */}
             {(r.missingDepartamentos.length > 0 || r.missingMunicipios.length > 0 ||
-              r.missingRutas.length > 0 || r.missingTiposSituacion.length > 0) && (
+              r.missingRutas.length > 0 || r.missingTiposSituacion.length > 0 ||
+              (r.missingUnidades && r.missingUnidades.length > 0)) && (
               <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-6">
                 <h3 className="font-semibold text-yellow-800 mb-3">Valores no encontrados en catalogos</h3>
                 {r.missingDepartamentos.length > 0 && (
@@ -289,6 +291,9 @@ export default function ImportExcelPage() {
                 )}
                 {r.missingTiposSituacion.length > 0 && (
                   <MissingList label="Tipos situacion" items={r.missingTiposSituacion} />
+                )}
+                {r.missingUnidades && r.missingUnidades.length > 0 && (
+                  <MissingList label="Unidades no encontradas" items={r.missingUnidades} />
                 )}
               </div>
             )}

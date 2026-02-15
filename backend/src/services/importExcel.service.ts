@@ -123,10 +123,11 @@ interface Catalogs {
   tiposSituacion: Map<string, number>;
   dispositivos: Map<string, number>;
   sedes: Map<string, number>;
+  unidades: Map<string, number>;
 }
 
 async function loadCatalogs(): Promise<Catalogs> {
-  const [deptos, munis, rutas, tiposVeh, marcas, tiposSit, dispositivos, sedes] = await Promise.all([
+  const [deptos, munis, rutas, tiposVeh, marcas, tiposSit, dispositivos, sedes, unidades] = await Promise.all([
     db.manyOrNone('SELECT id, nombre FROM departamento'),
     db.manyOrNone('SELECT id, nombre, departamento_id FROM municipio'),
     db.manyOrNone('SELECT id, codigo FROM ruta'),
@@ -135,6 +136,7 @@ async function loadCatalogs(): Promise<Catalogs> {
     db.manyOrNone("SELECT id, nombre FROM catalogo_tipo_situacion"),
     db.manyOrNone('SELECT id, nombre FROM dispositivo_seguridad'),
     db.manyOrNone('SELECT id, codigo_boleta FROM sede WHERE codigo_boleta IS NOT NULL'),
+    db.manyOrNone('SELECT id, codigo FROM unidad'),
   ]);
 
   const norm = (s: string) => stripAccents(s.trim().toUpperCase().replace(/_/g, ' '));
@@ -148,6 +150,7 @@ async function loadCatalogs(): Promise<Catalogs> {
     tiposSituacion: new Map(tiposSit.map((t: any) => [norm(t.nombre), t.id])),
     dispositivos: new Map(dispositivos.map((d: any) => [norm(d.nombre), d.id])),
     sedes: new Map(sedes.map((s: any) => [norm(s.codigo_boleta), s.id])),
+    unidades: new Map(unidades.map((u: any) => [String(u.codigo).trim(), u.id])),
   };
 
   for (const m of munis) {
@@ -328,6 +331,19 @@ function lookupDispositivo(cat: Catalogs, nombre: string): number | null {
   return null;
 }
 
+function lookupUnidad(cat: Catalogs, codigo: string | null): number | null {
+  if (!codigo || isNull(codigo)) return null;
+  let cod = String(codigo).trim().replace(/\D/g, ''); // solo dígitos
+  if (!cod || cod === '0') return null;
+  // Padear a 3 dígitos si tiene 1-2 (ej: "30" → "030")
+  if (cod.length <= 2) cod = cod.padStart(3, '0');
+  if (cat.unidades.has(cod)) return cat.unidades.get(cod)!;
+  // Intentar sin padeo por si el código en BD no tiene ceros
+  const original = String(codigo).trim();
+  if (cat.unidades.has(original)) return cat.unidades.get(original)!;
+  return null;
+}
+
 const BUS_TYPES = new Set([
   'BUS', 'BUS URBANO', 'BUS EXTRAURBANO', 'MICROBUS', 'MINIBUS',
   'BUS ESCOLAR', 'TRANSPORTE PUBLICO', 'TRANSMETRO',
@@ -349,6 +365,7 @@ export interface ImportResult {
   missingMunicipios: string[];
   missingRutas: string[];
   missingTiposSituacion: string[];
+  missingUnidades: string[];
   debug: {
     catalogKeys: {
       departamentos: string[];
@@ -446,6 +463,12 @@ async function processRow(
   const authNombre = cleanStr(row[FINAL_COLS_START + 11]);
   const authUnidad = cleanStr(row[FINAL_COLS_START + 12]);
 
+  // Lookup unidad por código
+  const unidadId = lookupUnidad(cat, unidadCod);
+  if (unidadCod && !unidadId) {
+    (_r._missingUnidades as Map<string, string[]>).set(unidadCod, [...((_r._missingUnidades as Map<string, string[]>).get(unidadCod) || []), loc]);
+  }
+
   const meta: string[] = [];
   if (chapa) meta.push(`Chapa: ${chapa}`);
   if (brigada) meta.push(`Brigada: ${brigada}`);
@@ -468,18 +491,18 @@ async function processRow(
       ruta_id, sentido, km, created_at,
       tipo_situacion_id, causa_probable,
       tipo_pavimento, via_estado, via_topografia, via_geometria, via_condicion,
-      clima, observaciones, creado_por
+      clima, observaciones, creado_por, unidad_id
     ) VALUES (
       'INCIDENTE', 'CERRADA', $1, $2,
       $3, $4, $5, $6, $7, $8, $9, $10,
-      $11, $12, $13, $14, $15, $16, $17, $18, $19, 1
+      $11, $12, $13, $14, $15, $16, $17, $18, $19, 1, $20
     ) RETURNING id`,
     [
       codigoBoleta, origenDatos,
       grupo, deptoId, muniId, area, rutaId, sentido, km, createdAt,
       tipoSituacionId, causaProbable,
       tipoPavimento, viaEstado, viaTopografia, viaGeometria, viaCondicion,
-      clima, observaciones || null,
+      clima, observaciones || null, unidadId,
     ]
   );
 
@@ -646,7 +669,7 @@ export async function importExcelData(
   const result: ImportResult = {
     totalRows: 0, inserted: 0, skipped: 0, skippedRows: [], errors: 0, vehiclesCreated: 0,
     errorDetails: [],
-    missingDepartamentos: [], missingMunicipios: [], missingRutas: [], missingTiposSituacion: [],
+    missingDepartamentos: [], missingMunicipios: [], missingRutas: [], missingTiposSituacion: [], missingUnidades: [],
     debug: {
       catalogKeys: {
         departamentos: Array.from(cat.departamentos.keys()),
@@ -668,6 +691,7 @@ export async function importExcelData(
     _missingMunis: new Map<string, string[]>(),
     _missingRutas: new Map<string, string[]>(),
     _missingSit: new Map<string, string[]>(),
+    _missingUnidades: new Map<string, string[]>(),
   };
   Object.assign(result, _maps);
 
@@ -698,6 +722,7 @@ export async function importExcelData(
   result.missingMunicipios = mapToArr((result as any)._missingMunis || new Map());
   result.missingRutas = mapToArr((result as any)._missingRutas || new Map());
   result.missingTiposSituacion = mapToArr((result as any)._missingSit || new Map());
+  result.missingUnidades = mapToArr((result as any)._missingUnidades || new Map());
 
   return result;
 }
