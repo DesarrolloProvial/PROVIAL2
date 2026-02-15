@@ -131,10 +131,26 @@ interface FinalColumnMap {
 }
 
 /**
- * Detecta columnas finales buscando headers UNICOS como ancla primero
- * (CAUSA PROBABLE, OBSERVACIONES, CLIMA no aparecen en bloques de vehiculos),
- * y luego busca headers ambiguos (UNIDAD, CHAPA, BRIGADA) solo en la zona
- * cercana a las anclas para evitar falsos positivos de bloques de vehiculos.
+ * Detecta columnas finales usando CLIMA como ancla unica.
+ *
+ * Headers reales del Excel (ENE como ejemplo):
+ *   [459] POSIBLES CAUSAS DEL ACCIDENTE  = clima - 6
+ *   [460] MATERIAL DE LA VIA             = clima - 5
+ *   [461] ESTADO DE LA VIA               = clima - 4
+ *   [462] TOPOGRAFIA                     = clima - 3
+ *   [463] CARACT. GEOMETRICAS            = clima - 2
+ *   [464] CONDICION DE LA VIA            = clima - 1
+ *   [465] CLIMA                          = ANCLA
+ *   [466] CHAPA (provial)                = clima + 1
+ *   [467] BRIGADA A CARGO                = clima + 2
+ *   [468] UNIDAD (provial)               = clima + 3
+ *   [469] CHAPA (autoridad)              = clima + 4
+ *   [470] NOMBRE DEL AGENTE              = clima + 5
+ *   [471] UNIDAD (autoridad)             = clima + 6
+ *   [472] OBSERVACION                    = clima + 7
+ *
+ * CLIMA es unico (no aparece en bloques de vehiculos) y siempre presente.
+ * Las posiciones relativas son fijas aunque el indice absoluto cambie por hoja.
  */
 function detectFinalColumns(headerRow: any[]): FinalColumnMap | null {
   const normH = (v: any): string => {
@@ -142,139 +158,30 @@ function detectFinalColumns(headerRow: any[]): FinalColumnMap | null {
     return stripAccents(String(v).trim().toUpperCase());
   };
 
-  const headers: string[] = [];
-  for (let i = 0; i < headerRow.length; i++) {
-    headers[i] = normH(headerRow[i]);
+  // Buscar CLIMA desde columna 100+ (vehiculos terminan como maximo en ~467)
+  let climaCol = -1;
+  for (let i = headerRow.length - 1; i >= 100; i--) {
+    if (normH(headerRow[i]) === 'CLIMA') { climaCol = i; break; }
   }
 
-  // Funcion auxiliar: buscar ÚLTIMA aparición de un patron desde startCol
-  const findLast = (patterns: string[], startCol: number): number => {
-    let best = -1;
-    for (let col = startCol; col < headers.length; col++) {
-      const h = headers[col];
-      if (!h) continue;
-      for (const pat of patterns) {
-        if (h === pat || h.includes(pat)) { best = col; break; }
-      }
-    }
-    return best;
+  if (climaCol < 0) return null;
+
+  return {
+    causaProbable: climaCol - 6,
+    tipoPavimento: climaCol - 5,
+    viaEstado:     climaCol - 4,
+    viaTopografia: climaCol - 3,
+    viaGeometria:  climaCol - 2,
+    viaCondicion:  climaCol - 1,
+    clima:         climaCol,
+    chapa:         climaCol + 1,
+    brigada:       climaCol + 2,
+    unidad:        climaCol + 3,
+    authChapa:     climaCol + 4,
+    authNombre:    climaCol + 5,
+    authUnidad:    climaCol + 6,
+    observaciones: climaCol + 7,
   };
-
-  // Funcion auxiliar: buscar en rango específico
-  const findInRange = (patterns: string[], minCol: number, maxCol: number): number => {
-    for (let col = maxCol; col >= minCol; col--) {
-      const h = headers[col];
-      if (!h) continue;
-      for (const pat of patterns) {
-        if (h === pat || h.includes(pat)) return col;
-      }
-    }
-    return -1;
-  };
-
-  // === PASO 1: Encontrar anclas UNICAS (no se repiten en bloques de vehiculos) ===
-  // Buscar desde columna 100+ (vehiculos empiezan en 17, minimo 4 vehiculos para llegar a 137)
-  const causaProbable = findLast(['CAUSA PROBABLE'], 100);
-  const observaciones = findLast(['OBSERVACIONES'], 100);
-  const clima = findLast(['CLIMA'], 100);
-
-  // Necesitamos al menos una ancla para saber donde estamos
-  const anchor = causaProbable >= 0 ? causaProbable
-    : clima >= 0 ? clima - 6  // clima suele estar 6 despues de causa_probable
-    : observaciones >= 0 ? observaciones - 13  // observaciones suele estar ~13 despues de causa_probable
-    : -1;
-
-  if (anchor < 0) return null;
-
-  // === PASO 2: Zona final = [anchor - 2, anchor + 20] ===
-  // Las columnas finales son un bloque de ~14 columnas consecutivas
-  const zoneStart = anchor - 2;
-  const zoneEnd = Math.min(anchor + 20, headers.length - 1);
-
-  const found: Partial<FinalColumnMap> = {};
-
-  // Headers unicos ya encontrados
-  if (causaProbable >= 0) found.causaProbable = causaProbable;
-  if (clima >= 0) found.clima = clima;
-  if (observaciones >= 0) found.observaciones = observaciones;
-
-  // Buscar el resto SOLO en la zona final
-  if (!found.causaProbable) {
-    const col = findInRange(['CAUSA PROBABLE', 'CAUSA'], zoneStart, zoneEnd);
-    if (col >= 0) found.causaProbable = col;
-  }
-  const tipoPavimento = findInRange(['TIPO PAVIMENTO', 'TIPO DE PAVIMENTO', 'PAVIMENTO'], zoneStart, zoneEnd);
-  if (tipoPavimento >= 0) found.tipoPavimento = tipoPavimento;
-
-  const viaEstado = findInRange(['ESTADO DE LA VIA', 'ESTADO VIA', 'ESTADO DE VIA', 'ESTADO'], zoneStart, zoneEnd);
-  if (viaEstado >= 0) found.viaEstado = viaEstado;
-
-  const topografia = findInRange(['TOPOGRAFIA'], zoneStart, zoneEnd);
-  if (topografia >= 0) found.viaTopografia = topografia;
-
-  const geometria = findInRange(['GEOMETRIA'], zoneStart, zoneEnd);
-  if (geometria >= 0) found.viaGeometria = geometria;
-
-  const condicion = findInRange(['CONDICION'], zoneStart, zoneEnd);
-  if (condicion >= 0) found.viaCondicion = condicion;
-
-  if (!found.clima) {
-    const col = findInRange(['CLIMA'], zoneStart, zoneEnd);
-    if (col >= 0) found.clima = col;
-  }
-
-  // Headers ambiguos - SOLO en zona final (estos se repiten en bloques de vehiculos)
-  const chapa = findInRange(['CHAPA'], zoneStart, zoneEnd);
-  if (chapa >= 0) found.chapa = chapa;
-
-  const brigada = findInRange(['BRIGADA'], zoneStart, zoneEnd);
-  if (brigada >= 0) found.brigada = brigada;
-
-  const unidad = findInRange(['UNIDAD'], zoneStart, zoneEnd);
-  if (unidad >= 0) found.unidad = unidad;
-
-  if (!found.observaciones) {
-    const col = findInRange(['OBSERVACIONES', 'OBS'], zoneStart, zoneEnd);
-    if (col >= 0) found.observaciones = col;
-  }
-
-  // Auth columns - buscar variantes especificas o por posicion relativa
-  const authChapa = findInRange(['NO. DE CHAPA', 'CHAPA AUTORIDAD', 'CHAPA PNC'], zoneStart, zoneEnd);
-  if (authChapa >= 0) found.authChapa = authChapa;
-
-  const authNombre = findInRange(['NOMBRE AUTORIDAD', 'NOMBRE PNC', 'NOMBRE DE LA AUTORIDAD'], zoneStart, zoneEnd);
-  if (authNombre >= 0) found.authNombre = authNombre;
-
-  const authUnidad = findInRange(['UNIDAD AUTORIDAD', 'UNIDAD PNC', 'UNIDAD DE LA AUTORIDAD'], zoneStart, zoneEnd);
-  if (authUnidad >= 0) found.authUnidad = authUnidad;
-
-  // === PASO 3: Inferir columnas no encontradas por posicion relativa ===
-  if (found.causaProbable !== undefined) {
-    const base = found.causaProbable;
-    if (found.tipoPavimento === undefined) found.tipoPavimento = base + 1;
-    if (found.viaEstado === undefined) found.viaEstado = base + 2;
-    if (found.viaTopografia === undefined) found.viaTopografia = base + 3;
-    if (found.viaGeometria === undefined) found.viaGeometria = base + 4;
-    if (found.viaCondicion === undefined) found.viaCondicion = base + 5;
-    if (found.clima === undefined) found.clima = base + 6;
-    if (found.chapa === undefined) found.chapa = base + 7;
-    if (found.brigada === undefined) found.brigada = base + 8;
-    if (found.unidad === undefined) found.unidad = base + 9;
-    if (found.authChapa === undefined) found.authChapa = base + 10;
-    if (found.authNombre === undefined) found.authNombre = base + 11;
-    if (found.authUnidad === undefined) found.authUnidad = base + 12;
-    if (found.observaciones === undefined) found.observaciones = base + 13;
-  }
-
-  // Defaults de emergencia
-  const defaults: FinalColumnMap = {
-    causaProbable: 459, tipoPavimento: 460, viaEstado: 461,
-    viaTopografia: 462, viaGeometria: 463, viaCondicion: 464, clima: 465,
-    chapa: 466, brigada: 467, unidad: 468,
-    authChapa: 469, authNombre: 470, authUnidad: 471, observaciones: 472,
-  };
-
-  return { ...defaults, ...found } as FinalColumnMap;
 }
 
 // ============================================================
@@ -915,21 +822,6 @@ export async function importExcelData(
 
     // Detectar columnas finales desde el header de esta hoja
     const headerRow = data[0];
-
-    // DEBUG: dump headers no vacios desde columna 100+ para primera hoja procesada
-    if (result.debug.detectedColumns && Object.keys(result.debug.detectedColumns).length === 0) {
-      const headerDump: string[] = [];
-      for (let c = 0; c < headerRow.length; c++) {
-        const v = headerRow[c];
-        if (v !== '' && v !== null && v !== undefined) {
-          // Solo desde col 400+ para no saturar, y todas las de 0-17
-          if (c <= 17 || c >= 400) {
-            headerDump.push(`[${c}]="${String(v).substring(0, 30)}"`);
-          }
-        }
-      }
-      result.errorDetails.push(`HEADERS ${mes}: ${headerDump.join(', ')}`);
-    }
 
     const fc = detectFinalColumns(headerRow);
     if (!fc) {
