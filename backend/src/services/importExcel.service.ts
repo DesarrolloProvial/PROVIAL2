@@ -699,7 +699,7 @@ export async function importExcelData(
     const ws = wb.Sheets[mes];
     if (!ws) continue;
 
-    const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', range: 'A1:PS5000' }) as any[][];
+    const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as any[][];
 
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
