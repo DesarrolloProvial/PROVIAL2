@@ -432,27 +432,33 @@ function parseUnidadCode(raw: string | null): { primary: string | null; apoyo: s
   return { primary: s, apoyo: null };
 }
 
-function lookupUnidad(cat: Catalogs, codigo: string | null): number | null {
-  if (!codigo || isNull(codigo)) return null;
+function lookupUnidad(cat: Catalogs, codigo: string | null): { id: number | null; fallback: boolean } {
+  if (!codigo || isNull(codigo)) return { id: null, fallback: false };
   const trimmed = String(codigo).trim();
 
   // 1. Intentar match exacto con uppercase (soporta "Peatonal" → "PEATONAL")
   const upper = trimmed.toUpperCase();
-  if (cat.unidades.has(upper)) return cat.unidades.get(upper)!;
+  if (cat.unidades.has(upper)) return { id: cat.unidades.get(upper)!, fallback: false };
 
   // 2. Intentar match exacto tal cual
-  if (cat.unidades.has(trimmed)) return cat.unidades.get(trimmed)!;
+  if (cat.unidades.has(trimmed)) return { id: cat.unidades.get(trimmed)!, fallback: false };
 
   // 3. Extraer solo digitos y padear
   const cod = trimmed.replace(/\D/g, '');
-  if (!cod || cod === '0') return null;
+  if (!cod || cod === '0') {
+    // No tiene digitos o es "0" → fallback a DESCONOCIDA
+    const fb = cat.unidades.get('DESCONOCIDA') ?? null;
+    return { id: fb, fallback: fb !== null };
+  }
   const padded = cod.length <= 2 ? cod.padStart(3, '0') : cod;
-  if (cat.unidades.has(padded)) return cat.unidades.get(padded)!;
+  if (cat.unidades.has(padded)) return { id: cat.unidades.get(padded)!, fallback: false };
 
   // 4. Sin padeo
-  if (cat.unidades.has(cod)) return cat.unidades.get(cod)!;
+  if (cat.unidades.has(cod)) return { id: cat.unidades.get(cod)!, fallback: false };
 
-  return null;
+  // 5. Codigo parece invalido (5+ digitos = probablemente chapa o placa) → DESCONOCIDA
+  const fb = cat.unidades.get('DESCONOCIDA') ?? null;
+  return { id: fb, fallback: fb !== null };
 }
 
 const BUS_TYPES = new Set([
@@ -579,8 +585,9 @@ async function processRow(
   // Parsear unidad (puede ser multiple: "M-004 Y M-002")
   const { primary: unidadCod, apoyo: unidadApoyo } = parseUnidadCode(rawUnidad);
 
-  // Lookup unidad por código
-  const unidadId = lookupUnidad(cat, unidadCod);
+  // Lookup unidad por código (fallback a DESCONOCIDA si no se encuentra)
+  const unidadResult = lookupUnidad(cat, unidadCod);
+  const unidadId = unidadResult.id;
   if (unidadCod && !unidadId) {
     (_r._missingUnidades as Map<string, string[]>).set(unidadCod, [...((_r._missingUnidades as Map<string, string[]>).get(unidadCod) || []), loc]);
   }
