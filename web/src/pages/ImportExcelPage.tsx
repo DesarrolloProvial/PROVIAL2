@@ -31,6 +31,7 @@ interface ImportResult {
       rutas: string[];
       tiposSituacion: string[];
     };
+    detectedColumns?: Record<string, Record<string, number>>;
   };
   catalogStats: {
     departamentos: number;
@@ -270,6 +271,14 @@ export default function ImportExcelPage() {
                   <div><span className="font-semibold">Rutas:</span> {r.debug.catalogKeys.rutas.join(', ')}</div>
                   <div><span className="font-semibold">Tipos situacion:</span> {r.debug.catalogKeys.tiposSituacion.join(', ')}</div>
                   <div><span className="font-semibold">Municipios (primeros 50):</span> {r.debug.catalogKeys.municipios.join(', ')}</div>
+                  {r.debug.detectedColumns && (
+                    <div className="mt-2 border-t pt-2">
+                      <span className="font-semibold">Columnas detectadas por hoja:</span>
+                      {Object.entries(r.debug.detectedColumns).map(([mes, cols]) => (
+                        <div key={mes}><span className="text-blue-600">{mes}:</span> {Object.entries(cols).map(([k, v]) => `${k}=${v}`).join(', ')}</div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </details>
             )}

@@ -14,7 +14,6 @@ const MESES = ['ENE', 'FEB', 'MAR', 'ABRIL', 'MAY', 'JUNIO', 'JUL', 'AGO', 'SEP'
 const VEHICLE_BLOCK_SIZE = 30;
 const MAX_VEHICLES = 15;
 const VEHICLE_START_COL = 17;
-const FINAL_COLS_START = 459;
 
 const NULL_VALUES = new Set([
   'N/D', 'N/A', 'NO', 'SE IGNORA', 'SE DESCONOCE', 'NO HAY DATOS',
@@ -111,6 +110,123 @@ function normalizeRutaCodigo(val: any): string | null {
 }
 
 // ============================================================
+// DETECCIÓN DINÁMICA DE COLUMNAS FINALES
+// ============================================================
+
+interface FinalColumnMap {
+  causaProbable: number;
+  tipoPavimento: number;
+  viaEstado: number;
+  viaTopografia: number;
+  viaGeometria: number;
+  viaCondicion: number;
+  clima: number;
+  chapa: number;
+  brigada: number;
+  unidad: number;
+  authChapa: number;
+  authNombre: number;
+  authUnidad: number;
+  observaciones: number;
+}
+
+// Headers conocidos para buscar en la fila 0 de cada hoja.
+// Buscamos desde columna 100+ para evitar falsos positivos en bloques de vehiculos.
+const HEADER_PATTERNS: { key: keyof FinalColumnMap; patterns: string[] }[] = [
+  { key: 'causaProbable', patterns: ['CAUSA PROBABLE', 'CAUSA'] },
+  { key: 'tipoPavimento', patterns: ['TIPO PAVIMENTO', 'TIPO DE PAVIMENTO', 'PAVIMENTO'] },
+  { key: 'viaEstado', patterns: ['ESTADO DE LA VIA', 'ESTADO VIA', 'ESTADO DE VIA'] },
+  { key: 'viaTopografia', patterns: ['TOPOGRAFIA', 'TOPOGRAFIA DE LA VIA'] },
+  { key: 'viaGeometria', patterns: ['GEOMETRIA', 'GEOMETRIA DE LA VIA'] },
+  { key: 'viaCondicion', patterns: ['CONDICION', 'CONDICION DE LA VIA'] },
+  { key: 'clima', patterns: ['CLIMA', 'CONDICIONES CLIMATICAS'] },
+  { key: 'chapa', patterns: ['CHAPA'] },
+  { key: 'brigada', patterns: ['BRIGADA'] },
+  { key: 'unidad', patterns: ['UNIDAD'] },
+  { key: 'authChapa', patterns: ['CHAPA AUTORIDAD', 'CHAPA PNC', 'NO. DE CHAPA'] },
+  { key: 'authNombre', patterns: ['NOMBRE AUTORIDAD', 'NOMBRE PNC', 'NOMBRE DE LA AUTORIDAD'] },
+  { key: 'authUnidad', patterns: ['UNIDAD AUTORIDAD', 'UNIDAD PNC', 'UNIDAD DE LA AUTORIDAD'] },
+  { key: 'observaciones', patterns: ['OBSERVACIONES', 'OBS'] },
+];
+
+function detectFinalColumns(headerRow: any[]): FinalColumnMap | null {
+  // Buscar solo desde columna 100+ para evitar hits en bloques de vehiculos
+  const MIN_COL = 100;
+  const normH = (v: any): string => {
+    if (v === null || v === undefined || v === '') return '';
+    return stripAccents(String(v).trim().toUpperCase());
+  };
+
+  // Construir array normalizado de headers
+  const headers: string[] = [];
+  for (let i = 0; i < headerRow.length; i++) {
+    headers[i] = normH(headerRow[i]);
+  }
+
+  const found: Partial<FinalColumnMap> = {};
+
+  for (const { key, patterns } of HEADER_PATTERNS) {
+    // Buscar la ÚLTIMA aparición (columnas finales estan al final)
+    // Para chapa/unidad que se repiten en bloques de vehiculos
+    let bestCol = -1;
+    for (let col = MIN_COL; col < headers.length; col++) {
+      const h = headers[col];
+      if (!h) continue;
+      for (const pat of patterns) {
+        if (h === pat || h.includes(pat)) {
+          bestCol = col;
+          break;
+        }
+      }
+    }
+    if (bestCol >= 0) {
+      found[key] = bestCol;
+    }
+  }
+
+  // Verificar que encontramos al menos las columnas criticas
+  if (found.unidad === undefined && found.causaProbable === undefined && found.clima === undefined) {
+    return null; // No se encontraron headers → hoja sin headers validos
+  }
+
+  // Para columnas no encontradas, intentar inferir por posición relativa
+  // Si tenemos causa_probable, las demas suelen estar en orden consecutivo
+  if (found.causaProbable !== undefined) {
+    const base = found.causaProbable;
+    if (found.tipoPavimento === undefined) found.tipoPavimento = base + 1;
+    if (found.viaEstado === undefined) found.viaEstado = base + 2;
+    if (found.viaTopografia === undefined) found.viaTopografia = base + 3;
+    if (found.viaGeometria === undefined) found.viaGeometria = base + 4;
+    if (found.viaCondicion === undefined) found.viaCondicion = base + 5;
+    if (found.clima === undefined) found.clima = base + 6;
+  }
+
+  if (found.chapa !== undefined) {
+    const base = found.chapa;
+    if (found.brigada === undefined) found.brigada = base + 1;
+    if (found.unidad === undefined) found.unidad = base + 2;
+  }
+
+  if (found.unidad !== undefined) {
+    const base = found.unidad;
+    if (found.authChapa === undefined) found.authChapa = base + 1;
+    if (found.authNombre === undefined) found.authNombre = base + 2;
+    if (found.authUnidad === undefined) found.authUnidad = base + 3;
+    if (found.observaciones === undefined) found.observaciones = base + 4;
+  }
+
+  // Defaults de emergencia (no deberia llegar aqui pero evita crashes)
+  const defaults: FinalColumnMap = {
+    causaProbable: 459, tipoPavimento: 460, viaEstado: 461,
+    viaTopografia: 462, viaGeometria: 463, viaCondicion: 464, clima: 465,
+    chapa: 466, brigada: 467, unidad: 468,
+    authChapa: 469, authNombre: 470, authUnidad: 471, observaciones: 472,
+  };
+
+  return { ...defaults, ...found } as FinalColumnMap;
+}
+
+// ============================================================
 // CATÁLOGOS
 // ============================================================
 
@@ -150,8 +266,15 @@ async function loadCatalogs(): Promise<Catalogs> {
     tiposSituacion: new Map(tiposSit.map((t: any) => [norm(t.nombre), t.id])),
     dispositivos: new Map(dispositivos.map((d: any) => [norm(d.nombre), d.id])),
     sedes: new Map(sedes.map((s: any) => [norm(s.codigo_boleta), s.id])),
-    unidades: new Map(unidades.map((u: any) => [String(u.codigo).trim(), u.id])),
+    // Unidades: guardar tanto el codigo original como uppercase para matching flexible
+    unidades: new Map(),
   };
+
+  for (const u of unidades) {
+    const cod = String(u.codigo).trim();
+    cat.unidades.set(cod, u.id);
+    cat.unidades.set(cod.toUpperCase(), u.id);
+  }
 
   for (const m of munis) {
     const key = norm(m.nombre);
@@ -331,16 +454,46 @@ function lookupDispositivo(cat: Catalogs, nombre: string): number | null {
   return null;
 }
 
+/** Parsear codigo de unidad, soporta: "1136", "PEATONAL", "M-004 Y M-002" */
+function parseUnidadCode(raw: string | null): { primary: string | null; apoyo: string | null } {
+  if (!raw || isNull(raw)) return { primary: null, apoyo: null };
+  const s = String(raw).trim();
+
+  // Multiples unidades separadas por " Y "
+  if (s.toUpperCase().includes(' Y ')) {
+    const parts = s.split(/\s+Y\s+/i).map(p => p.trim()).filter(Boolean);
+    return { primary: parts[0] || null, apoyo: parts.slice(1).join(', ') || null };
+  }
+
+  // Patron M-NNN-M-NNN (dos codigos pegados con guion)
+  const multiM = s.match(/^(M-\d+)-(M-\d+.*)$/i);
+  if (multiM) {
+    return { primary: multiM[1], apoyo: multiM[2] };
+  }
+
+  return { primary: s, apoyo: null };
+}
+
 function lookupUnidad(cat: Catalogs, codigo: string | null): number | null {
   if (!codigo || isNull(codigo)) return null;
-  let cod = String(codigo).trim().replace(/\D/g, ''); // solo dígitos
+  const trimmed = String(codigo).trim();
+
+  // 1. Intentar match exacto con uppercase (soporta "Peatonal" → "PEATONAL")
+  const upper = trimmed.toUpperCase();
+  if (cat.unidades.has(upper)) return cat.unidades.get(upper)!;
+
+  // 2. Intentar match exacto tal cual
+  if (cat.unidades.has(trimmed)) return cat.unidades.get(trimmed)!;
+
+  // 3. Extraer solo digitos y padear
+  const cod = trimmed.replace(/\D/g, '');
   if (!cod || cod === '0') return null;
-  // Padear a 3 dígitos si tiene 1-2 (ej: "30" → "030")
-  if (cod.length <= 2) cod = cod.padStart(3, '0');
+  const padded = cod.length <= 2 ? cod.padStart(3, '0') : cod;
+  if (cat.unidades.has(padded)) return cat.unidades.get(padded)!;
+
+  // 4. Sin padeo
   if (cat.unidades.has(cod)) return cat.unidades.get(cod)!;
-  // Intentar sin padeo por si el código en BD no tiene ceros
-  const original = String(codigo).trim();
-  if (cat.unidades.has(original)) return cat.unidades.get(original)!;
+
   return null;
 }
 
@@ -373,6 +526,7 @@ export interface ImportResult {
       rutas: string[];
       tiposSituacion: string[];
     };
+    detectedColumns?: Record<string, Record<string, number>>;
   };
   catalogStats: {
     departamentos: number;
@@ -396,7 +550,8 @@ export interface ImportOptions {
 
 async function processRow(
   row: any[], rowIndex: number, mesName: string,
-  cat: Catalogs, result: ImportResult, dryRun: boolean, origenDatos: string
+  cat: Catalogs, result: ImportResult, dryRun: boolean, origenDatos: string,
+  fc: FinalColumnMap
 ): Promise<void> {
   const sede = cleanStr(row[0]);
   const boleta = cleanStr(row[1]);
@@ -446,22 +601,25 @@ async function processRow(
   if (looksReal(rutaCodigo) && !rutaId) (_r._missingRutas as Map<string, string[]>).set(rutaCodigo!, [...((_r._missingRutas as Map<string, string[]>).get(rutaCodigo!) || []), loc]);
   if (looksReal(tipoAccidente) && !tipoSituacionId) (_r._missingSit as Map<string, string[]>).set(tipoAccidente!, [...((_r._missingSit as Map<string, string[]>).get(tipoAccidente!) || []), loc]);
 
-  // Campos finales
-  const causaProbable = cleanStr(row[FINAL_COLS_START]);
-  const tipoPavimento = cleanStr(row[FINAL_COLS_START + 1]);
-  const viaEstado = cleanStr(row[FINAL_COLS_START + 2]);
-  const viaTopografia = cleanStr(row[FINAL_COLS_START + 3]);
-  const viaGeometria = cleanStr(row[FINAL_COLS_START + 4]);
-  const viaCondicion = cleanStr(row[FINAL_COLS_START + 5]);
-  const clima = cleanStr(row[FINAL_COLS_START + 6]);
+  // Campos finales - usando indices dinamicos detectados del header
+  const causaProbable = cleanStr(row[fc.causaProbable]);
+  const tipoPavimento = cleanStr(row[fc.tipoPavimento]);
+  const viaEstado = cleanStr(row[fc.viaEstado]);
+  const viaTopografia = cleanStr(row[fc.viaTopografia]);
+  const viaGeometria = cleanStr(row[fc.viaGeometria]);
+  const viaCondicion = cleanStr(row[fc.viaCondicion]);
+  const clima = cleanStr(row[fc.clima]);
 
-  let observaciones = cleanStr(row[FINAL_COLS_START + 13]) || '';
-  const chapa = cleanStr(row[FINAL_COLS_START + 7]);
-  const brigada = cleanStr(row[FINAL_COLS_START + 8]);
-  const unidadCod = cleanStr(row[FINAL_COLS_START + 9]);
-  const authChapa = cleanStr(row[FINAL_COLS_START + 10]);
-  const authNombre = cleanStr(row[FINAL_COLS_START + 11]);
-  const authUnidad = cleanStr(row[FINAL_COLS_START + 12]);
+  let observaciones = cleanStr(row[fc.observaciones]) || '';
+  const chapa = cleanStr(row[fc.chapa]);
+  const brigada = cleanStr(row[fc.brigada]);
+  const rawUnidad = cleanStr(row[fc.unidad]);
+  const authChapa = cleanStr(row[fc.authChapa]);
+  const authNombre = cleanStr(row[fc.authNombre]);
+  const authUnidad = cleanStr(row[fc.authUnidad]);
+
+  // Parsear unidad (puede ser multiple: "M-004 Y M-002")
+  const { primary: unidadCod, apoyo: unidadApoyo } = parseUnidadCode(rawUnidad);
 
   // Lookup unidad por código
   const unidadId = lookupUnidad(cat, unidadCod);
@@ -473,6 +631,7 @@ async function processRow(
   if (chapa) meta.push(`Chapa: ${chapa}`);
   if (brigada) meta.push(`Brigada: ${brigada}`);
   if (unidadCod) meta.push(`Unidad: ${unidadCod}`);
+  if (unidadApoyo) meta.push(`Apoyo: ${unidadApoyo}`);
   if (meta.length > 0) observaciones += (observaciones ? '\n' : '') + `[${meta.join('] [')}]`;
 
   if (dryRun) {
@@ -677,6 +836,7 @@ export async function importExcelData(
         rutas: Array.from(cat.rutas.keys()),
         tiposSituacion: Array.from(cat.tiposSituacion.keys()),
       },
+      detectedColumns: {},
     },
     catalogStats: {
       departamentos: cat.departamentos.size, municipios: cat.municipios.size,
@@ -700,6 +860,24 @@ export async function importExcelData(
     if (!ws) continue;
 
     const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', range: 'A1:RZ5000' }) as any[][];
+    if (data.length === 0) continue;
+
+    // Detectar columnas finales desde el header de esta hoja
+    const headerRow = data[0];
+    const fc = detectFinalColumns(headerRow);
+    if (!fc) {
+      result.errorDetails.push(`${mes}: No se detectaron headers de columnas finales, saltando hoja`);
+      continue;
+    }
+
+    // Guardar info de debug sobre columnas detectadas
+    if (result.debug.detectedColumns) {
+      result.debug.detectedColumns[mes] = {
+        causaProbable: fc.causaProbable,
+        unidad: fc.unidad,
+        observaciones: fc.observaciones,
+      };
+    }
 
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
@@ -707,7 +885,7 @@ export async function importExcelData(
 
       result.totalRows++;
       try {
-        await processRow(row, i, mes, cat, result, dryRun, origenDatos);
+        await processRow(row, i, mes, cat, result, dryRun, origenDatos, fc);
       } catch (err: any) {
         result.errors++;
         result.errorDetails.push(`${mes} fila ${i + 1}: ${err.message}`);
