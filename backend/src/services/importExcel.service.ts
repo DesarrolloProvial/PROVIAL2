@@ -130,67 +130,125 @@ interface FinalColumnMap {
   observaciones: number;
 }
 
-// Headers conocidos para buscar en la fila 0 de cada hoja.
-// Buscamos desde columna 100+ para evitar falsos positivos en bloques de vehiculos.
-const HEADER_PATTERNS: { key: keyof FinalColumnMap; patterns: string[] }[] = [
-  { key: 'causaProbable', patterns: ['CAUSA PROBABLE', 'CAUSA'] },
-  { key: 'tipoPavimento', patterns: ['TIPO PAVIMENTO', 'TIPO DE PAVIMENTO', 'PAVIMENTO'] },
-  { key: 'viaEstado', patterns: ['ESTADO DE LA VIA', 'ESTADO VIA', 'ESTADO DE VIA'] },
-  { key: 'viaTopografia', patterns: ['TOPOGRAFIA', 'TOPOGRAFIA DE LA VIA'] },
-  { key: 'viaGeometria', patterns: ['GEOMETRIA', 'GEOMETRIA DE LA VIA'] },
-  { key: 'viaCondicion', patterns: ['CONDICION', 'CONDICION DE LA VIA'] },
-  { key: 'clima', patterns: ['CLIMA', 'CONDICIONES CLIMATICAS'] },
-  { key: 'chapa', patterns: ['CHAPA'] },
-  { key: 'brigada', patterns: ['BRIGADA'] },
-  { key: 'unidad', patterns: ['UNIDAD'] },
-  { key: 'authChapa', patterns: ['CHAPA AUTORIDAD', 'CHAPA PNC', 'NO. DE CHAPA'] },
-  { key: 'authNombre', patterns: ['NOMBRE AUTORIDAD', 'NOMBRE PNC', 'NOMBRE DE LA AUTORIDAD'] },
-  { key: 'authUnidad', patterns: ['UNIDAD AUTORIDAD', 'UNIDAD PNC', 'UNIDAD DE LA AUTORIDAD'] },
-  { key: 'observaciones', patterns: ['OBSERVACIONES', 'OBS'] },
-];
-
+/**
+ * Detecta columnas finales buscando headers UNICOS como ancla primero
+ * (CAUSA PROBABLE, OBSERVACIONES, CLIMA no aparecen en bloques de vehiculos),
+ * y luego busca headers ambiguos (UNIDAD, CHAPA, BRIGADA) solo en la zona
+ * cercana a las anclas para evitar falsos positivos de bloques de vehiculos.
+ */
 function detectFinalColumns(headerRow: any[]): FinalColumnMap | null {
-  // Buscar solo desde columna 100+ para evitar hits en bloques de vehiculos
-  const MIN_COL = 100;
   const normH = (v: any): string => {
     if (v === null || v === undefined || v === '') return '';
     return stripAccents(String(v).trim().toUpperCase());
   };
 
-  // Construir array normalizado de headers
   const headers: string[] = [];
   for (let i = 0; i < headerRow.length; i++) {
     headers[i] = normH(headerRow[i]);
   }
 
-  const found: Partial<FinalColumnMap> = {};
-
-  for (const { key, patterns } of HEADER_PATTERNS) {
-    // Buscar la ÚLTIMA aparición (columnas finales estan al final)
-    // Para chapa/unidad que se repiten en bloques de vehiculos
-    let bestCol = -1;
-    for (let col = MIN_COL; col < headers.length; col++) {
+  // Funcion auxiliar: buscar ÚLTIMA aparición de un patron desde startCol
+  const findLast = (patterns: string[], startCol: number): number => {
+    let best = -1;
+    for (let col = startCol; col < headers.length; col++) {
       const h = headers[col];
       if (!h) continue;
       for (const pat of patterns) {
-        if (h === pat || h.includes(pat)) {
-          bestCol = col;
-          break;
-        }
+        if (h === pat || h.includes(pat)) { best = col; break; }
       }
     }
-    if (bestCol >= 0) {
-      found[key] = bestCol;
+    return best;
+  };
+
+  // Funcion auxiliar: buscar en rango específico
+  const findInRange = (patterns: string[], minCol: number, maxCol: number): number => {
+    for (let col = maxCol; col >= minCol; col--) {
+      const h = headers[col];
+      if (!h) continue;
+      for (const pat of patterns) {
+        if (h === pat || h.includes(pat)) return col;
+      }
     }
+    return -1;
+  };
+
+  // === PASO 1: Encontrar anclas UNICAS (no se repiten en bloques de vehiculos) ===
+  // Buscar desde columna 100+ (vehiculos empiezan en 17, minimo 4 vehiculos para llegar a 137)
+  const causaProbable = findLast(['CAUSA PROBABLE'], 100);
+  const observaciones = findLast(['OBSERVACIONES'], 100);
+  const clima = findLast(['CLIMA'], 100);
+
+  // Necesitamos al menos una ancla para saber donde estamos
+  const anchor = causaProbable >= 0 ? causaProbable
+    : clima >= 0 ? clima - 6  // clima suele estar 6 despues de causa_probable
+    : observaciones >= 0 ? observaciones - 13  // observaciones suele estar ~13 despues de causa_probable
+    : -1;
+
+  if (anchor < 0) return null;
+
+  // === PASO 2: Zona final = [anchor - 2, anchor + 20] ===
+  // Las columnas finales son un bloque de ~14 columnas consecutivas
+  const zoneStart = anchor - 2;
+  const zoneEnd = Math.min(anchor + 20, headers.length - 1);
+
+  const found: Partial<FinalColumnMap> = {};
+
+  // Headers unicos ya encontrados
+  if (causaProbable >= 0) found.causaProbable = causaProbable;
+  if (clima >= 0) found.clima = clima;
+  if (observaciones >= 0) found.observaciones = observaciones;
+
+  // Buscar el resto SOLO en la zona final
+  if (!found.causaProbable) {
+    const col = findInRange(['CAUSA PROBABLE', 'CAUSA'], zoneStart, zoneEnd);
+    if (col >= 0) found.causaProbable = col;
+  }
+  const tipoPavimento = findInRange(['TIPO PAVIMENTO', 'TIPO DE PAVIMENTO', 'PAVIMENTO'], zoneStart, zoneEnd);
+  if (tipoPavimento >= 0) found.tipoPavimento = tipoPavimento;
+
+  const viaEstado = findInRange(['ESTADO DE LA VIA', 'ESTADO VIA', 'ESTADO DE VIA', 'ESTADO'], zoneStart, zoneEnd);
+  if (viaEstado >= 0) found.viaEstado = viaEstado;
+
+  const topografia = findInRange(['TOPOGRAFIA'], zoneStart, zoneEnd);
+  if (topografia >= 0) found.viaTopografia = topografia;
+
+  const geometria = findInRange(['GEOMETRIA'], zoneStart, zoneEnd);
+  if (geometria >= 0) found.viaGeometria = geometria;
+
+  const condicion = findInRange(['CONDICION'], zoneStart, zoneEnd);
+  if (condicion >= 0) found.viaCondicion = condicion;
+
+  if (!found.clima) {
+    const col = findInRange(['CLIMA'], zoneStart, zoneEnd);
+    if (col >= 0) found.clima = col;
   }
 
-  // Verificar que encontramos al menos las columnas criticas
-  if (found.unidad === undefined && found.causaProbable === undefined && found.clima === undefined) {
-    return null; // No se encontraron headers → hoja sin headers validos
+  // Headers ambiguos - SOLO en zona final (estos se repiten en bloques de vehiculos)
+  const chapa = findInRange(['CHAPA'], zoneStart, zoneEnd);
+  if (chapa >= 0) found.chapa = chapa;
+
+  const brigada = findInRange(['BRIGADA'], zoneStart, zoneEnd);
+  if (brigada >= 0) found.brigada = brigada;
+
+  const unidad = findInRange(['UNIDAD'], zoneStart, zoneEnd);
+  if (unidad >= 0) found.unidad = unidad;
+
+  if (!found.observaciones) {
+    const col = findInRange(['OBSERVACIONES', 'OBS'], zoneStart, zoneEnd);
+    if (col >= 0) found.observaciones = col;
   }
 
-  // Para columnas no encontradas, intentar inferir por posición relativa
-  // Si tenemos causa_probable, las demas suelen estar en orden consecutivo
+  // Auth columns - buscar variantes especificas o por posicion relativa
+  const authChapa = findInRange(['NO. DE CHAPA', 'CHAPA AUTORIDAD', 'CHAPA PNC'], zoneStart, zoneEnd);
+  if (authChapa >= 0) found.authChapa = authChapa;
+
+  const authNombre = findInRange(['NOMBRE AUTORIDAD', 'NOMBRE PNC', 'NOMBRE DE LA AUTORIDAD'], zoneStart, zoneEnd);
+  if (authNombre >= 0) found.authNombre = authNombre;
+
+  const authUnidad = findInRange(['UNIDAD AUTORIDAD', 'UNIDAD PNC', 'UNIDAD DE LA AUTORIDAD'], zoneStart, zoneEnd);
+  if (authUnidad >= 0) found.authUnidad = authUnidad;
+
+  // === PASO 3: Inferir columnas no encontradas por posicion relativa ===
   if (found.causaProbable !== undefined) {
     const base = found.causaProbable;
     if (found.tipoPavimento === undefined) found.tipoPavimento = base + 1;
@@ -199,23 +257,16 @@ function detectFinalColumns(headerRow: any[]): FinalColumnMap | null {
     if (found.viaGeometria === undefined) found.viaGeometria = base + 4;
     if (found.viaCondicion === undefined) found.viaCondicion = base + 5;
     if (found.clima === undefined) found.clima = base + 6;
+    if (found.chapa === undefined) found.chapa = base + 7;
+    if (found.brigada === undefined) found.brigada = base + 8;
+    if (found.unidad === undefined) found.unidad = base + 9;
+    if (found.authChapa === undefined) found.authChapa = base + 10;
+    if (found.authNombre === undefined) found.authNombre = base + 11;
+    if (found.authUnidad === undefined) found.authUnidad = base + 12;
+    if (found.observaciones === undefined) found.observaciones = base + 13;
   }
 
-  if (found.chapa !== undefined) {
-    const base = found.chapa;
-    if (found.brigada === undefined) found.brigada = base + 1;
-    if (found.unidad === undefined) found.unidad = base + 2;
-  }
-
-  if (found.unidad !== undefined) {
-    const base = found.unidad;
-    if (found.authChapa === undefined) found.authChapa = base + 1;
-    if (found.authNombre === undefined) found.authNombre = base + 2;
-    if (found.authUnidad === undefined) found.authUnidad = base + 3;
-    if (found.observaciones === undefined) found.observaciones = base + 4;
-  }
-
-  // Defaults de emergencia (no deberia llegar aqui pero evita crashes)
+  // Defaults de emergencia
   const defaults: FinalColumnMap = {
     causaProbable: 459, tipoPavimento: 460, viaEstado: 461,
     viaTopografia: 462, viaGeometria: 463, viaCondicion: 464, clima: 465,
