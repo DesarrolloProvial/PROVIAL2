@@ -94,8 +94,9 @@ export async function createSituacion(req: Request, res: Response) {
     const latitud = latitudRaw ?? coordenadas?.latitude ?? coordenadas?.latitud ?? null;
     const longitud = longitudRaw ?? coordenadas?.longitude ?? coordenadas?.longitud ?? null;
 
+    // Priorizar tipo específico (hecho/asistencia/emergencia) sobre el tipo genérico (categoría padre)
     const tipo_situacion_id_final = normalizeId(
-      tipo_situacion_id ?? tipo_hecho_id ?? tipo_asistencia_id ?? tipo_emergencia_id
+      tipo_hecho_id ?? tipo_asistencia_id ?? tipo_emergencia_id ?? tipo_situacion_id
     );
 
     // Normalizar tipo_situacion: HECHO_TRANSITO -> INCIDENTE (constraint DB)
@@ -220,11 +221,17 @@ export async function createSituacion(req: Request, res: Response) {
     let muniIdFinal = normalizeId(municipio_id);
     if (deptoIdFinal) {
       const deptoExists = await db.oneOrNone('SELECT id FROM departamento WHERE id = $1', [deptoIdFinal]);
-      if (!deptoExists) deptoIdFinal = null;
+      if (!deptoExists) {
+        console.warn(`[CREATE] departamento_id ${deptoIdFinal} no encontrado, ignorando`);
+        deptoIdFinal = null;
+      }
     }
     if (muniIdFinal) {
       const muniExists = await db.oneOrNone('SELECT id FROM municipio WHERE id = $1', [muniIdFinal]);
-      if (!muniExists) muniIdFinal = null;
+      if (!muniExists) {
+        console.warn(`[CREATE] municipio_id ${muniIdFinal} no encontrado, ignorando`);
+        muniIdFinal = null;
+      }
     }
 
     const dataToCreate = {

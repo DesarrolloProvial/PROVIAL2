@@ -433,9 +433,9 @@ export function useDraftSituacion() {
         console.log('📍 [ENVIAR_DRAFT] situacionId extraído:', situacionId);
 
         // Subir multimedia si hay
-        if (draft.multimedia.length > 0 && situacionId) {
+        if (draft.multimedia?.length > 0 && situacionId) {
           await subirMultimedia(situacionId, draft.multimedia);
-        } else if (draft.multimedia.length > 0 && !situacionId) {
+        } else if (draft.multimedia?.length > 0 && !situacionId) {
           console.error('❌ [ENVIAR_DRAFT] No se puede subir multimedia: situacionId es undefined');
         }
 
