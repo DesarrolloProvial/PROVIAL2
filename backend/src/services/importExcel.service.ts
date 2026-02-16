@@ -55,10 +55,17 @@ function parseKm(val: any): number | null {
   return isNaN(n) ? null : n;
 }
 
+const SENTIDOS_VALIDOS = new Set(['NORTE', 'SUR', 'ORIENTE', 'OCCIDENTE']);
+
 function parseSentido(val: any): string | null {
   if (isNull(val)) return null;
-  const words = String(val).trim().toUpperCase().split(/[\s\-]+/).filter((w: string) => w && w !== 'A');
-  return words.length > 0 ? words[words.length - 1] : null;
+  const s = String(val).trim().toUpperCase();
+  // "AMBOS SENTIDOS" o similar → null
+  if (s.includes('AMBOS')) return null;
+  const words = s.split(/[\s\-]+/).filter((w: string) => w && w !== 'A');
+  const candidate = words.length > 0 ? words[words.length - 1] : null;
+  // Solo retornar si es un valor válido del CHECK constraint
+  return candidate && SENTIDOS_VALIDOS.has(candidate) ? candidate : null;
 }
 
 function parseExcelDateTime(dateSerial: any, timeFraction: any): Date | null {
