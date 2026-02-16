@@ -79,12 +79,6 @@ function parseExcelDateTime(dateSerial: any, timeFraction: any): Date | null {
   return jsDate;
 }
 
-function parseModelo(val: any): number | null {
-  if (isNull(val)) return null;
-  const n = parseInt(String(val).replace(/,/g, '').trim(), 10);
-  return (isNaN(n) || n < 1900 || n > 2030) ? null : n;
-}
-
 function parseSexo(val: any): string | null {
   if (isNull(val)) return null;
   const s = String(val).trim().toUpperCase();
