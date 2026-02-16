@@ -461,6 +461,18 @@ function lookupUnidad(cat: Catalogs, codigo: string | null): { id: number | null
   return { id: fb, fallback: fb !== null };
 }
 
+/** Normaliza el valor de clima del Excel a los valores permitidos por el CHECK constraint */
+function normalizeClima(val: any): string | null {
+  if (isNull(val)) return null;
+  const s = stripAccents(String(val).trim().toUpperCase());
+  if (s.includes('DESPEJADO') || s.includes('SOLEADO') || s.includes('SOL')) return 'DESPEJADO';
+  if (s.includes('NUBLADO') || s.includes('NUBE') || s.includes('PARCIAL')) return 'NUBLADO';
+  if (s.includes('LLUVI') || s.includes('LLOVI') || s.includes('TORMENT')) return 'LLUVIA';
+  if (s.includes('NEBLIN') || s.includes('NIEBLA') || s.includes('BRUMA')) return 'NEBLINA';
+  // Si no matchea ninguno, null para no violar el constraint
+  return null;
+}
+
 const BUS_TYPES = new Set([
   'BUS', 'BUS URBANO', 'BUS EXTRAURBANO', 'MICROBUS', 'MINIBUS',
   'BUS ESCOLAR', 'TRANSPORTE PUBLICO', 'TRANSMETRO',
@@ -572,7 +584,7 @@ async function processRow(
   const viaTopografia = cleanStr(row[fc.viaTopografia]);
   const viaGeometria = cleanStr(row[fc.viaGeometria]);
   const viaCondicion = cleanStr(row[fc.viaCondicion]);
-  const clima = cleanStr(row[fc.clima]);
+  const clima = normalizeClima(row[fc.clima]);
 
   let observaciones = cleanStr(row[fc.observaciones]) || '';
   const chapa = cleanStr(row[fc.chapa]);
