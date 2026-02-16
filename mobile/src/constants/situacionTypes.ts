@@ -121,6 +121,7 @@ export const SENTIDOS = [
   { value: 'SUR', label: 'Sur' },
   { value: 'ORIENTE', label: 'Oriente' },
   { value: 'OCCIDENTE', label: 'Occidente' },
+  { value: 'AMBOS', label: 'Ambos sentidos' },
 ];
 
 // Estados de situaciones
