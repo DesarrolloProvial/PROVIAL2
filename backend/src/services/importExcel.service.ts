@@ -527,7 +527,7 @@ export interface ImportOptions {
 async function processRow(
   row: any[], rowIndex: number, mesName: string,
   cat: Catalogs, result: ImportResult, dryRun: boolean, origenDatos: string,
-  fc: FinalColumnMap, userId: number
+  fc: FinalColumnMap, userId: number, boletasSeen: Set<string>
 ): Promise<void> {
   const sede = cleanStr(row[0]);
   const boleta = cleanStr(row[1]);
@@ -544,9 +544,21 @@ async function processRow(
 
   const codigoBoleta = `${sede}-${boleta}`;
 
+  // Detectar duplicados internos (misma boleta en el mismo Excel)
+  if (boletasSeen.has(codigoBoleta)) {
+    result.skipped++;
+    result.skippedRows.push(`${mesName} fila ${rowIndex + 1}: DUPLICADO INTERNO boleta="${codigoBoleta}" depto="${row[3] ?? ''}" muni="${row[4] ?? ''}" ruta="${row[7] ?? ''}"`);
+    return;
+  }
+  boletasSeen.add(codigoBoleta);
+
   if (!dryRun) {
     const exists = await db.oneOrNone('SELECT id FROM situacion WHERE codigo_boleta = $1', [codigoBoleta]);
-    if (exists) { result.skipped++; return; }
+    if (exists) {
+      result.skipped++;
+      result.skippedRows.push(`${mesName} fila ${rowIndex + 1}: DUPLICADO BD boleta="${codigoBoleta}" depto="${row[3] ?? ''}" muni="${row[4] ?? ''}" ruta="${row[7] ?? ''}"`);
+      return;
+    }
   }
 
   const grupo = cleanInt(row[2]);
@@ -840,6 +852,8 @@ export async function importExcelData(
   };
   Object.assign(result, _maps);
 
+  const boletasSeen = new Set<string>();
+
   for (const mes of mesesAProcesar) {
     const ws = wb.Sheets[mes];
     if (!ws) continue;
@@ -875,7 +889,7 @@ export async function importExcelData(
 
       result.totalRows++;
       try {
-        await processRow(row, i, mes, cat, result, dryRun, origenDatos, fc, userId);
+        await processRow(row, i, mes, cat, result, dryRun, origenDatos, fc, userId, boletasSeen);
       } catch (err: any) {
         result.errors++;
         result.errorDetails.push(`${mes} fila ${i + 1}: ${err.message}`);
