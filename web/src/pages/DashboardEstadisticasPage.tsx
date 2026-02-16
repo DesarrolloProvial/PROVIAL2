@@ -360,7 +360,7 @@ export default function DashboardEstadisticasPage() {
                     <XAxis dataKey="hora" tick={{ fontSize: 11 }}
                       tickFormatter={(h: number) => `${h}:00`} />
                     <YAxis />
-                    <Tooltip labelFormatter={(h: number) => `${h}:00 - ${h}:59`} />
+                    <Tooltip labelFormatter={(h: any) => `${h}:00 - ${h}:59`} />
                     <Bar dataKey="cantidad" fill="#14b8a6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
