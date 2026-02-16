@@ -10,6 +10,7 @@ import {
   LogOut,
   ChevronRight,
   FileSpreadsheet,
+  BarChart3,
 } from 'lucide-react';
 
 interface MenuOption {
@@ -80,6 +81,15 @@ export default function AdminHubPage() {
       path: '/super-admin/import-excel',
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200',
+    },
+    {
+      id: 'estadisticas',
+      title: 'Estadisticas y Accidentologia',
+      description: 'Graficos, indicadores y analisis de datos de accidentologia',
+      icon: <BarChart3 className="w-8 h-8" />,
+      path: '/estadisticas',
+      color: 'text-cyan-600',
+      bgColor: 'bg-cyan-50 hover:bg-cyan-100 border-cyan-200',
     },
     {
       id: 'config',

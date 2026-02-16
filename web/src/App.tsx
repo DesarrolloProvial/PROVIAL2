@@ -28,6 +28,7 @@ import DashboardEjecutivoPage from './pages/DashboardEjecutivoPage';
 import EditarSituacionPage from './pages/EditarSituacionPage';
 import VerActividadPage from './pages/VerActividadPage';
 import ImportExcelPage from './pages/ImportExcelPage';
+import DashboardEstadisticasPage from './pages/DashboardEstadisticasPage';
 
 // Crear QueryClient
 const queryClient = new QueryClient({
@@ -352,6 +353,14 @@ function App() {
               <COPRoute>
                 <COPSituacionesPage />
               </COPRoute>
+            }
+          />
+          <Route
+            path="/estadisticas"
+            element={
+              <SuperAdminRoute>
+                <DashboardEstadisticasPage />
+              </SuperAdminRoute>
             }
           />
           <Route

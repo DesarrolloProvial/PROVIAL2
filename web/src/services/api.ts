@@ -181,6 +181,11 @@ export const situacionesAPI = {
     return data.situacion;
   },
 
+  async create(payload: any): Promise<any> {
+    const { data } = await api.post('/situaciones', payload);
+    return data.situacion;
+  },
+
   async cerrar(id: number, observaciones?: string): Promise<any> {
     const { data } = await api.patch(`/situaciones/${id}/cerrar`, {
       observaciones_finales: observaciones,

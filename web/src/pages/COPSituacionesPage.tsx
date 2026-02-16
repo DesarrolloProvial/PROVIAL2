@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { situacionesAPI, incidentesAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, ArrowLeft, Search, Filter, MapPin, ChevronDown, ChevronUp, Eye, X, Wifi, WifiOff } from 'lucide-react';
+import { RefreshCw, ArrowLeft, Search, Filter, MapPin, ChevronDown, ChevronUp, Eye, X, Wifi, WifiOff, Plus } from 'lucide-react';
+import CrearSituacionModal from '../components/forms/CrearSituacionModal';
 import { useDashboardSocket } from '../hooks/useSocket';
 
 // Colores por sede
@@ -48,6 +49,7 @@ export default function COPSituacionesPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'created_at', direction: 'desc' });
   const [selectedSituacion, setSelectedSituacion] = useState<any | null>(null);
+  const [showCrearModal, setShowCrearModal] = useState(false);
   const [filters, setFilters] = useState({
     sede: '',
     tipoSituacion: '',
@@ -63,7 +65,7 @@ export default function COPSituacionesPage() {
     refetchInterval: socketConnected ? false : 30000,
   });
 
-  const { refetch: refetchResumen } = useQuery({
+  const { data: resumenUnidades = [], refetch: refetchResumen } = useQuery({
     queryKey: ['resumen-unidades'],
     queryFn: situacionesAPI.getResumenUnidades,
     refetchInterval: socketConnected ? false : 30000,
@@ -197,6 +199,13 @@ export default function COPSituacionesPage() {
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowCrearModal(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Nueva Situacion
+              </button>
               <button
                 onClick={() => navigate('/cop/mapa')}
                 className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition flex items-center gap-2"
@@ -470,6 +479,17 @@ export default function COPSituacionesPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de crear situacion */}
+      <CrearSituacionModal
+        isOpen={showCrearModal}
+        onClose={() => setShowCrearModal(false)}
+        onCreated={() => {
+          refetchSituaciones();
+          refetchResumen();
+        }}
+        unidades={resumenUnidades}
+      />
 
       {/* Modal de detalle de situación */}
       {selectedSituacion && (

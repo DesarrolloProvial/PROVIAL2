@@ -39,6 +39,7 @@ import cloudinaryRoutes from './cloudinary.routes';
 import draftsRoutes from './drafts.routes';
 import actividadRoutes from './actividad.routes';
 import importExcelRoutes from './importExcel.routes';
+import estadisticasRoutes from './estadisticas.routes';
 
 
 const router = Router();
@@ -162,6 +163,9 @@ router.use('/actividades', actividadRoutes);
 
 // Importación de datos Excel (Estadísticas históricas)
 router.use('/admin', importExcelRoutes);
+
+// Estadísticas de accidentología
+router.use('/estadisticas', estadisticasRoutes);
 
 
 export default router;
