@@ -752,14 +752,7 @@ async function processRow(
         ]
       );
 
-      if (nitTarjeta || modelo || domicilio) {
-        const nitNum = nitTarjeta ? String(nitTarjeta).replace(/\D/g, '') : null;
-        await db.none(
-          `INSERT INTO tarjeta_circulacion (vehiculo_id, nit, modelo, direccion_propietario)
-           VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
-          [vehiculo.id, nitNum || null, modelo, domicilio]
-        );
-      }
+      // tarjeta_circulacion requiere campo "numero" NOT NULL que no existe en el Excel - se omite
 
       if (BUS_TYPES.has(tipoVehNombre.trim().toUpperCase()) && (licTransportes || tarOperaciones || seguro || poliza)) {
         await db.none(
