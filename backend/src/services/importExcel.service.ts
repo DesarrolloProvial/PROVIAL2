@@ -676,10 +676,8 @@ async function processRow(
 
     const placa = cleanStr(row[base + 1]) || `SIN-PLACA-${codigoBoleta}-V${v + 1}`;
     const color = cleanStr(row[base + 2]);
-    const modelo = parseModelo(row[base + 3]);
     const marcaNombre = cleanStr(row[base + 4]);
     const empresa = cleanStr(row[base + 5]);
-    const nitTarjeta = cleanStr(row[base + 6]);
     const licTransportes = cleanStr(row[base + 7]);
     const tarOperaciones = cleanStr(row[base + 8]);
     const seguro = cleanStr(row[base + 9]);
@@ -689,7 +687,6 @@ async function processRow(
     const sexo = parseSexo(row[base + 14]);
     const etnia = cleanStr(row[base + 15]);
     const estadoPiloto = parseEstadoPiloto(row[base + 16]);
-    const domicilio = cleanStr(row[base + 17]);
     const licTipo = cleanStr(row[base + 19]);
     const licNumero = cleanStr(row[base + 20]);
     const ebriedad = parseBoolean(row[base + 21]);
