@@ -560,7 +560,11 @@ async function processRow(
   const muniName = cleanStr(row[4]);
   const area = cleanStr(row[5])?.toUpperCase() || null;
   const rutaCodigo = cleanStr(row[7]);
-  const sentido = parseSentido(row[8]);
+  const sentidoRaw = row[8];
+  const sentido = parseSentido(sentidoRaw);
+  if (sentidoRaw && sentido === null && !isNull(sentidoRaw)) {
+    console.log(`⚠️ [IMPORT] ${mesName} fila ${rowIndex + 1}: sentido no reconocido raw="${sentidoRaw}"`);
+  }
   const km = parseKm(row[9]);
   const createdAt = parseExcelDateTime(row[10], row[13]);
   const tipoAccidente = cleanStr(row[16]);
