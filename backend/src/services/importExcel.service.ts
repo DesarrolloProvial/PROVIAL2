@@ -592,6 +592,14 @@ async function processRow(
     (_r._missingUnidades as Map<string, string[]>).set(unidadCod, [...((_r._missingUnidades as Map<string, string[]>).get(unidadCod) || []), loc]);
   }
 
+  // unidad_id es NOT NULL en la BD - si no hay unidad resuelta, necesitamos DESCONOCIDA
+  const finalUnidadId = unidadId ?? (cat.unidades.get('DESCONOCIDA') ?? null);
+  if (!finalUnidadId) {
+    result.errors++;
+    result.errorDetails.push(`${loc}: unidad_id NULL (unidad="${rawUnidad}"). Crea la unidad DESCONOCIDA en la BD.`);
+    return;
+  }
+
   const meta: string[] = [];
   if (chapa) meta.push(`Chapa: ${chapa}`);
   if (brigada) meta.push(`Brigada: ${brigada}`);
@@ -607,9 +615,13 @@ async function processRow(
     return;
   }
 
+  // Generar codigo_situacion determinista para importacion Excel
+  const codigoSituacion = `EXL-${codigoBoleta}`;
+
   // INSERT situacion
   const situacion = await db.one(
     `INSERT INTO situacion (
+      codigo_situacion,
       tipo_situacion, estado, codigo_boleta, origen_datos,
       grupo, departamento_id, municipio_id, area,
       ruta_id, sentido, km, created_at,
@@ -617,16 +629,18 @@ async function processRow(
       tipo_pavimento, via_estado, via_topografia, via_geometria, via_condicion,
       clima, observaciones, creado_por, unidad_id
     ) VALUES (
-      'INCIDENTE', 'CERRADA', $1, $2,
-      $3, $4, $5, $6, $7, $8, $9, $10,
-      $11, $12, $13, $14, $15, $16, $17, $18, $19, 1, $20
+      $1,
+      'INCIDENTE', 'CERRADA', $2, $3,
+      $4, $5, $6, $7, $8, $9, $10, $11,
+      $12, $13, $14, $15, $16, $17, $18, $19, $20, 1, $21
     ) RETURNING id`,
     [
+      codigoSituacion,
       codigoBoleta, origenDatos,
       grupo, deptoId, muniId, area, rutaId, sentido, km, createdAt,
       tipoSituacionId, causaProbable,
       tipoPavimento, viaEstado, viaTopografia, viaGeometria, viaCondicion,
-      clima, observaciones || null, unidadId,
+      clima, observaciones || null, finalUnidadId,
     ]
   );
 
