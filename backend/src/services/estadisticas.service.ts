@@ -70,7 +70,8 @@ function buildWhere(f: EstadisticasFilters): { clause: string; params: any[] } {
 
   const needsUnidadJoin = !!f.sede_id;
   const joinClause = needsUnidadJoin ? 'LEFT JOIN unidad u ON s.unidad_id = u.id' : '';
-  const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+  // Siempre usar WHERE 1=1 para que los AND adicionales en queries funcionen
+  const whereClause = 'WHERE 1=1' + (conditions.length > 0 ? ' AND ' + conditions.join(' AND ') : '');
 
   return { clause: `FROM situacion s ${joinClause} ${whereClause}`, params };
 }
