@@ -39,10 +39,13 @@ export async function importarExcel(req: Request, res: Response) {
     console.log(`📊 [IMPORT] Iniciando importacion Excel (dryRun=${dryRun}, mes=${mesFilter || 'TODOS'}, origen=${origenDatos})`);
     console.log(`📁 [IMPORT] Archivo: ${req.file.originalname} (${(req.file.size / 1024 / 1024).toFixed(2)} MB)`);
 
+    const userId = (req as any).user?.userId || 1;
+
     const result = await importExcelData(req.file.buffer, {
       dryRun,
       mesFilter,
       origenDatos,
+      userId,
     });
 
     console.log(`✅ [IMPORT] Completado: ${result.inserted} insertados, ${result.skipped} duplicados, ${result.errors} errores`);

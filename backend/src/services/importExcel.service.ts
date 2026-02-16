@@ -518,6 +518,7 @@ export interface ImportOptions {
   dryRun?: boolean;
   mesFilter?: string | null;
   origenDatos?: string;
+  userId?: number;
 }
 
 // ============================================================
@@ -527,7 +528,7 @@ export interface ImportOptions {
 async function processRow(
   row: any[], rowIndex: number, mesName: string,
   cat: Catalogs, result: ImportResult, dryRun: boolean, origenDatos: string,
-  fc: FinalColumnMap
+  fc: FinalColumnMap, userId: number
 ): Promise<void> {
   const sede = cleanStr(row[0]);
   const boleta = cleanStr(row[1]);
@@ -644,7 +645,7 @@ async function processRow(
       $1,
       'INCIDENTE', 'CERRADA', $2, $3,
       $4, $5, $6, $7, $8, $9, $10, $11,
-      $12, $13, $14, $15, $16, $17, $18, $19, $20, 1, $21
+      $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
     ) RETURNING id`,
     [
       codigoSituacion,
@@ -652,7 +653,7 @@ async function processRow(
       grupo, deptoId, muniId, area, rutaId, sentido, km, createdAt,
       tipoSituacionId, causaProbable,
       tipoPavimento, viaEstado, viaTopografia, viaGeometria, viaCondicion,
-      clima, observaciones || null, finalUnidadId,
+      clima, observaciones || null, userId, finalUnidadId,
     ]
   );
 
@@ -808,7 +809,7 @@ export async function importExcelData(
   excelBuffer: Buffer,
   options: ImportOptions = {}
 ): Promise<ImportResult> {
-  const { dryRun = false, mesFilter = null, origenDatos = 'EXCEL_2025' } = options;
+  const { dryRun = false, mesFilter = null, origenDatos = 'EXCEL_2025', userId = 1 } = options;
 
   const cat = await loadCatalogs();
 
@@ -881,7 +882,7 @@ export async function importExcelData(
 
       result.totalRows++;
       try {
-        await processRow(row, i, mes, cat, result, dryRun, origenDatos, fc);
+        await processRow(row, i, mes, cat, result, dryRun, origenDatos, fc, userId);
       } catch (err: any) {
         result.errors++;
         result.errorDetails.push(`${mes} fila ${i + 1}: ${err.message}`);
