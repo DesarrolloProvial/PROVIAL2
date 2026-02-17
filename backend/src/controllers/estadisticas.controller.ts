@@ -30,6 +30,27 @@ export const EstadisticasController = {
       res.status(500).json({ error: error.message || 'Error al obtener estadisticas' });
     }
   },
+
+  async obtenerDetalle(req: Request, res: Response) {
+    try {
+      const filters = {
+        ...parseFilters(req),
+        mes: req.query.mes as string | undefined,
+        dia_semana: req.query.dia_semana !== undefined ? parseInt(req.query.dia_semana as string) : undefined,
+        hora: req.query.hora !== undefined ? parseInt(req.query.hora as string) : undefined,
+        causa_probable: req.query.causa_probable as string | undefined,
+        sede_nombre: req.query.sede_nombre as string | undefined,
+        tipo_vehiculo: req.query.tipo_vehiculo as string | undefined,
+        departamento_nombre: req.query.departamento_nombre as string | undefined,
+        ruta_codigo: req.query.ruta_codigo as string | undefined,
+      };
+      const data = await EstadisticasService.obtenerDetalle(filters);
+      res.json({ situaciones: data, total: data.length });
+    } catch (error: any) {
+      console.error('Error obteniendo detalle:', error);
+      res.status(500).json({ error: error.message || 'Error al obtener detalle' });
+    }
+  },
 };
 
 export default EstadisticasController;

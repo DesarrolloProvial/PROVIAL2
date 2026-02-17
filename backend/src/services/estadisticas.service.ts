@@ -16,6 +16,18 @@ interface EstadisticasFilters {
   area?: string;
 }
 
+interface DetalleFilters extends EstadisticasFilters {
+  // Filtros de dimensión específica (al hacer click en una gráfica)
+  mes?: string;        // 'YYYY-MM'
+  dia_semana?: number; // 0=Domingo..6=Sabado
+  hora?: number;       // 0..23
+  causa_probable?: string;
+  sede_nombre?: string;
+  tipo_vehiculo?: string;
+  departamento_nombre?: string;
+  ruta_codigo?: string;
+}
+
 // Helper: construir WHERE dinámico con parámetros numerados
 function buildWhere(f: EstadisticasFilters): { clause: string; params: any[] } {
   const conditions: string[] = [];
@@ -372,6 +384,137 @@ export const EstadisticasService = {
       sede: r.sede,
       cantidad: parseInt(r.cantidad) || 0,
     }));
+  },
+
+  async obtenerDetalle(f: DetalleFilters) {
+    const conditions: string[] = [];
+    const params: any[] = [];
+    let i = 1;
+    const joins: string[] = [];
+
+    // Filtros base (mismos que buildWhere)
+    if (f.fecha_inicio) {
+      conditions.push(`COALESCE(s.fecha_hora_aviso, s.created_at) >= $${i}`);
+      params.push(f.fecha_inicio); i++;
+    }
+    if (f.fecha_fin) {
+      conditions.push(`COALESCE(s.fecha_hora_aviso, s.created_at) <= $${i}::date + INTERVAL '1 day'`);
+      params.push(f.fecha_fin); i++;
+    }
+    if (f.sede_id) {
+      conditions.push(`u.sede_id = $${i}`);
+      params.push(f.sede_id); i++;
+    }
+    if (f.departamento_id) {
+      conditions.push(`s.departamento_id = $${i}`);
+      params.push(f.departamento_id); i++;
+    }
+    if (f.ruta_id) {
+      conditions.push(`s.ruta_id = $${i}`);
+      params.push(f.ruta_id); i++;
+    }
+    if (f.tipo_situacion) {
+      conditions.push(`s.tipo_situacion = $${i}`);
+      params.push(f.tipo_situacion); i++;
+    }
+    if (f.origen_datos && f.origen_datos !== 'ALL') {
+      conditions.push(`s.origen_datos = $${i}`);
+      params.push(f.origen_datos); i++;
+    }
+    if (f.clima) {
+      conditions.push(`s.clima = $${i}`);
+      params.push(f.clima); i++;
+    }
+    if (f.area) {
+      conditions.push(`s.area = $${i}`);
+      params.push(f.area); i++;
+    }
+
+    // Filtros de dimensión (click en gráficas)
+    if (f.mes) {
+      conditions.push(`TO_CHAR(DATE_TRUNC('month', COALESCE(s.fecha_hora_aviso, s.created_at)), 'YYYY-MM') = $${i}`);
+      params.push(f.mes); i++;
+    }
+    if (f.dia_semana !== undefined && f.dia_semana !== null) {
+      conditions.push(`EXTRACT(DOW FROM COALESCE(s.fecha_hora_aviso, s.created_at))::INTEGER = $${i}`);
+      params.push(f.dia_semana); i++;
+    }
+    if (f.hora !== undefined && f.hora !== null) {
+      conditions.push(`EXTRACT(HOUR FROM COALESCE(s.fecha_hora_aviso, s.created_at))::INTEGER = $${i}`);
+      params.push(f.hora); i++;
+    }
+    if (f.causa_probable) {
+      conditions.push(`s.causa_probable = $${i}`);
+      params.push(f.causa_probable); i++;
+    }
+    if (f.sede_nombre) {
+      joins.push('LEFT JOIN sede se ON u.sede_id = se.id');
+      conditions.push(`se.nombre = $${i}`);
+      params.push(f.sede_nombre); i++;
+    }
+    if (f.tipo_vehiculo) {
+      joins.push('INNER JOIN situacion_vehiculo sv2 ON sv2.situacion_id = s.id');
+      joins.push('INNER JOIN vehiculo v2 ON sv2.vehiculo_id = v2.id');
+      joins.push('LEFT JOIN tipo_vehiculo tv2 ON v2.tipo_vehiculo_id = tv2.id');
+      conditions.push(`tv2.nombre = $${i}`);
+      params.push(f.tipo_vehiculo); i++;
+    }
+    if (f.departamento_nombre) {
+      conditions.push(`d.nombre = $${i}`);
+      params.push(f.departamento_nombre); i++;
+    }
+    if (f.ruta_codigo) {
+      conditions.push(`r.codigo = $${i}`);
+      params.push(f.ruta_codigo); i++;
+    }
+
+    // Siempre necesitamos estos joins para los nombres
+    const needsUnidad = !!f.sede_id || !!f.sede_nombre;
+    const baseJoins = [
+      needsUnidad ? 'LEFT JOIN unidad u ON s.unidad_id = u.id' : 'LEFT JOIN unidad u ON s.unidad_id = u.id',
+      'LEFT JOIN departamento d ON s.departamento_id = d.id',
+      'LEFT JOIN municipio m ON s.municipio_id = m.id',
+      'LEFT JOIN ruta r ON s.ruta_id = r.id',
+      'LEFT JOIN catalogo_tipo_situacion cts ON s.tipo_situacion_id = cts.id',
+      ...joins,
+    ];
+
+    const where = 'WHERE 1=1' + (conditions.length > 0 ? ' AND ' + conditions.join(' AND ') : '');
+
+    const result = await db.any(
+      `SELECT DISTINCT ON (s.id)
+        s.id,
+        s.codigo_boleta,
+        s.tipo_situacion,
+        cts.nombre AS tipo_situacion_nombre,
+        s.estado,
+        COALESCE(s.fecha_hora_aviso, s.created_at) AS fecha,
+        s.km,
+        s.sentido,
+        d.nombre AS departamento,
+        m.nombre AS municipio,
+        r.codigo AS ruta,
+        s.clima,
+        s.area,
+        s.origen_datos,
+        s.heridos,
+        s.fallecidos,
+        s.ilesos,
+        s.trasladados,
+        s.causa_probable,
+        s.observaciones,
+        u.codigo AS unidad,
+        s.latitud,
+        s.longitud
+      FROM situacion s
+      ${baseJoins.join('\n')}
+      ${where}
+      ORDER BY s.id, COALESCE(s.fecha_hora_aviso, s.created_at) DESC
+      LIMIT 500`,
+      params
+    );
+
+    return result;
   },
 
   // Obtener TODO en una sola llamada
