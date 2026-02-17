@@ -195,6 +195,38 @@ export const situacionesAPI = {
 };
 
 // ============================================
+// ACTIVIDADES
+// ============================================
+
+export const actividadesAPI = {
+  async create(payload: any): Promise<any> {
+    const { data } = await api.post('/actividades', payload);
+    return data.actividad;
+  },
+
+  async cerrar(id: number): Promise<any> {
+    const { data } = await api.patch(`/actividades/${id}/cerrar`);
+    return data.actividad;
+  },
+};
+
+// ============================================
+// CATALOGOS
+// ============================================
+
+export const catalogosAPI = {
+  async getCatalogoActividades(): Promise<any[]> {
+    const { data } = await api.get('/situaciones/catalogo');
+    return data;
+  },
+
+  async getAuxiliares(): Promise<any> {
+    const { data } = await api.get('/situaciones/auxiliares');
+    return data;
+  },
+};
+
+// ============================================
 // GEOGRAFÍA (RUTAS)
 // ============================================
 

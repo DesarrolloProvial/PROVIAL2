@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { situacionesAPI, incidentesAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, ArrowLeft, Search, Filter, MapPin, ChevronDown, ChevronUp, Eye, X, Wifi, WifiOff, Plus } from 'lucide-react';
+import { RefreshCw, ArrowLeft, Search, Filter, MapPin, ChevronDown, ChevronUp, Eye, X, Wifi, WifiOff, Plus, Activity } from 'lucide-react';
 import CrearSituacionModal from '../components/forms/CrearSituacionModal';
+import CrearActividadModal from '../components/forms/CrearActividadModal';
 import { useDashboardSocket } from '../hooks/useSocket';
 
 // Colores por sede
@@ -50,6 +51,8 @@ export default function COPSituacionesPage() {
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'created_at', direction: 'desc' });
   const [selectedSituacion, setSelectedSituacion] = useState<any | null>(null);
   const [showCrearModal, setShowCrearModal] = useState(false);
+  const [showCrearActividadModal, setShowCrearActividadModal] = useState(false);
+  const [preselectedUnidadId, setPreselectedUnidadId] = useState<number | undefined>(undefined);
   const [filters, setFilters] = useState({
     sede: '',
     tipoSituacion: '',
@@ -200,11 +203,18 @@ export default function COPSituacionesPage() {
 
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowCrearModal(true)}
+                onClick={() => { setPreselectedUnidadId(undefined); setShowCrearModal(true); }}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 Nueva Situacion
+              </button>
+              <button
+                onClick={() => { setPreselectedUnidadId(undefined); setShowCrearActividadModal(true); }}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
+              >
+                <Activity className="w-4 h-4" />
+                Nueva Actividad
               </button>
               <button
                 onClick={() => navigate('/cop/mapa')}
@@ -431,16 +441,40 @@ export default function COPSituacionesPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/bitacora/${situacion.unidad_id}`);
-                          }}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                          title="Ver bitácora"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/bitacora/${situacion.unidad_id}`);
+                            }}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                            title="Ver bitácora"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreselectedUnidadId(situacion.unidad_id);
+                              setShowCrearModal(true);
+                            }}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                            title="Crear situacion para esta unidad"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreselectedUnidadId(situacion.unidad_id);
+                              setShowCrearActividadModal(true);
+                            }}
+                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition"
+                            title="Crear actividad para esta unidad"
+                          >
+                            <Activity className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -489,6 +523,19 @@ export default function COPSituacionesPage() {
           refetchResumen();
         }}
         unidades={resumenUnidades}
+        preselectedUnidadId={preselectedUnidadId}
+      />
+
+      {/* Modal de crear actividad */}
+      <CrearActividadModal
+        isOpen={showCrearActividadModal}
+        onClose={() => setShowCrearActividadModal(false)}
+        onCreated={() => {
+          refetchSituaciones();
+          refetchResumen();
+        }}
+        unidades={resumenUnidades}
+        preselectedUnidadId={preselectedUnidadId}
       />
 
       {/* Modal de detalle de situación */}
