@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { situacionesAPI, api } from '../services/api';
-import { ArrowLeft, RefreshCw, MapPin, Users, Truck, Clock } from 'lucide-react';
+import { ArrowLeft, RefreshCw, MapPin, Users, Truck, Clock, Plus, Activity } from 'lucide-react';
 import Inspeccion360Historial from '../components/Inspeccion360Historial';
+import CrearSituacionModal from '../components/forms/CrearSituacionModal';
+import CrearActividadModal from '../components/forms/CrearActividadModal';
 
 // Tipos de situación para colores
 const TIPOS_SITUACION = [
@@ -35,6 +37,12 @@ export default function BitacoraPage() {
 
     // Estado para info de unidad
     const [unidadInfo, setUnidadInfo] = useState<any>(null);
+
+    // Modal states
+    const [showCrearSituacionModal, setShowCrearSituacionModal] = useState(false);
+    const [showCrearActividadModal, setShowCrearActividadModal] = useState(false);
+    const [editSituacionId, setEditSituacionId] = useState<number | undefined>(undefined);
+    const [editActividadId, setEditActividadId] = useState<number | undefined>(undefined);
 
 
 
@@ -71,14 +79,25 @@ export default function BitacoraPage() {
         }
     }, [bitacora, unidadInfo]);
 
-    // Navegar a página de detalle según tipo
+    // Open modal to edit/view entry
     const handleEditClick = (item: any) => {
         if (item.tipo_registro === 'SITUACION') {
-            navigate(`/editar-situacion/${item.id}`);
+            setEditSituacionId(item.id);
+            setEditActividadId(undefined);
+            setShowCrearSituacionModal(true);
         } else if (item.tipo_registro === 'ACTIVIDAD') {
-            navigate(`/ver-actividad/${item.id}`);
+            setEditActividadId(item.id);
+            setEditSituacionId(undefined);
+            setShowCrearActividadModal(true);
         }
     };
+
+    // Unidades for modals (minimal array with just this unit)
+    const unidadesForModal = unidadInfo ? [{
+        unidad_id: Number(unidadId),
+        unidad_codigo: unidadInfo.codigo || unidadId,
+        sede_nombre: unidadInfo.sede_nombre || '',
+    }] : [];
 
 
 
@@ -136,7 +155,28 @@ export default function BitacoraPage() {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => {
+                                    setEditSituacionId(undefined);
+                                    setShowCrearSituacionModal(true);
+                                }}
+                                className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-1.5 text-sm"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Situación
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setEditActividadId(undefined);
+                                    setShowCrearActividadModal(true);
+                                }}
+                                className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-1.5 text-sm"
+                            >
+                                <Activity className="w-4 h-4" />
+                                Actividad
+                            </button>
+
                             <select
                                 value={limit}
                                 onChange={(e) => setLimit(Number(e.target.value))}
@@ -350,6 +390,25 @@ export default function BitacoraPage() {
                 </div>
             </div>
 
+            {/* Modal crear/editar situación */}
+            <CrearSituacionModal
+                isOpen={showCrearSituacionModal}
+                onClose={() => { setShowCrearSituacionModal(false); setEditSituacionId(undefined); }}
+                onCreated={() => { refetch(); }}
+                unidades={unidadesForModal}
+                preselectedUnidadId={Number(unidadId)}
+                editSituacionId={editSituacionId}
+            />
+
+            {/* Modal crear/editar actividad */}
+            <CrearActividadModal
+                isOpen={showCrearActividadModal}
+                onClose={() => { setShowCrearActividadModal(false); setEditActividadId(undefined); }}
+                onCreated={() => { refetch(); }}
+                unidades={unidadesForModal}
+                preselectedUnidadId={Number(unidadId)}
+                editActividadId={editActividadId}
+            />
         </div>
     );
 }

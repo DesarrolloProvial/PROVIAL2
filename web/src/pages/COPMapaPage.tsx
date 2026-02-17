@@ -9,6 +9,8 @@ import { RefreshCw, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut, Sea
 import { useDashboardSocket } from '../hooks/useSocket';
 import ResumenUnidadesTable from '../components/ResumenUnidadesTable';
 import SituacionIcon from '../components/SituacionIcon';
+import CrearSituacionModal from '../components/forms/CrearSituacionModal';
+import CrearActividadModal from '../components/forms/CrearActividadModal';
 import { useAuthStore } from '../store/authStore';
 
 // Emoji corto por nombre de icono MDI (para el pin del mapa)
@@ -143,6 +145,9 @@ export default function COPMapaPage() {
     soloActivas: false, // Si true, solo muestra situaciones ACTIVAS
     sedes: [] as number[],
   });
+  const [showCrearSituacionModal, setShowCrearSituacionModal] = useState(false);
+  const [showCrearActividadModal, setShowCrearActividadModal] = useState(false);
+  const [preselectedUnidadId, setPreselectedUnidadId] = useState<number | undefined>(undefined);
 
   const { isConnected: socketConnected, lastUpdate } = useDashboardSocket(queryClient);
   const defaultCenter: LatLngExpression = [14.6407, -90.5133];
@@ -942,12 +947,19 @@ export default function COPMapaPage() {
                 <ResumenUnidadesTable
                   resumen={resumenUnidades}
                   onSelectUnidad={(unidadId) => {
-                    // Cambiar a vista de mapa y seleccionar la unidad
                     setModoVista('mapa');
                     const unidad = resumenUnidades.find((u: any) => u.unidad_id === unidadId);
                     if (unidad) {
                       setSelectedUnidad(unidad);
                     }
+                  }}
+                  onCreateSituacion={(unidadId) => {
+                    setPreselectedUnidadId(unidadId);
+                    setShowCrearSituacionModal(true);
+                  }}
+                  onCreateActividad={(unidadId) => {
+                    setPreselectedUnidadId(unidadId);
+                    setShowCrearActividadModal(true);
                   }}
                 />
               );
@@ -955,6 +967,24 @@ export default function COPMapaPage() {
           </div>
         )}
       </div>
+
+      {/* Modal crear situación */}
+      <CrearSituacionModal
+        isOpen={showCrearSituacionModal}
+        onClose={() => setShowCrearSituacionModal(false)}
+        onCreated={() => { refetchResumen(); }}
+        unidades={resumenUnidades}
+        preselectedUnidadId={preselectedUnidadId}
+      />
+
+      {/* Modal crear actividad */}
+      <CrearActividadModal
+        isOpen={showCrearActividadModal}
+        onClose={() => setShowCrearActividadModal(false)}
+        onCreated={() => { refetchResumen(); }}
+        unidades={resumenUnidades}
+        preselectedUnidadId={preselectedUnidadId}
+      />
     </div>
   );
 }

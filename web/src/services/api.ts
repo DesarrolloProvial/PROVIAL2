@@ -199,8 +199,18 @@ export const situacionesAPI = {
 // ============================================
 
 export const actividadesAPI = {
+  async getById(id: number): Promise<any> {
+    const { data } = await api.get(`/actividades/${id}`);
+    return data.actividad;
+  },
+
   async create(payload: any): Promise<any> {
     const { data } = await api.post('/actividades', payload);
+    return data.actividad;
+  },
+
+  async update(id: number, updates: any): Promise<any> {
+    const { data } = await api.patch(`/actividades/${id}`, updates);
     return data.actividad;
   },
 

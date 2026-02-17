@@ -57,12 +57,14 @@ interface Props {
   onCreated: () => void;
   unidades: any[];
   preselectedUnidadId?: number;
+  editSituacionId?: number; // If provided, load existing situacion for editing
 }
 
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
-export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidades, preselectedUnidadId }: Props) {
+export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidades, preselectedUnidadId, editSituacionId }: Props) {
+  const isEditMode = !!editSituacionId;
   const [step, setStep] = useState(1);
   const [tipoSituacion, setTipoSituacion] = useState('');
   const [activeTab, setActiveTab] = useState('general');
@@ -162,6 +164,111 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
       }
     }
   }, [form.unidad_id, unidades, rutas]);
+
+  // Load existing situacion for edit mode
+  useEffect(() => {
+    if (!isOpen || !editSituacionId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const sit = await situacionesAPI.getById(editSituacionId);
+        if (cancelled) return;
+
+        // Map tipo_situacion to our local type
+        const tipo = sit.tipo_situacion === 'INCIDENTE' ? 'HECHO_TRANSITO'
+          : sit.tipo_situacion === 'ASISTENCIA_VEHICULAR' ? 'ASISTENCIA_VEHICULAR'
+          : sit.tipo_situacion === 'EMERGENCIA' ? 'EMERGENCIA'
+          : sit.tipo_situacion || '';
+
+        setTipoSituacion(tipo);
+        setStep(2); // Skip type selector
+
+        setForm({
+          unidad_id: sit.unidad_id || '',
+          ruta_id: sit.ruta_id || '',
+          km: sit.km != null ? String(sit.km) : '',
+          km_fin: sit.km_fin != null ? String(sit.km_fin) : '',
+          sentido: sit.sentido || '',
+          latitud: sit.latitud != null ? String(sit.latitud) : '',
+          longitud: sit.longitud != null ? String(sit.longitud) : '',
+          departamento_id: sit.departamento_id || null,
+          municipio_id: sit.municipio_id || null,
+          clima: sit.clima || '',
+          area: sit.area || '',
+          material_via: sit.material_via || sit.tipo_pavimento || '',
+          obstruye: sit.obstruccion_data?.obstruye || 'NO',
+          observaciones: sit.observaciones || '',
+          descripcion: sit.descripcion || '',
+          subtipo_situacion: sit.subtipo_situacion || '',
+          heridos: sit.heridos || 0,
+          fallecidos: sit.fallecidos || 0,
+          ilesos: sit.ilesos || 0,
+          heridos_leves: sit.heridos_leves || 0,
+          heridos_graves: sit.heridos_graves || 0,
+          trasladados: sit.trasladados || 0,
+          fugados: sit.fugados || 0,
+          acuerdo_involucrados: sit.acuerdo_involucrados || false,
+          acuerdo_detalle: sit.acuerdo_detalle || '',
+          via_estado: sit.via_estado || '',
+          via_topografia: sit.via_topografia || '',
+          via_geometria: sit.via_geometria || '',
+          via_peralte: sit.via_peralte || '',
+          via_condicion: sit.via_condicion || '',
+          grupo: sit.grupo || '',
+          causas: sit.causas?.map((c: any) => c.id || c) || [],
+        });
+
+        // Load vehiculos
+        if (sit.vehiculos_involucrados?.length > 0) {
+          setVehiculos(sit.vehiculos_involucrados.map((v: any) => ({
+            tipo_vehiculo: v.tipo_vehiculo || v.vehiculo?.tipo_vehiculo || '',
+            marca: v.marca || v.vehiculo?.marca || '',
+            color: v.color || v.vehiculo?.color || '',
+            placa: v.placa || v.vehiculo?.placa || '',
+            placa_extranjera: v.placa_extranjera || v.vehiculo?.es_extranjero || false,
+            piloto_nombre: v.nombre_piloto || v.piloto?.nombre || '',
+            piloto_dpi: v.piloto_dpi || v.piloto?.dpi || '',
+            piloto_telefono: v.piloto_telefono || '',
+            estado_piloto: v.estado_piloto || 'ILESO',
+            personas_asistidas: v.personas_asistidas || 0,
+            dano: v.dano || v.danos_estimados || '',
+            observaciones: v.observaciones || '',
+            personas: v.datos_piloto?.personas || [],
+            dispositivos: v.dispositivos || [],
+            custodia_estado: v.custodia_estado || '',
+            custodia_autoridad: v.custodia_datos?.autoridad || '',
+            custodia_motivo: v.custodia_datos?.motivo || '',
+            custodia_destino: v.custodia_datos?.destino || '',
+          })));
+        }
+
+        // Load autoridades
+        if (sit.autoridades?.length > 0) {
+          const autoIds: string[] = [];
+          const autoDetalles: Record<string, any> = {};
+          const socIds: string[] = [];
+          const socDetalles: Record<string, any> = {};
+          sit.autoridades.forEach((a: any) => {
+            if (['PNC', 'PMT', 'MP', 'EJERCITO'].includes(a.tipo)) {
+              autoIds.push(a.tipo);
+              autoDetalles[a.tipo] = a.datos || {};
+            } else {
+              socIds.push(a.tipo);
+              socDetalles[a.tipo] = a.datos || {};
+            }
+          });
+          setAutoridadesSeleccionadas(autoIds);
+          setDetallesAutoridades(autoDetalles);
+          setSocorroSeleccionados(socIds);
+          setDetallesSocorro(socDetalles);
+        }
+      } catch (err) {
+        console.error('Error loading situacion:', err);
+        setError('Error al cargar la situacion');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isOpen, editSituacionId]);
 
   // Reset on close
   useEffect(() => {
@@ -341,11 +448,15 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
         };
       }
 
-      await situacionesAPI.create(payload);
+      if (isEditMode) {
+        await situacionesAPI.update(editSituacionId!, payload);
+      } else {
+        await situacionesAPI.create(payload);
+      }
       onCreated();
       onClose();
     } catch (err: any) {
-      console.error('Error creando situacion:', err);
+      console.error('Error guardando situacion:', err);
       setError(err.response?.data?.error || err.message || 'Error al crear la situacion');
     } finally {
       setSaving(false);
@@ -362,7 +473,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
           <div className="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-xl">
-            <h2 className="text-xl font-bold text-gray-900">Nueva Situacion</h2>
+            <h2 className="text-xl font-bold text-gray-900">{isEditMode ? 'Editar Situacion' : 'Nueva Situacion'}</h2>
             <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-lg">
               <X className="w-5 h-5" />
             </button>
@@ -713,12 +824,12 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
             {saving ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                Creando...
+                {isEditMode ? 'Guardando...' : 'Creando...'}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Crear Situacion
+                {isEditMode ? 'Guardar Cambios' : 'Crear Situacion'}
               </>
             )}
           </button>

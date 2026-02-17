@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Eye, Plus, Activity } from 'lucide-react';
 import SituacionIcon from './SituacionIcon';
 
 
@@ -43,9 +44,11 @@ const COLORES_SEDE: Record<number, string> = {
 interface Props {
   resumen: ResumenUnidad[];
   onSelectUnidad?: (unidadId: number) => void;
+  onCreateSituacion?: (unidadId: number) => void;
+  onCreateActividad?: (unidadId: number) => void;
 }
 
-export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props) {
+export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreateSituacion, onCreateActividad }: Props) {
   const [search, setSearch] = useState('');
   const [soloActivas, setSoloActivas] = useState(true); // Por defecto, solo mostrar activas
   const navigate = useNavigate();
@@ -156,7 +159,7 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Última Hora
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '300px' }}>
                 Acciones
               </th>
             </tr>
@@ -288,15 +291,51 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad }: Props)
 
                 {/* Acciones */}
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation(); // Evitar navegar a bitácora
-                      onSelectUnidad?.(unidad.unidad_id);
-                    }}
-                    className="text-green-600 hover:text-green-900 text-sm font-medium"
-                  >
-                    📍 Ver en mapa
-                  </button>
+                  <div className="flex items-center justify-center gap-1.5">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/bitacora/${unidad.unidad_id}`);
+                      }}
+                      className="flex items-center gap-1 px-2 py-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition text-xs font-medium"
+                      title="Ver bitácora"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      Bitácora
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCreateSituacion?.(unidad.unidad_id);
+                      }}
+                      className="flex items-center gap-1 px-2 py-1.5 text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition text-xs font-medium"
+                      title="Crear situación para esta unidad"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Situación
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCreateActividad?.(unidad.unidad_id);
+                      }}
+                      className="flex items-center gap-1 px-2 py-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition text-xs font-medium"
+                      title="Crear actividad para esta unidad"
+                    >
+                      <Activity className="w-3.5 h-3.5" />
+                      Actividad
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectUnidad?.(unidad.unidad_id);
+                      }}
+                      className="flex items-center gap-1 px-2 py-1.5 text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-xs font-medium"
+                      title="Ver en mapa"
+                    >
+                      📍
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

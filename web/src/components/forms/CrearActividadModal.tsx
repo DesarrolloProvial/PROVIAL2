@@ -26,6 +26,7 @@ interface Props {
   onCreated: () => void;
   unidades: any[];
   preselectedUnidadId?: number;
+  editActividadId?: number; // If provided, load existing actividad for editing
 }
 
 interface TipoActividad {
@@ -46,7 +47,8 @@ interface Categoria {
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
-export default function CrearActividadModal({ isOpen, onClose, onCreated, unidades, preselectedUnidadId }: Props) {
+export default function CrearActividadModal({ isOpen, onClose, onCreated, unidades, preselectedUnidadId, editActividadId }: Props) {
+  const isEditMode = !!editActividadId;
   const [step, setStep] = useState(1); // 1 = selector, 2 = formulario
   const [selectedTipo, setSelectedTipo] = useState<TipoActividad | null>(null);
   const [selectedCategoria, setSelectedCategoria] = useState('');
@@ -113,6 +115,49 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
     }
   }, [form.unidad_id, unidades, rutas]);
 
+  // Load existing actividad for edit mode
+  useEffect(() => {
+    if (!isOpen || !editActividadId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const act = await actividadesAPI.getById(editActividadId);
+        if (cancelled) return;
+        setForm({
+          unidad_id: act.unidad_id || '',
+          ruta_id: act.ruta_id || '',
+          km: act.km != null ? String(act.km) : '',
+          sentido: act.sentido || '',
+          latitud: act.latitud != null ? String(act.latitud) : '',
+          longitud: act.longitud != null ? String(act.longitud) : '',
+          departamento_id: act.departamento_id || null,
+          municipio_id: act.municipio_id || null,
+          observaciones: act.observaciones || '',
+        });
+        if (act.datos) {
+          const d = typeof act.datos === 'string' ? JSON.parse(act.datos) : act.datos;
+          setDatos(d);
+        }
+        // Find the tipo in catalog to set selectedTipo
+        if (act.tipo_actividad_id && categorias.length > 0) {
+          for (const cat of categorias) {
+            const found = cat.tipos.find((t: TipoActividad) => t.id === act.tipo_actividad_id);
+            if (found) {
+              setSelectedTipo(found);
+              setSelectedCategoria(cat.codigo);
+              setStep(2);
+              break;
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error loading actividad:', err);
+        setError('Error al cargar la actividad');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isOpen, editActividadId, categorias]);
+
   // Reset on close
   useEffect(() => {
     if (!isOpen) {
@@ -164,12 +209,16 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
         datos: Object.keys(cleanDatos).length > 0 ? cleanDatos : undefined,
       };
 
-      await actividadesAPI.create(payload);
+      if (isEditMode) {
+        await actividadesAPI.update(editActividadId!, payload);
+      } else {
+        await actividadesAPI.create(payload);
+      }
       onCreated();
       onClose();
     } catch (err: any) {
-      console.error('Error creando actividad:', err);
-      setError(err.response?.data?.error || err.message || 'Error al crear la actividad');
+      console.error('Error guardando actividad:', err);
+      setError(err.response?.data?.error || err.message || 'Error al guardar la actividad');
     } finally {
       setSaving(false);
     }
@@ -185,7 +234,7 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
           <div className="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-xl">
-            <h2 className="text-xl font-bold text-gray-900">Nueva Actividad</h2>
+            <h2 className="text-xl font-bold text-gray-900">{isEditMode ? 'Editar Actividad' : 'Nueva Actividad'}</h2>
             <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-lg">
               <X className="w-5 h-5" />
             </button>
@@ -373,12 +422,12 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
             {saving ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                Creando...
+                {isEditMode ? 'Guardando...' : 'Creando...'}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Crear Actividad
+                {isEditMode ? 'Guardar Cambios' : 'Crear Actividad'}
               </>
             )}
           </button>
