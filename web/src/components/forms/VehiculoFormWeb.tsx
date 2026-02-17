@@ -1,11 +1,29 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Trash2, Plus } from 'lucide-react';
 import {
   TIPOS_VEHICULO,
   MARCAS_VEHICULO,
   ESTADOS_PILOTO,
   NIVELES_DANO,
+  SEXOS,
+  LUGARES_FALLECIMIENTO,
+  TIPOS_PERSONA,
+  ESTADOS_DISPOSITIVO,
+  CUSTODIAS,
 } from '../../constants/situacionTypes';
+
+interface Persona {
+  nombre: string;
+  dpi: string;
+  edad: number | '';
+  genero: string;
+  tipo_persona: string;
+  estado: string;
+  hospital_traslado: string;
+  descripcion_lesiones: string;
+  causa_fallecimiento: string;
+  lugar_fallecimiento: string;
+}
 
 interface Vehiculo {
   tipo_vehiculo: string;
@@ -17,6 +35,12 @@ interface Vehiculo {
   piloto_dpi: string;
   piloto_telefono: string;
   estado_piloto: string;
+  ebriedad: boolean;
+  sexo_piloto: string;
+  hospital_traslado_piloto: string;
+  descripcion_lesiones_piloto: string;
+  causa_fallecimiento: string;
+  lugar_fallecimiento: string;
   personas_asistidas: number;
   dano: string;
   cargado: boolean;
@@ -59,6 +83,15 @@ interface Vehiculo {
   doc_consignado_tarjeta_operaciones: boolean;
   doc_consignado_poliza: boolean;
   doc_consignado_por: string;
+  // Custodia
+  custodia_estado: string;
+  custodia_autoridad: string;
+  custodia_motivo: string;
+  custodia_destino: string;
+  // Personas
+  personas: Persona[];
+  // Dispositivos
+  dispositivos: { id: number; estado: string }[];
 }
 
 interface VehiculoFormWebProps {
@@ -66,6 +99,8 @@ interface VehiculoFormWebProps {
   vehiculo: Partial<Vehiculo>;
   onChange: (index: number, field: string, value: any) => void;
   onRemove: (index: number) => void;
+  auxiliares?: any;
+  dispositivosCatalogo?: { id: number; nombre: string }[];
 }
 
 const COLORES_VEHICULO = [
@@ -75,7 +110,13 @@ const COLORES_VEHICULO = [
 
 const TIPOS_LICENCIA = ['A', 'B', 'C', 'M', 'E'];
 
-export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove }: VehiculoFormWebProps) {
+const emptyPersona = (): Persona => ({
+  nombre: '', dpi: '', edad: '', genero: '', tipo_persona: '',
+  estado: 'ILESO', hospital_traslado: '', descripcion_lesiones: '',
+  causa_fallecimiento: '', lugar_fallecimiento: '',
+});
+
+export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, auxiliares, dispositivosCatalogo }: VehiculoFormWebProps) {
   const [expandedSections, setExpandedSections] = useState({
     preliminares: true,
     tarjetaCirculacion: false,
@@ -85,7 +126,11 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove }:
     bus: false,
     sancion: false,
     documentos: false,
+    personas: false,
+    dispositivos: false,
+    custodia: false,
   });
+  const [expandedPersonas, setExpandedPersonas] = useState<Record<number, boolean>>({});
 
   const handleChange = (field: string, value: any) => {
     onChange(index, field, value);
@@ -228,6 +273,102 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove }:
               </select>
             </div>
           </div>
+
+          {/* Ebriedad + Sexo */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="flex items-center pt-6">
+              <input
+                type="checkbox"
+                id={`ebriedad_${index}`}
+                checked={vehiculo.ebriedad || false}
+                onChange={(e) => handleChange('ebriedad', e.target.checked)}
+                className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+              />
+              <label htmlFor={`ebriedad_${index}`} className="ml-2 text-sm text-gray-700">
+                Ebriedad / bajo efectos
+              </label>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Sexo Piloto</label>
+              <div className="flex gap-2">
+                {SEXOS.map(s => (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => handleChange('sexo_piloto', s.value)}
+                    className={`px-4 py-1.5 rounded-md text-sm font-medium ${
+                      vehiculo.sexo_piloto === s.value
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Campos condicionales del piloto */}
+          {(vehiculo.estado_piloto === 'HERIDO' || vehiculo.estado_piloto === 'TRASLADADO') && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Hospital de traslado</label>
+                <input
+                  type="text"
+                  value={vehiculo.hospital_traslado_piloto || ''}
+                  onChange={(e) => handleChange('hospital_traslado_piloto', e.target.value)}
+                  placeholder="Nombre del hospital"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción de lesiones</label>
+                <input
+                  type="text"
+                  value={vehiculo.descripcion_lesiones_piloto || ''}
+                  onChange={(e) => handleChange('descripcion_lesiones_piloto', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+          )}
+
+          {vehiculo.estado_piloto === 'FALLECIDO' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Causa de fallecimiento</label>
+                <input
+                  type="text"
+                  value={vehiculo.causa_fallecimiento || ''}
+                  onChange={(e) => handleChange('causa_fallecimiento', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Lugar de fallecimiento</label>
+                <select
+                  value={vehiculo.lugar_fallecimiento || ''}
+                  onChange={(e) => handleChange('lugar_fallecimiento', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="">Seleccionar...</option>
+                  {LUGARES_FALLECIMIENTO.map(l => (
+                    <option key={l.value} value={l.value}>{l.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Hospital</label>
+                <input
+                  type="text"
+                  value={vehiculo.hospital_traslado_piloto || ''}
+                  onChange={(e) => handleChange('hospital_traslado_piloto', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -421,6 +562,43 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove }:
                 onChange={(e) => handleChange('fecha_nacimiento_piloto', e.target.value)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
               />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Antigüedad licencia (años)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={vehiculo.licencia_antiguedad || ''}
+                onChange={(e) => handleChange('licencia_antiguedad', parseInt(e.target.value) || 0)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Etnia del Piloto
+              </label>
+              <select
+                value={vehiculo.etnia_piloto || ''}
+                onChange={(e) => handleChange('etnia_piloto', e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+              >
+                <option value="">Seleccionar...</option>
+                {(auxiliares?.etnias || []).map((e: any) => (
+                  <option key={e.id || e.nombre} value={e.nombre}>{e.nombre}</option>
+                ))}
+                {(!auxiliares?.etnias || auxiliares.etnias.length === 0) && (
+                  <>
+                    <option value="Ladino">Ladino</option>
+                    <option value="Maya">Maya</option>
+                    <option value="Garífuna">Garífuna</option>
+                    <option value="Xinca">Xinca</option>
+                  </>
+                )}
+              </select>
             </div>
           </div>
         </div>
@@ -713,6 +891,341 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove }:
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Sección 9: Personas/Acompañantes */}
+      <SectionHeader section="personas" title={`Personas / Acompañantes (${(vehiculo.personas || []).length})`} color="cyan" />
+      {expandedSections.personas && (
+        <div className="mb-4 px-1">
+          <div className="flex justify-end mb-2">
+            <button
+              type="button"
+              onClick={() => {
+                const personas = [...(vehiculo.personas || []), emptyPersona()];
+                handleChange('personas', personas);
+                setExpandedPersonas(prev => ({ ...prev, [personas.length - 1]: true }));
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 bg-cyan-600 text-white rounded-md text-sm hover:bg-cyan-700"
+            >
+              <Plus className="w-3.5 h-3.5" /> Agregar persona
+            </button>
+          </div>
+
+          {(vehiculo.personas || []).length === 0 && (
+            <p className="text-sm text-gray-400 text-center py-4">No hay personas registradas</p>
+          )}
+
+          {(vehiculo.personas || []).map((persona: Persona, pIdx: number) => (
+            <div key={pIdx} className="border border-gray-200 rounded-lg mb-2 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setExpandedPersonas(prev => ({ ...prev, [pIdx]: !prev[pIdx] }))}
+                className="w-full flex justify-between items-center bg-gray-50 px-3 py-2 text-left"
+              >
+                <span className="text-sm font-medium text-gray-700">
+                  Persona {pIdx + 1}{persona.nombre ? ` - ${persona.nombre}` : ''}
+                  {persona.estado ? ` (${persona.estado})` : ''}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const personas = (vehiculo.personas || []).filter((_: any, i: number) => i !== pIdx);
+                      handleChange('personas', personas);
+                    }}
+                    className="text-red-500 hover:text-red-700 p-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                  {expandedPersonas[pIdx] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
+              </button>
+
+              {expandedPersonas[pIdx] && (
+                <div className="p-3 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Nombre</label>
+                      <input
+                        type="text"
+                        value={persona.nombre}
+                        onChange={(e) => {
+                          const personas = [...(vehiculo.personas || [])];
+                          personas[pIdx] = { ...personas[pIdx], nombre: e.target.value };
+                          handleChange('personas', personas);
+                        }}
+                        className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">DPI</label>
+                      <input
+                        type="text"
+                        value={persona.dpi}
+                        onChange={(e) => {
+                          const personas = [...(vehiculo.personas || [])];
+                          personas[pIdx] = { ...personas[pIdx], dpi: e.target.value };
+                          handleChange('personas', personas);
+                        }}
+                        className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Edad</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={persona.edad}
+                        onChange={(e) => {
+                          const personas = [...(vehiculo.personas || [])];
+                          personas[pIdx] = { ...personas[pIdx], edad: parseInt(e.target.value) || '' };
+                          handleChange('personas', personas);
+                        }}
+                        className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Género</label>
+                      <div className="flex gap-2">
+                        {SEXOS.map(s => (
+                          <button
+                            key={s.value}
+                            type="button"
+                            onClick={() => {
+                              const personas = [...(vehiculo.personas || [])];
+                              personas[pIdx] = { ...personas[pIdx], genero: s.value };
+                              handleChange('personas', personas);
+                            }}
+                            className={`px-3 py-1 rounded-md text-sm ${
+                              persona.genero === s.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Tipo de persona</label>
+                      <select
+                        value={persona.tipo_persona}
+                        onChange={(e) => {
+                          const personas = [...(vehiculo.personas || [])];
+                          personas[pIdx] = { ...personas[pIdx], tipo_persona: e.target.value };
+                          handleChange('personas', personas);
+                        }}
+                        className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                      >
+                        <option value="">Seleccionar...</option>
+                        {TIPOS_PERSONA.map(t => (
+                          <option key={t.value} value={t.value}>{t.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Estado</label>
+                      <select
+                        value={persona.estado}
+                        onChange={(e) => {
+                          const personas = [...(vehiculo.personas || [])];
+                          personas[pIdx] = { ...personas[pIdx], estado: e.target.value };
+                          handleChange('personas', personas);
+                        }}
+                        className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                      >
+                        {ESTADOS_PILOTO.map(ep => (
+                          <option key={ep.value} value={ep.value}>{ep.label}</option>
+                        ))}
+                        <option value="DESCONOCIDO">Desconocido</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {(persona.estado === 'HERIDO' || persona.estado === 'TRASLADADO') && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-2 bg-yellow-50 rounded-lg">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Hospital de traslado</label>
+                        <input
+                          type="text"
+                          value={persona.hospital_traslado}
+                          onChange={(e) => {
+                            const personas = [...(vehiculo.personas || [])];
+                            personas[pIdx] = { ...personas[pIdx], hospital_traslado: e.target.value };
+                            handleChange('personas', personas);
+                          }}
+                          className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Descripción de lesiones</label>
+                        <input
+                          type="text"
+                          value={persona.descripcion_lesiones}
+                          onChange={(e) => {
+                            const personas = [...(vehiculo.personas || [])];
+                            personas[pIdx] = { ...personas[pIdx], descripcion_lesiones: e.target.value };
+                            handleChange('personas', personas);
+                          }}
+                          className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {persona.estado === 'FALLECIDO' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-2 bg-red-50 rounded-lg">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Causa de fallecimiento</label>
+                        <input
+                          type="text"
+                          value={persona.causa_fallecimiento}
+                          onChange={(e) => {
+                            const personas = [...(vehiculo.personas || [])];
+                            personas[pIdx] = { ...personas[pIdx], causa_fallecimiento: e.target.value };
+                            handleChange('personas', personas);
+                          }}
+                          className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Lugar de fallecimiento</label>
+                        <select
+                          value={persona.lugar_fallecimiento}
+                          onChange={(e) => {
+                            const personas = [...(vehiculo.personas || [])];
+                            personas[pIdx] = { ...personas[pIdx], lugar_fallecimiento: e.target.value };
+                            handleChange('personas', personas);
+                          }}
+                          className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                        >
+                          <option value="">Seleccionar...</option>
+                          {LUGARES_FALLECIMIENTO.map(l => (
+                            <option key={l.value} value={l.value}>{l.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Sección 10: Dispositivos de Seguridad */}
+      <SectionHeader section="dispositivos" title={`Dispositivos de Seguridad (${(vehiculo.dispositivos || []).length} marcados)`} color="amber" />
+      {expandedSections.dispositivos && (
+        <div className="mb-4 px-1">
+          {dispositivosCatalogo && dispositivosCatalogo.length > 0 ? (
+            <div className="space-y-2">
+              {dispositivosCatalogo.map((disp) => {
+                const current = (vehiculo.dispositivos || []).find((d: any) => d.id === disp.id);
+                return (
+                  <div key={disp.id} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                    <span className="text-sm text-gray-700">{disp.nombre}</span>
+                    <div className="flex gap-1">
+                      {ESTADOS_DISPOSITIVO.map(ed => (
+                        <button
+                          key={ed.value}
+                          type="button"
+                          onClick={() => {
+                            const dispositivos = [...(vehiculo.dispositivos || [])];
+                            const idx = dispositivos.findIndex((d: any) => d.id === disp.id);
+                            if (current?.estado === ed.value) {
+                              // Deselect
+                              if (idx >= 0) dispositivos.splice(idx, 1);
+                            } else if (idx >= 0) {
+                              dispositivos[idx] = { id: disp.id, estado: ed.value };
+                            } else {
+                              dispositivos.push({ id: disp.id, estado: ed.value });
+                            }
+                            handleChange('dispositivos', dispositivos);
+                          }}
+                          className={`px-2.5 py-1 rounded text-xs font-medium ${
+                            current?.estado === ed.value
+                              ? ed.value === 'FUNCIONANDO' ? 'bg-green-600 text-white'
+                                : ed.value === 'DANADO' ? 'bg-red-600 text-white'
+                                : 'bg-gray-600 text-white'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {ed.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 text-center py-4">
+              No hay dispositivos de seguridad en el catálogo
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Sección 11: Custodia del Vehículo */}
+      <SectionHeader section="custodia" title="Custodia del Vehículo" color="rose" />
+      {expandedSections.custodia && (
+        <div className="mb-4 px-1 space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Estado de Custodia</label>
+            <div className="flex gap-2 flex-wrap">
+              {CUSTODIAS.map(c => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => handleChange('custodia_estado', c.value)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium ${
+                    vehiculo.custodia_estado === c.value
+                      ? 'bg-rose-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {vehiculo.custodia_estado && vehiculo.custodia_estado !== 'LIBRE' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 bg-rose-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Autoridad</label>
+                <input
+                  type="text"
+                  value={vehiculo.custodia_autoridad || ''}
+                  onChange={(e) => handleChange('custodia_autoridad', e.target.value)}
+                  placeholder="Ej: PNC, PMT"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Motivo</label>
+                <input
+                  type="text"
+                  value={vehiculo.custodia_motivo || ''}
+                  onChange={(e) => handleChange('custodia_motivo', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Destino</label>
+                <input
+                  type="text"
+                  value={vehiculo.custodia_destino || ''}
+                  onChange={(e) => handleChange('custodia_destino', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 

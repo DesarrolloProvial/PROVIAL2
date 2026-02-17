@@ -17,6 +17,7 @@ import UbicacionFields from './UbicacionFields';
 import CondicionesViaFields from './CondicionesViaFields';
 import VictimasFields from './VictimasFields';
 import RecursosSection from './RecursosSection';
+import CausasSelectorWeb from './CausasSelectorWeb';
 
 // ============================================
 // CONSTANTES
@@ -101,6 +102,11 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
     via_estado: '',
     via_topografia: '',
     via_geometria: '',
+    via_peralte: '',
+    via_condicion: '',
+    // Grupo y causas
+    grupo: '' as string | number,
+    causas: [] as number[],
   });
 
   // Related data
@@ -170,6 +176,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
         heridos: 0, fallecidos: 0, ilesos: 0, heridos_leves: 0, heridos_graves: 0,
         trasladados: 0, fugados: 0, acuerdo_involucrados: false, acuerdo_detalle: '',
         via_estado: '', via_topografia: '', via_geometria: '',
+        via_peralte: '', via_condicion: '', grupo: '', causas: [],
       });
       setVehiculos([]);
       setGruas([]);
@@ -293,6 +300,10 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
         payload.via_estado = form.via_estado || undefined;
         payload.via_topografia = form.via_topografia || undefined;
         payload.via_geometria = form.via_geometria || undefined;
+        payload.via_peralte = form.via_peralte || undefined;
+        payload.via_condicion = form.via_condicion || undefined;
+        if (form.grupo) payload.grupo = Number(form.grupo);
+        if (form.causas.length > 0) payload.causas = form.causas;
       }
 
       // Emergencia specific
@@ -301,9 +312,13 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
         if (form.km_fin) payload.km_fin = parseFloat(form.km_fin);
       }
 
-      // Vehiculos
+      // Vehiculos (include personas, dispositivos, custodia)
       if (vehiculos.length > 0) {
-        payload.vehiculos = vehiculos;
+        payload.vehiculos = vehiculos.map((v: any) => ({
+          ...v,
+          personas: v.personas || [],
+          dispositivos: v.dispositivos || [],
+        }));
       }
 
       // Gruas
@@ -606,13 +621,15 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {vehiculos.map((vehiculo, index) => (
+                  {vehiculos.map((vehiculo, idx) => (
                     <VehiculoFormWeb
-                      key={index}
-                      index={index}
+                      key={idx}
+                      index={idx}
                       vehiculo={vehiculo}
                       onChange={handleVehiculoChange}
-                      onRemove={(idx) => setVehiculos(prev => prev.filter((_, i) => i !== idx))}
+                      onRemove={(i) => setVehiculos(prev => prev.filter((_, j) => j !== i))}
+                      auxiliares={auxiliares}
+                      dispositivosCatalogo={auxiliares?.dispositivos_seguridad || []}
                     />
                   ))}
                 </div>
@@ -631,8 +648,30 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
                 viaEstado={form.via_estado}
                 viaTopografia={form.via_topografia}
                 viaGeometria={form.via_geometria}
+                viaPeralte={form.via_peralte}
+                viaCondicion={form.via_condicion}
                 showViaDetails={true}
                 onChange={handleChange}
+              />
+
+              {/* Grupo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Grupo (número)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.grupo}
+                  onChange={(e) => handleChange('grupo', e.target.value ? parseInt(e.target.value) : '')}
+                  className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="Número de grupo"
+                />
+              </div>
+
+              {/* Causas del Hecho */}
+              <CausasSelectorWeb
+                causas={auxiliares?.causas_hecho || []}
+                selected={form.causas}
+                onChange={(ids) => handleChange('causas', ids)}
               />
             </div>
           )}

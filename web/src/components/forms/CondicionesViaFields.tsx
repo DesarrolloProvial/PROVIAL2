@@ -1,6 +1,7 @@
 import {
   CONDICIONES_CLIMATICAS, AREAS, MATERIALES_VIA,
   ESTADOS_VIA, TOPOGRAFIAS_VIA, GEOMETRIAS_VIA,
+  PERALTES_VIA, CONDICIONES_SUPERFICIE,
 } from '../../constants/situacionTypes';
 
 interface Props {
@@ -10,6 +11,8 @@ interface Props {
   viaEstado?: string;
   viaTopografia?: string;
   viaGeometria?: string;
+  viaPeralte?: string;
+  viaCondicion?: string;
   showViaDetails?: boolean;
   onChange: (field: string, value: any) => void;
 }
@@ -17,6 +20,7 @@ interface Props {
 export default function CondicionesViaFields({
   clima, area, materialVia,
   viaEstado, viaTopografia, viaGeometria,
+  viaPeralte, viaCondicion,
   showViaDetails, onChange,
 }: Props) {
   return (
@@ -75,6 +79,24 @@ export default function CondicionesViaFields({
                 className="w-full border rounded-lg px-3 py-2 text-sm">
                 <option value="">Seleccionar</option>
                 {GEOMETRIAS_VIA.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            <div>
+              <label className="text-xs text-gray-500">Peralte</label>
+              <select value={viaPeralte || ''} onChange={e => onChange('via_peralte', e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 text-sm">
+                <option value="">Seleccionar</option>
+                {PERALTES_VIA.map(p => <option key={p} value={p}>{p.replace(/_/g, ' ')}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500">Condicion superficie</label>
+              <select value={viaCondicion || ''} onChange={e => onChange('via_condicion', e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 text-sm">
+                <option value="">Seleccionar</option>
+                {CONDICIONES_SUPERFICIE.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
           </div>

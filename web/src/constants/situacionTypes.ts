@@ -410,3 +410,45 @@ export const CONSIGNADO_POR = [
   { value: 'PMT', label: 'PMT' },
   { value: 'MP', label: 'Ministerio Público' },
 ];
+
+// Peralte de la vía
+export const PERALTES_VIA = ['SIN_PERALTE', 'PERALTE_IZQUIERDO', 'PERALTE_DERECHO'];
+
+// Condición de la superficie
+export const CONDICIONES_SUPERFICIE = ['SECA', 'MOJADA', 'ENGRASADA', 'EMPEDRADA'];
+
+// Lugar de fallecimiento
+export const LUGARES_FALLECIMIENTO = [
+  { value: 'EN_LUGAR', label: 'En el lugar' },
+  { value: 'EN_TRASLADO', label: 'En traslado' },
+  { value: 'EN_HOSPITAL', label: 'En hospital' },
+  { value: 'OTRO', label: 'Otro' },
+];
+
+// Tipos de persona involucrada
+export const TIPOS_PERSONA = [
+  { value: 'ACOMPANANTE', label: 'Acompañante' },
+  { value: 'PASAJERO', label: 'Pasajero' },
+  { value: 'PEATON', label: 'Peatón' },
+];
+
+// Estados de dispositivos de seguridad
+export const ESTADOS_DISPOSITIVO = [
+  { value: 'FUNCIONANDO', label: 'OK' },
+  { value: 'DANADO', label: 'Dañado' },
+  { value: 'NO_APLICA', label: 'N/A' },
+];
+
+// Custodia del vehículo
+export const CUSTODIAS = [
+  { value: 'LIBRE', label: 'Libre' },
+  { value: 'CONSIGNADO', label: 'Consignado' },
+  { value: 'GRUA', label: 'En grúa' },
+  { value: 'LIBERADO', label: 'Liberado' },
+];
+
+// Sexo
+export const SEXOS = [
+  { value: 'M', label: 'Masculino' },
+  { value: 'F', label: 'Femenino' },
+];

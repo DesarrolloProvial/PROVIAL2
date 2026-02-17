@@ -383,7 +383,7 @@ export default function COPSituacionesPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Estado
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase" style={{ minWidth: '280px' }}>
                       Acciones
                     </th>
                   </tr>
@@ -441,16 +441,17 @@ export default function COPSituacionesPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-1">
+                        <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               navigate(`/bitacora/${situacion.unidad_id}`);
                             }}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                            className="flex items-center gap-1 px-2.5 py-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition text-xs font-medium"
                             title="Ver bitácora"
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye className="w-3.5 h-3.5" />
+                            Bitácora
                           </button>
                           <button
                             onClick={(e) => {
@@ -458,10 +459,11 @@ export default function COPSituacionesPage() {
                               setPreselectedUnidadId(situacion.unidad_id);
                               setShowCrearModal(true);
                             }}
-                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                            className="flex items-center gap-1 px-2.5 py-1.5 text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition text-xs font-medium"
                             title="Crear situacion para esta unidad"
                           >
-                            <Plus className="w-4 h-4" />
+                            <Plus className="w-3.5 h-3.5" />
+                            Situación
                           </button>
                           <button
                             onClick={(e) => {
@@ -469,10 +471,11 @@ export default function COPSituacionesPage() {
                               setPreselectedUnidadId(situacion.unidad_id);
                               setShowCrearActividadModal(true);
                             }}
-                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition"
+                            className="flex items-center gap-1 px-2.5 py-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition text-xs font-medium"
                             title="Crear actividad para esta unidad"
                           >
-                            <Activity className="w-4 h-4" />
+                            <Activity className="w-3.5 h-3.5" />
+                            Actividad
                           </button>
                         </div>
                       </td>
