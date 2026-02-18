@@ -49,12 +49,25 @@ export default function BitacoraPage() {
 
 
 
+    // Query independiente: salida activa de la unidad (no depende de bitácora)
+    const { data: salidaActivaData, refetch: refetchSalidaActiva } = useQuery({
+        queryKey: ['salida-activa-unidad', unidadId],
+        queryFn: () => api.get(`/salidas/historial/${unidadId}?limit=1`).then(r => {
+            const items = r.data?.historial || [];
+            return items.find((s: any) => s.estado === 'EN_SALIDA') || null;
+        }),
+        enabled: !!unidadId,
+        staleTime: 10000,
+    });
+
     // Query de bitácora (debe ir antes de los useEffects que lo usan)
-    const { data: bitacora = [], isLoading, refetch, isRefetching, error, isError } = useQuery({
+    const { data: bitacora = [], isLoading, refetch: refetchBitacora, isRefetching, error, isError } = useQuery({
         queryKey: ['bitacora-unidad', unidadId, limit],
         queryFn: () => situacionesAPI.getBitacora(Number(unidadId), { limit }),
         enabled: !!unidadId,
     });
+
+    const refetch = () => { refetchBitacora(); refetchSalidaActiva(); };
 
     // Obtener info de la unidad (puede fallar para COP, usa fallback de bitácora)
     useEffect(() => {
@@ -132,8 +145,11 @@ export default function BitacoraPage() {
 
     if (!unidadId) return <div>Error: No se especificó unidad</div>;
 
-    // Buscar la salida activa en los registros de la bitácora
-    const salidaActual = bitacora.find((item: any) => item.tipo_registro === 'SALIDA' && item.estado === 'EN_SALIDA') || null;
+    // Salida activa: usa query independiente como fuente primaria, bitácora como fallback
+    const salidaActual: any =
+        salidaActivaData ||
+        bitacora.find((item: any) => item.tipo_registro === 'SALIDA' && item.estado === 'EN_SALIDA') ||
+        null;
 
     return (
         <div className="min-h-screen bg-gray-100 p-6">

@@ -6,12 +6,13 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { situacionesAPI, api } from '../services/api';
 import { situacionesPersistentesAPI } from '../services/movimientos.service';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut, Search } from 'lucide-react';
+import { RefreshCw, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut, Search, Map as MapIcon, Plus, Eye, EyeOff } from 'lucide-react';
 import { useDashboardSocket } from '../hooks/useSocket';
 import ResumenUnidadesTable from '../components/ResumenUnidadesTable';
 import SituacionIcon from '../components/SituacionIcon';
 import CrearSituacionModal from '../components/forms/CrearSituacionModal';
 import CrearActividadModal from '../components/forms/CrearActividadModal';
+import CrearPuntoMapaModal from '../components/forms/CrearPuntoMapaModal';
 import { useAuthStore } from '../store/authStore';
 
 // Emoji corto por nombre de icono MDI (para el pin del mapa)
@@ -151,6 +152,9 @@ export default function COPMapaPage() {
   const [preselectedUnidadId, setPreselectedUnidadId] = useState<number | undefined>(undefined);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [heatmapDias, setHeatmapDias] = useState(30);
+  const [showCapasPanel, setShowCapasPanel] = useState(false);
+  const [capassVisibles, setCapasVisibles] = useState<Set<number>>(new Set());
+  const [showCrearPuntoModal, setShowCrearPuntoModal] = useState(false);
 
   const { isConnected: socketConnected, lastUpdate } = useDashboardSocket(queryClient);
   const defaultCenter: LatLngExpression = [14.6407, -90.5133];
@@ -192,6 +196,25 @@ export default function COPMapaPage() {
     },
     enabled: showHeatmap,
     staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: capas = [], refetch: refetchCapas } = useQuery({
+    queryKey: ['capas-mapa'],
+    queryFn: async () => {
+      const { data } = await api.get('/capas-mapa');
+      return data.capas || [];
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: todosPuntos = [], refetch: refetchPuntos } = useQuery({
+    queryKey: ['puntos-mapa'],
+    queryFn: async () => {
+      const { data } = await api.get('/capas-mapa/puntos');
+      return data.puntos || [];
+    },
+    enabled: capassVisibles.size > 0,
+    staleTime: 60 * 1000,
   });
 
   const handleRefresh = async () => {
@@ -666,6 +689,44 @@ export default function COPMapaPage() {
 
 
 
+        {/* Marcadores de Capas del Mapa */}
+        {todosPuntos
+          .filter((p: any) => capassVisibles.has(p.capa_id))
+          .map((p: any) => {
+            const lat = Number(p.latitud);
+            const lng = Number(p.longitud);
+            if (isNaN(lat) || isNaN(lng)) return null;
+            const svgPin = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 32 46"><path fill="${p.capa_color || '#3B82F6'}" stroke="#fff" stroke-width="1.5" d="M16 1C7.7 1 1 7.7 1 16c0 10.5 15 29 15 29s15-18.5 15-29C31 7.7 24.3 1 16 1z"/><circle cx="16" cy="16" r="9" fill="#fff" fill-opacity="0.9"/><text x="16" y="20" text-anchor="middle" font-size="10" fill="${p.capa_color || '#3B82F6'}" font-weight="bold">📍</text></svg>`;
+            const capaIcon = new Icon({
+              iconUrl: `data:image/svg+xml,${encodeURIComponent(svgPin)}`,
+              iconSize: [28, 40], iconAnchor: [14, 40], popupAnchor: [0, -40],
+            });
+            return (
+              <Marker key={`capa-${p.id}`} position={[lat, lng]} icon={capaIcon}>
+                <Popup>
+                  <div className="p-2 min-w-[200px]">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: p.capa_color || '#3B82F6' }} />
+                      <span className="text-xs text-gray-500">{p.capa_nombre}</span>
+                    </div>
+                    <h3 className="font-bold text-gray-900 mb-1">{p.titulo}</h3>
+                    {p.categoria && <p className="text-xs text-blue-600 mb-1">🏷 {p.categoria}</p>}
+                    {p.descripcion && <p className="text-sm text-gray-700">{p.descripcion}</p>}
+                    {p.datos && Object.keys(p.datos).length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-gray-100 space-y-0.5">
+                        {Object.entries(p.datos).map(([k, v]) => (
+                          <p key={k} className="text-xs text-gray-600">
+                            <span className="font-medium">{k.replace(/_/g, ' ')}:</span> {String(v)}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
+
         {/* Marcadores de Situaciones Persistentes */}
         {filteredPersistentes.map((sp: any) => {
           const lat = sp.latitud != null ? Number(sp.latitud) : null;
@@ -815,6 +876,13 @@ export default function COPMapaPage() {
               >
                 🔥
               </button>
+              <button
+                onClick={() => setShowCapasPanel(!showCapasPanel)}
+                className={`p-3 rounded-lg shadow-lg transition ${showCapasPanel ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                title="Capas del mapa"
+              >
+                <MapIcon className="w-5 h-5" />
+              </button>
             </div>
 
             {/* Panel de capas cuando heatmap está activo */}
@@ -841,6 +909,57 @@ export default function COPMapaPage() {
                 <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
                   <span>Bajo</span><span>Alto</span>
                 </div>
+              </div>
+            )}
+
+            {/* Panel de Capas del Mapa */}
+            {showCapasPanel && (
+              <div className="absolute top-20 right-16 z-[1000] bg-white rounded-lg shadow-lg p-3 w-60">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="font-semibold text-gray-800 text-sm flex items-center gap-1.5">
+                    <MapIcon className="w-4 h-4 text-indigo-600" /> Capas del Mapa
+                  </p>
+                  <button
+                    onClick={() => { setShowCrearPuntoModal(true); }}
+                    className="flex items-center gap-1 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2 py-1 rounded"
+                  >
+                    <Plus className="w-3 h-3" /> Punto
+                  </button>
+                </div>
+                {capas.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-2">No hay capas creadas</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                    {capas.map((capa: any) => {
+                      const visible = capassVisibles.has(capa.id);
+                      return (
+                        <div key={capa.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-gray-50">
+                          <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: capa.color }} />
+                          <span className="flex-1 text-sm text-gray-700 truncate">{capa.nombre}</span>
+                          <span className="text-xs text-gray-400">{capa.total_puntos || 0}</span>
+                          <button
+                            onClick={() => {
+                              setCapasVisibles(prev => {
+                                const next = new Set(prev);
+                                if (next.has(capa.id)) next.delete(capa.id);
+                                else next.add(capa.id);
+                                return next;
+                              });
+                            }}
+                            className={`p-0.5 rounded ${visible ? 'text-indigo-600' : 'text-gray-300'}`}
+                          >
+                            {visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {capassVisibles.size > 0 && (
+                  <p className="text-xs text-gray-400 mt-2 border-t pt-2">
+                    {todosPuntos.filter((p: any) => capassVisibles.has(p.capa_id)).length} puntos visibles
+                  </p>
+                )}
               </div>
             )}
 
@@ -1034,6 +1153,14 @@ export default function COPMapaPage() {
         onCreated={() => { refetchResumen(); }}
         unidades={resumenUnidades}
         preselectedUnidadId={preselectedUnidadId}
+      />
+
+      {/* Modal crear punto de capa */}
+      <CrearPuntoMapaModal
+        isOpen={showCrearPuntoModal}
+        onClose={() => setShowCrearPuntoModal(false)}
+        onCreated={() => { refetchPuntos(); refetchCapas(); }}
+        capas={capas}
       />
     </div>
   );

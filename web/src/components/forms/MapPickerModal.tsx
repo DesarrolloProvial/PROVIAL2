@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import { X, MapPin, Check } from 'lucide-react';
@@ -52,7 +53,7 @@ export default function MapPickerModal({ isOpen, onClose, onConfirm, initialLat,
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style={{ height: '75vh' }}>
         {/* Header */}
@@ -120,6 +121,7 @@ export default function MapPickerModal({ isOpen, onClose, onConfirm, initialLat,
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

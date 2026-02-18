@@ -40,6 +40,7 @@ import draftsRoutes from './drafts.routes';
 import actividadRoutes from './actividad.routes';
 import importExcelRoutes from './importExcel.routes';
 import estadisticasRoutes from './estadisticas.routes';
+import capaMapaRoutes from './capaMapa.routes';
 
 
 const router = Router();
@@ -166,6 +167,9 @@ router.use('/admin', importExcelRoutes);
 
 // Estadísticas de accidentología
 router.use('/estadisticas', estadisticasRoutes);
+
+// Capas del mapa COP (puntos de interés geolocalizados)
+router.use('/capas-mapa', capaMapaRoutes);
 
 
 export default router;

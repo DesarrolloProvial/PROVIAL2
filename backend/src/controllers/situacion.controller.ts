@@ -661,8 +661,13 @@ export async function getMapaSituaciones(_req: Request, res: Response) {
 }
 
 export async function getBitacoraUnidad(req: Request, res: Response) {
-  const list = await SituacionModel.getBitacoraUnidad(parseInt(req.params.unidad_id), req.query);
-  return res.json({ bitacora: list });
+  try {
+    const list = await SituacionModel.getBitacoraUnidad(parseInt(req.params.unidad_id), req.query);
+    return res.json({ bitacora: list });
+  } catch (error) {
+    console.error('Error en getBitacoraUnidad:', error);
+    return res.status(500).json({ error: 'Error al cargar bitácora' });
+  }
 }
 
 export async function getHeatmapData(req: Request, res: Response) {
