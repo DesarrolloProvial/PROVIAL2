@@ -12,7 +12,7 @@ import {
   TIPOS_EMERGENCIA,
 } from '../../constants/situacionTypes';
 import VehiculoFormWeb from './VehiculoFormWeb';
-import ObstruccionSelectorWeb from './ObstruccionSelectorWeb';
+import ObstruccionForm, { getDefaultObstruccion, type ObstruccionData } from '../situaciones/ObstruccionForm';
 import UbicacionFields from './UbicacionFields';
 import CondicionesViaFields from './CondicionesViaFields';
 import VictimasFields from './VictimasFields';
@@ -86,7 +86,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
     clima: '',
     area: '',
     material_via: '',
-    obstruye: 'NO',
+    obstruccion: getDefaultObstruccion() as ObstruccionData,
     observaciones: '',
     descripcion: '',
     // Subtipo
@@ -199,7 +199,9 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
           clima: sit.clima || '',
           area: sit.area || '',
           material_via: sit.material_via || sit.tipo_pavimento || '',
-          obstruye: sit.obstruccion_data?.obstruye || 'NO',
+          obstruccion: (sit.obstruccion_data && sit.obstruccion_data.tipo_obstruccion)
+            ? sit.obstruccion_data
+            : getDefaultObstruccion(),
           observaciones: sit.observaciones || '',
           descripcion: sit.descripcion || '',
           subtipo_situacion: sit.subtipo_situacion || '',
@@ -284,7 +286,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
       setForm({
         unidad_id: '', ruta_id: '', km: '', km_fin: '', sentido: '', latitud: '', longitud: '',
         departamento_id: null, municipio_id: null, clima: '', area: '', material_via: '',
-        obstruye: 'NO', observaciones: '', descripcion: '', subtipo_situacion: '',
+        obstruccion: getDefaultObstruccion() as ObstruccionData, observaciones: '', descripcion: '', subtipo_situacion: '',
         heridos: 0, fallecidos: 0, ilesos: 0, heridos_leves: 0, heridos_graves: 0,
         trasladados: 0, fugados: 0, acuerdo_involucrados: false, acuerdo_detalle: '',
         via_estado: '', via_topografia: '', via_geometria: '',
@@ -391,7 +393,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
         clima: form.clima || undefined,
         area: form.area || undefined,
         material_via: form.material_via || undefined,
-        obstruccion: { obstruye: form.obstruye },
+        obstruccion: form.obstruccion,
         observaciones: form.observaciones || undefined,
         subtipo_situacion: form.subtipo_situacion || undefined,
         ...subtipoIds,
@@ -655,9 +657,10 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
               />
 
               {/* Obstruccion */}
-              <ObstruccionSelectorWeb
-                value={form.obstruye}
-                onChange={(val) => handleChange('obstruye', val)}
+              <ObstruccionForm
+                value={form.obstruccion}
+                onChange={(val) => handleChange('obstruccion', val)}
+                sentidoSituacion={form.sentido}
               />
 
               {/* Descripcion (emergencia) */}

@@ -502,7 +502,18 @@ export const SituacionModel = {
       WITH salidas AS (
         SELECT su.id, su.unidad_id, su.estado, su.fecha_hora_salida, su.fecha_hora_regreso,
                su.ruta_inicial_id, su.km_inicial, su.combustible_inicial, su.km_final,
-               su.combustible_final, su.tripulacion, su.observaciones_salida,
+               su.combustible_final,
+               COALESCE(su.tripulacion, (
+                 SELECT json_agg(json_build_object(
+                   'usuario_id', u.id,
+                   'nombre_completo', u.nombre_completo,
+                   'rol_tripulacion', bu.rol_tripulacion
+                 ) ORDER BY CASE bu.rol_tripulacion WHEN 'PILOTO' THEN 1 WHEN 'COPILOTO' THEN 2 ELSE 3 END)
+                 FROM brigada_unidad bu
+                 JOIN usuario u ON bu.brigada_id = u.id
+                 WHERE bu.unidad_id = su.unidad_id AND bu.activo = TRUE
+               )) AS tripulacion,
+               su.observaciones_salida,
                su.observaciones_regreso, su.finalizada_por
         FROM salida_unidad su
         WHERE su.unidad_id = $/unidad_id/
