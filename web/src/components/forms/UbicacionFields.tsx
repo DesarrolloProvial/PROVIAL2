@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { SENTIDOS } from '../../constants/situacionTypes';
+import MapPickerModal from './MapPickerModal';
 
 interface Props {
   km: string;
@@ -20,6 +21,7 @@ export default function UbicacionFields({
   departamentoId, municipioId, departamentos, onChange,
 }: Props) {
   const [municipios, setMunicipios] = useState<any[]>([]);
+  const [showMapPicker, setShowMapPicker] = useState(false);
 
   // Cargar municipios cuando cambia departamento
   useEffect(() => {
@@ -40,6 +42,18 @@ export default function UbicacionFields({
 
   return (
     <>
+      {/* MapPickerModal */}
+      <MapPickerModal
+        isOpen={showMapPicker}
+        onClose={() => setShowMapPicker(false)}
+        onConfirm={(lat, lng) => {
+          onChange('latitud', lat.toFixed(6));
+          onChange('longitud', lng.toFixed(6));
+        }}
+        initialLat={latitud ? parseFloat(latitud) : undefined}
+        initialLng={longitud ? parseFloat(longitud) : undefined}
+      />
+
       {/* Ubicacion */}
       <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-4 mb-2">Ubicacion</h4>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -78,6 +92,14 @@ export default function UbicacionFields({
             className="w-full border rounded-lg px-3 py-2 text-sm" placeholder="-90.5069" />
         </div>
       </div>
+      {/* Botón pin en mapa */}
+      <button
+        type="button"
+        onClick={() => setShowMapPicker(true)}
+        className="mt-2 flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-medium"
+      >
+        📍 {latitud && longitud ? 'Mover pin en mapa' : 'Seleccionar en mapa'}
+      </button>
 
       {/* Departamento / Municipio */}
       <div className="grid grid-cols-2 gap-3 mt-3">

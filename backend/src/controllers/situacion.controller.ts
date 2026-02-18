@@ -665,6 +665,34 @@ export async function getBitacoraUnidad(req: Request, res: Response) {
   return res.json({ bitacora: list });
 }
 
+export async function getHeatmapData(req: Request, res: Response) {
+  try {
+    const dias = Math.min(parseInt(req.query.dias as string) || 30, 365);
+    const tipo = req.query.tipo as string | undefined;
+
+    const points = await db.manyOrNone(
+      `SELECT latitud, longitud,
+              CASE tipo_situacion
+                WHEN 'INCIDENTE' THEN 3
+                WHEN 'EMERGENCIA' THEN 2
+                ELSE 1
+              END AS peso
+       FROM situacion
+       WHERE latitud IS NOT NULL
+         AND longitud IS NOT NULL
+         AND created_at > NOW() - ($1 || ' days')::INTERVAL
+         ${tipo ? `AND tipo_situacion = $2` : ''}
+       LIMIT 2000`,
+      tipo ? [dias, tipo] : [dias]
+    );
+
+    return res.json({ points });
+  } catch (err) {
+    console.error('Error heatmap:', err);
+    return res.status(500).json({ error: 'Error interno' });
+  }
+}
+
 // ========================================
 // FUNCIONES ADICIONALES
 // ========================================

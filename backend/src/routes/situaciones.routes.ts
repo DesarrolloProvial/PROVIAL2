@@ -18,7 +18,8 @@ import {
   getResumenUnidades,
   cambiarTipoSituacion,
   getCatalogo,
-  getCatalogosAuxiliares
+  getCatalogosAuxiliares,
+  getHeatmapData,
 } from '../controllers/situacion.controller';
 import {
   registrarConflicto,
@@ -55,6 +56,9 @@ router.get('/catalogo', authenticate, getCatalogo);
 
 // Catálogos Auxiliares (Tipos Hecho, Asistencia, etc)
 router.get('/auxiliares', authenticate, getCatalogosAuxiliares);
+
+// Datos para heatmap (COP, Operaciones, Admin)
+router.get('/heatmap', authenticate, authorize('COP', 'OPERACIONES', 'MANDOS', 'ADMIN'), getHeatmapData);
 
 // Situaciones activas
 router.get('/activas', authenticate, listSituacionesActivas);

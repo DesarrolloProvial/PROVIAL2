@@ -8,6 +8,7 @@ import {
   getMiSalidaActiva,
   getMiSalidaHoy,
   iniciarSalida,
+  iniciarSalidaCOP,
   finalizarSalida,
   finalizarMiSalida,
   finalizarJornadaCompleta,
@@ -49,6 +50,9 @@ router.get('/mi-salida-hoy', authenticate, authorize('BRIGADA'), getMiSalidaHoy)
 
 // Iniciar salida (Brigada)
 router.post('/iniciar', authenticate, authorize('BRIGADA'), iniciarSalida);
+
+// Iniciar salida desde COP sin inspección 360 (COP, Operaciones, Admin)
+router.post('/cop/iniciar-unidad', authenticate, authorize('COP', 'OPERACIONES', 'ADMIN'), iniciarSalidaCOP);
 
 // Cambiar ruta de mi salida activa (Brigada)
 router.post('/cambiar-ruta', authenticate, authorize('BRIGADA'), cambiarRuta);

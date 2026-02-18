@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Icon, LatLngExpression } from 'leaflet';
+import HeatmapLayer from '../components/HeatmapLayer';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { situacionesAPI } from '../services/api';
+import { situacionesAPI, api } from '../services/api';
 import { situacionesPersistentesAPI } from '../services/movimientos.service';
 import { useNavigate } from 'react-router-dom';
 import { RefreshCw, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut, Search } from 'lucide-react';
@@ -148,6 +149,8 @@ export default function COPMapaPage() {
   const [showCrearSituacionModal, setShowCrearSituacionModal] = useState(false);
   const [showCrearActividadModal, setShowCrearActividadModal] = useState(false);
   const [preselectedUnidadId, setPreselectedUnidadId] = useState<number | undefined>(undefined);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [heatmapDias, setHeatmapDias] = useState(30);
 
   const { isConnected: socketConnected, lastUpdate } = useDashboardSocket(queryClient);
   const defaultCenter: LatLngExpression = [14.6407, -90.5133];
@@ -179,6 +182,16 @@ export default function COPMapaPage() {
     queryKey: ['situaciones-persistentes-mapa'],
     queryFn: situacionesPersistentesAPI.getActivas,
     refetchInterval: 60000,
+  });
+
+  const { data: heatmapData = [] } = useQuery({
+    queryKey: ['heatmap-situaciones', heatmapDias],
+    queryFn: async () => {
+      const { data } = await api.get(`/situaciones/heatmap?dias=${heatmapDias}`);
+      return data.points || [];
+    },
+    enabled: showHeatmap,
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleRefresh = async () => {
@@ -518,6 +531,9 @@ export default function COPMapaPage() {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               <MapController center={defaultCenter} />
+              {showHeatmap && heatmapData.length > 0 && (
+                <HeatmapLayer points={heatmapData} />
+              )}
 
         {/* Marcadores de Unidades (última situación reportada) */}
         {filteredUnidades.map((unidad: any) => {
@@ -792,7 +808,41 @@ export default function COPMapaPage() {
               >
                 <Layers className="w-5 h-5" />
               </button>
+              <button
+                onClick={() => setShowHeatmap(!showHeatmap)}
+                className={`p-3 rounded-lg shadow-lg transition text-xs font-bold ${showHeatmap ? 'bg-orange-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                title="Mapa de calor de incidentes"
+              >
+                🔥
+              </button>
             </div>
+
+            {/* Panel de capas cuando heatmap está activo */}
+            {showHeatmap && (
+              <div className="absolute bottom-8 right-4 z-[1000] bg-white rounded-lg shadow-lg p-3 text-sm w-52">
+                <p className="font-semibold text-gray-800 mb-2">🔥 Mapa de Calor</p>
+                <label className="text-xs text-gray-500">Período</label>
+                <select
+                  value={heatmapDias}
+                  onChange={e => setHeatmapDias(parseInt(e.target.value))}
+                  className="w-full mt-1 border border-gray-200 rounded px-2 py-1 text-xs"
+                >
+                  <option value={7}>Últimos 7 días</option>
+                  <option value={30}>Últimos 30 días</option>
+                  <option value={90}>Últimos 90 días</option>
+                  <option value={365}>Último año</option>
+                </select>
+                <p className="mt-2 text-xs text-gray-400">
+                  {heatmapData.length} puntos con coordenadas
+                </p>
+                <div className="mt-2 flex items-center gap-1">
+                  <div className="flex-1 h-2 rounded" style={{ background: 'linear-gradient(to right, #3B82F6, #F59E0B, #EF4444)' }} />
+                </div>
+                <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+                  <span>Bajo</span><span>Alto</span>
+                </div>
+              </div>
+            )}
 
             {/* Panel de Filtros */}
             {showFilters && (

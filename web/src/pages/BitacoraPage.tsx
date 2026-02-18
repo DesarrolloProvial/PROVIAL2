@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { situacionesAPI, api } from '../services/api';
-import { ArrowLeft, RefreshCw, MapPin, Users, Truck, Clock, Plus, Activity } from 'lucide-react';
+import { ArrowLeft, RefreshCw, MapPin, Users, Truck, Clock, Plus, Activity, LogIn, LogOut } from 'lucide-react';
 import Inspeccion360Historial from '../components/Inspeccion360Historial';
 import CrearSituacionModal from '../components/forms/CrearSituacionModal';
 import CrearActividadModal from '../components/forms/CrearActividadModal';
+import SalidaCOPModal from '../components/forms/SalidaCOPModal';
 
 // Tipos de situación para colores
 const TIPOS_SITUACION = [
@@ -43,6 +44,8 @@ export default function BitacoraPage() {
     const [showCrearActividadModal, setShowCrearActividadModal] = useState(false);
     const [editSituacionId, setEditSituacionId] = useState<number | undefined>(undefined);
     const [editActividadId, setEditActividadId] = useState<number | undefined>(undefined);
+    const [showSalidaModal, setShowSalidaModal] = useState(false);
+    const [salidaMode, setSalidaMode] = useState<'iniciar' | 'finalizar'>('iniciar');
 
 
 
@@ -156,6 +159,23 @@ export default function BitacoraPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
+                            {!salidaActual ? (
+                                <button
+                                    onClick={() => { setSalidaMode('iniciar'); setShowSalidaModal(true); }}
+                                    className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-1.5 text-sm font-medium"
+                                >
+                                    <LogIn className="w-4 h-4" />
+                                    Iniciar Jornada
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => { setSalidaMode('finalizar'); setShowSalidaModal(true); }}
+                                    className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-1.5 text-sm font-medium"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    Finalizar Jornada
+                                </button>
+                            )}
                             <button
                                 onClick={() => {
                                     setEditSituacionId(undefined);
@@ -408,6 +428,17 @@ export default function BitacoraPage() {
                 unidades={unidadesForModal}
                 preselectedUnidadId={Number(unidadId)}
                 editActividadId={editActividadId}
+            />
+
+            {/* Modal iniciar/finalizar jornada desde COP */}
+            <SalidaCOPModal
+                isOpen={showSalidaModal}
+                onClose={() => setShowSalidaModal(false)}
+                onDone={() => refetch()}
+                mode={salidaMode}
+                unidadId={Number(unidadId)}
+                unidadCodigo={unidadInfo?.codigo}
+                salidaId={salidaActual?.salida_id}
             />
         </div>
     );

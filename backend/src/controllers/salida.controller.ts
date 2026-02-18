@@ -412,6 +412,62 @@ export async function iniciarSalida(req: Request, res: Response) {
 }
 
 /**
+ * POST /api/salidas/cop/iniciar-unidad
+ * Iniciar salida de una unidad desde COP (sin requerir inspección 360)
+ */
+export async function iniciarSalidaCOP(req: Request, res: Response) {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+
+    const { unidad_id, ruta_inicial_id, km_inicial, combustible_inicial, observaciones_salida } = req.body;
+
+    if (!unidad_id) return res.status(400).json({ error: 'unidad_id es requerido' });
+
+    // Verificar si ya tiene salida activa
+    const salidaActiva = await db.oneOrNone(
+      `SELECT id FROM salida_unidad WHERE unidad_id = $1 AND estado = 'EN_SALIDA'`,
+      [unidad_id]
+    );
+    if (salidaActiva) {
+      return res.status(409).json({ error: 'La unidad ya tiene una salida activa', salida_id: salidaActiva.id });
+    }
+
+    const combustibleDecimal = convertirCombustibleADecimal(combustible_inicial);
+
+    const salidaId = await SalidaModel.iniciarSalida({
+      unidad_id,
+      ruta_inicial_id: ruta_inicial_id || undefined,
+      km_inicial,
+      combustible_inicial: combustibleDecimal ?? undefined,
+      observaciones_salida,
+    });
+
+    const salida = await SalidaModel.getSalidaById(salidaId);
+
+    if (salida) {
+      const s = salida as any;
+      const evento: UnidadEvent = {
+        unidad_id,
+        unidad_codigo: s.unidad_codigo || `U-${unidad_id}`,
+        estado: 'EN_SALIDA',
+        sede_id: s.sede_id,
+        ruta_id: ruta_inicial_id || undefined,
+        ultima_situacion: 'SALIDA_INICIADA_COP',
+      };
+      emitUnidadCambioEstado(evento);
+    }
+
+    return res.status(201).json({ message: 'Salida iniciada desde COP', salida_id: salidaId, salida });
+  } catch (error: any) {
+    console.error('Error en iniciarSalidaCOP:', error);
+    if (error.message?.includes('ya tiene una salida activa')) {
+      return res.status(409).json({ error: 'La unidad ya tiene una salida activa' });
+    }
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+/**
  * POST /api/salidas/:id/finalizar
  * Finalizar salida por ID
  */
