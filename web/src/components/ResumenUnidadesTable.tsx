@@ -50,7 +50,6 @@ interface Props {
 
 export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreateSituacion, onCreateActividad }: Props) {
   const [search, setSearch] = useState('');
-  const [soloActivas, setSoloActivas] = useState(true); // Por defecto, solo mostrar activas
   const navigate = useNavigate();
 
   const formatHora = (fecha: string | null) => {
@@ -82,25 +81,14 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
   };
 
   const filteredResumen = resumen.filter((u) => {
-    // Filtro de búsqueda
     const searchLower = search.toLowerCase();
-    const matchesSearch =
+    return (
       u.unidad_codigo.toLowerCase().includes(searchLower) ||
       u.tipo_unidad.toLowerCase().includes(searchLower) ||
       u.sede_nombre?.toLowerCase().includes(searchLower) ||
-      u.placa?.toLowerCase().includes(searchLower);
-
-    // Filtro de solo activas (unidades con situación o actividad activa)
-    const isActiva = u.estado_situacion === 'ACTIVA' || u.ultima_situacion !== null;
-
-    if (soloActivas) {
-      return matchesSearch && isActiva;
-    }
-    return matchesSearch;
+      u.placa?.toLowerCase().includes(searchLower)
+    );
   });
-
-  // Contar unidades activas para el contador
-  const unidadesActivas = resumen.filter(u => u.estado_situacion === 'ACTIVA' || u.ultima_situacion !== null).length;
 
   return (
     <div className="bg-white rounded-lg shadow">
@@ -110,12 +98,9 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
           <h2 className="text-xl font-semibold text-gray-800">
             Resumen de Unidades
           </h2>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">
-              {filteredResumen.length} de {resumen.length} unidades
-              {soloActivas && ` (${unidadesActivas} activas)`}
-            </span>
-          </div>
+          <span className="text-sm text-gray-500">
+            {filteredResumen.length} de {resumen.length} unidades
+          </span>
         </div>
         <div className="flex gap-2 mb-2">
           <input
@@ -125,17 +110,6 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
             onChange={(e) => setSearch(e.target.value)}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-          {/* Toggle para mostrar solo activas */}
-          <button
-            onClick={() => setSoloActivas(!soloActivas)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${soloActivas
-              ? 'bg-green-600 text-white hover:bg-green-700'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            title={soloActivas ? 'Mostrando solo activas' : 'Mostrando todas'}
-          >
-            {soloActivas ? 'Solo Activas' : 'Ver Todas'}
-          </button>
         </div>
       </div>
 

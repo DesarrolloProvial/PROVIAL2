@@ -49,11 +49,12 @@ interface Categoria {
 // ============================================
 export default function CrearActividadModal({ isOpen, onClose, onCreated, unidades, preselectedUnidadId, editActividadId }: Props) {
   const isEditMode = !!editActividadId;
-  const [step, setStep] = useState(1); // 1 = selector, 2 = formulario
+  const [step, setStep] = useState(isEditMode ? 2 : 1);
   const [selectedTipo, setSelectedTipo] = useState<TipoActividad | null>(null);
   const [selectedCategoria, setSelectedCategoria] = useState('');
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loadingEdit, setLoadingEdit] = useState(false);
   const [error, setError] = useState('');
 
   // Form state
@@ -119,6 +120,8 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
   useEffect(() => {
     if (!isOpen || !editActividadId) return;
     let cancelled = false;
+    setLoadingEdit(true);
+    setStep(2);
     (async () => {
       try {
         const act = await actividadesAPI.getById(editActividadId);
@@ -153,6 +156,8 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
       } catch (err) {
         console.error('Error loading actividad:', err);
         setError('Error al cargar la actividad');
+      } finally {
+        if (!cancelled) setLoadingEdit(false);
       }
     })();
     return () => { cancelled = true; };
@@ -322,49 +327,46 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {loadingEdit && (
+            <div className="text-center py-8 text-gray-400">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+              <p className="text-sm">Cargando datos...</p>
+            </div>
+          )}
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
               {error}
             </div>
           )}
 
-          {/* Unidad y Ruta */}
+          {!loadingEdit && <>
+          {/* Unidad */}
           <div>
-            <h3 className="font-semibold text-gray-800 mb-3">Unidad y Ruta</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Unidad *</label>
-                <select
-                  value={form.unidad_id}
-                  onChange={(e) => handleChange('unidad_id', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Seleccionar unidad...</option>
-                  {unidades
-                    .sort((a: any, b: any) => (a.unidad_codigo || '').localeCompare(b.unidad_codigo || ''))
-                    .map((u: any) => (
-                      <option key={u.unidad_id} value={u.unidad_id}>
-                        {u.unidad_codigo} - {u.sede_nombre || 'Sin sede'}
-                      </option>
-                    ))
-                  }
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ruta</label>
-                <select
-                  value={form.ruta_id}
-                  onChange={(e) => handleChange('ruta_id', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Seleccionar ruta...</option>
-                  {rutas.map((r: any) => (
-                    <option key={r.id} value={r.id}>
-                      {r.codigo} {r.nombre ? `- ${r.nombre}` : ''}
+            <h3 className="font-semibold text-gray-800 mb-3">Unidad</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Unidad *</label>
+              <select
+                value={form.unidad_id}
+                onChange={(e) => handleChange('unidad_id', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Seleccionar unidad...</option>
+                {unidades
+                  .sort((a: any, b: any) => (a.unidad_codigo || '').localeCompare(b.unidad_codigo || ''))
+                  .map((u: any) => (
+                    <option key={u.unidad_id} value={u.unidad_id}>
+                      {u.unidad_codigo} - {u.sede_nombre || 'Sin sede'}
                     </option>
-                  ))}
-                </select>
-              </div>
+                  ))
+                }
+              </select>
+              {form.ruta_id ? (
+                <p className="mt-1 text-xs text-blue-600">
+                  Ruta asignada: {rutas.find((r: any) => r.id === Number(form.ruta_id))?.codigo || form.ruta_id}
+                </p>
+              ) : (
+                form.unidad_id && <p className="mt-1 text-xs text-gray-400">Sin ruta asignada</p>
+              )}
             </div>
           </div>
 
@@ -404,6 +406,7 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
               placeholder="Observaciones adicionales..."
             />
           </div>
+          </>}
         </div>
 
         {/* Footer */}

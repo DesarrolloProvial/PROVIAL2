@@ -65,10 +65,11 @@ interface Props {
 // ============================================
 export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidades, preselectedUnidadId, editSituacionId }: Props) {
   const isEditMode = !!editSituacionId;
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(isEditMode ? 2 : 1);
   const [tipoSituacion, setTipoSituacion] = useState('');
   const [activeTab, setActiveTab] = useState('general');
   const [saving, setSaving] = useState(false);
+  const [loadingEdit, setLoadingEdit] = useState(false);
   const [error, setError] = useState('');
 
   // Form state
@@ -169,6 +170,8 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
   useEffect(() => {
     if (!isOpen || !editSituacionId) return;
     let cancelled = false;
+    setLoadingEdit(true);
+    setStep(2); // Skip step 1 immediately
     (async () => {
       try {
         const sit = await situacionesAPI.getById(editSituacionId);
@@ -265,6 +268,8 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
       } catch (err) {
         console.error('Error loading situacion:', err);
         setError('Error al cargar la situacion');
+      } finally {
+        if (!cancelled) setLoadingEdit(false);
       }
     })();
     return () => { cancelled = true; };
@@ -365,7 +370,6 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
 
   const handleSubmit = async () => {
     if (!form.unidad_id) { setError('Selecciona una unidad'); return; }
-    if (!form.ruta_id) { setError('Selecciona una ruta'); return; }
     if (!form.km) { setError('Ingresa el kilometro'); return; }
 
     setSaving(true);
@@ -517,15 +521,17 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-xl">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setStep(1)}
-              className="p-1.5 hover:bg-gray-200 rounded-lg text-gray-500"
-              title="Cambiar tipo"
-            >
-              <ChevronRight className="w-4 h-4 rotate-180" />
-            </button>
+            {!isEditMode && (
+              <button
+                onClick={() => setStep(1)}
+                className="p-1.5 hover:bg-gray-200 rounded-lg text-gray-500"
+                title="Cambiar tipo"
+              >
+                <ChevronRight className="w-4 h-4 rotate-180" />
+              </button>
+            )}
             <h2 className="text-xl font-bold text-gray-900">
-              Nueva: {tipoConfig?.label}
+              {isEditMode ? `Editar: ${tipoConfig?.label}` : `Nueva: ${tipoConfig?.label}`}
             </h2>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-lg">
@@ -569,46 +575,43 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
             </div>
           )}
 
+          {loadingEdit ? (
+            <div className="flex items-center justify-center h-48">
+              <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+              <span className="ml-3 text-gray-600">Cargando datos...</span>
+            </div>
+          ) : (<>
+
           {/* TAB: General */}
           {activeTab === 'general' && (
             <div className="space-y-6">
-              {/* Unidad y Ruta */}
+              {/* Unidad */}
               <div>
-                <h3 className="font-semibold text-gray-800 mb-3">Unidad y Ruta</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Unidad *</label>
-                    <select
-                      value={form.unidad_id}
-                      onChange={(e) => handleChange('unidad_id', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Seleccionar unidad...</option>
-                      {unidades
-                        .sort((a: any, b: any) => (a.unidad_codigo || '').localeCompare(b.unidad_codigo || ''))
-                        .map((u: any) => (
-                          <option key={u.unidad_id} value={u.unidad_id}>
-                            {u.unidad_codigo} - {u.sede_nombre || 'Sin sede'}
-                          </option>
-                        ))
-                      }
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ruta *</label>
-                    <select
-                      value={form.ruta_id}
-                      onChange={(e) => handleChange('ruta_id', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Seleccionar ruta...</option>
-                      {rutas.map((r: any) => (
-                        <option key={r.id} value={r.id}>
-                          {r.codigo} {r.nombre ? `- ${r.nombre}` : ''}
+                <h3 className="font-semibold text-gray-800 mb-3">Unidad</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Unidad *</label>
+                  <select
+                    value={form.unidad_id}
+                    onChange={(e) => handleChange('unidad_id', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Seleccionar unidad...</option>
+                    {unidades
+                      .sort((a: any, b: any) => (a.unidad_codigo || '').localeCompare(b.unidad_codigo || ''))
+                      .map((u: any) => (
+                        <option key={u.unidad_id} value={u.unidad_id}>
+                          {u.unidad_codigo} - {u.sede_nombre || 'Sin sede'}
                         </option>
-                      ))}
-                    </select>
-                  </div>
+                      ))
+                    }
+                  </select>
+                  {form.ruta_id ? (
+                    <p className="mt-1 text-xs text-blue-600">
+                      Ruta asignada: {rutas.find((r: any) => r.id === Number(form.ruta_id))?.codigo || form.ruta_id}
+                    </p>
+                  ) : (
+                    form.unidad_id && <p className="mt-1 text-xs text-gray-400">Sin ruta asignada</p>
+                  )}
                 </div>
               </div>
 
@@ -806,6 +809,8 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
               showAjustadores={tipoSituacion !== 'EMERGENCIA'}
             />
           )}
+
+          </>)}
         </div>
 
         {/* Footer */}

@@ -2,9 +2,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { situacionesAPI, incidentesAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, ArrowLeft, Search, Filter, MapPin, ChevronDown, ChevronUp, X, Wifi, WifiOff, Plus, Activity } from 'lucide-react';
-import CrearSituacionModal from '../components/forms/CrearSituacionModal';
-import CrearActividadModal from '../components/forms/CrearActividadModal';
+import { RefreshCw, ArrowLeft, Search, Filter, MapPin, ChevronDown, ChevronUp, X, Wifi, WifiOff } from 'lucide-react';
 import { useDashboardSocket } from '../hooks/useSocket';
 
 // Colores por sede
@@ -50,9 +48,6 @@ export default function COPSituacionesPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'created_at', direction: 'desc' });
   const [selectedSituacion, setSelectedSituacion] = useState<any | null>(null);
-  const [showCrearModal, setShowCrearModal] = useState(false);
-  const [showCrearActividadModal, setShowCrearActividadModal] = useState(false);
-  const [preselectedUnidadId, setPreselectedUnidadId] = useState<number | undefined>(undefined);
   const [filters, setFilters] = useState({
     sede: '',
     tipoSituacion: '',
@@ -68,12 +63,6 @@ export default function COPSituacionesPage() {
     refetchInterval: socketConnected ? false : 30000,
   });
 
-  const { data: resumenUnidades = [], refetch: refetchResumen } = useQuery({
-    queryKey: ['resumen-unidades'],
-    queryFn: situacionesAPI.getResumenUnidades,
-    refetchInterval: socketConnected ? false : 30000,
-  });
-
   const { data: incidentes = [] } = useQuery({
     queryKey: ['incidentes-activos'],
     queryFn: incidentesAPI.getActivos,
@@ -83,7 +72,7 @@ export default function COPSituacionesPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([refetchSituaciones(), refetchResumen()]);
+      await refetchSituaciones();
     } finally {
       setIsRefreshing(false);
     }
@@ -202,20 +191,6 @@ export default function COPSituacionesPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => { setPreselectedUnidadId(undefined); setShowCrearModal(true); }}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Nueva Situacion
-              </button>
-              <button
-                onClick={() => { setPreselectedUnidadId(undefined); setShowCrearActividadModal(true); }}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
-              >
-                <Activity className="w-4 h-4" />
-                Nueva Actividad
-              </button>
               <button
                 onClick={() => navigate('/cop/mapa')}
                 className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition flex items-center gap-2"
@@ -474,30 +449,6 @@ export default function COPSituacionesPage() {
           </div>
         </div>
       </div>
-
-      {/* Modal de crear situacion */}
-      <CrearSituacionModal
-        isOpen={showCrearModal}
-        onClose={() => setShowCrearModal(false)}
-        onCreated={() => {
-          refetchSituaciones();
-          refetchResumen();
-        }}
-        unidades={resumenUnidades}
-        preselectedUnidadId={preselectedUnidadId}
-      />
-
-      {/* Modal de crear actividad */}
-      <CrearActividadModal
-        isOpen={showCrearActividadModal}
-        onClose={() => setShowCrearActividadModal(false)}
-        onCreated={() => {
-          refetchSituaciones();
-          refetchResumen();
-        }}
-        unidades={resumenUnidades}
-        preselectedUnidadId={preselectedUnidadId}
-      />
 
       {/* Modal de detalle de situación */}
       {selectedSituacion && (
