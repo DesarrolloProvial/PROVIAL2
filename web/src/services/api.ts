@@ -138,8 +138,8 @@ export const situacionesAPI = {
   async getAll(params?: {
     estado?: string;
     unidad_id?: number;
-    desde?: string;
-    hasta?: string;
+    fecha_desde?: string;
+    fecha_hasta?: string;
   }): Promise<any[]> {
     const { data } = await api.get('/situaciones', { params });
     return data.situaciones || [];
@@ -199,6 +199,16 @@ export const situacionesAPI = {
 // ============================================
 
 export const actividadesAPI = {
+  async getAll(params?: {
+    estado?: string;
+    unidad_id?: number;
+    fecha_desde?: string;
+    fecha_hasta?: string;
+  }): Promise<any[]> {
+    const { data } = await api.get('/actividades', { params });
+    return data.actividades || [];
+  },
+
   async getById(id: number): Promise<any> {
     const { data } = await api.get(`/actividades/${id}`);
     return data.actividad;

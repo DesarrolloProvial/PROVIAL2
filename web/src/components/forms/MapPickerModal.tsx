@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import { Icon } from 'leaflet';
+import type { LeafletMouseEvent } from 'leaflet';
 import { X, MapPin, Check } from 'lucide-react';
 
 const pickerIcon = new Icon({
@@ -26,11 +27,17 @@ interface Props {
 }
 
 function ClickHandler({ onPick }: { onPick: (lat: number, lng: number) => void }) {
-  useMapEvents({
-    click(e) {
-      onPick(e.latlng.lat, e.latlng.lng);
-    },
-  });
+  const map = useMap();
+  useEffect(() => {
+    const container = map.getContainer();
+    container.style.cursor = 'crosshair';
+    const handler = (e: LeafletMouseEvent) => onPick(e.latlng.lat, e.latlng.lng);
+    map.on('click', handler);
+    return () => {
+      map.off('click', handler);
+      container.style.cursor = '';
+    };
+  }, [map, onPick]);
   return null;
 }
 

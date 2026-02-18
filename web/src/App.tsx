@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from './store/authStore';
+import { useThemeStore } from './store/themeStore';
 import LoginPage from './pages/LoginPage';
 import OperacionesPage from './pages/OperacionesPage';
 import CrearAsignacionPage from './pages/CrearAsignacionPage';
@@ -152,11 +153,12 @@ function RoleBasedRedirect() {
 
 function App() {
   const { initializeAuth } = useAuthStore();
+  const { initTheme } = useThemeStore();
 
-  // Inicializar autenticación desde localStorage
   useEffect(() => {
     initializeAuth();
-  }, [initializeAuth]);
+    initTheme();
+  }, [initializeAuth, initTheme]);
 
   return (
     <QueryClientProvider client={queryClient}>
