@@ -505,12 +505,12 @@ export const SituacionModel = {
                su.combustible_final,
                COALESCE(su.tripulacion, (
                  SELECT jsonb_agg(jsonb_build_object(
-                   'id', bu.usuario_id,
+                   'id', bu.brigada_id,
                    'nombre', u2.nombre_completo,
-                   'rol', bu.rol
+                   'rol', bu.rol_tripulacion
                  ))
                  FROM brigada_unidad bu
-                 JOIN usuario u2 ON bu.usuario_id = u2.id
+                 JOIN usuario u2 ON bu.brigada_id = u2.id
                  WHERE bu.unidad_id = su.unidad_id AND bu.activo = true
                )) as tripulacion,
                su.observaciones_salida,
