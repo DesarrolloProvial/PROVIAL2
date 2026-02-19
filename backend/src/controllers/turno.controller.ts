@@ -10,10 +10,14 @@ export async function getTurnoHoy(req: Request, res: Response) {
     const turno = await TurnoModel.findHoy(userSedeId);
 
     // SIEMPRE filtrar por sede del usuario en el dashboard general
+    // Excluir asignaciones FINALIZADAS (jornada completada)
     let asignaciones;
     if (userSedeId) {
       asignaciones = await db.any(
-        'SELECT * FROM v_asignaciones_pendientes WHERE sede_id = $1 ORDER BY fecha, hora_salida',
+        `SELECT * FROM v_asignaciones_pendientes
+         WHERE sede_id = $1
+           AND (salida_estado IS NULL OR salida_estado != 'FINALIZADA')
+         ORDER BY fecha, hora_salida`,
         [userSedeId]
       );
     } else {
@@ -42,7 +46,10 @@ export async function getAsignacionesPendientes(req: Request, res: Response) {
     let asignaciones;
     if (userSedeId) {
       asignaciones = await db.any(
-        'SELECT * FROM v_asignaciones_pendientes WHERE sede_id = $1 ORDER BY fecha, hora_salida',
+        `SELECT * FROM v_asignaciones_pendientes
+         WHERE sede_id = $1
+           AND (salida_estado IS NULL OR salida_estado != 'FINALIZADA')
+         ORDER BY fecha, hora_salida`,
         [userSedeId]
       );
     } else {
