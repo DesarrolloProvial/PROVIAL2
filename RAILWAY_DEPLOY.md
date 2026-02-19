@@ -37,9 +37,9 @@ PORT=3000
 DATABASE_URL=${{Postgres.DATABASE_URL}}
 REDIS_URL=${{Redis.REDIS_URL}}
 
-# Secrets (ya generados):
-JWT_SECRET=b132b112dbd77a124c82094c0971a63a377b8132a9dd344feb242ff343b312e38ff637abdba92dbdc2c498cf86568372c13ba50799e440d9506d0019a842199f
-JWT_REFRESH_SECRET=cdac3e8dcec4d4b808b4f918fe139691b93a3bbc92240584478ca1968bc52f5d1cca3195ae626758d06338de46836f16c1c71a61b5cfec6f97af5adf218e74af
+# Secrets - Generar con: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+JWT_SECRET=<GENERA_UN_SECRET_SEGURO_DE_64_BYTES>
+JWT_REFRESH_SECRET=<GENERA_UN_REFRESH_SECRET_SEGURO_DE_64_BYTES>
 JWT_EXPIRES_IN=12h
 JWT_REFRESH_EXPIRES_IN=7d
 
@@ -96,7 +96,7 @@ curl https://TU-URL.railway.app/api/health
 # Probar login
 curl -X POST https://TU-URL.railway.app/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"19109","password":"provial123"}'
+  -d '{"username":"TU_USUARIO","password":"TU_PASSWORD"}'
 ```
 
 ---
@@ -105,11 +105,11 @@ curl -X POST https://TU-URL.railway.app/api/auth/login \
 
 | Username | Password | Rol |
 |----------|----------|-----|
-| 19109 | provial123 | SUPER_ADMIN |
-| admin | provial123 | SUPER_ADMIN |
-| operaciones | provial123 | OPERACIONES |
-| cop.admin | provial123 | COP |
-| 00001 | provial123 | BRIGADA |
+| 19109 | \<cambiar_password> | SUPER_ADMIN |
+| admin | \<cambiar_password> | SUPER_ADMIN |
+| operaciones | \<cambiar_password> | OPERACIONES |
+| cop.admin | \<cambiar_password> | COP |
+| 00001 | \<cambiar_password> | BRIGADA |
 
 ---
 

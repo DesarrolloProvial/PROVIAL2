@@ -156,14 +156,10 @@ Deberías ver:
 
 | Username | Password | Rol |
 |----------|----------|-----|
-| admin | password123 | ADMIN |
-| cop01 | password123 | COP |
-| cop02 | password123 | COP |
-| brigada01 | password123 | BRIGADA |
-| brigada02 | password123 | BRIGADA |
-| operaciones01 | password123 | OPERACIONES |
-| accidentologia01 | password123 | ACCIDENTOLOGIA |
-| mando01 | password123 | MANDOS |
+| admin | \<ver env de desarrollo> | ADMIN |
+| cop01 | \<ver env de desarrollo> | COP |
+| brigada01 | \<ver env de desarrollo> | BRIGADA |
+| operaciones01 | \<ver env de desarrollo> | OPERACIONES |
 
 **Hacer login:**
 

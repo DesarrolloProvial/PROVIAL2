@@ -19,10 +19,10 @@ const io = initSocketService(server);
 // Middlewares globales
 app.use(helmet());
 app.use(cors({
-  origin: '*', // Permitir todas las conexiones
+  origin: config.cors.origins,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: false, // Debe ser false cuando origin es '*'
+  credentials: true,
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
