@@ -3,6 +3,33 @@ import { createPortal } from 'react-dom';
 import { X, Save, RefreshCw, MapPin } from 'lucide-react';
 import { api } from '../../services/api';
 
+const ICONOS = [
+  { emoji: '📍', label: 'Marcador' },
+  { emoji: '🏥', label: 'Hospital' },
+  { emoji: '⛽', label: 'Combustible' },
+  { emoji: '🚦', label: 'Semáforo' },
+  { emoji: '🚧', label: 'Obstrucción' },
+  { emoji: '🏛', label: 'Institución' },
+  { emoji: '🏫', label: 'Escuela' },
+  { emoji: '🏪', label: 'Comercio' },
+  { emoji: '🔧', label: 'Taller' },
+  { emoji: '⚠️', label: 'Peligro' },
+  { emoji: '🚔', label: 'Policía' },
+  { emoji: '🚑', label: 'Ambulancia' },
+  { emoji: '🚒', label: 'Bomberos' },
+  { emoji: '📡', label: 'Antena' },
+  { emoji: '🌳', label: 'Zona verde' },
+  { emoji: '💧', label: 'Agua' },
+  { emoji: '🔥', label: 'Peligro fuego' },
+  { emoji: '⭐', label: 'Destacado' },
+  { emoji: '🔴', label: 'Alerta' },
+  { emoji: '🟢', label: 'Habilitado' },
+  { emoji: '🟡', label: 'Precaución' },
+  { emoji: '🏗', label: 'Construcción' },
+  { emoji: '🅿️', label: 'Parqueo' },
+  { emoji: '🛡', label: 'Puesto control' },
+];
+
 interface Capa { id: number; nombre: string; color: string; icono: string; }
 
 interface Props {
@@ -24,6 +51,7 @@ export default function CrearPuntoMapaModal({ isOpen, onClose, onCreated, capas,
     latitud: initialLat?.toString() ?? '',
     longitud: initialLng?.toString() ?? '',
     categoria: '',
+    icono: '📍',
   });
 
   const set = (field: string, value: string) => setForm(p => ({ ...p, [field]: value }));
@@ -42,6 +70,7 @@ export default function CrearPuntoMapaModal({ isOpen, onClose, onCreated, capas,
         latitud: parseFloat(form.latitud),
         longitud: parseFloat(form.longitud),
         categoria: form.categoria || undefined,
+        icono_url: form.icono,
       });
       onCreated();
       onClose();
@@ -56,7 +85,7 @@ export default function CrearPuntoMapaModal({ isOpen, onClose, onCreated, capas,
 
   return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b bg-blue-50 rounded-t-xl">
           <div className="flex items-center gap-2">
             <MapPin className="w-5 h-5 text-blue-600" />
@@ -92,6 +121,30 @@ export default function CrearPuntoMapaModal({ isOpen, onClose, onCreated, capas,
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
               placeholder="Nombre del punto"
             />
+          </div>
+
+          {/* Selector de icono */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Icono — <span className="text-2xl">{form.icono}</span>
+            </label>
+            <div className="grid grid-cols-8 gap-1">
+              {ICONOS.map(({ emoji, label }) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => set('icono', emoji)}
+                  title={label}
+                  className={`w-9 h-9 flex items-center justify-center text-xl rounded-lg border-2 transition ${
+                    form.icono === emoji
+                      ? 'border-blue-500 bg-blue-50 shadow-sm'
+                      : 'border-transparent hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>

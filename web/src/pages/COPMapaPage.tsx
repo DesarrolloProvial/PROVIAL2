@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import type { LeafletMouseEvent } from 'leaflet';
 import { Icon, LatLngExpression } from 'leaflet';
 import HeatmapLayer from '../components/HeatmapLayer';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -129,6 +130,16 @@ function MapController({ center, zoom }: { center: LatLngExpression; zoom?: numb
   return null;
 }
 
+function CoordClickListener({ onCoord }: { onCoord: (lat: number, lng: number) => void }) {
+  const map = useMap();
+  useEffect(() => {
+    const handler = (e: LeafletMouseEvent) => onCoord(e.latlng.lat, e.latlng.lng);
+    map.on('click', handler);
+    return () => { map.off('click', handler); };
+  }, [map, onCoord]);
+  return null;
+}
+
 export default function COPMapaPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -155,6 +166,11 @@ export default function COPMapaPage() {
   const [showCapasPanel, setShowCapasPanel] = useState(false);
   const [capassVisibles, setCapasVisibles] = useState<Set<number>>(new Set());
   const [showCrearPuntoModal, setShowCrearPuntoModal] = useState(false);
+  const [clickedCoord, setClickedCoord] = useState<{ lat: number; lng: number } | null>(null);
+  const [coordCopied, setCoordCopied] = useState(false);
+  const [showCrearCapaInline, setShowCrearCapaInline] = useState(false);
+  const [nuevaCapa, setNuevaCapa] = useState({ nombre: '', color: '#3B82F6' });
+  const [creandoCapa, setCreandoCapa] = useState(false);
 
   const { isConnected: socketConnected, lastUpdate } = useDashboardSocket(queryClient);
   const defaultCenter: LatLngExpression = [14.6407, -90.5133];
@@ -260,6 +276,33 @@ export default function COPMapaPage() {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleCoord = useCallback((lat: number, lng: number) => {
+    setClickedCoord({ lat, lng });
+    setCoordCopied(false);
+  }, []);
+
+  const copyCoord = () => {
+    if (!clickedCoord) return;
+    navigator.clipboard.writeText(`${clickedCoord.lat.toFixed(6)}, ${clickedCoord.lng.toFixed(6)}`);
+    setCoordCopied(true);
+    setTimeout(() => setCoordCopied(false), 2000);
+  };
+
+  const handleCrearCapa = async () => {
+    if (!nuevaCapa.nombre.trim()) return;
+    setCreandoCapa(true);
+    try {
+      await api.post('/capas-mapa', { nombre: nuevaCapa.nombre.trim(), color: nuevaCapa.color });
+      refetchCapas();
+      setNuevaCapa({ nombre: '', color: '#3B82F6' });
+      setShowCrearCapaInline(false);
+    } catch (e) {
+      console.error('Error creando capa:', e);
+    } finally {
+      setCreandoCapa(false);
+    }
   };
 
   const isLoading = loadingResumen;
@@ -554,6 +597,7 @@ export default function COPMapaPage() {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               <MapController center={defaultCenter} />
+              <CoordClickListener onCoord={handleCoord} />
               {showHeatmap && heatmapData.length > 0 && (
                 <HeatmapLayer points={heatmapData} />
               )}
@@ -696,7 +740,8 @@ export default function COPMapaPage() {
             const lat = Number(p.latitud);
             const lng = Number(p.longitud);
             if (isNaN(lat) || isNaN(lng)) return null;
-            const svgPin = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 32 46"><path fill="${p.capa_color || '#3B82F6'}" stroke="#fff" stroke-width="1.5" d="M16 1C7.7 1 1 7.7 1 16c0 10.5 15 29 15 29s15-18.5 15-29C31 7.7 24.3 1 16 1z"/><circle cx="16" cy="16" r="9" fill="#fff" fill-opacity="0.9"/><text x="16" y="20" text-anchor="middle" font-size="10" fill="${p.capa_color || '#3B82F6'}" font-weight="bold">📍</text></svg>`;
+            const puntoEmoji = p.icono_url || '📍';
+            const svgPin = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="46" viewBox="0 0 34 46"><path fill="${p.capa_color || '#3B82F6'}" stroke="#fff" stroke-width="1.5" d="M17 1C8.7 1 2 7.7 2 16c0 10.5 15 29 15 29s15-18.5 15-29C32 7.7 25.3 1 17 1z"/><circle cx="17" cy="16" r="11" fill="#fff" fill-opacity="0.95"/><text x="17" y="21" text-anchor="middle" font-size="14">${puntoEmoji}</text></svg>`;
             const capaIcon = new Icon({
               iconUrl: `data:image/svg+xml,${encodeURIComponent(svgPin)}`,
               iconSize: [28, 40], iconAnchor: [14, 40], popupAnchor: [0, -40],
@@ -914,22 +959,71 @@ export default function COPMapaPage() {
 
             {/* Panel de Capas del Mapa */}
             {showCapasPanel && (
-              <div className="absolute top-20 right-16 z-[1000] bg-white rounded-lg shadow-lg p-3 w-60">
+              <div className="absolute top-20 right-16 z-[1000] bg-white rounded-lg shadow-lg p-3 w-64">
                 <div className="flex items-center justify-between mb-3">
                   <p className="font-semibold text-gray-800 text-sm flex items-center gap-1.5">
                     <MapIcon className="w-4 h-4 text-indigo-600" /> Capas del Mapa
                   </p>
-                  <button
-                    onClick={() => { setShowCrearPuntoModal(true); }}
-                    className="flex items-center gap-1 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2 py-1 rounded"
-                  >
-                    <Plus className="w-3 h-3" /> Punto
-                  </button>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setShowCrearCapaInline(!showCrearCapaInline)}
+                      className={`flex items-center gap-1 text-xs px-2 py-1 rounded transition ${
+                        showCrearCapaInline ? 'bg-indigo-600 text-white' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700'
+                      }`}
+                      title="Nueva capa"
+                    >
+                      <Plus className="w-3 h-3" /> Capa
+                    </button>
+                    <button
+                      onClick={() => setShowCrearPuntoModal(true)}
+                      className="flex items-center gap-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded"
+                      title="Nuevo punto"
+                    >
+                      <Plus className="w-3 h-3" /> Punto
+                    </button>
+                  </div>
                 </div>
+
+                {/* Formulario inline nueva capa */}
+                {showCrearCapaInline && (
+                  <div className="mb-3 p-2 bg-indigo-50 rounded-lg space-y-2">
+                    <input
+                      type="text"
+                      value={nuevaCapa.nombre}
+                      onChange={e => setNuevaCapa(p => ({ ...p, nombre: e.target.value }))}
+                      placeholder="Nombre de la capa..."
+                      className="w-full px-2 py-1.5 text-xs border border-indigo-200 rounded focus:ring-1 focus:ring-indigo-400 focus:outline-none"
+                      onKeyDown={e => { if (e.key === 'Enter') handleCrearCapa(); }}
+                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={nuevaCapa.color}
+                        onChange={e => setNuevaCapa(p => ({ ...p, color: e.target.value }))}
+                        className="w-8 h-7 rounded cursor-pointer border border-indigo-200"
+                        title="Color de la capa"
+                      />
+                      <button
+                        onClick={handleCrearCapa}
+                        disabled={creandoCapa || !nuevaCapa.nombre.trim()}
+                        className="flex-1 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 transition"
+                      >
+                        {creandoCapa ? '...' : 'Crear capa'}
+                      </button>
+                      <button
+                        onClick={() => setShowCrearCapaInline(false)}
+                        className="p-1 text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {capas.length === 0 ? (
-                  <p className="text-xs text-gray-400 text-center py-2">No hay capas creadas</p>
+                  <p className="text-xs text-gray-400 text-center py-2">No hay capas — crea una arriba</p>
                 ) : (
-                  <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                  <div className="space-y-1.5 max-h-56 overflow-y-auto">
                     {capas.map((capa: any) => {
                       const visible = capassVisibles.has(capa.id);
                       return (
@@ -1083,6 +1177,30 @@ export default function COPMapaPage() {
                 </div>
               </div>
             )}
+
+            {/* Barra flotante de coordenadas */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-lg shadow-lg px-4 py-2 flex items-center gap-3 text-sm">
+              {clickedCoord ? (
+                <>
+                  <span className="text-xs text-gray-400">📍</span>
+                  <span className="font-mono text-gray-800 select-all">
+                    {clickedCoord.lat.toFixed(6)}, {clickedCoord.lng.toFixed(6)}
+                  </span>
+                  <button
+                    onClick={copyCoord}
+                    className={`px-2 py-0.5 rounded text-xs font-medium transition ${
+                      coordCopied
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {coordCopied ? '✓ Copiado' : 'Copiar'}
+                  </button>
+                </>
+              ) : (
+                <span className="text-gray-400 text-xs">Haz clic en el mapa para ver coordenadas</span>
+              )}
+            </div>
 
             {/* Stats flotantes */}
             <div className="absolute bottom-4 right-4 z-[1000] bg-white/90 backdrop-blur rounded-lg shadow-lg p-3">
