@@ -7,6 +7,16 @@ import { emitToAll } from '../services/socket.service';
 // CREAR ACTIVIDAD
 // ========================================
 
+export async function listActividades(req: Request, res: Response) {
+  try {
+    const list = await ActividadModel.list(req.query);
+    return res.json({ actividades: list, count: list.length });
+  } catch (error: any) {
+    console.error('Error listActividades:', error);
+    return res.status(500).json({ error: error.message || 'Error interno' });
+  }
+}
+
 export async function createActividad(req: Request, res: Response) {
   try {
     const {

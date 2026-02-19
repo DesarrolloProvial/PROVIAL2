@@ -551,9 +551,13 @@ export async function updateSituacion(req: Request, res: Response) {
 // ========================================
 
 export async function listSituaciones(req: Request, res: Response) {
-  const filters = req.query;
-  const list = await SituacionModel.list(filters);
-  return res.json({ situaciones: list, count: list.length });
+  try {
+    const list = await SituacionModel.list(req.query);
+    return res.json({ situaciones: list, count: list.length });
+  } catch (error: any) {
+    console.error('Error listSituaciones:', error);
+    return res.status(500).json({ error: error.message || 'Error interno' });
+  }
 }
 
 export async function getMiUnidadHoy(req: Request, res: Response) {

@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { situacionesAPI, api } from '../services/api';
 import { situacionesPersistentesAPI } from '../services/movimientos.service';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut, Search, Map as MapIcon, Plus, Eye, EyeOff } from 'lucide-react';
+import { RefreshCw, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut, Search, Map as MapIcon, Plus, Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDashboardSocket } from '../hooks/useSocket';
 import ResumenUnidadesTable from '../components/ResumenUnidadesTable';
 import SituacionIcon from '../components/SituacionIcon';
@@ -146,7 +146,7 @@ export default function COPMapaPage() {
   const { logout } = useAuthStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [showLegend, setShowLegend] = useState(true);
+  const [showLegend, setShowLegend] = useState(false);
   const [modoVista, setModoVista] = useState<'mapa' | 'tabla'>('mapa');
   const [selectedUnidad, setSelectedUnidad] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -164,6 +164,8 @@ export default function COPMapaPage() {
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [heatmapDias, setHeatmapDias] = useState(30);
   const [showCapasPanel, setShowCapasPanel] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSearch, setShowSearch] = useState(false);
   const [capassVisibles, setCapasVisibles] = useState<Set<number>>(new Set());
   const [showCrearPuntoModal, setShowCrearPuntoModal] = useState(false);
   const [clickedCoord, setClickedCoord] = useState<{ lat: number; lng: number } | null>(null);
@@ -358,7 +360,7 @@ export default function COPMapaPage() {
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className="w-96 bg-white shadow-lg flex flex-col">
+      <div className={`transition-all duration-300 ${showSidebar ? 'w-96' : 'w-0'} bg-white shadow-lg flex flex-col overflow-hidden flex-shrink-0`}>
         {/* Header */}
         <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
           <div className="flex items-center justify-between mb-1">
@@ -585,6 +587,15 @@ export default function COPMapaPage() {
 
       {/* Área principal: Mapa o Tabla */}
       <div className="flex-1 relative">
+        {/* Sidebar toggle button */}
+        <button
+          onClick={() => setShowSidebar(s => !s)}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-[1001] bg-white border border-gray-200 border-l-0 shadow-md rounded-r-lg p-1.5 hover:bg-gray-50 transition"
+          title={showSidebar ? 'Ocultar panel' : 'Mostrar panel'}
+        >
+          {showSidebar ? <ChevronLeft className="w-4 h-4 text-gray-600" /> : <ChevronRight className="w-4 h-4 text-gray-600" />}
+        </button>
+
         {modoVista === 'mapa' ? (
           <>
             <MapContainer
@@ -824,70 +835,75 @@ export default function COPMapaPage() {
             </MapContainer>
 
             {/* Buscador de lugares */}
-            <div className="absolute top-4 left-4 z-[1000] w-80">
-              <div className="relative">
-                <div className="flex items-center bg-white rounded-lg shadow-lg">
-                  <Search className="w-5 h-5 text-gray-400 ml-3" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Buscar lugar en Guatemala..."
-                    className="w-full px-3 py-3 rounded-lg focus:outline-none"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => {
-                        setSearchQuery('');
-                        setSearchResults([]);
-                      }}
-                      className="p-2 hover:bg-gray-100 rounded-r-lg"
-                    >
-                      <X className="w-4 h-4 text-gray-500" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Resultados de búsqueda */}
-                {searchResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {searchResults.map((result: any, index: number) => (
+            <div className="absolute top-4 left-4 z-[1000]">
+              {showSearch ? (
+                <div className="w-80">
+                  <div className="relative">
+                    <div className="flex items-center bg-white rounded-lg shadow-lg">
+                      <Search className="w-5 h-5 text-gray-400 ml-3 flex-shrink-0" />
+                      <input
+                        autoFocus
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Buscar lugar en Guatemala..."
+                        className="w-full px-3 py-3 rounded-lg focus:outline-none"
+                      />
                       <button
-                        key={index}
-                        onClick={() => {
-                          // Navegar al lugar en el mapa
-                          const lat = parseFloat(result.lat);
-                          const lng = parseFloat(result.lon);
-                          if (!isNaN(lat) && !isNaN(lng)) {
-                            // Usar el MapController para centrar
-                            setSearchQuery(result.display_name.split(',')[0]);
-                            setSearchResults([]);
-                            // El mapa se centrará en esta ubicación
-                            const mapEl = document.querySelector('.leaflet-container') as any;
-                            if (mapEl && mapEl._leaflet_map) {
-                              mapEl._leaflet_map.setView([lat, lng], 15);
-                            }
-                          }
-                        }}
-                        className="w-full px-4 py-2 text-left hover:bg-blue-50 border-b border-gray-100 last:border-0"
+                        onClick={() => { setSearchQuery(''); setSearchResults([]); setShowSearch(false); }}
+                        className="p-2 hover:bg-gray-100 rounded-r-lg flex-shrink-0"
                       >
-                        <p className="text-sm font-medium text-gray-800 truncate">
-                          {result.display_name.split(',')[0]}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {result.display_name.split(',').slice(1, 3).join(',')}
-                        </p>
+                        <X className="w-4 h-4 text-gray-500" />
                       </button>
-                    ))}
-                  </div>
-                )}
+                    </div>
 
-                {isSearching && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg p-3 text-center text-gray-500 text-sm">
-                    Buscando...
+                    {/* Resultados de búsqueda */}
+                    {searchResults.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {searchResults.map((result: any, index: number) => (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              const lat = parseFloat(result.lat);
+                              const lng = parseFloat(result.lon);
+                              if (!isNaN(lat) && !isNaN(lng)) {
+                                setSearchQuery(result.display_name.split(',')[0]);
+                                setSearchResults([]);
+                                const mapEl = document.querySelector('.leaflet-container') as any;
+                                if (mapEl && mapEl._leaflet_map) {
+                                  mapEl._leaflet_map.setView([lat, lng], 15);
+                                }
+                              }
+                            }}
+                            className="w-full px-4 py-2 text-left hover:bg-blue-50 border-b border-gray-100 last:border-0"
+                          >
+                            <p className="text-sm font-medium text-gray-800 truncate">
+                              {result.display_name.split(',')[0]}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {result.display_name.split(',').slice(1, 3).join(',')}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {isSearching && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg p-3 text-center text-gray-500 text-sm">
+                        Buscando...
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowSearch(true)}
+                  className="p-3 bg-white rounded-lg shadow-lg hover:bg-gray-50 transition"
+                  title="Buscar lugar en Guatemala"
+                >
+                  <Search className="w-5 h-5 text-gray-700" />
+                </button>
+              )}
             </div>
 
             {/* Controles flotantes del mapa */}

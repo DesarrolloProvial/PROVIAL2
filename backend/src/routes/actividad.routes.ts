@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  listActividades,
   createActividad,
   cerrarActividad,
   getActividad,
@@ -11,6 +12,9 @@ const router = Router();
 
 // Actividades de mi unidad hoy (app móvil) - BRIGADAS
 router.get('/mi-unidad/hoy', authenticate, authorize('BRIGADA'), getMiUnidadHoy);
+
+// Listar actividades con filtros (COP/OPERACIONES/MANDOS/ADMIN)
+router.get('/', authenticate, authorize('COP', 'OPERACIONES', 'MANDOS', 'ADMIN'), listActividades);
 
 // Crear actividad
 router.post('/', authenticate, createActividad);

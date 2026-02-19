@@ -201,6 +201,31 @@ export const ActividadModel = {
   /**
    * Cerrar todas las actividades activas de una unidad (al crear nueva)
    */
+  async list(filters: any = {}): Promise<ActividadCompleta[]> {
+    let where = 'WHERE 1=1';
+    const params: any = {};
+    if (filters.estado)       { where += ' AND a.estado = $/estado/';           params.estado = filters.estado; }
+    if (filters.unidad_id)    { where += ' AND a.unidad_id = $/unidad_id/';     params.unidad_id = parseInt(filters.unidad_id); }
+    if (filters.fecha_desde)  { where += ' AND a.created_at >= $/fecha_desde/'; params.fecha_desde = filters.fecha_desde; }
+    if (filters.fecha_hasta)  { where += ' AND a.created_at <= $/fecha_hasta/'; params.fecha_hasta = filters.fecha_hasta; }
+    const limit = filters.limit ? `LIMIT ${Math.min(parseInt(filters.limit), 500)}` : 'LIMIT 100';
+    return db.manyOrNone(`
+      SELECT a.*, u.codigo AS unidad_codigo, u.sede_id,
+             r.codigo AS ruta_codigo,
+             cts.nombre AS tipo_actividad_nombre, cts.categoria AS tipo_actividad_categoria,
+             cts.icono AS tipo_actividad_icono, cts.color AS tipo_actividad_color,
+             us.nombre_completo AS creado_por_nombre
+      FROM actividad a
+      LEFT JOIN unidad u ON a.unidad_id = u.id
+      LEFT JOIN ruta r ON a.ruta_id = r.id
+      LEFT JOIN catalogo_tipo_situacion cts ON a.tipo_actividad_id = cts.id
+      LEFT JOIN usuario us ON a.creado_por = us.id
+      ${where}
+      ORDER BY a.created_at DESC
+      ${limit}
+    `, params);
+  },
+
   async cerrarActivasDeUnidad(unidadId: number): Promise<void> {
     await db.none(`
       UPDATE actividad SET estado = 'CERRADA', closed_at = NOW()
