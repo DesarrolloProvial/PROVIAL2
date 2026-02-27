@@ -236,6 +236,11 @@ export default function OperacionesPage() {
           <UnidadesView unidades={unidades} isLoading={loadingUnidades} />
         )}
       </div>
+
+      <CambiarPasswordModal
+        isOpen={showCambiarPassword}
+        onClose={() => setShowCambiarPassword(false)}
+      />
     </div>
   );
 }
@@ -878,10 +883,6 @@ function UnidadesView({ unidades, isLoading }: { unidades: any[]; isLoading: boo
         )}
       </div>
 
-      <CambiarPasswordModal
-        isOpen={showCambiarPassword}
-        onClose={() => setShowCambiarPassword(false)}
-      />
     </>
   );
 }
