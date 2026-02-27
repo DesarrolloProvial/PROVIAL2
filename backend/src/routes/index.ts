@@ -41,7 +41,7 @@ import actividadRoutes from './actividad.routes';
 import importExcelRoutes from './importExcel.routes';
 import estadisticasRoutes from './estadisticas.routes';
 import capaMapaRoutes from './capaMapa.routes';
-
+import dispositivoRoutes from './dispositivo.routes';
 
 const router = Router();
 
@@ -171,5 +171,7 @@ router.use('/estadisticas', estadisticasRoutes);
 // Capas del mapa COP (puntos de interés geolocalizados)
 router.use('/capas-mapa', capaMapaRoutes);
 
+// Gestión de dispositivos móviles autorizados
+router.use('/admin/dispositivos', dispositivoRoutes);
 
 export default router;

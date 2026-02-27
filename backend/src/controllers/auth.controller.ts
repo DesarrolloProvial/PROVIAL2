@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { UsuarioModel } from '../models/usuario.model';
+import { DispositivoModel } from '../models/dispositivo.model';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { cache } from '../config/redis';
+import { config } from '../config/env';
 
 // Login
 export async function login(req: Request, res: Response) {
@@ -33,6 +35,40 @@ export async function login(req: Request, res: Response) {
 
     // Actualizar último acceso
     await UsuarioModel.updateLastAccess(usuario.id);
+
+    // Registrar/verificar dispositivo si la app móvil envió device_id
+    const { device_id, device_model, device_os, device_os_version, app_version } = req.body;
+    if (device_id) {
+      try {
+        const dispositivo = await DispositivoModel.registrarOActualizar({
+          device_id,
+          usuario_id: usuario.id,
+          device_model,
+          device_os,
+          device_os_version,
+          app_version,
+        });
+
+        // Solo bloquear si el flag está activo en producción
+        if (config.deviceAuth.enabled) {
+          if (dispositivo.estado === 'BLOQUEADO') {
+            return res.status(403).json({
+              error: 'Dispositivo bloqueado. Contacte al departamento de informática.',
+              code: 'DEVICE_BLOCKED',
+            });
+          }
+          if (dispositivo.estado === 'PENDIENTE') {
+            return res.status(403).json({
+              error: 'Dispositivo pendiente de autorización. Contacte al departamento de informática.',
+              code: 'DEVICE_PENDING',
+            });
+          }
+        }
+      } catch (deviceError) {
+        // No fallar el login si falla el registro de dispositivo
+        console.error('⚠️ [LOGIN] Error registrando dispositivo:', deviceError);
+      }
+    }
 
     // Generar tokens
     const accessToken = generateAccessToken({

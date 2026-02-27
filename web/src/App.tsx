@@ -30,6 +30,7 @@ import EditarSituacionPage from './pages/EditarSituacionPage';
 import VerActividadPage from './pages/VerActividadPage';
 import ImportExcelPage from './pages/ImportExcelPage';
 import DashboardEstadisticasPage from './pages/DashboardEstadisticasPage';
+import DispositivosPage from './pages/DispositivosPage';
 
 // Crear QueryClient
 const queryClient = new QueryClient({
@@ -322,6 +323,14 @@ function App() {
             element={
               <SuperAdminRoute>
                 <GestionUnidadesPage />
+              </SuperAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/dispositivos"
+            element={
+              <SuperAdminRoute>
+                <DispositivosPage />
               </SuperAdminRoute>
             }
           />

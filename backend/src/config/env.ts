@@ -80,6 +80,12 @@ export const config = {
   socket: {
     corsOrigins: process.env.SOCKET_IO_CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:8081'],
   },
+
+  // Control de dispositivos móviles autorizados
+  // Activar con DEVICE_AUTH_ENABLED=true en variables de entorno de Railway
+  deviceAuth: {
+    enabled: process.env.DEVICE_AUTH_ENABLED === 'true',
+  },
 };
 
 // Validar configuración crítica

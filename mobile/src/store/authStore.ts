@@ -153,10 +153,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     console.log('📡 [LOGIN] URL:', `${API_URL}/auth/login`);
     console.log('👤 [LOGIN] Username:', username);
 
+    // Obtener info del dispositivo para registro de control de acceso
+    let deviceInfo: Record<string, string> = {};
+    try {
+      const Application = (await import('expo-application')).default;
+      const Device = (await import('expo-device')).default;
+      const androidId = await Application.getAndroidIdAsync?.() ?? null;
+      deviceInfo = {
+        device_id:         androidId || '',
+        device_model:      Device.modelName || '',
+        device_os:         Device.osName || '',
+        device_os_version: Device.osVersion || '',
+        app_version:       Application.nativeApplicationVersion || '',
+      };
+    } catch (_) {
+      // No bloquear el login si no se puede obtener info del dispositivo
+    }
+
     try {
       const response = await axios.post(`${API_URL}/auth/login`, {
         username,
         password,
+        ...deviceInfo,
       });
 
       console.log('✅ [LOGIN] Login exitoso:', response.data);

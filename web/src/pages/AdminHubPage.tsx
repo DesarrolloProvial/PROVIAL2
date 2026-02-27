@@ -11,6 +11,7 @@ import {
   ChevronRight,
   FileSpreadsheet,
   BarChart3,
+  Smartphone,
 } from 'lucide-react';
 
 interface MenuOption {
@@ -54,6 +55,15 @@ export default function AdminHubPage() {
       path: '/admin/acceso',
       color: 'text-purple-600',
       bgColor: 'bg-purple-50 hover:bg-purple-100 border-purple-200',
+    },
+    {
+      id: 'dispositivos',
+      title: 'Dispositivos Móviles',
+      description: 'Aprobar, bloquear y auditar teléfonos institucionales',
+      icon: <Smartphone className="w-8 h-8" />,
+      path: '/admin/dispositivos',
+      color: 'text-cyan-600',
+      bgColor: 'bg-cyan-50 hover:bg-cyan-100 border-cyan-200',
     },
     {
       id: 'cop-mapa',
