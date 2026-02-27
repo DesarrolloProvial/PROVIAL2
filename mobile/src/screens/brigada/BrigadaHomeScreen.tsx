@@ -322,27 +322,35 @@ export default function BrigadaHomeScreen() {
                 {usuario?.nombre?.split(' ')[0] || usuario?.email || 'Usuario'}
               </Text>
             </View>
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={() => {
-                Alert.alert(
-                  'Cerrar Sesión',
-                  '¿Estás seguro que deseas cerrar sesión?',
-                  [
-                    { text: 'Cancelar', style: 'cancel' },
-                    {
-                      text: 'Salir',
-                      style: 'destructive',
-                      onPress: async () => {
-                        await useAuthStore.getState().logout();
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                style={[styles.logoutButton, { backgroundColor: '#2563eb' }]}
+                onPress={() => navigation.navigate('CambiarPassword' as never)}
+              >
+                <Text style={styles.logoutButtonText}>🔑 Clave</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={() => {
+                  Alert.alert(
+                    'Cerrar Sesión',
+                    '¿Estás seguro que deseas cerrar sesión?',
+                    [
+                      { text: 'Cancelar', style: 'cancel' },
+                      {
+                        text: 'Salir',
+                        style: 'destructive',
+                        onPress: async () => {
+                          await useAuthStore.getState().logout();
+                        },
                       },
-                    },
-                  ]
-                );
-              }}
-            >
-              <Text style={styles.logoutButtonText}>Salir</Text>
-            </TouchableOpacity>
+                    ]
+                  );
+                }}
+              >
+                <Text style={styles.logoutButtonText}>Salir</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Indicador de acceso */}
@@ -903,6 +911,17 @@ export default function BrigadaHomeScreen() {
             </Text>
           </View>
         )}
+
+        {/* Herramientas — siempre visibles */}
+        <View style={styles.actionsContainer}>
+          <Text style={styles.actionsTitle}>Herramientas</Text>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.secondaryButton]}
+            onPress={() => navigation.navigate('BuscarPlacaSLV' as never)}
+          >
+            <Text style={styles.secondaryButtonText}>🔍 Verificar Limitador SLV</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );

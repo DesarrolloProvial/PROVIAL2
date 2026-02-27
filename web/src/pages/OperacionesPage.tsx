@@ -19,13 +19,16 @@ import {
   LogOut,
   FileText,
   Eye,
+  Lock,
 } from 'lucide-react';
 import Inspeccion360Historial from '../components/Inspeccion360Historial';
+import CambiarPasswordModal from '../components/CambiarPasswordModal';
 
 export default function OperacionesPage() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [vistaActual, setVistaActual] = useState<'dashboard' | 'brigadas' | 'unidades'>('dashboard');
+  const [showCambiarPassword, setShowCambiarPassword] = useState(false);
 
   // Solo ENCARGADO_NOMINAS Central o ADMIN puede ver el panel de admin
   const esAdminCentral = (user?.rol === 'ENCARGADO_NOMINAS' && user?.puede_ver_todas_sedes) || user?.rol === 'ADMIN';
@@ -119,6 +122,13 @@ export default function OperacionesPage() {
                 title="Actualizar"
               >
                 <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+              </button>
+              <button
+                onClick={() => setShowCambiarPassword(true)}
+                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                title="Cambiar contraseña"
+              >
+                <Lock className="w-5 h-5" />
               </button>
               <button
                 onClick={() => { logout(); }}
@@ -867,6 +877,11 @@ function UnidadesView({ unidades, isLoading }: { unidades: any[]; isLoading: boo
           </div>
         )}
       </div>
+
+      <CambiarPasswordModal
+        isOpen={showCambiarPassword}
+        onClose={() => setShowCambiarPassword(false)}
+      />
     </>
   );
 }

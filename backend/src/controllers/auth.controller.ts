@@ -231,6 +231,50 @@ export async function me(req: Request, res: Response) {
   }
 }
 
+// Cambiar contraseña (usuario autenticado, cualquier rol)
+export async function cambiarPassword(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
+
+    const { password_actual, nueva_password } = req.body;
+
+    if (!password_actual || !nueva_password) {
+      return res.status(400).json({ error: 'Se requieren la contraseña actual y la nueva' });
+    }
+
+    if (nueva_password.length < 6) {
+      return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+    }
+
+    const usuario = await UsuarioModel.findById(req.user.userId);
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    const passwordMatch = await bcrypt.compare(password_actual, usuario.password_hash);
+    if (!passwordMatch) {
+      return res.status(401).json({ error: 'La contraseña actual es incorrecta' });
+    }
+
+    const mismaPassword = await bcrypt.compare(nueva_password, usuario.password_hash);
+    if (mismaPassword) {
+      return res.status(400).json({ error: 'La nueva contraseña debe ser diferente a la actual' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const newHash = await bcrypt.hash(nueva_password, salt);
+
+    await UsuarioModel.resetPassword(usuario.username, newHash);
+
+    return res.json({ success: true, message: 'Contraseña actualizada exitosamente' });
+  } catch (error) {
+    console.error('Error en cambiarPassword:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
 // Verificar estado de reset
 export async function checkResetStatus(req: Request, res: Response) {
   try {

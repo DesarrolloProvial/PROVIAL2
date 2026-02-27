@@ -69,6 +69,8 @@ export type BrigadaStackParamList = {
   ConfiguracionPruebas: undefined;
   Inspeccion360: { unidadId: number; tipoUnidad?: string; salidaId?: number } | undefined;
   AprobarInspeccion360: { inspeccionId: number; salidaId?: number };
+  BuscarPlacaSLV: undefined;
+  CambiarPassword: undefined;
 };
 
 // ========================================

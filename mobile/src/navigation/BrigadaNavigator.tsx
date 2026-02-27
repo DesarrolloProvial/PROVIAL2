@@ -26,6 +26,8 @@ import RelevoScreen from '../screens/brigada/RelevoScreen';
 import ConfiguracionPruebasScreen from '../screens/brigada/ConfiguracionPruebasScreen';
 import Inspeccion360Screen from '../screens/brigada/Inspeccion360Screen';
 import AprobarInspeccion360Screen from '../screens/brigada/AprobarInspeccion360Screen';
+import BuscarPlacaSLVScreen from '../screens/brigada/BuscarPlacaSLV';
+import CambiarPasswordScreen from '../screens/brigada/CambiarPasswordScreen';
 // Pantalla dinámica para situaciones (REEMPLAZA AsistenciaScreen, EmergenciaScreen, IncidenteScreen)
 import SituacionDinamicaScreen from '../screens/situaciones/SituacionDinamicaScreen';
 
@@ -156,6 +158,16 @@ export default function BrigadaNavigator() {
                 name="AprobarInspeccion360"
                 component={AprobarInspeccion360Screen}
                 options={{ title: 'Aprobar Inspeccion', headerShown: false }}
+            />
+            <Stack.Screen
+                name="BuscarPlacaSLV"
+                component={BuscarPlacaSLVScreen}
+                options={{ title: 'Verificar Limitador SLV', headerShown: true }}
+            />
+            <Stack.Screen
+                name="CambiarPassword"
+                component={CambiarPasswordScreen}
+                options={{ title: 'Cambiar Contraseña', headerShown: true }}
             />
         </Stack.Navigator>
     );

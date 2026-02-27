@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { login, refresh, logout, me, checkResetStatus, resetPassword } from '../controllers/auth.controller';
+import { login, refresh, logout, me, checkResetStatus, resetPassword, cambiarPassword } from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/auth';
 
 const router = Router();
@@ -39,5 +39,8 @@ router.post('/reset-password', resetLimiter, resetPassword);
 
 // GET /api/auth/me (protegido)
 router.get('/me', authenticate, me);
+
+// POST /api/auth/cambiar-password (protegido, cualquier rol)
+router.post('/cambiar-password', authenticate, cambiarPassword);
 
 export default router;

@@ -7,13 +7,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { situacionesAPI, api } from '../services/api';
 import { situacionesPersistentesAPI } from '../services/movimientos.service';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut, Search, Map as MapIcon, Plus, Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
+import { RefreshCw, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut, Search, Map as MapIcon, Plus, Eye, EyeOff, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import { useDashboardSocket } from '../hooks/useSocket';
 import ResumenUnidadesTable from '../components/ResumenUnidadesTable';
 import SituacionIcon from '../components/SituacionIcon';
 import CrearSituacionModal from '../components/forms/CrearSituacionModal';
 import CrearActividadModal from '../components/forms/CrearActividadModal';
 import CrearPuntoMapaModal from '../components/forms/CrearPuntoMapaModal';
+import CambiarPasswordModal from '../components/CambiarPasswordModal';
 import { useAuthStore } from '../store/authStore';
 
 // Emoji corto por nombre de icono MDI (para el pin del mapa)
@@ -164,6 +165,7 @@ export default function COPMapaPage() {
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [heatmapDias, setHeatmapDias] = useState(30);
   const [showCapasPanel, setShowCapasPanel] = useState(false);
+  const [showCambiarPassword, setShowCambiarPassword] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showSearch, setShowSearch] = useState(false);
   const [capassVisibles, setCapasVisibles] = useState<Set<number>>(new Set());
@@ -377,6 +379,14 @@ export default function COPMapaPage() {
                 {socketConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
                 <span>{socketConnected ? 'En vivo' : 'Polling'}</span>
               </div>
+              {/* Botón Cambiar Contraseña */}
+              <button
+                onClick={() => setShowCambiarPassword(true)}
+                className="p-2 hover:bg-white/10 rounded-lg transition"
+                title="Cambiar contraseña"
+              >
+                <Lock className="w-5 h-5 text-white" />
+              </button>
               {/* Botón de Logout */}
               <button
                 onClick={handleLogout}
@@ -1295,6 +1305,10 @@ export default function COPMapaPage() {
         onClose={() => setShowCrearPuntoModal(false)}
         onCreated={() => { refetchPuntos(); refetchCapas(); }}
         capas={capas}
+      />
+      <CambiarPasswordModal
+        isOpen={showCambiarPassword}
+        onClose={() => setShowCambiarPassword(false)}
       />
     </div>
   );
