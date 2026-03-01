@@ -59,11 +59,6 @@ npm run dev
 - [GETTING_STARTED.md](./GETTING_STARTED.md) - Guía de inicio
 - [INSTALL_GUIDE.md](./INSTALL_GUIDE.md) - Instalación detallada
 
-## 🔑 Usuarios de Prueba
-
-- **Admin**: `admin` / `admin123`
-- **COP**: `cop01` / `cop123`
-- **Brigada**: `brigada01` / `brigada123`
 
 ## 📦 Dependencias Principales
 

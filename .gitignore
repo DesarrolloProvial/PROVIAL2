@@ -28,7 +28,9 @@ logs/
 # Backend
 backend/dist/
 backend/uploads/
-# backend/.env
+backend/.env
+backend/.env.local.bak
+backend/.env.production
 # NO ignorar los templates de configuración
 !backend/.env.pc1
 !backend/.env.pc2
