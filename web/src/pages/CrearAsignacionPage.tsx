@@ -9,6 +9,7 @@ import type { TripulacionMiembro, CreateAsignacionDTO } from '../services/turnos
 import type { CreateAsignacionProgramadaDTO } from '../services/asignaciones.service';
 import type { BrigadaDisponible } from '../services/operaciones.service';
 import { AlertCircle, CheckCircle, Users, Truck, ArrowLeft, Plus, X, Search, Crown } from 'lucide-react';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function CrearAsignacionPage() {
   const navigate = useNavigate();
@@ -317,11 +318,11 @@ export default function CrearAsignacionPage() {
         <div className="page-header flex items-center gap-4">
           <button
             onClick={() => navigate('/operaciones')}
-            className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
-            <ArrowLeft className="h-5 w-5 text-gray-700" />
+            <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-gray-300" />
           </button>
-          <div>
+          <div className="flex-1">
             <h1 className="page-title">{isEditMode ? 'Editar Asignacion' : 'Nueva Asignacion'}</h1>
             <p className="page-subtitle">
               {isEditMode
@@ -329,13 +330,14 @@ export default function CrearAsignacionPage() {
                 : 'Asignar unidad y tripulacion para un turno'}
             </p>
           </div>
+          <ThemeToggle />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Fecha */}
           <div className="card">
             <div className="card-body">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Fecha del Turno</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Fecha del Turno</h2>
               <div className="flex flex-wrap items-end gap-4">
                 <div>
                   <label className="label">Fecha de Salida *</label>
@@ -358,7 +360,7 @@ export default function CrearAsignacionPage() {
                     }}
                     className="w-4 h-4 text-blue-600 rounded"
                   />
-                  <span className="text-sm text-gray-700 font-medium">Comision larga (varios dias)</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">Comision larga (varios dias)</span>
                 </label>
 
                 {esComisionLarga && (
@@ -374,7 +376,7 @@ export default function CrearAsignacionPage() {
                   </div>
                 )}
               </div>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                 La asignacion se crea hoy y la unidad sale en la fecha indicada.
               </p>
             </div>
@@ -383,12 +385,12 @@ export default function CrearAsignacionPage() {
           {/* Tipo de Asignacion - Solo mostrar si no se esta editando (aunque podria permitirse cambiar) */}
           <div className="card">
             <div className="card-body">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Tipo de Asignación</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Tipo de Asignación</h2>
               <div className="flex flex-wrap gap-4">
                 {['PATRULLA', 'GARITA', 'PUESTO_CONTROL'].map((tipo) => (
                   <label key={tipo} className={`cursor-pointer flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${tipoAsignacion === tipo
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:bg-gray-50'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                    : 'border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                     }`}>
                     <input
                       type="radio"
@@ -398,7 +400,7 @@ export default function CrearAsignacionPage() {
                       onChange={() => setTipoAsignacion(tipo as any)}
                       className="text-blue-600 focus:ring-blue-500 w-4 h-4"
                     />
-                    <span className="font-medium text-gray-900">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
                       {tipo === 'PATRULLA' && 'Patrulla (Unidad Móvil)'}
                       {tipo === 'GARITA' && 'Garita (Sin Unidad)'}
                       {tipo === 'PUESTO_CONTROL' && 'Puesto de Control'}
@@ -415,13 +417,13 @@ export default function CrearAsignacionPage() {
               <div className="card-body">
                 <div className="flex items-center gap-2 mb-4">
                   <Truck className="h-5 w-5 text-blue-600" />
-                  <h2 className="text-lg font-bold text-gray-900">Unidad *</h2>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Unidad *</h2>
                 </div>
 
                 {loadingUnidades ? (
-                  <p className="text-gray-600">Cargando unidades...</p>
+                  <p className="text-gray-600 dark:text-gray-400">Cargando unidades...</p>
                 ) : unidades.length === 0 ? (
-                  <p className="text-gray-600">No hay unidades disponibles para esta fecha</p>
+                  <p className="text-gray-600 dark:text-gray-400">No hay unidades disponibles para esta fecha</p>
                 ) : (
                   <div className="grid gap-3 md:grid-cols-2">
                     {unidades.map((unidad) => (
@@ -442,8 +444,8 @@ export default function CrearAsignacionPage() {
                         />
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900">{unidad.codigo}</span>
-                            <span className="text-gray-700 text-sm">
+                            <span className="font-bold text-gray-900 dark:text-gray-100">{unidad.codigo}</span>
+                            <span className="text-gray-700 dark:text-gray-300 text-sm">
                               {unidad.marca} {unidad.modelo}
                             </span>
                             {unidad.disponible ? (
@@ -452,8 +454,8 @@ export default function CrearAsignacionPage() {
                               <AlertCircle className="h-4 w-4 text-amber-500" />
                             )}
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">{unidad.mensaje}</p>
-                          <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{unidad.mensaje}</p>
+                          <div className="flex gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
                             <span>Odometro: {unidad.odometro_actual?.toLocaleString()} km</span>
                             <span>Turnos mes: {unidad.turnos_ultimo_mes}</span>
                           </div>
@@ -470,7 +472,7 @@ export default function CrearAsignacionPage() {
           <div className="card">
             <div className="card-body">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                   {tipoAsignacion === 'PATRULLA' ? 'Detalles de Ruta' : 'Detalles de Ubicación'}
                 </h2>
               </div>
@@ -486,11 +488,11 @@ export default function CrearAsignacionPage() {
                         onChange={(e) => setEsReaccion(e.target.checked)}
                         className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                       />
-                      <span className="font-bold text-gray-900 border-b-2 border-red-500 pb-0.5">
+                      <span className="font-bold text-gray-900 dark:text-gray-100 border-b-2 border-red-500 pb-0.5">
                         ¿Es Unidad de Reacción?
                       </span>
                     </label>
-                    <p className="text-sm text-gray-500 mt-1 ml-7">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 ml-7">
                       Si se marca, la unidad no tendrá ruta asignada y deberá seleccionarla al momento de salir.
                       Reemplazará a cualquier otra unidad de reacción activa del turno.
                     </p>
@@ -577,7 +579,7 @@ export default function CrearAsignacionPage() {
           {/* Horarios */}
           <div className="card">
             <div className="card-body">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Horarios</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Horarios</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Hora de Salida</label>
@@ -608,8 +610,8 @@ export default function CrearAsignacionPage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-blue-600" />
-                  <h2 className="text-lg font-bold text-gray-900">
-                    Tripulacion {sedeConfig?.requiere_tripulacion !== false ? '*' : <span className="text-sm font-normal text-gray-500 ml-2">(Opcional)</span>}
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    Tripulacion {sedeConfig?.requiere_tripulacion !== false ? '*' : <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">(Opcional)</span>}
                   </h2>
                 </div>
                 <button
@@ -630,10 +632,10 @@ export default function CrearAsignacionPage() {
               </div>
 
               {tripulacion.length === 0 ? (
-                <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <div className="text-center py-8 bg-gray-50 dark:bg-gray-700/50 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
                   <Users className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-600">No hay tripulantes asignados</p>
-                  <p className="text-sm text-gray-500">Agregue al menos un piloto</p>
+                  <p className="text-gray-600 dark:text-gray-400">No hay tripulantes asignados</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Agregue al menos un piloto</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -641,8 +643,8 @@ export default function CrearAsignacionPage() {
                     <div
                       key={miembro.usuario_id}
                       className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${miembro.es_comandante
-                        ? 'bg-amber-50 border-amber-400'
-                        : 'bg-gray-50 border-gray-200'
+                        ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-400 dark:border-amber-700'
+                        : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600'
                         }`}
                     >
                       <div>
@@ -658,15 +660,15 @@ export default function CrearAsignacionPage() {
                               COMANDANTE
                             </span>
                           )}
-                          <span className="font-bold text-gray-900">
+                          <span className="font-bold text-gray-900 dark:text-gray-100">
                             {getBrigadaNombre(miembro.usuario_id)}
                           </span>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
                             ({getBrigadaChapa(miembro.usuario_id)})
                           </span>
                         </div>
                         {miembro.telefono_contacto && (
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                             Tel: {miembro.telefono_contacto}
                           </p>
                         )}
@@ -676,8 +678,8 @@ export default function CrearAsignacionPage() {
                           type="button"
                           onClick={() => toggleComandante(miembro.usuario_id)}
                           className={`p-2 rounded-lg transition-colors ${miembro.es_comandante
-                            ? 'text-amber-600 bg-amber-100 hover:bg-amber-200'
-                            : 'text-gray-500 hover:bg-gray-200'
+                            ? 'text-amber-600 bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 dark:hover:bg-amber-900/60'
+                            : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                           title={miembro.es_comandante ? 'Quitar comandante' : 'Designar como comandante'}
                         >
@@ -686,7 +688,7 @@ export default function CrearAsignacionPage() {
                         <button
                           type="button"
                           onClick={() => removerTripulante(miembro.usuario_id)}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                          className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                         >
                           <X className="h-5 w-5" />
                         </button>
@@ -701,7 +703,7 @@ export default function CrearAsignacionPage() {
           {/* Observaciones */}
           <div className="card">
             <div className="card-body">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Observaciones</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Observaciones</h2>
               <textarea
                 value={observaciones}
                 onChange={(e) => setObservaciones(e.target.value)}
@@ -739,18 +741,18 @@ export default function CrearAsignacionPage() {
         <div className="modal-overlay">
           <div className="modal-content flex flex-col" style={{ maxHeight: '80vh' }}>
             <div className="modal-header">
-              <h3 className="text-lg font-bold text-gray-900">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                 Seleccionar {rolSeleccionado}
               </h3>
               <button
                 onClick={cerrarModalBrigada}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
               >
-                <X className="h-5 w-5 text-gray-700" />
+                <X className="h-5 w-5 text-gray-700 dark:text-gray-300" />
               </button>
             </div>
 
-            <div className="px-6 py-3 border-b border-gray-200 bg-gray-50 space-y-3">
+            <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 space-y-3">
               {/* Buscador */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -759,13 +761,13 @@ export default function CrearAsignacionPage() {
                   value={busquedaBrigada}
                   onChange={(e) => setBusquedaBrigada(e.target.value)}
                   placeholder="Buscar por nombre, chapa o telefono..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
                   autoFocus
                 />
                 {busquedaBrigada && (
                   <button
                     onClick={() => setBusquedaBrigada('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -780,7 +782,7 @@ export default function CrearAsignacionPage() {
                     onClick={() => setRolSeleccionado(rol)}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${rolSeleccionado === rol
                       ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
                       }`}
                     disabled={rol !== 'ACOMPAÑANTE' && tripulacion.some(t => t.rol_tripulacion === rol)}
                   >
@@ -792,10 +794,10 @@ export default function CrearAsignacionPage() {
 
             <div className="modal-body flex-1 overflow-y-auto">
               {loadingBrigadas ? (
-                <p className="text-center text-gray-600 py-8">Cargando brigadas...</p>
+                <p className="text-center text-gray-600 dark:text-gray-400 py-8">Cargando brigadas...</p>
               ) : brigadasFiltradas.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 dark:text-gray-400">
                     {busquedaBrigada ? 'No se encontraron brigadas con ese criterio' : 'No hay brigadas disponibles'}
                   </p>
                   {busquedaBrigada && (
@@ -818,15 +820,15 @@ export default function CrearAsignacionPage() {
                         onClick={() => rolSeleccionado && agregarTripulante(brigada, rolSeleccionado)}
                         disabled={yaAsignado}
                         className={`w-full text-left p-4 rounded-lg border-2 transition-all ${yaAsignado
-                          ? 'opacity-50 cursor-not-allowed bg-gray-100 border-gray-200'
+                          ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
                           : brigada.disponible
-                            ? 'hover:border-blue-500 hover:bg-blue-50 border-gray-200 bg-white'
-                            : 'hover:border-amber-500 hover:bg-amber-50 border-gray-200 bg-white'
+                            ? 'hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'
+                            : 'hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'
                           }`}
                       >
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-gray-900">{brigada.nombre_completo}</span>
-                          <span className="text-sm text-gray-500">({brigada.chapa})</span>
+                          <span className="font-bold text-gray-900 dark:text-gray-100">{brigada.nombre_completo}</span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">({brigada.chapa})</span>
                           {brigada.disponible ? (
                             <CheckCircle className="h-4 w-4 text-green-600" />
                           ) : (
@@ -836,8 +838,8 @@ export default function CrearAsignacionPage() {
                             <span className="badge badge-gray ml-auto">Ya asignado</span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">{brigada.mensaje}</p>
-                        <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{brigada.mensaje}</p>
+                        <div className="flex gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
                           {brigada.telefono && <span>Tel: {brigada.telefono}</span>}
                           <span>Turnos mes: {brigada.turnos_ultimo_mes}</span>
                           {brigada.rol_tripulacion_frecuente && (

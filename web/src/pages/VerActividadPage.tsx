@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { ArrowLeft, Loader2, MapPin, Clock, User, Users, Truck } from 'lucide-react';
+import ThemeToggle from '../components/ThemeToggle';
 
 interface Tripulante {
     usuario_id: number;
@@ -24,7 +25,7 @@ export default function VerActividadPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+            <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
         );
@@ -32,10 +33,10 @@ export default function VerActividadPage() {
 
     if (error || !actividad) {
         return (
-            <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-                <div className="bg-white rounded-lg shadow-lg p-8 max-w-md">
+            <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-md">
                     <h2 className="text-xl font-bold text-red-600 mb-4">Error</h2>
-                    <p className="text-gray-600 mb-4">No se pudo cargar la actividad.</p>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">No se pudo cargar la actividad.</p>
                     <button onClick={() => navigate(-1)} className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                         Volver
                     </button>
@@ -56,48 +57,51 @@ export default function VerActividadPage() {
         : (actividad.tripulacion || []);
 
     return (
-        <div className="min-h-screen bg-gray-100">
-            <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+            <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
                 <div className="max-w-3xl mx-auto px-4 py-4">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition">
-                            <ArrowLeft className="w-6 h-6 text-gray-600" />
+                        <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition">
+                            <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                         </button>
                         <div>
-                            <h1 className="text-xl font-bold text-gray-800">
+                            <h1 className="text-xl font-bold text-gray-800 dark:text-gray-200">
                                 Actividad #{actividad.id}
                             </h1>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
                                 {actividad.tipo_actividad_nombre || 'Actividad'} - {actividad.unidad_codigo}
                             </p>
                         </div>
                         <span className={`ml-auto px-3 py-1 rounded-full text-sm font-medium ${
-                            actividad.estado === 'ACTIVA' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                            actividad.estado === 'ACTIVA'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400'
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
                         }`}>
                             {actividad.estado}
                         </span>
+                        <ThemeToggle />
                     </div>
                 </div>
             </div>
 
             <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
                 {/* Info principal */}
-                <div className="bg-white rounded-lg shadow p-6">
-                    <h2 className="text-lg font-semibold text-gray-800 mb-4">Informacion General</h2>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Informacion General</h2>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4 text-gray-400" />
                             <div>
-                                <span className="text-gray-500">Inicio:</span>
-                                <span className="ml-2 font-medium">{formatDate(actividad.created_at)}</span>
+                                <span className="text-gray-500 dark:text-gray-400">Inicio:</span>
+                                <span className="ml-2 font-medium dark:text-gray-200">{formatDate(actividad.created_at)}</span>
                             </div>
                         </div>
                         {actividad.closed_at && (
                             <div className="flex items-center gap-2">
                                 <Clock className="w-4 h-4 text-gray-400" />
                                 <div>
-                                    <span className="text-gray-500">Cierre:</span>
-                                    <span className="ml-2 font-medium">{formatDate(actividad.closed_at)}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Cierre:</span>
+                                    <span className="ml-2 font-medium dark:text-gray-200">{formatDate(actividad.closed_at)}</span>
                                 </div>
                             </div>
                         )}
@@ -105,8 +109,8 @@ export default function VerActividadPage() {
                             <div className="flex items-center gap-2">
                                 <MapPin className="w-4 h-4 text-gray-400" />
                                 <div>
-                                    <span className="text-gray-500">Ubicacion:</span>
-                                    <span className="ml-2 font-medium">
+                                    <span className="text-gray-500 dark:text-gray-400">Ubicacion:</span>
+                                    <span className="ml-2 font-medium dark:text-gray-200">
                                         {actividad.ruta_codigo} Km {actividad.km || '-'} {actividad.sentido && `(${actividad.sentido})`}
                                     </span>
                                 </div>
@@ -116,23 +120,23 @@ export default function VerActividadPage() {
                             <div className="flex items-center gap-2">
                                 <User className="w-4 h-4 text-gray-400" />
                                 <div>
-                                    <span className="text-gray-500">Registrado por:</span>
-                                    <span className="ml-2 font-medium">{actividad.creado_por_nombre}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Registrado por:</span>
+                                    <span className="ml-2 font-medium dark:text-gray-200">{actividad.creado_por_nombre}</span>
                                 </div>
                             </div>
                         )}
                         {actividad.tipo_actividad_categoria && (
                             <div>
-                                <span className="text-gray-500">Categoria:</span>
-                                <span className="ml-2 font-medium">{actividad.tipo_actividad_categoria}</span>
+                                <span className="text-gray-500 dark:text-gray-400">Categoria:</span>
+                                <span className="ml-2 font-medium dark:text-gray-200">{actividad.tipo_actividad_categoria}</span>
                             </div>
                         )}
                         {actividad.salida_ruta_codigo && (
                             <div className="flex items-center gap-2">
                                 <Truck className="w-4 h-4 text-gray-400" />
                                 <div>
-                                    <span className="text-gray-500">Ruta de salida:</span>
-                                    <span className="ml-2 font-medium">{actividad.salida_ruta_codigo}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">Ruta de salida:</span>
+                                    <span className="ml-2 font-medium dark:text-gray-200">{actividad.salida_ruta_codigo}</span>
                                 </div>
                             </div>
                         )}
@@ -141,16 +145,16 @@ export default function VerActividadPage() {
 
                 {/* Tripulacion */}
                 {tripulacion.length > 0 && (
-                    <div className="bg-white rounded-lg shadow p-6">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                         <div className="flex items-center gap-2 mb-4">
                             <Users className="w-5 h-5 text-green-600" />
-                            <h2 className="text-lg font-semibold text-gray-800">Tripulacion</h2>
+                            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Tripulacion</h2>
                         </div>
                         <div className="flex flex-wrap gap-3">
                             {tripulacion.map((t, idx) => (
-                                <div key={idx} className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
-                                    <span className="text-xs font-semibold text-green-700 uppercase">{t.rol_tripulacion}:</span>
-                                    <span className="text-sm text-gray-800">{t.nombre_completo}</span>
+                                <div key={idx} className="flex items-center gap-2 bg-green-50 dark:bg-green-900/30 px-3 py-2 rounded-lg border border-green-200 dark:border-green-700">
+                                    <span className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase">{t.rol_tripulacion}:</span>
+                                    <span className="text-sm text-gray-800 dark:text-gray-200">{t.nombre_completo}</span>
                                 </div>
                             ))}
                         </div>
@@ -159,21 +163,21 @@ export default function VerActividadPage() {
 
                 {/* Observaciones */}
                 {actividad.observaciones && (
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-2">Observaciones</h2>
-                        <p className="text-gray-700 whitespace-pre-wrap">{actividad.observaciones}</p>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Observaciones</h2>
+                        <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{actividad.observaciones}</p>
                     </div>
                 )}
 
                 {/* Datos JSONB */}
                 {datosKeys.length > 0 && (
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4">Datos Adicionales</h2>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Datos Adicionales</h2>
                         <div className="grid grid-cols-2 gap-3 text-sm">
                             {datosKeys.map(key => (
-                                <div key={key} className="bg-gray-50 rounded-lg p-3">
-                                    <span className="text-gray-500 text-xs uppercase">{key.replace(/_/g, ' ')}</span>
-                                    <p className="font-medium text-gray-900 mt-1">
+                                <div key={key} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                                    <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">{key.replace(/_/g, ' ')}</span>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100 mt-1">
                                         {typeof datos[key] === 'object' ? JSON.stringify(datos[key]) : String(datos[key])}
                                     </p>
                                 </div>
@@ -184,9 +188,9 @@ export default function VerActividadPage() {
 
                 {/* Coordenadas */}
                 {actividad.latitud && actividad.longitud && (
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-2">Coordenadas</h2>
-                        <p className="text-sm text-gray-600">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Coordenadas</h2>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                             {actividad.latitud}, {actividad.longitud}
                         </p>
                     </div>

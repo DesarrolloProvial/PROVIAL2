@@ -34,6 +34,7 @@ import {
   Edit2,
   ArrowLeft
 } from 'lucide-react';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function DashboardSedesPage() {
   const { user, logout } = useAuthStore();
@@ -121,24 +122,24 @@ export default function DashboardSedesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-20">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-20">
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/operaciones')}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
                 title="Regresar"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   Asignaciones Pendientes
                 </h1>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   Hoy y pr&oacute;ximos d&iacute;as - {user?.sede_nombre || 'Administrador'}
                 </p>
               </div>
@@ -149,7 +150,7 @@ export default function DashboardSedesPage() {
                 onClick={() => setIncluirBorradores(!incluirBorradores)}
                 className={`px-3 py-2 rounded-lg flex items-center gap-2 ${incluirBorradores
                   ? 'bg-purple-100 text-purple-700'
-                  : 'bg-gray-100 text-gray-600'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                   }`}
                 title={incluirBorradores ? 'Mostrando borradores' : 'Ocultando borradores'}
               >
@@ -157,31 +158,33 @@ export default function DashboardSedesPage() {
                 Borradores
               </button>
 
+              <ThemeToggle />
+
               <button
                 onClick={() => refetch()}
                 disabled={isLoading}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg"
               >
                 <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
               </button>
 
               <button
                 onClick={expandirTodas}
-                className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
               >
                 Expandir todas
               </button>
 
               <button
                 onClick={contraerTodas}
-                className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
               >
                 Contraer todas
               </button>
 
               <button
                 onClick={() => navigate('/operaciones/configuracion-sedes')}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg"
                 title="Configurar colores de sedes"
               >
                 <Settings className="w-5 h-5" />
@@ -189,7 +192,7 @@ export default function DashboardSedesPage() {
 
               <button
                 onClick={logout}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg"
               >
                 Cerrar Sesion
               </button>
@@ -201,9 +204,9 @@ export default function DashboardSedesPage() {
       {/* Content */}
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {isLoading ? (
-          <div className="text-center py-12 text-gray-500">Cargando asignaciones...</div>
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400">Cargando asignaciones...</div>
         ) : !data?.sedes || data.sedes.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">No hay datos para mostrar</div>
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400">No hay datos para mostrar</div>
         ) : (
           <div className="space-y-4">
             {data.sedes.map((sede) => (
@@ -229,21 +232,21 @@ export default function DashboardSedesPage() {
       {/* Modal Agregar Aviso */}
       {modalAviso.visible && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Agregar Aviso</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Agregar Aviso</h3>
               <button onClick={() => setModalAviso({ visible: false, asignacionId: null })}>
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo</label>
                 <select
                   value={nuevoAviso.tipo}
                   onChange={(e) => setNuevoAviso({ ...nuevoAviso, tipo: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="INFO">Informativo</option>
                   <option value="ADVERTENCIA">Advertencia</option>
@@ -252,18 +255,18 @@ export default function DashboardSedesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mensaje</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mensaje</label>
                 <textarea
                   value={nuevoAviso.mensaje}
                   onChange={(e) => setNuevoAviso({ ...nuevoAviso, mensaje: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                   placeholder="Escribe el aviso..."
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color</label>
                 <input
                   type="color"
                   value={nuevoAviso.color}
@@ -276,7 +279,7 @@ export default function DashboardSedesPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setModalAviso({ visible: false, asignacionId: null })}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg"
               >
                 Cancelar
               </button>
@@ -372,8 +375,8 @@ function SedeCard({
           {/* Badge borrador/publicado */}
           {sede.turno_id && (
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${sede.publicado
-              ? 'bg-green-100 text-green-700'
-              : 'bg-yellow-100 text-yellow-700'
+              ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+              : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400'
               }`}>
               {sede.publicado ? 'Publicado' : 'Borrador'}
             </span>
@@ -493,7 +496,7 @@ function AsignacionRow({
 
           {/* Estado */}
           {asignacion.en_ruta && (
-            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded font-medium">
+            <span className="px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 text-xs rounded font-medium">
               EN RUTA
             </span>
           )}
@@ -586,7 +589,7 @@ function AsignacionRow({
 
                   {/* Alertas de rotación */}
                   {(t.veces_en_ruta && t.veces_en_ruta >= 3) && (
-                    <span className="text-xs bg-yellow-100 text-yellow-700 px-1 rounded">
+                    <span className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400 px-1 rounded">
                       {t.veces_en_ruta}x ruta
                     </span>
                   )}

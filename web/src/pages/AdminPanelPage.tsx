@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import PageHeader from '../components/PageHeader';
+import ThemeToggle from '../components/ThemeToggle';
 import { useAuthStore } from '../store/authStore';
 import {
   Users,
@@ -187,11 +188,11 @@ export default function AdminPanelPage() {
 
   if (!esAdminCentral && !esAdmin) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+        <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg text-center">
           <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Acceso Denegado</h1>
-          <p className="text-gray-600">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Acceso Denegado</h1>
+          <p className="text-gray-600 dark:text-gray-400">
             Solo el Encargado de Nominas Central puede acceder a este panel.
           </p>
         </div>
@@ -200,15 +201,16 @@ export default function AdminPanelPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <PageHeader
         title="Panel de Administracion"
         subtitle="Gestion de roles y permisos del sistema"
         backTo="/operaciones"
       >
+        <ThemeToggle />
         <button
           onClick={() => refetch()}
-          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
           title="Actualizar"
         >
           <RefreshCw className={`w-5 h-5 ${loadingUsuarios ? 'animate-spin' : ''}`} />
@@ -224,7 +226,7 @@ export default function AdminPanelPage() {
               <div>
                 <h3 className="font-semibold text-red-800">Error al cargar datos</h3>
                 <p className="text-sm text-red-600 mt-1">
-                  No se pudieron obtener algunos datos del servidor. Verifica tu conexión.
+                  No se pudieron obtener algunos datos del servidor. Verifica tu conexion.
                 </p>
                 <button
                   onClick={() => refetch()}
@@ -239,66 +241,66 @@ export default function AdminPanelPage() {
 
         {/* Resumen de Roles */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <Users className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {usuarios.filter(u => u.rol_nombre === 'COP').length}
                 </p>
-                <p className="text-sm text-gray-500">Operadores COP</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Operadores COP</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-purple-100 rounded-lg">
                 <UserCog className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {usuarios.filter(u => u.rol_nombre === 'OPERACIONES').length}
                 </p>
-                <p className="text-sm text-gray-500">Operaciones</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Operaciones</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-indigo-100 rounded-lg">
                 <Shield className="w-5 h-5 text-indigo-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {usuarios.filter(u => u.rol_nombre === 'ENCARGADO_NOMINAS').length}
                 </p>
-                <p className="text-sm text-gray-500">Enc. Nominas</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Enc. Nominas</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 rounded-lg">
                 <Building2 className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{sedes.length}</p>
-                <p className="text-sm text-gray-500">Sedes</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{sedes.length}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Sedes</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Buscar Brigada para asignar rol */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-green-600" />
               Asignar Rol a Brigada
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Busca una brigada por chapa o nombre para asignarle un rol del sistema
             </p>
           </div>
@@ -312,7 +314,7 @@ export default function AdminPanelPage() {
                   value={searchBrigada}
                   onChange={(e) => setSearchBrigada(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleBuscarBrigada()}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                 />
               </div>
               <button
@@ -325,7 +327,7 @@ export default function AdminPanelPage() {
             </div>
 
             {brigadasEncontradas.length > 0 && (
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border dark:border-gray-700 rounded-lg overflow-hidden">
                 <table className="w-full">
                   <thead className="bg-green-600 text-white">
                     <tr>
@@ -336,15 +338,17 @@ export default function AdminPanelPage() {
                       <th className="px-4 py-2 text-center text-sm font-semibold">Accion</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                     {brigadasEncontradas.map(brigada => (
-                      <tr key={brigada.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-2 font-mono text-sm">{brigada.chapa}</td>
-                        <td className="px-4 py-2 font-medium text-gray-900">{brigada.nombre}</td>
-                        <td className="px-4 py-2 text-sm text-gray-700">{brigada.sede_nombre}</td>
+                      <tr key={brigada.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="px-4 py-2 font-mono text-sm dark:text-gray-300">{brigada.chapa}</td>
+                        <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">{brigada.nombre}</td>
+                        <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{brigada.sede_nombre}</td>
                         <td className="px-4 py-2 text-center">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            brigada.activa ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                            brigada.activa
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                              : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
                           }`}>
                             {brigada.activa ? 'Activo' : 'Inactivo'}
                           </span>
@@ -378,19 +382,19 @@ export default function AdminPanelPage() {
             )}
 
             {searchBrigada && brigadasEncontradas.length === 0 && !buscandoBrigadas && (
-              <p className="text-center text-gray-500 py-4">No se encontraron brigadas</p>
+              <p className="text-center text-gray-500 dark:text-gray-400 py-4">No se encontraron brigadas</p>
             )}
           </div>
         </div>
 
         {/* Usuarios con Roles del Sistema */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <Shield className="w-5 h-5 text-indigo-600" />
               Usuarios con Roles del Sistema
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Usuarios que tienen acceso al panel web
             </p>
           </div>
@@ -405,14 +409,14 @@ export default function AdminPanelPage() {
                     placeholder="Buscar por nombre o chapa..."
                     value={searchSistema}
                     onChange={(e) => setSearchSistema(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                   />
                 </div>
               </div>
               <select
                 value={filtroRol}
                 onChange={(e) => setFiltroRol(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
               >
                 <option value="">Todos los roles</option>
                 {roles.filter(r => r.nombre !== 'BRIGADA').map(rol => (
@@ -422,7 +426,7 @@ export default function AdminPanelPage() {
               <select
                 value={filtroSede}
                 onChange={(e) => setFiltroSede(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
               >
                 <option value="">Todas las sedes</option>
                 {sedes.map(sede => (
@@ -444,20 +448,20 @@ export default function AdminPanelPage() {
                     <th className="px-4 py-3 text-center text-sm font-semibold">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {usuariosFiltrados.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                         No se encontraron usuarios con roles del sistema
                       </td>
                     </tr>
                   ) : (
                     usuariosFiltrados.map(usuario => (
-                      <tr key={usuario.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 font-medium text-gray-900">
+                      <tr key={usuario.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                           {usuario.nombre_completo}
                         </td>
-                        <td className="px-4 py-3 font-mono text-sm text-gray-700">
+                        <td className="px-4 py-3 font-mono text-sm text-gray-700 dark:text-gray-300">
                           {usuario.username}
                         </td>
                         <td className="px-4 py-3 text-center">
@@ -471,16 +475,16 @@ export default function AdminPanelPage() {
                             {usuario.rol_nombre}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                           {usuario.sede_nombre}
                         </td>
                         <td className="px-4 py-3 text-center">
                           {usuario.puede_ver_todas_sedes ? (
-                            <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
+                            <span className="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 rounded text-xs font-medium">
                               CENTRAL
                             </span>
                           ) : (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium">
+                            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded text-xs font-medium">
                               Regional
                             </span>
                           )}
@@ -492,7 +496,7 @@ export default function AdminPanelPage() {
                                 setModalCambiarRol(usuario);
                                 setNuevoRolId(usuario.rol_id?.toString() || '');
                               }}
-                              className="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded"
+                              className="p-1.5 text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded"
                               title="Cambiar rol"
                             >
                               <UserCog className="w-4 h-4" />
@@ -500,7 +504,7 @@ export default function AdminPanelPage() {
                             {usuario.rol_nombre === 'ENCARGADO_NOMINAS' && (
                               <button
                                 onClick={() => setModalPermisos(usuario)}
-                                className="p-1.5 text-amber-600 hover:bg-amber-100 rounded"
+                                className="p-1.5 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded"
                                 title="Cambiar permisos"
                               >
                                 <Key className="w-4 h-4" />
@@ -518,12 +522,12 @@ export default function AdminPanelPage() {
         </div>
 
         {/* Info */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
           <div className="flex items-start gap-3">
             <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-blue-900">Permisos del Panel</h3>
-              <ul className="mt-2 text-sm text-blue-800 space-y-1">
+              <h3 className="font-semibold text-blue-900 dark:text-blue-400">Permisos del Panel</h3>
+              <ul className="mt-2 text-sm text-blue-800 dark:text-blue-400 space-y-1">
                 <li><strong>CENTRAL:</strong> Puede ver y gestionar todas las sedes, asignar roles</li>
                 <li><strong>Regional:</strong> Solo puede ver y gestionar su propia sede</li>
               </ul>
@@ -535,13 +539,13 @@ export default function AdminPanelPage() {
       {/* Modal Cambiar Rol */}
       {modalCambiarRol && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                 {modalCambiarRol.rol_nombre === 'BRIGADA' ? 'Asignar Rol' : 'Cambiar Rol'}
               </h2>
-              <button onClick={() => setModalCambiarRol(null)} className="p-1 hover:bg-gray-100 rounded">
-                <X className="w-5 h-5" />
+              <button onClick={() => setModalCambiarRol(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                <X className="w-5 h-5 dark:text-gray-300" />
               </button>
             </div>
             <div className="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
@@ -560,11 +564,11 @@ export default function AdminPanelPage() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Nuevo Rol *</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Nuevo Rol *</label>
                 <select
                   value={nuevoRolId}
                   onChange={(e) => setNuevoRolId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="">Seleccionar rol</option>
                   {roles.map(rol => (
@@ -578,7 +582,7 @@ export default function AdminPanelPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setModalCambiarRol(null)}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium"
               >
                 Cancelar
               </button>
@@ -600,11 +604,11 @@ export default function AdminPanelPage() {
       {/* Modal Permisos */}
       {modalPermisos && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Permisos de Acceso</h2>
-              <button onClick={() => setModalPermisos(null)} className="p-1 hover:bg-gray-100 rounded">
-                <X className="w-5 h-5" />
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Permisos de Acceso</h2>
+              <button onClick={() => setModalPermisos(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                <X className="w-5 h-5 dark:text-gray-300" />
               </button>
             </div>
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
@@ -617,10 +621,10 @@ export default function AdminPanelPage() {
               </p>
             </div>
             <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-2">Tipo de Acceso</h3>
+              <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Tipo de Acceso</h3>
                 <div className="space-y-2">
-                  <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-white">
+                  <label className="flex items-center gap-3 p-3 border dark:border-gray-600 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-gray-600">
                     <input
                       type="radio"
                       name="tipoAcceso"
@@ -629,11 +633,11 @@ export default function AdminPanelPage() {
                       className="w-4 h-4 text-amber-600"
                     />
                     <div>
-                      <p className="font-medium text-gray-900">Regional</p>
-                      <p className="text-sm text-gray-500">Solo puede gestionar su sede</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">Regional</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Solo puede gestionar su sede</p>
                     </div>
                   </label>
-                  <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-white">
+                  <label className="flex items-center gap-3 p-3 border dark:border-gray-600 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-gray-600">
                     <input
                       type="radio"
                       name="tipoAcceso"
@@ -642,8 +646,8 @@ export default function AdminPanelPage() {
                       className="w-4 h-4 text-amber-600"
                     />
                     <div>
-                      <p className="font-medium text-gray-900">Central</p>
-                      <p className="text-sm text-gray-500">Puede gestionar todas las sedes y asignar roles</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">Central</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Puede gestionar todas las sedes y asignar roles</p>
                     </div>
                   </label>
                 </div>
@@ -652,7 +656,7 @@ export default function AdminPanelPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setModalPermisos(null)}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium"
               >
                 Cancelar
               </button>

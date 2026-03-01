@@ -6,6 +6,7 @@ import {
 import { ArrowLeft, RefreshCw, Filter, X, Loader2, MapPin, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import ThemeToggle from '../components/ThemeToggle';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16', '#06b6d4', '#e11d48'];
 
@@ -145,24 +146,25 @@ export default function DashboardEstadisticasPage() {
   const clickStyle = { cursor: 'pointer' };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-20">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/hub')} className="p-2 hover:bg-gray-100 rounded-lg">
-              <ArrowLeft className="w-5 h-5" />
+            <button onClick={() => navigate('/hub')} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg">
+              <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             </button>
-            <h1 className="text-xl font-bold text-gray-800">Estadisticas de Accidentologia</h1>
-            <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">{origenLabel}</span>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-gray-200">Estadisticas de Accidentologia</h1>
+            <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">{origenLabel}</span>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-1 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg">
+              className="flex items-center gap-1 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg">
               <Filter className="w-4 h-4" /> Filtros
             </button>
-            <button onClick={fetchData} className="p-2 hover:bg-gray-100 rounded-lg" disabled={loading}>
-              <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            <ThemeToggle />
+            <button onClick={fetchData} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg" disabled={loading}>
+              <RefreshCw className={`w-5 h-5 text-gray-700 dark:text-gray-300 ${loading ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
@@ -171,16 +173,16 @@ export default function DashboardEstadisticasPage() {
       <div className="max-w-7xl mx-auto px-4 py-4">
         {/* Filtros */}
         {showFilters && (
-          <div className="bg-white rounded-xl shadow-sm border p-4 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-700">Filtros</h3>
-              <button onClick={clearFilters} className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1">
+              <h3 className="font-semibold text-gray-700 dark:text-gray-300">Filtros</h3>
+              <button onClick={clearFilters} className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1">
                 <X className="w-3 h-3" /> Limpiar
               </button>
             </div>
 
             {/* Origen datos - toggle prominente */}
-            <div className="flex gap-1 mb-4 bg-gray-100 rounded-lg p-1 w-fit">
+            <div className="flex gap-1 mb-4 bg-gray-100 dark:bg-gray-700 rounded-lg p-1 w-fit">
               {[
                 { val: 'ALL', label: 'Todos' },
                 { val: 'APP', label: 'App movil' },
@@ -190,8 +192,8 @@ export default function DashboardEstadisticasPage() {
                   onClick={() => updateFilter('origen_datos', o.val)}
                   className={`px-4 py-2 text-sm rounded-md transition ${
                     filters.origen_datos === o.val
-                      ? 'bg-white shadow text-blue-700 font-medium'
-                      : 'text-gray-600 hover:text-gray-800'
+                      ? 'bg-white dark:bg-gray-800 shadow text-blue-700 dark:text-blue-400 font-medium'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                   }`}>
                   {o.label}
                 </button>
@@ -200,21 +202,21 @@ export default function DashboardEstadisticasPage() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
               <div>
-                <label className="text-xs text-gray-500">Desde</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400">Desde</label>
                 <input type="date" value={filters.fecha_inicio}
                   onChange={e => updateFilter('fecha_inicio', e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm" />
+                  className="w-full border dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400" />
               </div>
               <div>
-                <label className="text-xs text-gray-500">Hasta</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400">Hasta</label>
                 <input type="date" value={filters.fecha_fin}
                   onChange={e => updateFilter('fecha_fin', e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm" />
+                  className="w-full border dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400" />
               </div>
               <div>
-                <label className="text-xs text-gray-500">Sede</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400">Sede</label>
                 <select value={filters.sede_id} onChange={e => updateFilter('sede_id', e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm">
+                  className="w-full border dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100">
                   <option value="">Todas</option>
                   {sedes.length > 0
                     ? sedes.map((s: any) => <option key={s.id} value={s.id}>{s.nombre}</option>)
@@ -223,25 +225,25 @@ export default function DashboardEstadisticasPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-gray-500">Departamento</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400">Departamento</label>
                 <select value={filters.departamento_id} onChange={e => updateFilter('departamento_id', e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm">
+                  className="w-full border dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100">
                   <option value="">Todos</option>
                   {departamentos.map((d: any) => <option key={d.id} value={d.id}>{d.nombre}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs text-gray-500">Ruta</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400">Ruta</label>
                 <select value={filters.ruta_id} onChange={e => updateFilter('ruta_id', e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm">
+                  className="w-full border dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100">
                   <option value="">Todas</option>
                   {rutas.map((r: any) => <option key={r.id} value={r.id}>{r.codigo}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs text-gray-500">Tipo situacion</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400">Tipo situacion</label>
                 <select value={filters.tipo_situacion} onChange={e => updateFilter('tipo_situacion', e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm">
+                  className="w-full border dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100">
                   <option value="">Todos</option>
                   <option value="INCIDENTE">Incidente</option>
                   <option value="ASISTENCIA_VEHICULAR">Asistencia</option>
@@ -249,9 +251,9 @@ export default function DashboardEstadisticasPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-gray-500">Clima</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400">Clima</label>
                 <select value={filters.clima} onChange={e => updateFilter('clima', e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm">
+                  className="w-full border dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100">
                   <option value="">Todos</option>
                   <option value="DESPEJADO">Despejado</option>
                   <option value="NUBLADO">Nublado</option>
@@ -260,9 +262,9 @@ export default function DashboardEstadisticasPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-gray-500">Area</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400">Area</label>
                 <select value={filters.area} onChange={e => updateFilter('area', e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm">
+                  className="w-full border dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100">
                   <option value="">Todas</option>
                   <option value="URBANA">Urbana</option>
                   <option value="RURAL">Rural</option>
@@ -271,7 +273,7 @@ export default function DashboardEstadisticasPage() {
             </div>
 
             {filters.origen_datos === 'EXCEL_2025' && (
-              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+              <div className="mt-3 p-3 bg-amber-50 dark:bg-yellow-900/20 border border-amber-200 dark:border-yellow-800 rounded-lg text-sm text-amber-800 dark:text-yellow-400">
                 Los datos importados del Excel solo incluyen campos basicos (ubicacion, tipo, vehiculos).
                 No tienen tiempos de respuesta, multimedia ni datos detallados de autoridades.
               </div>
@@ -295,8 +297,8 @@ export default function DashboardEstadisticasPage() {
                 { label: 'Ilesos', value: data.kpis?.total_ilesos, color: 'green' },
                 { label: 'Trasladados', value: data.kpis?.total_trasladados, color: 'cyan' },
               ].map((kpi, i) => (
-                <div key={i} className="bg-white rounded-xl shadow-sm border p-4">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">{kpi.label}</p>
+                <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">{kpi.label}</p>
                   <p className={`text-2xl font-bold text-${kpi.color}-600 mt-1`}>
                     {(kpi.value || 0).toLocaleString()}
                   </p>
@@ -304,7 +306,7 @@ export default function DashboardEstadisticasPage() {
               ))}
             </div>
 
-            <p className="text-xs text-gray-400 mb-4 italic">Click en cualquier barra o sector para ver el detalle de las situaciones</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4 italic">Click en cualquier barra o sector para ver el detalle de las situaciones</p>
 
             {/* Graficos Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -540,7 +542,7 @@ export default function DashboardEstadisticasPage() {
             </div>
           </>
         ) : (
-          <div className="text-center py-20 text-gray-500">No se pudieron cargar las estadisticas</div>
+          <div className="text-center py-20 text-gray-500 dark:text-gray-400">No se pudieron cargar las estadisticas</div>
         )}
       </div>
 
@@ -563,8 +565,8 @@ export default function DashboardEstadisticasPage() {
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border p-4">
-      <h3 className="text-sm font-semibold text-gray-700 mb-3">{title}</h3>
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-4">
+      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">{title}</h3>
       {children}
     </div>
   );
@@ -580,17 +582,17 @@ function DetalleModal({ title, data, loading, onClose }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-10 bg-black/50" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-[95vw] max-w-6xl max-h-[85vh] flex flex-col"
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-[95vw] max-w-6xl max-h-[85vh] flex flex-col"
         onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
+        <div className="flex items-center justify-between px-6 py-4 border-b dark:border-gray-700">
           <div>
-            <h2 className="text-lg font-bold text-gray-800">{title}</h2>
-            {!loading && <p className="text-sm text-gray-500">{data.length} situacion(es) encontrada(s){data.length === 500 ? ' (limite 500)' : ''}</p>}
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">{title}</h2>
+            {!loading && <p className="text-sm text-gray-500 dark:text-gray-400">{data.length} situacion(es) encontrada(s){data.length === 500 ? ' (limite 500)' : ''}</p>}
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg">
+            <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
         </div>
 
@@ -601,7 +603,7 @@ function DetalleModal({ title, data, loading, onClose }: {
               <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
             </div>
           ) : data.length === 0 ? (
-            <p className="text-center py-10 text-gray-400">No se encontraron situaciones</p>
+            <p className="text-center py-10 text-gray-400 dark:text-gray-500">No se encontraron situaciones</p>
           ) : (
             <div className="space-y-2">
               {data.map((s: any) => (
@@ -622,27 +624,27 @@ function SituacionRow({ s, expanded, onToggle }: { s: any; expanded: boolean; on
     hour: '2-digit', minute: '2-digit',
   }) : '-';
 
-  const tipoColor = s.tipo_situacion === 'INCIDENTE' ? 'bg-red-100 text-red-700'
-    : s.tipo_situacion === 'EMERGENCIA' ? 'bg-amber-100 text-amber-700'
-    : 'bg-blue-100 text-blue-700';
+  const tipoColor = s.tipo_situacion === 'INCIDENTE' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+    : s.tipo_situacion === 'EMERGENCIA' ? 'bg-amber-100 text-amber-700 dark:bg-yellow-900/40 dark:text-yellow-400'
+    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400';
 
   return (
-    <div className={`border rounded-lg transition ${expanded ? 'ring-2 ring-blue-300' : 'hover:bg-gray-50'}`}>
+    <div className={`border dark:border-gray-700 rounded-lg transition ${expanded ? 'ring-2 ring-blue-300 dark:ring-blue-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
       {/* Fila principal - siempre visible */}
       <div className="flex items-center gap-3 px-4 py-3 cursor-pointer" onClick={onToggle}>
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${tipoColor}`}>
           {s.tipo_situacion_nombre || s.tipo_situacion || '-'}
         </span>
-        <span className="text-xs text-gray-400 font-mono">{s.codigo_boleta || `#${s.id}`}</span>
-        <span className="text-sm text-gray-700 flex-1">{s.departamento || ''} {s.municipio ? `/ ${s.municipio}` : ''}</span>
-        <span className="text-xs text-gray-500">{s.ruta ? `Ruta ${s.ruta}` : ''} {s.km ? `km ${s.km}` : ''}</span>
-        <span className="text-xs text-gray-400">{fecha}</span>
-        <span className="text-xs text-gray-300">{expanded ? '▲' : '▼'}</span>
+        <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">{s.codigo_boleta || `#${s.id}`}</span>
+        <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">{s.departamento || ''} {s.municipio ? `/ ${s.municipio}` : ''}</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400">{s.ruta ? `Ruta ${s.ruta}` : ''} {s.km ? `km ${s.km}` : ''}</span>
+        <span className="text-xs text-gray-400 dark:text-gray-500">{fecha}</span>
+        <span className="text-xs text-gray-300 dark:text-gray-600">{expanded ? '▲' : '▼'}</span>
       </div>
 
       {/* Detalle expandido */}
       {expanded && (
-        <div className="px-4 pb-4 border-t bg-gray-50">
+        <div className="px-4 pb-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 text-sm">
             <Detail label="ID" value={s.id} />
             <Detail label="Boleta" value={s.codigo_boleta} />
@@ -667,7 +669,7 @@ function SituacionRow({ s, expanded, onToggle }: { s: any; expanded: boolean; on
           </div>
           {s.latitud && s.longitud && (
             <div className="mt-3 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-gray-400" />
+              <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500" />
               <a href={`https://www.google.com/maps?q=${s.latitud},${s.longitud}`}
                 target="_blank" rel="noopener noreferrer"
                 className="text-xs text-blue-600 hover:underline flex items-center gap-1">
@@ -687,14 +689,14 @@ function Detail({ label, value, highlight, span }: {
 }) {
   if (value === null || value === undefined || value === '') return (
     <div className={span === 2 ? 'col-span-2' : ''}>
-      <p className="text-xs text-gray-400">{label}</p>
-      <p className="text-gray-300">-</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500">{label}</p>
+      <p className="text-gray-300 dark:text-gray-600">-</p>
     </div>
   );
   return (
     <div className={span === 2 ? 'col-span-2' : ''}>
-      <p className="text-xs text-gray-400">{label}</p>
-      <p className={highlight || 'text-gray-700'}>{value}</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500">{label}</p>
+      <p className={highlight || 'text-gray-700 dark:text-gray-300'}>{value}</p>
     </div>
   );
 }

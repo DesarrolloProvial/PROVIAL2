@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import PageHeader from '../components/PageHeader';
+import ThemeToggle from '../components/ThemeToggle';
 import { useAuthStore } from '../store/authStore';
 import {
   administracionAPI,
@@ -98,11 +99,11 @@ export default function SuperAdminPage() {
 
   if (!canAccess) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+        <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg text-center">
           <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Acceso Denegado</h1>
-          <p className="text-gray-600">Solo administradores pueden acceder a este panel.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Acceso Denegado</h1>
+          <p className="text-gray-600 dark:text-gray-400">Solo administradores pueden acceder a este panel.</p>
         </div>
       </div>
     );
@@ -119,18 +120,19 @@ export default function SuperAdminPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <PageHeader
         title="Super Administrador"
         subtitle={`Panel de control del sistema - ${isSuperAdmin ? 'SUPER_ADMIN' : 'ADMIN'}`}
         backTo="/operaciones"
       >
+        <ThemeToggle />
         <button
           onClick={() => {
             refetchStats();
             queryClient.invalidateQueries({ queryKey: ['admin'] });
           }}
-          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
           title="Actualizar"
         >
           <RefreshCw className={`w-5 h-5 ${loadingStats ? 'animate-spin' : ''}`} />
@@ -139,8 +141,8 @@ export default function SuperAdminPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="border-b border-gray-200">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+          <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="flex flex-wrap -mb-px">
               {tabs.map((tab) => (
                 <button
@@ -148,7 +150,7 @@ export default function SuperAdminPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id
                     ? 'border-indigo-600 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                     }`}
                 >
                   {tab.icon}
@@ -253,16 +255,16 @@ function DashboardTab({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Departamentos */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-indigo-600" />
               Departamentos del Sistema
             </h3>
             {isSuperAdmin && (
               <button
                 onClick={() => setModalDepartamento('new')}
-                className="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded"
+                className="p-1.5 text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded"
                 title="Agregar departamento"
               >
                 <Plus className="w-5 h-5" />
@@ -273,20 +275,22 @@ function DashboardTab({
             {departamentos.map((depto) => (
               <div
                 key={depto.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <div>
-                  <p className="font-medium text-gray-900">{depto.nombre}</p>
-                  <p className="text-sm text-gray-500">{depto.codigo}</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">{depto.nombre}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{depto.codigo}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {depto.usa_sistema_grupos && (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                    <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 text-xs rounded">
                       Usa Grupos
                     </span>
                   )}
                   <span
-                    className={`px-2 py-1 text-xs rounded ${depto.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    className={`px-2 py-1 text-xs rounded ${depto.activo
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
                       }`}
                   >
                     {depto.activo ? 'Activo' : 'Inactivo'}
@@ -294,7 +298,7 @@ function DashboardTab({
                   {isSuperAdmin && (
                     <button
                       onClick={() => setModalDepartamento(depto)}
-                      className="p-1 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded"
+                      className="p-1 text-gray-500 dark:text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded"
                       title="Editar"
                     >
                       <Edit2 className="w-4 h-4" />
@@ -307,16 +311,16 @@ function DashboardTab({
         </div>
 
         {/* Sedes */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <MapPin className="w-5 h-5 text-green-600" />
               Sedes ({sedes.length})
             </h3>
             {isSuperAdmin && (
               <button
                 onClick={() => setModalSede('new')}
-                className="p-1.5 text-green-600 hover:bg-green-100 rounded"
+                className="p-1.5 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/40 rounded"
                 title="Agregar sede"
               >
                 <Plus className="w-5 h-5" />
@@ -325,16 +329,16 @@ function DashboardTab({
           </div>
           <div className="space-y-2 max-h-80 overflow-y-auto">
             {sedes.map((sede) => (
-              <div key={sede.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div key={sede.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-gray-900 truncate">{sede.nombre}</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{sede.nombre}</p>
                     {sede.es_sede_central && (
                       <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" />
                     )}
                   </div>
-                  <p className="text-sm text-gray-500">{sede.codigo}</p>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{sede.codigo}</p>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-400 dark:text-gray-500">
                     <span className="flex items-center gap-1">
                       <Users className="w-3 h-3" />
                       {sede.usuarios_count}
@@ -344,7 +348,9 @@ function DashboardTab({
                 </div>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`px-2 py-1 text-xs rounded ${sede.activa ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    className={`px-2 py-1 text-xs rounded ${sede.activa
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
                       }`}
                   >
                     {sede.activa ? 'Activa' : 'Inactiva'}
@@ -352,7 +358,7 @@ function DashboardTab({
                   {isSuperAdmin && (
                     <button
                       onClick={() => setModalSede(sede)}
-                      className="p-1 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded"
+                      className="p-1 text-gray-500 dark:text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/40 rounded"
                       title="Editar"
                     >
                       <Edit2 className="w-4 h-4" />
@@ -366,16 +372,16 @@ function DashboardTab({
       </div>
 
       {/* Usuarios por Rol */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
           <Users className="w-5 h-5 text-indigo-600" />
           Usuarios por Rol
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {estadisticas?.usuariosPorRol?.map((item) => (
-            <div key={item.rol} className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-2xl font-bold text-gray-700">{item.cantidad}</p>
-              <p className="text-sm text-gray-600">{item.rol}</p>
+            <div key={item.rol} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <p className="text-2xl font-bold text-gray-700 dark:text-gray-200">{item.cantidad}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{item.rol}</p>
             </div>
           ))}
         </div>
@@ -469,47 +475,47 @@ function ModalDepartamento({
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             {isNew ? 'Nuevo Departamento' : 'Editar Departamento'}
           </h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+            <X className="w-5 h-5 dark:text-gray-300" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Codigo</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Codigo</label>
             <input
               type="text"
               value={formData.codigo}
               onChange={(e) => setFormData({ ...formData, codigo: e.target.value.toUpperCase() })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
               placeholder="Ej: BRIGADA"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre</label>
             <input
               type="text"
               value={formData.nombre}
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
               placeholder="Ej: Brigadas de Campo"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripcion</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripcion</label>
             <textarea
               value={formData.descripcion}
               onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
               rows={2}
               placeholder="Descripcion del departamento..."
             />
@@ -521,9 +527,9 @@ function ModalDepartamento({
                 type="checkbox"
                 checked={formData.usa_sistema_grupos}
                 onChange={(e) => setFormData({ ...formData, usa_sistema_grupos: e.target.checked })}
-                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                className="w-4 h-4 text-indigo-600 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500"
               />
-              <span className="text-sm text-gray-700">Usa Sistema de Grupos</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Usa Sistema de Grupos</span>
             </label>
 
             {!isNew && (
@@ -532,9 +538,9 @@ function ModalDepartamento({
                   type="checkbox"
                   checked={formData.activo}
                   onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
-                  className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  className="w-4 h-4 text-green-600 border-gray-300 dark:border-gray-600 rounded focus:ring-green-500"
                 />
-                <span className="text-sm text-gray-700">Activo</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Activo</span>
               </label>
             )}
           </div>
@@ -543,7 +549,7 @@ function ModalDepartamento({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
+              className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
             >
               Cancelar
             </button>
@@ -628,36 +634,36 @@ function ModalSede({
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             {isNew ? 'Nueva Sede' : 'Editar Sede'}
           </h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+            <X className="w-5 h-5 dark:text-gray-300" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Codigo</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Codigo</label>
               <input
                 type="text"
                 value={formData.codigo}
                 onChange={(e) => setFormData({ ...formData, codigo: e.target.value.toUpperCase() })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                 placeholder="Ej: GUATE"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre</label>
               <input
                 type="text"
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                 placeholder="Ej: Guatemala"
                 required
               />
@@ -665,14 +671,14 @@ function ModalSede({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Departamento</label>
             <select
               value={formData.departamento_id || ''}
               onChange={(e) => setFormData({
                 ...formData,
                 departamento_id: e.target.value ? parseInt(e.target.value) : undefined,
               })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">Seleccionar...</option>
               {departamentosGeo?.map((d) => (
@@ -687,9 +693,9 @@ function ModalSede({
                 type="checkbox"
                 checked={formData.es_sede_central}
                 onChange={(e) => setFormData({ ...formData, es_sede_central: e.target.checked })}
-                className="w-4 h-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500"
+                className="w-4 h-4 text-yellow-600 border-gray-300 dark:border-gray-600 rounded focus:ring-yellow-500"
               />
-              <span className="text-sm text-gray-700 flex items-center gap-1">
+              <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
                 <Star className="w-4 h-4 text-yellow-500" />
                 Sede Central
               </span>
@@ -701,9 +707,9 @@ function ModalSede({
                   type="checkbox"
                   checked={formData.activa}
                   onChange={(e) => setFormData({ ...formData, activa: e.target.checked })}
-                  className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  className="w-4 h-4 text-green-600 border-gray-300 dark:border-gray-600 rounded focus:ring-green-500"
                 />
-                <span className="text-sm text-gray-700">Activa</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Activa</span>
               </label>
             )}
           </div>
@@ -712,7 +718,7 @@ function ModalSede({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
+              className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
             >
               Cancelar
             </button>
@@ -742,12 +748,12 @@ function StatCard({
   bgColor: string;
 }) {
   return (
-    <div className="bg-white rounded-lg shadow p-4">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
       <div className="flex items-center gap-3">
         <div className={`p-2 rounded-lg ${bgColor}`}>{icon}</div>
         <div>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-          <p className="text-sm text-gray-500">{title}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
         </div>
       </div>
     </div>
@@ -832,7 +838,7 @@ function UsuariosTab({
   const habilitarResetMutation = useMutation({
     mutationFn: (userId: number) => administracionAPI.habilitarResetPassword(userId),
     onSuccess: () => {
-      alert('Reset de contraseña habilitado. El usuario podrá cambiar su contraseña desde la app móvil.');
+      alert('Reset de contrasena habilitado. El usuario podra cambiar su contrasena desde la app movil.');
       queryClient.invalidateQueries({ queryKey: ['admin-usuarios'] });
     },
     onError: (error: any) => {
@@ -843,7 +849,7 @@ function UsuariosTab({
   return (
     <div className="space-y-6">
       {/* Filtros */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="md:col-span-2 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -852,13 +858,13 @@ function UsuariosTab({
               placeholder="Buscar por nombre o chapa..."
               value={filtros.busqueda}
               onChange={(e) => setFiltros({ ...filtros, busqueda: e.target.value })}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
             />
           </div>
           <select
             value={filtros.sede_id}
             onChange={(e) => setFiltros({ ...filtros, sede_id: e.target.value })}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
           >
             <option value="">Todas las sedes</option>
             {sedes.map((sede) => (
@@ -870,7 +876,7 @@ function UsuariosTab({
           <select
             value={filtros.grupo}
             onChange={(e) => setFiltros({ ...filtros, grupo: e.target.value })}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
           >
             <option value="">Todos los grupos</option>
             <option value="0">Normal (L-V)</option>
@@ -881,7 +887,7 @@ function UsuariosTab({
           <select
             value={filtros.activo}
             onChange={(e) => setFiltros({ ...filtros, activo: e.target.value })}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
           >
             <option value="">Todos</option>
             <option value="true">Activos</option>
@@ -891,7 +897,7 @@ function UsuariosTab({
       </div>
 
       {/* Tabla */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-700 text-white">
@@ -906,25 +912,25 @@ function UsuariosTab({
                 <th className="px-4 py-3 text-center text-sm font-semibold">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     Cargando usuarios...
                   </td>
                 </tr>
               ) : usuarios?.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     No se encontraron usuarios
                   </td>
                 </tr>
               ) : (
                 usuarios?.map((usuario) => (
-                  <tr key={usuario.id} className="hover:bg-gray-50">
+                  <tr key={usuario.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="px-4 py-3">
                       <div>
-                        <p className="font-medium text-gray-900">{usuario.nombre_completo}</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">{usuario.nombre_completo}</p>
                         {usuario.es_encargado_grupo && (
                           <span className="inline-flex items-center gap-1 text-xs text-amber-600">
                             <Crown className="w-3 h-3" /> Encargado
@@ -932,7 +938,7 @@ function UsuariosTab({
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-mono text-sm text-gray-700">{usuario.chapa}</td>
+                    <td className="px-4 py-3 font-mono text-sm text-gray-700 dark:text-gray-300">{usuario.chapa}</td>
                     <td className="px-4 py-3 text-center">
                       <span
                         className={`px-2 py-1 rounded text-xs font-semibold ${usuario.rol_codigo === 'SUPER_ADMIN'
@@ -956,7 +962,7 @@ function UsuariosTab({
                         {getNombreGrupo(usuario.grupo)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{usuario.sede_nombre || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{usuario.sede_nombre || '-'}</td>
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() =>
@@ -994,20 +1000,20 @@ function UsuariosTab({
                       <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => setModalUsuario(usuario)}
-                          className="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded"
+                          className="p-1.5 text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded"
                           title="Editar usuario"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => {
-                            if (confirm(`¿Habilitar reset de contraseña para ${usuario.nombre_completo}?\n\nEl usuario podrá cambiar su contraseña desde la app móvil.`)) {
+                            if (confirm(`Habilitar reset de contrasena para ${usuario.nombre_completo}?\n\nEl usuario podra cambiar su contrasena desde la app movil.`)) {
                               habilitarResetMutation.mutate(usuario.id);
                             }
                           }}
                           disabled={habilitarResetMutation.isPending}
-                          className="p-1.5 text-orange-600 hover:bg-orange-100 rounded disabled:opacity-50"
-                          title="Habilitar reset de contraseña"
+                          className="p-1.5 text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900/40 rounded disabled:opacity-50"
+                          title="Habilitar reset de contrasena"
                         >
                           <KeyRound className="w-4 h-4" />
                         </button>
@@ -1061,31 +1067,31 @@ function ModalEditarUsuario({
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Editar Usuario</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
-            <X className="w-5 h-5" />
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Editar Usuario</h2>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+            <X className="w-5 h-5 dark:text-gray-300" />
           </button>
         </div>
 
         {/* Info */}
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <p className="font-semibold text-gray-900">{usuario.nombre_completo}</p>
-          <p className="text-sm text-gray-600">Chapa: {usuario.chapa}</p>
-          <p className="text-sm text-gray-600">Sede: {usuario.sede_nombre || 'Sin asignar'}</p>
-          <p className="text-sm text-gray-600">Rol actual: {usuario.rol_codigo}</p>
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <p className="font-semibold text-gray-900 dark:text-gray-100">{usuario.nombre_completo}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Chapa: {usuario.chapa}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Sede: {usuario.sede_nombre || 'Sin asignar'}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Rol actual: {usuario.rol_codigo}</p>
         </div>
 
         <div className="space-y-4">
           {/* Cambiar Grupo */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Grupo</label>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Grupo</label>
             <div className="flex gap-2">
               <select
                 value={nuevoGrupo}
                 onChange={(e) => setNuevoGrupo(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
               >
                 <option value="null">Sin asignar</option>
                 <option value="0">Normal (L-V)</option>
@@ -1107,12 +1113,12 @@ function ModalEditarUsuario({
           {/* Cambiar Rol (solo SUPER_ADMIN) */}
           {isSuperAdmin && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Rol</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Rol</label>
               <div className="flex gap-2">
                 <select
                   value={nuevoRolId}
                   onChange={(e) => setNuevoRolId(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="">Seleccionar rol</option>
                   {roles.map((rol) => (
@@ -1136,7 +1142,7 @@ function ModalEditarUsuario({
         <div className="flex justify-end mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium"
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium"
           >
             Cerrar
           </button>
@@ -1194,13 +1200,13 @@ function GruposTab({
   return (
     <div className="space-y-6">
       {/* Filtro por sede */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div className="flex items-center gap-4">
-          <label className="font-medium text-gray-700">Filtrar por sede:</label>
+          <label className="font-medium text-gray-700 dark:text-gray-300">Filtrar por sede:</label>
           <select
             value={sedeSeleccionada}
             onChange={(e) => setSedeSeleccionada(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
           >
             <option value="">Todas las sedes</option>
             {sedes.map((sede) => (
@@ -1213,12 +1219,12 @@ function GruposTab({
       </div>
 
       {/* Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
         <div className="flex items-start gap-3">
           <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-blue-900">Gestion de Grupos</h3>
-            <p className="text-sm text-blue-800 mt-1">
+            <h3 className="font-semibold text-blue-900 dark:text-blue-400">Gestion de Grupos</h3>
+            <p className="text-sm text-blue-800 dark:text-blue-400 mt-1">
               Activa o desactiva el acceso de cada grupo por departamento y sede.
               Los usuarios del grupo desactivado no podran iniciar sesion.
               Nota: El Centro de Operaciones (COP) no se ve afectado por estos bloqueos.
@@ -1228,35 +1234,35 @@ function GruposTab({
       </div>
 
       {isLoading ? (
-        <div className="text-center py-8 text-gray-500">Cargando estados de grupos...</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">Cargando estados de grupos...</div>
       ) : (
         Object.values(gruposPorSede || {}).map((sedeData) => (
-          <div key={sedeData.sede_id || 0} className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 bg-gray-50 border-b">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+          <div key={sedeData.sede_id || 0} className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-b dark:border-gray-600">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-indigo-600" />
                 {sedeData.sede_nombre}
               </h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-100">
+                <thead className="bg-gray-100 dark:bg-gray-800">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Departamento
                     </th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Normal (L-V)
                     </th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Grupo 1
                     </th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Grupo 2
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {departamentos
                     .filter((d) => d.usa_sistema_grupos)
                     .map((depto) => {
@@ -1264,10 +1270,10 @@ function GruposTab({
                         (e) => e.departamento_id === depto.id
                       );
                       return (
-                        <tr key={depto.id} className="hover:bg-gray-50">
+                        <tr key={depto.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                           <td className="px-4 py-3">
-                            <p className="font-medium text-gray-900">{depto.nombre}</p>
-                            <p className="text-xs text-gray-500">{depto.codigo}</p>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">{depto.nombre}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{depto.codigo}</p>
                           </td>
                           {[0, 1, 2].map((grupo) => {
                             const estado = estadosDepto.find((e) => e.grupo === grupo);
@@ -1286,8 +1292,8 @@ function GruposTab({
                                   }
                                   disabled={!sedeData.sede_id}
                                   className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${activo
-                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                    ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-400'
+                                    : 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400'
                                     }`}
                                 >
                                   {activo ? 'Activo' : 'Inactivo'}
@@ -1322,7 +1328,6 @@ function EncargadosTab({
   onSedeChange: (id: string) => void;
 }) {
   const queryClient = useQueryClient();
-  // Removed local state: const [sedeSeleccionada, setSedeSeleccionada] = useState<string>('');
   const [modalAsignar, setModalAsignar] = useState<{
     sede_id: number;
     grupo: 0 | 1 | 2;
@@ -1369,14 +1374,13 @@ function EncargadosTab({
   return (
     <div className="space-y-6">
       {/* Filtro por sede */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div className="flex items-center gap-4">
-          <label className="font-medium text-gray-700">Filtrar por sede:</label>
+          <label className="font-medium text-gray-700 dark:text-gray-300">Filtrar por sede:</label>
           <select
             value={sedeSeleccionada}
             onChange={(e) => onSedeChange(e.target.value)}
-
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
           >
             <option value="">Todas las sedes</option>
             {sedes.map((sede) => (
@@ -1389,12 +1393,12 @@ function EncargadosTab({
       </div>
 
       {/* Info */}
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+      <div className="bg-amber-50 dark:bg-yellow-900/40 border border-amber-200 dark:border-yellow-700 rounded-lg p-4">
         <div className="flex items-start gap-3">
           <Crown className="w-5 h-5 text-amber-600 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-amber-900">Gestion de Encargados</h3>
-            <p className="text-sm text-amber-800 mt-1">
+            <h3 className="font-semibold text-amber-900 dark:text-yellow-400">Gestion de Encargados</h3>
+            <p className="text-sm text-amber-800 dark:text-yellow-400 mt-1">
               Cada sede puede tener hasta 3 encargados: uno para cada grupo (Normal, G1, G2).
               El encargado aparece en la bitacora de cada unidad de su sede y grupo.
             </p>
@@ -1403,7 +1407,7 @@ function EncargadosTab({
       </div>
 
       {isLoading ? (
-        <div className="text-center py-8 text-gray-500">Cargando encargados...</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">Cargando encargados...</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {sedes
@@ -1411,9 +1415,9 @@ function EncargadosTab({
             .map((sede) => {
               const sedeData = encargadosPorSede?.[sede.id];
               return (
-                <div key={sede.id} className="bg-white rounded-lg shadow">
-                  <div className="px-6 py-4 bg-gray-50 border-b flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <div key={sede.id} className="bg-white dark:bg-gray-800 rounded-lg shadow">
+                  <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-b dark:border-gray-600 flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                       <Building2 className="w-5 h-5 text-indigo-600" />
                       {sede.nombre}
                     </h3>
@@ -1430,7 +1434,7 @@ function EncargadosTab({
                       return (
                         <div
                           key={grupo}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
                         >
                           <div>
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${getColorGrupo(grupo as 0 | 1 | 2)}`}>
@@ -1438,14 +1442,14 @@ function EncargadosTab({
                             </span>
                             {encargado ? (
                               <div className="mt-1">
-                                <p className="font-medium text-gray-900">{encargado.nombre_completo}</p>
-                                <p className="text-xs text-gray-500">
+                                <p className="font-medium text-gray-900 dark:text-gray-100">{encargado.nombre_completo}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
                                   Chapa: {encargado.chapa} | Desde:{' '}
                                   {new Date(encargado.fecha_inicio).toLocaleDateString()}
                                 </p>
                               </div>
                             ) : (
-                              <p className="mt-1 text-sm text-gray-500 italic">Sin encargado asignado</p>
+                              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 italic">Sin encargado asignado</p>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
@@ -1457,7 +1461,7 @@ function EncargadosTab({
                                     grupo: grupo as 0 | 1 | 2,
                                   })
                                 }
-                                className="p-1.5 text-red-600 hover:bg-red-100 rounded"
+                                className="p-1.5 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/40 rounded"
                                 title="Remover encargado"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1471,7 +1475,7 @@ function EncargadosTab({
                                     sede_nombre: sede.nombre,
                                   })
                                 }
-                                className="p-1.5 text-green-600 hover:bg-green-100 rounded"
+                                className="p-1.5 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/40 rounded"
                                 title="Asignar encargado"
                               >
                                 <Plus className="w-4 h-4" />
@@ -1505,43 +1509,43 @@ function EncargadosTab({
       {/* Modal Historial */}
       {historialSede && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 max-h-[80vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl p-6 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Historial de Encargados</h2>
-              <button onClick={() => setHistorialSede(null)} className="p-1 hover:bg-gray-100 rounded">
-                <X className="w-5 h-5" />
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Historial de Encargados</h2>
+              <button onClick={() => setHistorialSede(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                <X className="w-5 h-5 dark:text-gray-300" />
               </button>
             </div>
             {loadingHistorial ? (
-              <p className="text-center text-gray-500 py-4">Cargando historial...</p>
+              <p className="text-center text-gray-500 dark:text-gray-400 py-4">Cargando historial...</p>
             ) : historial?.length === 0 ? (
-              <p className="text-center text-gray-500 py-4">No hay historial para esta sede</p>
+              <p className="text-center text-gray-500 dark:text-gray-400 py-4">No hay historial para esta sede</p>
             ) : (
               <div className="space-y-3">
                 {historial?.map((h) => (
                   <div
                     key={h.asignacion_id}
-                    className={`p-3 rounded-lg ${h.fecha_fin ? 'bg-gray-50' : 'bg-green-50 border border-green-200'}`}
+                    className={`p-3 rounded-lg ${h.fecha_fin ? 'bg-gray-50 dark:bg-gray-700' : 'bg-green-50 dark:bg-green-900/40 border border-green-200 dark:border-green-700'}`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">{h.nombre_completo}</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">{h.nombre_completo}</p>
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${getColorGrupo(h.grupo)}`}>
                           {h.grupo_nombre}
                         </span>
                       </div>
                       {!h.fecha_fin && (
-                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
+                        <span className="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 text-xs rounded">
                           Actual
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 mt-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                       Desde: {new Date(h.fecha_inicio).toLocaleDateString()}
                       {h.fecha_fin && ` - Hasta: ${new Date(h.fecha_fin).toLocaleDateString()}`}
                     </p>
                     {h.motivo_remocion && (
-                      <p className="text-xs text-gray-500 mt-1">Motivo: {h.motivo_remocion}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Motivo: {h.motivo_remocion}</p>
                     )}
                   </div>
                 ))}
@@ -1596,11 +1600,11 @@ function ModalAsignarEncargado({
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Asignar Encargado</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
-            <X className="w-5 h-5" />
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Asignar Encargado</h2>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+            <X className="w-5 h-5 dark:text-gray-300" />
           </button>
         </div>
 
@@ -1614,31 +1618,31 @@ function ModalAsignarEncargado({
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Buscar brigada</label>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Buscar brigada</label>
           <input
             type="text"
             placeholder="Nombre o chapa..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
           />
         </div>
 
-        <div className="max-h-48 overflow-y-auto border rounded-lg">
+        <div className="max-h-48 overflow-y-auto border dark:border-gray-600 rounded-lg">
           {isLoading ? (
-            <p className="text-center text-gray-500 py-4">Buscando...</p>
+            <p className="text-center text-gray-500 dark:text-gray-400 py-4">Buscando...</p>
           ) : brigadas?.length === 0 ? (
-            <p className="text-center text-gray-500 py-4">No hay brigadas disponibles</p>
+            <p className="text-center text-gray-500 dark:text-gray-400 py-4">No hay brigadas disponibles</p>
           ) : (
             brigadas?.map((brigada) => (
               <button
                 key={brigada.id}
                 onClick={() => setUsuarioSeleccionado(brigada.id)}
-                className={`w-full px-4 py-3 text-left hover:bg-gray-50 border-b last:border-b-0 ${usuarioSeleccionado === brigada.id ? 'bg-amber-50 border-amber-200' : ''
+                className={`w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b dark:border-gray-600 last:border-b-0 ${usuarioSeleccionado === brigada.id ? 'bg-amber-50 dark:bg-amber-900/40 border-amber-200' : ''
                   }`}
               >
-                <p className="font-medium text-gray-900">{brigada.nombre_completo}</p>
-                <p className="text-sm text-gray-500">Chapa: {brigada.chapa}</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{brigada.nombre_completo}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Chapa: {brigada.chapa}</p>
               </button>
             ))
           )}
@@ -1647,7 +1651,7 @@ function ModalAsignarEncargado({
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium"
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium"
           >
             Cancelar
           </button>
@@ -1688,28 +1692,28 @@ function ConfiguracionTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
 
   if (!isSuperAdmin) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+      <div className="bg-yellow-50 dark:bg-yellow-900/40 border border-yellow-200 dark:border-yellow-700 rounded-lg p-6 text-center">
         <AlertTriangle className="w-12 h-12 text-yellow-600 mx-auto mb-4" />
-        <h3 className="font-semibold text-yellow-900">Acceso Restringido</h3>
-        <p className="text-yellow-800">Solo SUPER_ADMIN puede ver la configuracion del sistema.</p>
+        <h3 className="font-semibold text-yellow-900 dark:text-yellow-400">Acceso Restringido</h3>
+        <p className="text-yellow-800 dark:text-yellow-400">Solo SUPER_ADMIN puede ver la configuracion del sistema.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <Settings className="w-5 h-5 text-indigo-600" />
             Configuracion del Sistema
           </h3>
         </div>
         <div className="p-6">
           {isLoading ? (
-            <p className="text-center text-gray-500">Cargando configuracion...</p>
+            <p className="text-center text-gray-500 dark:text-gray-400">Cargando configuracion...</p>
           ) : configuracion?.length === 0 ? (
-            <p className="text-center text-gray-500">No hay configuraciones</p>
+            <p className="text-center text-gray-500 dark:text-gray-400">No hay configuraciones</p>
           ) : (
             <div className="space-y-4">
               {configuracion?.map((config) => (
@@ -1748,12 +1752,12 @@ function ConfiguracionItem({
   };
 
   return (
-    <div className="p-4 bg-gray-50 rounded-lg">
+    <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="font-medium text-gray-900">{config.clave}</p>
-          <p className="text-sm text-gray-500">{config.descripcion}</p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="font-medium text-gray-900 dark:text-gray-100">{config.clave}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{config.descripcion}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
             Tipo: {config.tipo} | Modificado: {new Date(config.updated_at).toLocaleString()}
           </p>
         </div>
@@ -1764,7 +1768,7 @@ function ConfiguracionItem({
                 <select
                   value={valor}
                   onChange={(e) => setValor(e.target.value)}
-                  className="px-3 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="true">Activo</option>
                   <option value="false">Inactivo</option>
@@ -1774,13 +1778,13 @@ function ConfiguracionItem({
                   type={config.tipo === 'number' ? 'number' : 'text'}
                   value={valor}
                   onChange={(e) => setValor(e.target.value)}
-                  className="px-3 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
                 />
               )}
               <button
                 onClick={handleSave}
                 disabled={isUpdating}
-                className="p-1.5 text-green-600 hover:bg-green-100 rounded"
+                className="p-1.5 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/40 rounded"
               >
                 <Save className="w-4 h-4" />
               </button>
@@ -1789,7 +1793,7 @@ function ConfiguracionItem({
                   setValor(config.valor || '');
                   setEditando(false);
                 }}
-                className="p-1.5 text-gray-600 hover:bg-gray-200 rounded"
+                className="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1799,16 +1803,16 @@ function ConfiguracionItem({
               <span
                 className={`px-3 py-1 rounded text-sm font-medium ${config.tipo === 'boolean'
                   ? config.valor === 'true'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-red-100 text-red-700'
-                  : 'bg-gray-100 text-gray-700'
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                    : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
                   }`}
               >
                 {config.valor}
               </span>
               <button
                 onClick={() => setEditando(true)}
-                className="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded"
+                className="p-1.5 text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
@@ -1843,10 +1847,10 @@ function AuditoriaTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
 
   if (!isSuperAdmin) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+      <div className="bg-yellow-50 dark:bg-yellow-900/40 border border-yellow-200 dark:border-yellow-700 rounded-lg p-6 text-center">
         <AlertTriangle className="w-12 h-12 text-yellow-600 mx-auto mb-4" />
-        <h3 className="font-semibold text-yellow-900">Acceso Restringido</h3>
-        <p className="text-yellow-800">Solo SUPER_ADMIN puede ver el log de auditoria.</p>
+        <h3 className="font-semibold text-yellow-900 dark:text-yellow-400">Acceso Restringido</h3>
+        <p className="text-yellow-800 dark:text-yellow-400">Solo SUPER_ADMIN puede ver el log de auditoria.</p>
       </div>
     );
   }
@@ -1854,12 +1858,12 @@ function AuditoriaTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
   return (
     <div className="space-y-6">
       {/* Filtros */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div className="flex items-center gap-4">
           <select
             value={filtros.accion}
             onChange={(e) => setFiltros({ ...filtros, accion: e.target.value })}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
           >
             <option value="">Todas las acciones</option>
             <option value="TOGGLE_GRUPO">Toggle Grupo</option>
@@ -1874,7 +1878,7 @@ function AuditoriaTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
           <select
             value={filtros.limite}
             onChange={(e) => setFiltros({ ...filtros, limite: e.target.value })}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
           >
             <option value="25">Ultimos 25</option>
             <option value="50">Ultimos 50</option>
@@ -1884,57 +1888,57 @@ function AuditoriaTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
       </div>
 
       {/* Log */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <History className="w-5 h-5 text-indigo-600" />
             Log de Acciones Administrativas
           </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-100">
+            <thead className="bg-gray-100 dark:bg-gray-800">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Fecha</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Accion</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Fecha</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Accion</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Realizado por
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Usuario afectado
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Detalles</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Detalles</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     Cargando log...
                   </td>
                 </tr>
               ) : logs?.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     No hay registros
                   </td>
                 </tr>
               ) : (
                 logs?.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-600">
+                  <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                       {new Date(log.created_at).toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded">
+                      <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 text-xs font-medium rounded">
                         {log.accion}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{log.realizado_por_nombre}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{log.realizado_por_nombre}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                       {log.usuario_afectado_nombre || '-'}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                       {log.descripcion || log.tabla_afectada || '-'}
                     </td>
                   </tr>

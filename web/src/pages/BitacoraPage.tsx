@@ -7,22 +7,23 @@ import Inspeccion360Historial from '../components/Inspeccion360Historial';
 import CrearSituacionModal from '../components/forms/CrearSituacionModal';
 import CrearActividadModal from '../components/forms/CrearActividadModal';
 import SalidaCOPModal from '../components/forms/SalidaCOPModal';
+import ThemeToggle from '../components/ThemeToggle';
 
 // Tipos de situación para colores
 const TIPOS_SITUACION = [
-    { value: 'PATRULLAJE', color: 'bg-blue-100 text-blue-700' },
-    { value: 'INCIDENTE', color: 'bg-red-100 text-red-700' },
-    { value: 'ASISTENCIA_VEHICULAR', color: 'bg-yellow-100 text-yellow-700' },
-    { value: 'EMERGENCIA', color: 'bg-orange-100 text-orange-700' },
-    { value: 'PARADA_COMIDA', color: 'bg-purple-100 text-purple-700' },
-    { value: 'OTROS', color: 'bg-gray-100 text-gray-700' },
+    { value: 'PATRULLAJE', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' },
+    { value: 'INCIDENTE', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' },
+    { value: 'ASISTENCIA_VEHICULAR', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400' },
+    { value: 'EMERGENCIA', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400' },
+    { value: 'PARADA_COMIDA', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400' },
+    { value: 'OTROS', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' },
 ];
 
 // Colores por tipo de registro
 const TIPO_REGISTRO_STYLE: Record<string, { dot: string; border: string; bg: string; badge: string }> = {
-    SITUACION: { dot: 'bg-red-500', border: 'border-red-200', bg: 'bg-red-50', badge: 'bg-red-100 text-red-700' },
-    ACTIVIDAD: { dot: 'bg-blue-500', border: 'border-blue-200', bg: 'bg-blue-50', badge: 'bg-blue-100 text-blue-700' },
-    SALIDA: { dot: 'bg-emerald-500', border: 'border-emerald-200', bg: 'bg-emerald-50', badge: 'bg-emerald-100 text-emerald-700' },
+    SITUACION: { dot: 'bg-red-500', border: 'border-red-200 dark:border-red-800', bg: 'bg-red-50 dark:bg-red-900/20', badge: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' },
+    ACTIVIDAD: { dot: 'bg-blue-500', border: 'border-blue-200 dark:border-blue-800', bg: 'bg-blue-50 dark:bg-blue-900/20', badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' },
+    SALIDA: { dot: 'bg-emerald-500', border: 'border-emerald-200 dark:border-emerald-800', bg: 'bg-emerald-50 dark:bg-emerald-900/20', badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' },
 };
 
 interface Tripulante {
@@ -136,7 +137,7 @@ export default function BitacoraPage() {
 
     const getTipoColor = (tipo: string) => {
         const found = TIPOS_SITUACION.find(t => t.value === tipo);
-        return found?.color || 'bg-gray-100 text-gray-700';
+        return found?.color || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
     };
 
     const getRegistroStyle = (item: any) => {
@@ -152,23 +153,23 @@ export default function BitacoraPage() {
         null;
 
     return (
-        <div className="min-h-screen bg-gray-100 p-6">
+        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
             <div className="max-w-5xl mx-auto">
                 {/* Header */}
-                <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <button
                                 onClick={() => navigate(-1)}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition text-gray-600"
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition text-gray-600 dark:text-gray-400"
                             >
                                 <ArrowLeft className="w-6 h-6" />
                             </button>
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-800">
+                                <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
                                     Bitácora - Unidad {unidadInfo?.codigo || unidadId}
                                 </h1>
-                                <p className="text-gray-600 text-sm mt-1">
+                                <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
                                     {unidadInfo?.tipo_unidad} | {unidadInfo?.placa}
                                 </p>
                             </div>
@@ -216,17 +217,19 @@ export default function BitacoraPage() {
                             <select
                                 value={limit}
                                 onChange={(e) => setLimit(Number(e.target.value))}
-                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                             >
                                 <option value={20}>Últimos 20</option>
                                 <option value={50}>Últimos 50</option>
                                 <option value={100}>Últimos 100</option>
                             </select>
 
+                            <ThemeToggle />
+
                             <button
                                 onClick={() => refetch()}
                                 disabled={isRefetching}
-                                className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition disabled:opacity-50"
+                                className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition disabled:opacity-50 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
                             >
                                 <RefreshCw className={`w-5 h-5 ${isRefetching ? 'animate-spin' : ''}`} />
                             </button>
@@ -235,27 +238,27 @@ export default function BitacoraPage() {
 
                     {/* Info de Salida Activa */}
                     {salidaActual?.salida_id && (
-                        <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                        <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
                             <div className="flex items-center gap-2 mb-2">
-                                <Truck className="w-5 h-5 text-blue-600" />
-                                <span className="font-semibold text-blue-900">Salida Activa</span>
+                                <Truck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                <span className="font-semibold text-blue-900 dark:text-blue-300">Salida Activa</span>
                             </div>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                 <div>
-                                    <span className="text-blue-600">Hora salida:</span>
-                                    <p className="font-medium">{formatTime(salidaActual.fecha_hora_salida)}</p>
+                                    <span className="text-blue-600 dark:text-blue-400">Hora salida:</span>
+                                    <p className="font-medium dark:text-gray-200">{formatTime(salidaActual.fecha_hora_salida)}</p>
                                 </div>
                                 <div>
-                                    <span className="text-blue-600">Ruta inicial:</span>
-                                    <p className="font-medium">{salidaActual.salida_ruta_codigo || '-'}</p>
+                                    <span className="text-blue-600 dark:text-blue-400">Ruta inicial:</span>
+                                    <p className="font-medium dark:text-gray-200">{salidaActual.salida_ruta_codigo || '-'}</p>
                                 </div>
                                 <div>
-                                    <span className="text-blue-600">Km inicial:</span>
-                                    <p className="font-medium">{salidaActual.salida_km_inicial || '-'}</p>
+                                    <span className="text-blue-600 dark:text-blue-400">Km inicial:</span>
+                                    <p className="font-medium dark:text-gray-200">{salidaActual.salida_km_inicial || '-'}</p>
                                 </div>
                                 <div>
-                                    <span className="text-blue-600">Combustible inicial:</span>
-                                    <p className="font-medium">{salidaActual.salida_combustible_inicial ? `${salidaActual.salida_combustible_inicial}%` : '-'}</p>
+                                    <span className="text-blue-600 dark:text-blue-400">Combustible inicial:</span>
+                                    <p className="font-medium dark:text-gray-200">{salidaActual.salida_combustible_inicial ? `${salidaActual.salida_combustible_inicial}%` : '-'}</p>
                                 </div>
                             </div>
                         </div>
@@ -263,16 +266,16 @@ export default function BitacoraPage() {
 
                     {/* Tripulación */}
                     {salidaActual?.tripulacion && salidaActual.tripulacion.length > 0 && (
-                        <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-100">
+                        <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-800">
                             <div className="flex items-center gap-2 mb-2">
-                                <Users className="w-5 h-5 text-green-600" />
-                                <span className="font-semibold text-green-900">Tripulación</span>
+                                <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
+                                <span className="font-semibold text-green-900 dark:text-green-300">Tripulación</span>
                             </div>
                             <div className="flex flex-wrap gap-3">
                                 {salidaActual.tripulacion.map((t: Tripulante, idx: number) => (
-                                    <div key={idx} className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-green-200">
-                                        <span className="text-xs font-semibold text-green-700 uppercase">{t.rol_tripulacion}:</span>
-                                        <span className="text-sm text-gray-800">{t.nombre_completo}</span>
+                                    <div key={idx} className="flex items-center gap-2 bg-white dark:bg-gray-700 px-3 py-1.5 rounded-full border border-green-200 dark:border-green-700">
+                                        <span className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase">{t.rol_tripulacion}:</span>
+                                        <span className="text-sm text-gray-800 dark:text-gray-200">{t.nombre_completo}</span>
                                     </div>
                                 ))}
                             </div>
@@ -284,23 +287,23 @@ export default function BitacoraPage() {
                 </div>
 
                 {/* Timeline de Situaciones */}
-                <div className="bg-white rounded-xl shadow-sm p-6">
-                    <h2 className="text-lg font-semibold text-gray-800 mb-4">Historial de Actividad</h2>
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Historial de Actividad</h2>
 
                     {isLoading ? (
-                        <div className="text-center py-12 text-gray-500">
+                        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                             Cargando historial...
                         </div>
                     ) : isError ? (
-                        <div className="text-center py-12 text-red-500">
+                        <div className="text-center py-12 text-red-500 dark:text-red-400">
                             Error al cargar bitácora: {(error as any)?.message || 'Error desconocido'}
                         </div>
                     ) : bitacora.length === 0 ? (
-                        <div className="text-center py-12 text-gray-500">
+                        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                             No hay registros en la bitácora para esta unidad.
                         </div>
                     ) : (
-                        <div className="relative border-l-2 border-gray-200 ml-4 space-y-6">
+                        <div className="relative border-l-2 border-gray-200 dark:border-gray-700 ml-4 space-y-6">
                             {bitacora.map((item: any) => {
                                 const style = getRegistroStyle(item);
                                 const isSalida = item.tipo_registro === 'SALIDA';
@@ -309,7 +312,7 @@ export default function BitacoraPage() {
                                 return (
                                 <div key={`${item.tipo_registro}-${item.id}`} className="relative pl-8">
                                     {/* Dot */}
-                                    <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-white ${
+                                    <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-white dark:border-gray-800 ${
                                         item.estado === 'ACTIVA' || item.estado === 'EN_SALIDA' ? style.dot : 'bg-gray-400'
                                     }`}></div>
 
@@ -318,7 +321,7 @@ export default function BitacoraPage() {
                                         className={`rounded-lg p-4 border ${!isSalida ? 'cursor-pointer hover:shadow-md' : ''} transition-shadow ${
                                             item.estado === 'ACTIVA' || item.estado === 'EN_SALIDA'
                                                 ? `${style.bg} ${style.border}`
-                                                : 'bg-gray-50 border-gray-200'
+                                                : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600'
                                         }`}
                                         onClick={() => !isSalida && handleEditClick(item)}
                                     >
@@ -335,17 +338,17 @@ export default function BitacoraPage() {
                                                     {item.subtipo_nombre || item.tipo_situacion?.replace(/_/g, ' ') || 'Sin tipo'}
                                                 </span>
                                                 {isActividad && (
-                                                    <span className="px-1.5 py-0.5 text-[10px] rounded bg-blue-50 text-blue-600 font-medium">
+                                                    <span className="px-1.5 py-0.5 text-[10px] rounded bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-medium">
                                                         ACT
                                                     </span>
                                                 )}
                                                 {isSalida && (
-                                                    <span className="px-1.5 py-0.5 text-[10px] rounded bg-emerald-50 text-emerald-600 font-medium">
+                                                    <span className="px-1.5 py-0.5 text-[10px] rounded bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 font-medium">
                                                         JORNADA
                                                     </span>
                                                 )}
                                                 {!isSalida && (
-                                                    <span className="text-sm font-medium text-gray-500">
+                                                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
                                                         #{item.id}
                                                     </span>
                                                 )}
@@ -355,7 +358,7 @@ export default function BitacoraPage() {
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                                            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                                                 <Clock className="w-4 h-4" />
                                                 {formatDate(item.created_at)}
                                             </div>
@@ -371,19 +374,19 @@ export default function BitacoraPage() {
                                                     return trip.length > 0 ? (
                                                         <div className="flex flex-wrap gap-2 mb-2">
                                                             {trip.map((t: Tripulante, idx: number) => (
-                                                                <span key={idx} className="inline-flex items-center gap-1 text-xs bg-white px-2 py-1 rounded border border-emerald-200">
-                                                                    <span className="font-semibold text-emerald-700">{t.rol_tripulacion}:</span>
-                                                                    <span>{t.nombre_completo}</span>
+                                                                <span key={idx} className="inline-flex items-center gap-1 text-xs bg-white dark:bg-gray-700 px-2 py-1 rounded border border-emerald-200 dark:border-emerald-700">
+                                                                    <span className="font-semibold text-emerald-700 dark:text-emerald-400">{t.rol_tripulacion}:</span>
+                                                                    <span className="dark:text-gray-300">{t.nombre_completo}</span>
                                                                 </span>
                                                             ))}
                                                         </div>
                                                     ) : null;
                                                 })()}
-                                                <p className="font-medium text-gray-900">
+                                                <p className="font-medium text-gray-900 dark:text-gray-100">
                                                     {item.descripcion || item.observaciones || (isSalida ? 'Salida de unidad' : 'Sin descripción')}
                                                 </p>
                                                 {item.descripcion && item.observaciones && (
-                                                    <p className="text-sm text-gray-600 mt-1 italic">
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 italic">
                                                         &quot;{item.observaciones}&quot;
                                                     </p>
                                                 )}
@@ -394,7 +397,7 @@ export default function BitacoraPage() {
                                                     return keys.length > 0 ? (
                                                         <div className="flex flex-wrap gap-2 mt-2">
                                                             {keys.map(k => (
-                                                                <span key={k} className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                                                                <span key={k} className="text-xs bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-2 py-1 rounded">
                                                                     {k.replace(/_/g, ' ')}: {typeof d[k] === 'object' ? JSON.stringify(d[k]) : String(d[k])}
                                                                 </span>
                                                             ))}
@@ -405,13 +408,13 @@ export default function BitacoraPage() {
 
                                             <div className="space-y-1 text-sm">
                                                 {item.ruta_codigo && (
-                                                    <div className="flex items-center gap-2 text-gray-600">
-                                                        <MapPin className="w-4 h-4 text-gray-400" />
+                                                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                                                        <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                                                         <span>{item.ruta_codigo} Km {item.km} {item.sentido && `(${item.sentido})`}</span>
                                                     </div>
                                                 )}
                                                 {item.creado_por_nombre && (
-                                                    <div className="text-xs text-gray-500 mt-2">
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                                         Registrado por: {item.creado_por_nombre}
                                                     </div>
                                                 )}

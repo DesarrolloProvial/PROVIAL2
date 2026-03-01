@@ -16,6 +16,7 @@ import CrearActividadModal from '../components/forms/CrearActividadModal';
 import CrearPuntoMapaModal from '../components/forms/CrearPuntoMapaModal';
 import CambiarPasswordModal from '../components/CambiarPasswordModal';
 import { useAuthStore } from '../store/authStore';
+import ThemeToggle from '../components/ThemeToggle';
 
 // Emoji corto por nombre de icono MDI (para el pin del mapa)
 const MDI_EMOJI: Record<string, string> = {
@@ -360,11 +361,11 @@ export default function COPMapaPage() {
 
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       {/* Sidebar */}
-      <div className={`transition-all duration-300 ${showSidebar ? 'w-96' : 'w-0'} bg-white shadow-lg flex flex-col overflow-hidden flex-shrink-0`}>
+      <div className={`transition-all duration-300 ${showSidebar ? 'w-96' : 'w-0'} bg-white dark:bg-gray-800 shadow-lg flex flex-col overflow-hidden flex-shrink-0`}>
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-blue-700">
           <div className="flex items-center justify-between mb-1">
             <h1 className="text-2xl font-bold text-white">PROVIAL COP</h1>
             <div className="flex items-center gap-2">
@@ -379,6 +380,8 @@ export default function COPMapaPage() {
                 {socketConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
                 <span>{socketConnected ? 'En vivo' : 'Polling'}</span>
               </div>
+              {/* ThemeToggle */}
+              <ThemeToggle />
               {/* Botón Cambiar Contraseña */}
               <button
                 onClick={() => setShowCambiarPassword(true)}
@@ -403,14 +406,14 @@ export default function COPMapaPage() {
         </div>
 
         {/* Toggle Mapa/Tabla */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
             <button
               onClick={() => setModoVista('mapa')}
               className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
                 modoVista === 'mapa'
                   ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
               Mapa
@@ -420,7 +423,7 @@ export default function COPMapaPage() {
               className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
                 modoVista === 'tabla'
                   ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
               Tabla
@@ -429,8 +432,8 @@ export default function COPMapaPage() {
         </div>
 
         {/* Accesos Rápidos */}
-        <div className="p-3 border-b border-gray-200 bg-gray-50">
-          <p className="text-xs text-gray-500 mb-2 font-medium">Accesos Rápidos</p>
+        <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">Accesos Rápidos</p>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => navigate('/movimientos-brigadas')}
@@ -456,21 +459,21 @@ export default function COPMapaPage() {
         {/* Lista de Incidentes y Situaciones */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-semibold text-gray-800">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
               Situación General
             </h2>
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="p-2 hover:bg-gray-100 rounded-lg transition disabled:opacity-50"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition disabled:opacity-50"
               title="Actualizar"
             >
-              <RefreshCw className={`w-5 h-5 text-gray-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-5 h-5 text-gray-600 dark:text-gray-400 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
           </div>
 
           {isLoading && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               Cargando datos...
             </div>
           )}
@@ -496,7 +499,7 @@ export default function COPMapaPage() {
           )}
 
           {!isLoading && !hasError && resumenUnidades.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               No hay unidades activas
             </div>
           )}
@@ -506,16 +509,16 @@ export default function COPMapaPage() {
             <div
               key={`unidad-${unidad.unidad_id}`}
               onClick={() => setSelectedUnidad(unidad)}
-              className={`bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition cursor-pointer border-l-4 ${
+              className={`bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition cursor-pointer border-l-4 ${
                 selectedUnidad?.unidad_id === unidad.unidad_id
-                  ? 'border-blue-500 bg-blue-50'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                   : unidad.estado_situacion === 'ACTIVA'
                     ? 'border-red-400'
                     : 'border-green-400'
               }`}
             >
               <div className="flex items-start justify-between mb-2">
-                <span className="font-semibold text-gray-800">
+                <span className="font-semibold text-gray-800 dark:text-gray-200">
                   🚓 {unidad.unidad_codigo || `Unidad #${unidad.unidad_id}`}
                 </span>
                 <span
@@ -528,16 +531,16 @@ export default function COPMapaPage() {
               </div>
 
               {(unidad.situacion_nombre || unidad.ultima_situacion) && (
-                <p className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
                   <SituacionIcon icono={unidad.situacion_icono} color={unidad.situacion_color} size={16} />
                   {unidad.situacion_nombre || getTipoSituacionLabel(unidad.ultima_situacion)}
                   {unidad.tipo_registro === 'ACTIVIDAD' && (
-                    <span className="text-[10px] bg-blue-100 text-blue-700 px-1 rounded">ACT</span>
+                    <span className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 px-1 rounded">ACT</span>
                   )}
                 </p>
               )}
 
-              <div className="text-xs text-gray-600 space-y-1">
+              <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                 {(unidad.ruta_activa_codigo || unidad.ruta_codigo) && (
                   <p>
                     📍 {unidad.ruta_activa_codigo || unidad.ruta_codigo}
@@ -552,12 +555,12 @@ export default function COPMapaPage() {
                   <p>🌤 {unidad.clima}{unidad.carga_vehicular ? ` · 🚗 ${unidad.carga_vehicular}` : ''}</p>
                 )}
                 {unidad.observaciones && (
-                  <p className="italic text-gray-500 truncate" title={unidad.observaciones}>
+                  <p className="italic text-gray-500 dark:text-gray-400 truncate" title={unidad.observaciones}>
                     💬 {unidad.observaciones}
                   </p>
                 )}
                 {unidad.created_at && (
-                  <p className="text-gray-400">
+                  <p className="text-gray-400 dark:text-gray-500">
                     🕐 {new Date(unidad.created_at).toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 )}
@@ -571,11 +574,11 @@ export default function COPMapaPage() {
                       key={foto.id}
                       src={foto.thumbnail || foto.url}
                       alt={`Foto ${foto.orden}`}
-                      className="w-12 h-9 object-cover rounded border border-gray-200"
+                      className="w-12 h-9 object-cover rounded border border-gray-200 dark:border-gray-700"
                     />
                   ))}
                   {unidad.fotos.length > 3 && (
-                    <span className="w-12 h-9 flex items-center justify-center bg-gray-100 rounded text-xs text-gray-500">
+                    <span className="w-12 h-9 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-500 dark:text-gray-400">
                       +{unidad.fotos.length - 3}
                     </span>
                   )}
@@ -586,7 +589,7 @@ export default function COPMapaPage() {
                   <img
                     src={unidad.foto_preview}
                     alt="Preview"
-                    className="w-full h-16 object-cover rounded border border-gray-200"
+                    className="w-full h-16 object-cover rounded border border-gray-200 dark:border-gray-700"
                   />
                 </div>
               )}
@@ -600,10 +603,10 @@ export default function COPMapaPage() {
         {/* Sidebar toggle button */}
         <button
           onClick={() => setShowSidebar(s => !s)}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-[1001] bg-white border border-gray-200 border-l-0 shadow-md rounded-r-lg p-1.5 hover:bg-gray-50 transition"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-[1001] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 border-l-0 shadow-md rounded-r-lg p-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
           title={showSidebar ? 'Ocultar panel' : 'Mostrar panel'}
         >
-          {showSidebar ? <ChevronLeft className="w-4 h-4 text-gray-600" /> : <ChevronRight className="w-4 h-4 text-gray-600" />}
+          {showSidebar ? <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />}
         </button>
 
         {modoVista === 'mapa' ? (
@@ -849,27 +852,27 @@ export default function COPMapaPage() {
               {showSearch ? (
                 <div className="w-80">
                   <div className="relative">
-                    <div className="flex items-center bg-white rounded-lg shadow-lg">
-                      <Search className="w-5 h-5 text-gray-400 ml-3 flex-shrink-0" />
+                    <div className="flex items-center bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+                      <Search className="w-5 h-5 text-gray-400 dark:text-gray-500 ml-3 flex-shrink-0" />
                       <input
                         autoFocus
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Buscar lugar en Guatemala..."
-                        className="w-full px-3 py-3 rounded-lg focus:outline-none"
+                        className="w-full px-3 py-3 rounded-lg focus:outline-none dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
                       />
                       <button
                         onClick={() => { setSearchQuery(''); setSearchResults([]); setShowSearch(false); }}
-                        className="p-2 hover:bg-gray-100 rounded-r-lg flex-shrink-0"
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-r-lg flex-shrink-0"
                       >
-                        <X className="w-4 h-4 text-gray-500" />
+                        <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       </button>
                     </div>
 
                     {/* Resultados de búsqueda */}
                     {searchResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                         {searchResults.map((result: any, index: number) => (
                           <button
                             key={index}
@@ -885,12 +888,12 @@ export default function COPMapaPage() {
                                 }
                               }
                             }}
-                            className="w-full px-4 py-2 text-left hover:bg-blue-50 border-b border-gray-100 last:border-0"
+                            className="w-full px-4 py-2 text-left hover:bg-blue-50 dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 last:border-0"
                           >
-                            <p className="text-sm font-medium text-gray-800 truncate">
+                            <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
                               {result.display_name.split(',')[0]}
                             </p>
-                            <p className="text-xs text-gray-500 truncate">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                               {result.display_name.split(',').slice(1, 3).join(',')}
                             </p>
                           </button>
@@ -899,7 +902,7 @@ export default function COPMapaPage() {
                     )}
 
                     {isSearching && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg p-3 text-center text-gray-500 text-sm">
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 text-center text-gray-500 dark:text-gray-400 text-sm">
                         Buscando...
                       </div>
                     )}
@@ -908,10 +911,10 @@ export default function COPMapaPage() {
               ) : (
                 <button
                   onClick={() => setShowSearch(true)}
-                  className="p-3 bg-white rounded-lg shadow-lg hover:bg-gray-50 transition"
+                  className="p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
                   title="Buscar lugar en Guatemala"
                 >
-                  <Search className="w-5 h-5 text-gray-700" />
+                  <Search className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                 </button>
               )}
             </div>
@@ -921,35 +924,35 @@ export default function COPMapaPage() {
               <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="p-3 bg-white rounded-lg shadow-lg hover:bg-gray-50 transition disabled:opacity-50"
+                className="p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition disabled:opacity-50"
                 title="Actualizar"
               >
-                <RefreshCw className={`w-5 h-5 text-gray-700 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-5 h-5 text-gray-700 dark:text-gray-300 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`p-3 rounded-lg shadow-lg transition ${showFilters ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                className={`p-3 rounded-lg shadow-lg transition ${showFilters ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
                 title="Filtros"
               >
                 <Filter className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setShowLegend(!showLegend)}
-                className={`p-3 rounded-lg shadow-lg transition ${showLegend ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                className={`p-3 rounded-lg shadow-lg transition ${showLegend ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
                 title="Leyenda"
               >
                 <Layers className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setShowHeatmap(!showHeatmap)}
-                className={`p-3 rounded-lg shadow-lg transition text-xs font-bold ${showHeatmap ? 'bg-orange-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                className={`p-3 rounded-lg shadow-lg transition text-xs font-bold ${showHeatmap ? 'bg-orange-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
                 title="Mapa de calor de incidentes"
               >
                 🔥
               </button>
               <button
                 onClick={() => setShowCapasPanel(!showCapasPanel)}
-                className={`p-3 rounded-lg shadow-lg transition ${showCapasPanel ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                className={`p-3 rounded-lg shadow-lg transition ${showCapasPanel ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
                 title="Capas del mapa"
               >
                 <MapIcon className="w-5 h-5" />
@@ -958,26 +961,26 @@ export default function COPMapaPage() {
 
             {/* Panel de capas cuando heatmap está activo */}
             {showHeatmap && (
-              <div className="absolute bottom-8 right-4 z-[1000] bg-white rounded-lg shadow-lg p-3 text-sm w-52">
-                <p className="font-semibold text-gray-800 mb-2">🔥 Mapa de Calor</p>
-                <label className="text-xs text-gray-500">Período</label>
+              <div className="absolute bottom-8 right-4 z-[1000] bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 text-sm w-52">
+                <p className="font-semibold text-gray-800 dark:text-gray-200 mb-2">🔥 Mapa de Calor</p>
+                <label className="text-xs text-gray-500 dark:text-gray-400">Período</label>
                 <select
                   value={heatmapDias}
                   onChange={e => setHeatmapDias(parseInt(e.target.value))}
-                  className="w-full mt-1 border border-gray-200 rounded px-2 py-1 text-xs"
+                  className="w-full mt-1 border border-gray-200 dark:border-gray-600 rounded px-2 py-1 text-xs dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value={7}>Últimos 7 días</option>
                   <option value={30}>Últimos 30 días</option>
                   <option value={90}>Últimos 90 días</option>
                   <option value={365}>Último año</option>
                 </select>
-                <p className="mt-2 text-xs text-gray-400">
+                <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
                   {heatmapData.length} puntos con coordenadas
                 </p>
                 <div className="mt-2 flex items-center gap-1">
                   <div className="flex-1 h-2 rounded" style={{ background: 'linear-gradient(to right, #3B82F6, #F59E0B, #EF4444)' }} />
                 </div>
-                <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+                <div className="flex justify-between text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
                   <span>Bajo</span><span>Alto</span>
                 </div>
               </div>
@@ -985,9 +988,9 @@ export default function COPMapaPage() {
 
             {/* Panel de Capas del Mapa */}
             {showCapasPanel && (
-              <div className="absolute top-20 right-16 z-[1000] bg-white rounded-lg shadow-lg p-3 w-64">
+              <div className="absolute top-20 right-16 z-[1000] bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 w-64">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="font-semibold text-gray-800 text-sm flex items-center gap-1.5">
+                  <p className="font-semibold text-gray-800 dark:text-gray-200 text-sm flex items-center gap-1.5">
                     <MapIcon className="w-4 h-4 text-indigo-600" /> Capas del Mapa
                   </p>
                   <div className="flex gap-1">
@@ -1012,13 +1015,13 @@ export default function COPMapaPage() {
 
                 {/* Formulario inline nueva capa */}
                 {showCrearCapaInline && (
-                  <div className="mb-3 p-2 bg-indigo-50 rounded-lg space-y-2">
+                  <div className="mb-3 p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg space-y-2">
                     <input
                       type="text"
                       value={nuevaCapa.nombre}
                       onChange={e => setNuevaCapa(p => ({ ...p, nombre: e.target.value }))}
                       placeholder="Nombre de la capa..."
-                      className="w-full px-2 py-1.5 text-xs border border-indigo-200 rounded focus:ring-1 focus:ring-indigo-400 focus:outline-none"
+                      className="w-full px-2 py-1.5 text-xs border border-indigo-200 dark:border-indigo-700 rounded focus:ring-1 focus:ring-indigo-400 focus:outline-none dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                       onKeyDown={e => { if (e.key === 'Enter') handleCrearCapa(); }}
                     />
                     <div className="flex items-center gap-2">
@@ -1026,7 +1029,7 @@ export default function COPMapaPage() {
                         type="color"
                         value={nuevaCapa.color}
                         onChange={e => setNuevaCapa(p => ({ ...p, color: e.target.value }))}
-                        className="w-8 h-7 rounded cursor-pointer border border-indigo-200"
+                        className="w-8 h-7 rounded cursor-pointer border border-indigo-200 dark:border-indigo-700"
                         title="Color de la capa"
                       />
                       <button
@@ -1038,7 +1041,7 @@ export default function COPMapaPage() {
                       </button>
                       <button
                         onClick={() => setShowCrearCapaInline(false)}
-                        className="p-1 text-gray-400 hover:text-gray-600"
+                        className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -1047,16 +1050,16 @@ export default function COPMapaPage() {
                 )}
 
                 {capas.length === 0 ? (
-                  <p className="text-xs text-gray-400 text-center py-2">No hay capas — crea una arriba</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-2">No hay capas — crea una arriba</p>
                 ) : (
                   <div className="space-y-1.5 max-h-56 overflow-y-auto">
                     {capas.map((capa: any) => {
                       const visible = capassVisibles.has(capa.id);
                       return (
-                        <div key={capa.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-gray-50">
+                        <div key={capa.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50">
                           <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: capa.color }} />
-                          <span className="flex-1 text-sm text-gray-700 truncate">{capa.nombre}</span>
-                          <span className="text-xs text-gray-400">{capa.total_puntos || 0}</span>
+                          <span className="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">{capa.nombre}</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500">{capa.total_puntos || 0}</span>
                           <button
                             onClick={() => {
                               setCapasVisibles(prev => {
@@ -1066,7 +1069,7 @@ export default function COPMapaPage() {
                                 return next;
                               });
                             }}
-                            className={`p-0.5 rounded ${visible ? 'text-indigo-600' : 'text-gray-300'}`}
+                            className={`p-0.5 rounded ${visible ? 'text-indigo-600' : 'text-gray-300 dark:text-gray-600'}`}
                           >
                             {visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                           </button>
@@ -1076,7 +1079,7 @@ export default function COPMapaPage() {
                   </div>
                 )}
                 {capassVisibles.size > 0 && (
-                  <p className="text-xs text-gray-400 mt-2 border-t pt-2">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 border-t dark:border-gray-700 pt-2">
                     {todosPuntos.filter((p: any) => capassVisibles.has(p.capa_id)).length} puntos visibles
                   </p>
                 )}
@@ -1085,11 +1088,11 @@ export default function COPMapaPage() {
 
             {/* Panel de Filtros */}
             {showFilters && (
-              <div className="absolute top-20 right-4 z-[1000] bg-white rounded-lg shadow-lg p-4 w-64">
+              <div className="absolute top-20 right-4 z-[1000] bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-64">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-gray-800">Filtros</h3>
-                  <button onClick={() => setShowFilters(false)} className="p-1 hover:bg-gray-100 rounded">
-                    <X className="w-4 h-4" />
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-200">Filtros</h3>
+                  <button onClick={() => setShowFilters(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded">
+                    <X className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                   </button>
                 </div>
 
@@ -1101,7 +1104,7 @@ export default function COPMapaPage() {
                       onChange={(e) => setFilters(prev => ({ ...prev, unidades: e.target.checked }))}
                       className="rounded text-blue-600"
                     />
-                    <span className="text-sm">Unidades ({resumenUnidades.length})</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Unidades ({resumenUnidades.length})</span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -1111,7 +1114,7 @@ export default function COPMapaPage() {
                       onChange={(e) => setFilters(prev => ({ ...prev, soloActivas: e.target.checked }))}
                       className="rounded text-blue-600"
                     />
-                    <span className="text-sm">Solo situaciones activas</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Solo situaciones activas</span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -1121,12 +1124,12 @@ export default function COPMapaPage() {
                       onChange={(e) => setFilters(prev => ({ ...prev, persistentes: e.target.checked }))}
                       className="rounded text-blue-600"
                     />
-                    <span className="text-sm">Persistentes ({situacionesPersistentes.length})</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Persistentes ({situacionesPersistentes.length})</span>
                   </label>
 
-                  <div className="border-t pt-3 mt-3">
+                  <div className="border-t dark:border-gray-700 pt-3 mt-3">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-medium text-gray-500">Filtrar por sede:</p>
+                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Filtrar por sede:</p>
                       {filters.sedes.length > 0 ? (
                         <button
                           onClick={() => setFilters(prev => ({ ...prev, sedes: [] }))}
@@ -1155,13 +1158,13 @@ export default function COPMapaPage() {
                                 setFilters(prev => ({ ...prev, sedes: [...prev.sedes, sedeId] }));
                               }
                             }}
-                            className={`flex items-center gap-2 w-full text-left text-sm px-2 py-1 rounded transition ${isActive ? 'bg-gray-100' : 'opacity-50'}`}
+                            className={`flex items-center gap-2 w-full text-left text-sm px-2 py-1 rounded transition ${isActive ? 'bg-gray-100 dark:bg-gray-700' : 'opacity-50'}`}
                           >
                             <div
                               className={`w-3 h-3 rounded-full ${isActive ? '' : 'opacity-30'}`}
                               style={{ backgroundColor: COLORES_SEDE[sedeId] }}
                             />
-                            <span className={isActive ? '' : 'line-through'}>{nombre}</span>
+                            <span className={`text-gray-700 dark:text-gray-300 ${isActive ? '' : 'line-through'}`}>{nombre}</span>
                           </button>
                         );
                       })}
@@ -1173,30 +1176,30 @@ export default function COPMapaPage() {
 
             {/* Leyenda */}
             {showLegend && (
-              <div className="absolute bottom-4 left-4 z-[1000] bg-white rounded-lg shadow-lg p-3 max-h-64 overflow-y-auto">
-                <h4 className="text-xs font-bold text-gray-600 mb-2 uppercase">Leyenda</h4>
+              <div className="absolute bottom-4 left-4 z-[1000] bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 max-h-64 overflow-y-auto">
+                <h4 className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-2 uppercase">Leyenda</h4>
 
                 <div className="mb-3">
-                  <p className="text-xs font-semibold text-gray-500 mb-1">Estado Situación:</p>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Estado Situación:</p>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-red-500" />
-                      <span className="text-xs">Situación Activa</span>
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Situación Activa</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-green-500" />
-                      <span className="text-xs">Situación Cerrada</span>
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Situación Cerrada</span>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 mb-1">Sedes:</p>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Sedes:</p>
                   <div className="space-y-1">
                     {Object.entries(COLORES_SEDE).map(([sedeId, color]) => (
                       <div key={sedeId} className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                        <span className="text-xs text-gray-700">{SEDES_NOMBRES[parseInt(sedeId)]}</span>
+                        <span className="text-xs text-gray-700 dark:text-gray-300">{SEDES_NOMBRES[parseInt(sedeId)]}</span>
                       </div>
                     ))}
                   </div>
@@ -1205,44 +1208,44 @@ export default function COPMapaPage() {
             )}
 
             {/* Barra flotante de coordenadas */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-lg shadow-lg px-4 py-2 flex items-center gap-3 text-sm">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-white dark:bg-gray-800 rounded-lg shadow-lg px-4 py-2 flex items-center gap-3 text-sm">
               {clickedCoord ? (
                 <>
-                  <span className="text-xs text-gray-400">📍</span>
-                  <span className="font-mono text-gray-800 select-all">
+                  <span className="text-xs text-gray-400 dark:text-gray-500">📍</span>
+                  <span className="font-mono text-gray-800 dark:text-gray-200 select-all">
                     {clickedCoord.lat.toFixed(6)}, {clickedCoord.lng.toFixed(6)}
                   </span>
                   <button
                     onClick={copyCoord}
                     className={`px-2 py-0.5 rounded text-xs font-medium transition ${
                       coordCopied
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                     }`}
                   >
                     {coordCopied ? '✓ Copiado' : 'Copiar'}
                   </button>
                 </>
               ) : (
-                <span className="text-gray-400 text-xs">Haz clic en el mapa para ver coordenadas</span>
+                <span className="text-gray-400 dark:text-gray-500 text-xs">Haz clic en el mapa para ver coordenadas</span>
               )}
             </div>
 
             {/* Stats flotantes */}
-            <div className="absolute bottom-4 right-4 z-[1000] bg-white/90 backdrop-blur rounded-lg shadow-lg p-3">
+            <div className="absolute bottom-4 right-4 z-[1000] bg-white/90 dark:bg-gray-800/90 backdrop-blur rounded-lg shadow-lg p-3">
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div>
-                  <p className="text-xs text-gray-500">Unidades</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Unidades</p>
                   <p className="text-lg font-bold text-blue-600">{filteredUnidades.length}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Con Situación Activa</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Con Situación Activa</p>
                   <p className="text-lg font-bold text-red-600">
                     {filteredUnidades.filter((u: any) => u.estado_situacion === 'ACTIVA').length}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Persistentes</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Persistentes</p>
                   <p className="text-lg font-bold text-orange-600">{filteredPersistentes.length}</p>
                 </div>
               </div>

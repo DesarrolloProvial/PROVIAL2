@@ -6,6 +6,7 @@ import PageHeader from '../components/PageHeader';
 import { useDebounce } from '../hooks/useDebounce';
 import { useAuthStore } from '../store/authStore';
 import ConfiguracionColumnas, { useConfiguracionColumnas } from '../components/ConfiguracionColumnas';
+import ThemeToggle from '../components/ThemeToggle';
 
 interface Brigada {
   id: number;
@@ -274,15 +275,16 @@ export default function BrigadasPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <PageHeader
         title="Gestion de Brigadas"
         subtitle="Administra el personal de brigadas"
         backTo="/operaciones"
       >
+        <ThemeToggle />
         <button
           onClick={() => refetch()}
-          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
           title="Actualizar"
         >
           <RefreshCw className="w-5 h-5" />
@@ -291,24 +293,24 @@ export default function BrigadasPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-400" />
                 <input
                   type="text"
                   placeholder="Buscar por nombre o chapa..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                 />
               </div>
             </div>
             <select
               value={filtroSede || ''}
               onChange={(e) => setFiltroSede(e.target.value ? parseInt(e.target.value) : undefined)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">Todas las sedes</option>
               {sedes.map((sede) => (
@@ -318,7 +320,7 @@ export default function BrigadasPage() {
             <select
               value={filtroActiva === undefined ? '' : filtroActiva.toString()}
               onChange={(e) => setFiltroActiva(e.target.value === '' ? undefined : e.target.value === 'true')}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">Todos los estados</option>
               <option value="true">Activas</option>
@@ -336,7 +338,7 @@ export default function BrigadasPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
           <table className="w-full">
             <thead className="bg-gray-700 text-white">
               <tr>
@@ -351,24 +353,24 @@ export default function BrigadasPage() {
                 <th className="px-4 py-3 text-center text-sm font-semibold">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {isLoading ? (
                 <tr>
-                  <td colSpan={99} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={99} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     Cargando brigadas...
                   </td>
                 </tr>
               ) : brigadas.length === 0 ? (
                 <tr>
-                  <td colSpan={99} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={99} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     No se encontraron brigadas
                   </td>
                 </tr>
               ) : (
                 brigadas.map((brigada) => (
-                  <tr key={brigada.id} className={!brigada.activa ? 'bg-gray-100' : 'hover:bg-gray-50'}>
-                    {isColumnVisible('chapa') && <td className="px-4 py-3 font-mono text-sm font-bold text-gray-900">{brigada.chapa || '-'}</td>}
-                    {isColumnVisible('nombre') && <td className="px-4 py-3 font-medium text-gray-900">{brigada.nombre || '-'}</td>}
+                  <tr key={brigada.id} className={!brigada.activa ? 'bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}>
+                    {isColumnVisible('chapa') && <td className="px-4 py-3 font-mono text-sm font-bold text-gray-900 dark:text-gray-100">{brigada.chapa || '-'}</td>}
+                    {isColumnVisible('nombre') && <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{brigada.nombre || '-'}</td>}
                     {isColumnVisible('rol_brigada') && (
                       <td className="px-4 py-3 text-center">
                         {brigada.rol_brigada ? (
@@ -393,9 +395,9 @@ export default function BrigadasPage() {
                         )}
                       </td>
                     )}
-                    {isColumnVisible('sede') && <td className="px-4 py-3 text-sm text-gray-700">{brigada.sede_nombre}</td>}
-                    {isColumnVisible('telefono') && <td className="px-4 py-3 text-sm text-gray-700">{brigada.telefono || '-'}</td>}
-                    {isColumnVisible('email') && <td className="px-4 py-3 text-sm text-gray-700">{brigada.email || '-'}</td>}
+                    {isColumnVisible('sede') && <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{brigada.sede_nombre}</td>}
+                    {isColumnVisible('telefono') && <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{brigada.telefono || '-'}</td>}
+                    {isColumnVisible('email') && <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{brigada.email || '-'}</td>}
                     {isColumnVisible('estado') && (
                       <td className="px-4 py-3 text-center">
                         <span className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -460,7 +462,7 @@ export default function BrigadasPage() {
             </tbody>
           </table>
           {brigadasData && (
-            <div className="px-4 py-3 bg-gray-100 border-t text-sm text-gray-700 font-medium">
+            <div className="px-4 py-3 bg-gray-100 dark:bg-gray-800 border-t dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 font-medium">
               Total: {brigadasData.total} brigadas
             </div>
           )}
@@ -470,31 +472,31 @@ export default function BrigadasPage() {
       {/* Modal Crear */}
       {modalCrear && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Nueva Brigada</h2>
-              <button onClick={() => setModalCrear(false)} className="p-1 hover:bg-gray-100 rounded">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Nueva Brigada</h2>
+              <button onClick={() => setModalCrear(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Chapa *</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Chapa *</label>
                   <input
                     type="text"
                     value={formData.chapa}
                     onChange={(e) => setFormData({ ...formData, chapa: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                     placeholder="Ej: 19109"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Sede *</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Sede *</label>
                   <select
                     value={formData.sede_id}
                     onChange={(e) => setFormData({ ...formData, sede_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   >
                     <option value="">Seleccionar sede</option>
                     {sedes.map((sede) => (
@@ -504,22 +506,22 @@ export default function BrigadasPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre Completo *</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Nombre Completo *</label>
                 <input
                   type="text"
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                   placeholder="Nombre completo del brigadista"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Rol</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Rol</label>
                   <select
                     value={formData.rol_brigada}
                     onChange={(e) => setFormData({ ...formData, rol_brigada: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   >
                     <option value="">Sin asignar</option>
                     {ROLES_BRIGADA.map((rol) => (
@@ -528,11 +530,11 @@ export default function BrigadasPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Grupo</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Grupo</label>
                   <select
                     value={formData.grupo}
                     onChange={(e) => setFormData({ ...formData, grupo: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   >
                     <option value="">Sin asignar</option>
                     <option value="1">Grupo 1</option>
@@ -542,22 +544,22 @@ export default function BrigadasPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Telefono</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Telefono</label>
                   <input
                     type="tel"
                     value={formData.telefono}
                     onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                     placeholder="Ej: 5555-5555"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Email</label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                     placeholder="correo@ejemplo.com"
                   />
                 </div>
@@ -566,7 +568,7 @@ export default function BrigadasPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setModalCrear(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium"
               >
                 Cancelar
               </button>
@@ -585,30 +587,30 @@ export default function BrigadasPage() {
       {/* Modal Editar */}
       {modalEditar && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Editar Brigada</h2>
-              <button onClick={() => setModalEditar(null)} className="p-1 hover:bg-gray-100 rounded">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Editar Brigada</h2>
+              <button onClick={() => setModalEditar(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Chapa</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Chapa</label>
                   <input
                     type="text"
                     value={formData.chapa}
                     disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Sede *</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Sede *</label>
                   <select
                     value={formData.sede_id}
                     onChange={(e) => setFormData({ ...formData, sede_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   >
                     <option value="">Seleccionar sede</option>
                     {sedes.map((sede) => (
@@ -618,21 +620,21 @@ export default function BrigadasPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre Completo *</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Nombre Completo *</label>
                 <input
                   type="text"
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Rol</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Rol</label>
                   <select
                     value={formData.rol_brigada}
                     onChange={(e) => setFormData({ ...formData, rol_brigada: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   >
                     <option value="">Sin asignar</option>
                     {ROLES_BRIGADA.map((rol) => (
@@ -641,11 +643,11 @@ export default function BrigadasPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Grupo</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Grupo</label>
                   <select
                     value={formData.grupo}
                     onChange={(e) => setFormData({ ...formData, grupo: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   >
                     <option value="">Sin asignar</option>
                     <option value="1">Grupo 1</option>
@@ -655,21 +657,21 @@ export default function BrigadasPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Telefono</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Telefono</label>
                   <input
                     type="tel"
                     value={formData.telefono}
                     onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Email</label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   />
                 </div>
               </div>
@@ -677,7 +679,7 @@ export default function BrigadasPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setModalEditar(null)}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium"
               >
                 Cancelar
               </button>
@@ -706,28 +708,28 @@ export default function BrigadasPage() {
       {/* Modal Transferir */}
       {modalTransferir && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Transferir Brigada</h2>
-              <button onClick={() => setModalTransferir(null)} className="p-1 hover:bg-gray-100 rounded">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Transferir Brigada</h2>
+              <button onClick={() => setModalTransferir(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="mb-4 p-3 bg-gray-100 rounded-lg">
-              <p className="text-sm text-gray-700">
+            <div className="mb-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
                 <span className="font-semibold">Brigada:</span> {modalTransferir.nombre}
               </p>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
                 <span className="font-semibold">Sede actual:</span> {modalTransferir.sede_nombre}
               </p>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Nueva Sede *</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Nueva Sede *</label>
                 <select
                   value={nuevaSedeId}
                   onChange={(e) => setNuevaSedeId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="">Seleccionar sede destino</option>
                   {sedes.filter(s => s.id !== modalTransferir.sede_id).map((sede) => (
@@ -736,11 +738,11 @@ export default function BrigadasPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Motivo</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Motivo</label>
                 <textarea
                   value={motivoTransferencia}
                   onChange={(e) => setMotivoTransferencia(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                   rows={3}
                   placeholder="Motivo de la transferencia..."
                 />
@@ -749,7 +751,7 @@ export default function BrigadasPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setModalTransferir(null)}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium"
               >
                 Cancelar
               </button>
@@ -772,10 +774,10 @@ export default function BrigadasPage() {
       {/* Modal Desactivar */}
       {modalDesactivar && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Desactivar Brigada</h2>
-              <button onClick={() => setModalDesactivar(null)} className="p-1 hover:bg-gray-100 rounded">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Desactivar Brigada</h2>
+              <button onClick={() => setModalDesactivar(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -789,11 +791,11 @@ export default function BrigadasPage() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Motivo de Inactividad *</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Motivo de Inactividad *</label>
                 <select
                   value={motivoCodigo}
                   onChange={(e) => setMotivoCodigo(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="">Seleccionar motivo</option>
                   {motivos.map((motivo) => (
@@ -803,22 +805,22 @@ export default function BrigadasPage() {
               </div>
               {motivoCodigo && motivos.find(m => m.codigo === motivoCodigo)?.requiere_fecha_fin && (
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Fecha Estimada de Regreso *</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Fecha Estimada de Regreso *</label>
                   <input
                     type="date"
                     value={fechaFinEstimada}
                     onChange={(e) => setFechaFinEstimada(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:text-gray-100"
                   />
                 </div>
               )}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Observaciones</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Observaciones</label>
                 <textarea
                   value={observacionesDesactivar}
                   onChange={(e) => setObservacionesDesactivar(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                   rows={3}
                   placeholder="Observaciones adicionales..."
                 />
@@ -827,7 +829,7 @@ export default function BrigadasPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setModalDesactivar(null)}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium"
               >
                 Cancelar
               </button>
@@ -858,10 +860,10 @@ export default function BrigadasPage() {
       {/* Modal Asignar Rol */}
       {modalAsignarRol && puedeAsignarRoles && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Asignar Rol</h2>
-              <button onClick={() => setModalAsignarRol(null)} className="p-1 hover:bg-gray-100 rounded">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Asignar Rol</h2>
+              <button onClick={() => setModalAsignarRol(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -878,11 +880,11 @@ export default function BrigadasPage() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Rol a Asignar *</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Rol a Asignar *</label>
                 <select
                   value={rolSeleccionado}
                   onChange={(e) => setRolSeleccionado(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="">Seleccionar rol</option>
                   {rolesDisponibles.map((rol) => (
@@ -891,18 +893,18 @@ export default function BrigadasPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Sede del Rol</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Sede del Rol</label>
                 <select
                   value={sedeRol}
                   onChange={(e) => setSedeRol(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="">Misma sede del usuario</option>
                   {sedes.map((sede) => (
                     <option key={sede.id} value={sede.id}>{sede.nombre}</option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Ej: OPERACIONES de San Cristóbal
                 </p>
               </div>
@@ -914,7 +916,7 @@ export default function BrigadasPage() {
                   onChange={(e) => setEsRolPrincipal(e.target.checked)}
                   className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                 />
-                <label htmlFor="esRolPrincipal" className="text-sm text-gray-700">
+                <label htmlFor="esRolPrincipal" className="text-sm text-gray-700 dark:text-gray-300">
                   Establecer como rol principal (cambia el login del usuario)
                 </label>
               </div>
@@ -922,7 +924,7 @@ export default function BrigadasPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setModalAsignarRol(null)}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium"
               >
                 Cancelar
               </button>

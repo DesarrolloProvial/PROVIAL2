@@ -6,6 +6,7 @@ import PageHeader from '../components/PageHeader';
 import { useDebounce } from '../hooks/useDebounce';
 import { useAuthStore } from '../store/authStore';
 import ConfiguracionColumnas, { useConfiguracionColumnas } from '../components/ConfiguracionColumnas';
+import ThemeToggle from '../components/ThemeToggle';
 
 interface Unidad {
   id: number;
@@ -241,25 +242,26 @@ export default function UnidadesPage() {
 
   const getTipoColor = (tipo: string) => {
     switch (tipo) {
-      case 'MOTORIZADA': return 'bg-blue-100 text-blue-800';
-      case 'PICKUP': return 'bg-green-100 text-green-800';
-      case 'PATRULLA': return 'bg-purple-100 text-purple-800';
-      case 'AMBULANCIA': return 'bg-red-100 text-red-800';
+      case 'MOTORIZADA': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400';
+      case 'PICKUP': return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400';
+      case 'PATRULLA': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400';
+      case 'AMBULANCIA': return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400';
       case 'GRUA': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <PageHeader
         title="Gestion de Unidades"
         subtitle="Administra los vehiculos del sistema"
         backTo="/operaciones"
       >
+        <ThemeToggle />
         <button
           onClick={() => refetch()}
-          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
           title="Actualizar"
         >
           <RefreshCw className="w-5 h-5" />
@@ -268,7 +270,7 @@ export default function UnidadesPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
@@ -278,14 +280,14 @@ export default function UnidadesPage() {
                   placeholder="Buscar por codigo o placa..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                 />
               </div>
             </div>
             <select
               value={filtroSede || ''}
               onChange={(e) => setFiltroSede(e.target.value ? parseInt(e.target.value) : undefined)}
-              className="px-4 py-2 border rounded-lg"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">Todas las sedes</option>
               {sedes.map((sede) => (
@@ -295,7 +297,7 @@ export default function UnidadesPage() {
             <select
               value={filtroTipo || ''}
               onChange={(e) => setFiltroTipo(e.target.value || undefined)}
-              className="px-4 py-2 border rounded-lg"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">Todos los tipos</option>
               {tipos.map((tipo) => (
@@ -305,7 +307,7 @@ export default function UnidadesPage() {
             <select
               value={filtroActiva === undefined ? '' : filtroActiva.toString()}
               onChange={(e) => setFiltroActiva(e.target.value === '' ? undefined : e.target.value === 'true')}
-              className="px-4 py-2 border rounded-lg"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">Todos</option>
               <option value="true">Activas</option>
@@ -323,51 +325,53 @@ export default function UnidadesPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                {isColumnVisible('codigo') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Codigo</th>}
-                {isColumnVisible('tipo_unidad') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Tipo</th>}
-                {isColumnVisible('marca') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Marca</th>}
-                {isColumnVisible('modelo') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Modelo</th>}
-                {isColumnVisible('anio') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Ano</th>}
-                {isColumnVisible('placa') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Placa</th>}
-                {isColumnVisible('sede') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Sede</th>}
-                {isColumnVisible('estado') && <th className="px-4 py-3 text-center text-sm font-semibold text-gray-600">Estado</th>}
-                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-600">Acciones</th>
+                {isColumnVisible('codigo') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Codigo</th>}
+                {isColumnVisible('tipo_unidad') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Tipo</th>}
+                {isColumnVisible('marca') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Marca</th>}
+                {isColumnVisible('modelo') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Modelo</th>}
+                {isColumnVisible('anio') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Ano</th>}
+                {isColumnVisible('placa') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Placa</th>}
+                {isColumnVisible('sede') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Sede</th>}
+                {isColumnVisible('estado') && <th className="px-4 py-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-300">Estado</th>}
+                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-300">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     Cargando unidades...
                   </td>
                 </tr>
               ) : unidades.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     No se encontraron unidades
                   </td>
                 </tr>
               ) : (
                 unidades.map((unidad) => (
-                  <tr key={unidad.id} className={!unidad.activa ? 'bg-gray-50' : ''}>
-                    <td className="px-4 py-3 font-mono text-sm font-semibold">{unidad.codigo}</td>
+                  <tr key={unidad.id} className={!unidad.activa ? 'bg-gray-50 dark:bg-gray-700/50' : ''}>
+                    <td className="px-4 py-3 font-mono text-sm font-semibold dark:text-gray-100">{unidad.codigo}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTipoColor(unidad.tipo_unidad)}`}>
                         {unidad.tipo_unidad}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm dark:text-gray-300">
                       {unidad.marca || unidad.modelo ? `${unidad.marca || ''} ${unidad.modelo || ''}`.trim() : '-'}
-                      {unidad.anio && <span className="text-gray-500 ml-1">({unidad.anio})</span>}
+                      {unidad.anio && <span className="text-gray-500 dark:text-gray-400 ml-1">({unidad.anio})</span>}
                     </td>
-                    <td className="px-4 py-3 text-sm font-mono">{unidad.placa || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{unidad.sede_nombre}</td>
+                    <td className="px-4 py-3 text-sm font-mono dark:text-gray-300">{unidad.placa || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{unidad.sede_nombre}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${unidad.activa ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${unidad.activa
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400'
                         }`}>
                         {unidad.activa ? 'Activa' : 'Inactiva'}
                       </span>
@@ -418,7 +422,7 @@ export default function UnidadesPage() {
             </tbody>
           </table>
           {unidadesData && (
-            <div className="px-4 py-3 bg-gray-50 border-t text-sm text-gray-600">
+            <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-t dark:border-gray-600 text-sm text-gray-600 dark:text-gray-400">
               Total: {unidadesData.total} unidades
             </div>
           )}
@@ -428,31 +432,31 @@ export default function UnidadesPage() {
       {/* Modal Crear */}
       {modalCrear && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Nueva Unidad</h2>
-              <button onClick={() => setModalCrear(false)} className="p-1 hover:bg-gray-100 rounded">
+              <h2 className="text-xl font-bold dark:text-gray-100">Nueva Unidad</h2>
+              <button onClick={() => setModalCrear(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Codigo *</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Codigo *</label>
                   <input
                     type="text"
                     value={formData.codigo}
                     onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                     placeholder="Ej: MP-001"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Tipo *</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Tipo *</label>
                   <select
                     value={formData.tipo_unidad}
                     onChange={(e) => setFormData({ ...formData, tipo_unidad: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
                   >
                     <option value="">Seleccionar...</option>
                     {TIPOS_UNIDAD.map((tipo) => (
@@ -463,56 +467,56 @@ export default function UnidadesPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Marca</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Marca</label>
                   <input
                     type="text"
                     value={formData.marca}
                     onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                     placeholder="Ej: Toyota"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Modelo</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Modelo</label>
                   <input
                     type="text"
                     value={formData.modelo}
                     onChange={(e) => setFormData({ ...formData, modelo: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                     placeholder="Ej: Hilux"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Ano</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Ano</label>
                   <input
                     type="number"
                     value={formData.anio}
                     onChange={(e) => setFormData({ ...formData, anio: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                     placeholder="Ej: 2020"
                     min="1990"
                     max="2030"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Placa</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Placa</label>
                   <input
                     type="text"
                     value={formData.placa}
                     onChange={(e) => setFormData({ ...formData, placa: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                     placeholder="Ej: P-123ABC"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Sede *</label>
+                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Sede *</label>
                 <select
                   value={formData.sede_id}
                   onChange={(e) => setFormData({ ...formData, sede_id: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="">Seleccionar...</option>
                   {sedes.map((sede) => (
@@ -524,7 +528,7 @@ export default function UnidadesPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setModalCrear(false)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300"
               >
                 Cancelar
               </button>
@@ -548,30 +552,30 @@ export default function UnidadesPage() {
       {/* Modal Editar */}
       {modalEditar && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Editar Unidad</h2>
-              <button onClick={() => setModalEditar(null)} className="p-1 hover:bg-gray-100 rounded">
+              <h2 className="text-xl font-bold dark:text-gray-100">Editar Unidad</h2>
+              <button onClick={() => setModalEditar(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Codigo</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Codigo</label>
                   <input
                     type="text"
                     value={formData.codigo}
                     disabled
-                    className="w-full px-3 py-2 border rounded-lg bg-gray-100"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 dark:text-gray-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Tipo</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Tipo</label>
                   <select
                     value={formData.tipo_unidad}
                     onChange={(e) => setFormData({ ...formData, tipo_unidad: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
                   >
                     {TIPOS_UNIDAD.map((tipo) => (
                       <option key={tipo} value={tipo}>{tipo}</option>
@@ -581,52 +585,52 @@ export default function UnidadesPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Marca</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Marca</label>
                   <input
                     type="text"
                     value={formData.marca}
                     onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Modelo</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Modelo</label>
                   <input
                     type="text"
                     value={formData.modelo}
                     onChange={(e) => setFormData({ ...formData, modelo: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Ano</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Ano</label>
                   <input
                     type="number"
                     value={formData.anio}
                     onChange={(e) => setFormData({ ...formData, anio: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
                     min="1990"
                     max="2030"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Placa</label>
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Placa</label>
                   <input
                     type="text"
                     value={formData.placa}
                     onChange={(e) => setFormData({ ...formData, placa: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Sede</label>
+                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Sede</label>
                 <select
                   value={formData.sede_id}
                   onChange={(e) => setFormData({ ...formData, sede_id: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
                 >
                   {sedes.map((sede) => (
                     <option key={sede.id} value={sede.id}>{sede.nombre}</option>
@@ -637,7 +641,7 @@ export default function UnidadesPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setModalEditar(null)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300"
               >
                 Cancelar
               </button>
@@ -656,24 +660,24 @@ export default function UnidadesPage() {
       {/* Modal Transferir */}
       {modalTransferir && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Transferir Unidad</h2>
-              <button onClick={() => setModalTransferir(null)} className="p-1 hover:bg-gray-100 rounded">
+              <h2 className="text-xl font-bold dark:text-gray-100">Transferir Unidad</h2>
+              <button onClick={() => setModalTransferir(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               Transferir <strong>{modalTransferir.codigo}</strong> ({modalTransferir.tipo_unidad})
               desde <strong>{modalTransferir.sede_nombre}</strong>
             </p>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Nueva Sede *</label>
+                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Nueva Sede *</label>
                 <select
                   value={nuevaSedeId}
                   onChange={(e) => setNuevaSedeId(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="">Seleccionar sede destino...</option>
                   {sedes.filter(s => s.id !== modalTransferir.sede_id).map((sede) => (
@@ -682,11 +686,11 @@ export default function UnidadesPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Motivo (opcional)</label>
+                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Motivo (opcional)</label>
                 <textarea
                   value={motivoTransferencia}
                   onChange={(e) => setMotivoTransferencia(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                   rows={3}
                   placeholder="Razon de la transferencia..."
                 />
@@ -695,7 +699,7 @@ export default function UnidadesPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setModalTransferir(null)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300"
               >
                 Cancelar
               </button>

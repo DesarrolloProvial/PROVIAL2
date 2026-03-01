@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   Settings,
 } from 'lucide-react';
+import ThemeToggle from '../components/ThemeToggle';
 
 interface Unidad {
   id: number;
@@ -176,30 +177,31 @@ export default function GestionUnidadesPage() {
   const tipos: string[] = tiposData?.tipos || [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/super-admin')}
-              className="p-2 hover:bg-gray-100 rounded-lg"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
               title="Volver al panel"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+              <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
             <Truck className="w-8 h-8 text-orange-600" />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Gestion de Unidades</h1>
-              <p className="text-sm text-gray-500">{unidades.length} unidades encontradas</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Gestion de Unidades</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{unidades.length} unidades encontradas</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <button
               onClick={() => setShowColumnConfig(true)}
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
               title="Configurar Campos"
             >
               <Settings className="w-5 h-5" />
@@ -213,7 +215,7 @@ export default function GestionUnidadesPage() {
             </button>
             <button
               onClick={() => refetch()}
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
               title="Actualizar"
             >
               <RefreshCw className="w-5 h-5" />
@@ -224,10 +226,10 @@ export default function GestionUnidadesPage() {
 
       {/* Filtros */}
       <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="bg-white rounded-lg shadow p-4 mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
           <div className="flex items-center gap-2 mb-3">
-            <Filter className="w-5 h-5 text-gray-500" />
-            <span className="font-medium text-gray-700">Filtros</span>
+            <Filter className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <span className="font-medium text-gray-700 dark:text-gray-300">Filtros</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="relative md:col-span-2">
@@ -237,13 +239,13 @@ export default function GestionUnidadesPage() {
                 placeholder="Buscar por codigo o placa..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
               />
             </div>
             <select
               value={sedeFilter}
               onChange={(e) => setSedeFilter(e.target.value ? parseInt(e.target.value) : '')}
-              className="px-3 py-2 border rounded-lg"
+              className="px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
             >
               <option value="">Todas las sedes</option>
               {sedes.map((sede: Sede) => (
@@ -253,7 +255,7 @@ export default function GestionUnidadesPage() {
             <select
               value={tipoFilter}
               onChange={(e) => setTipoFilter(e.target.value)}
-              className="px-3 py-2 border rounded-lg"
+              className="px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
             >
               <option value="">Todos los tipos</option>
               {tipos.map((tipo) => (
@@ -263,7 +265,7 @@ export default function GestionUnidadesPage() {
             <select
               value={activaFilter === '' ? '' : activaFilter.toString()}
               onChange={(e) => setActivaFilter(e.target.value === '' ? '' : e.target.value === 'true')}
-              className="px-3 py-2 border rounded-lg"
+              className="px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
             >
               <option value="">Todas</option>
               <option value="true">Activas</option>
@@ -275,26 +277,28 @@ export default function GestionUnidadesPage() {
         {/* Grid de unidades */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {isLoading ? (
-            <div className="col-span-full p-8 text-center text-gray-500">Cargando unidades...</div>
+            <div className="col-span-full p-8 text-center text-gray-500 dark:text-gray-400">Cargando unidades...</div>
           ) : unidades.length === 0 ? (
-            <div className="col-span-full p-8 text-center text-gray-500">No se encontraron unidades</div>
+            <div className="col-span-full p-8 text-center text-gray-500 dark:text-gray-400">No se encontraron unidades</div>
           ) : (
             unidades.map((unidad) => (
-              <div key={unidad.id} className={`bg-white rounded-lg shadow overflow-hidden ${!unidad.activa ? 'opacity-60' : ''}`}>
+              <div key={unidad.id} className={`bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden ${!unidad.activa ? 'opacity-60' : ''}`}>
                 <div className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900">{unidad.codigo}</h3>
-                      <p className="text-sm text-gray-500">{unidad.placa}</p>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{unidad.codigo}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{unidad.placa}</p>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${unidad.activa ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${unidad.activa
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
                       }`}>
                       {unidad.activa ? 'Activa' : 'Inactiva'}
                     </span>
                   </div>
 
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-gray-600">
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                       <Truck className="w-4 h-4" />
                       <span>
                         {unidad.tipo_unidad}
@@ -307,30 +311,32 @@ export default function GestionUnidadesPage() {
                       const value = unidad.custom_fields?.[field.clave];
                       if (!value) return null;
                       return (
-                        <div key={field.id} className="flex items-center gap-2 text-gray-600">
-                          <span className="text-xs font-semibold uppercase text-gray-400">{field.etiqueta}:</span>
+                        <div key={field.id} className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                          <span className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">{field.etiqueta}:</span>
                           <span className="text-sm">{value}</span>
                         </div>
                       );
                     })}
-                    <div className="flex items-center gap-2 text-gray-600">
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                       <Building2 className="w-4 h-4" />
                       <span>{unidad.sede_nombre}</span>
                     </div>
                   </div>
 
                   {/* Acciones */}
-                  <div className="flex items-center justify-end gap-1 mt-4 pt-3 border-t">
+                  <div className="flex items-center justify-end gap-1 mt-4 pt-3 border-t dark:border-gray-700">
                     <button
                       onClick={() => toggleActivaMutation.mutate({ id: unidad.id, activa: !unidad.activa })}
-                      className={`p-1.5 rounded ${unidad.activa ? 'text-red-600 hover:bg-red-50' : 'text-green-600 hover:bg-green-50'}`}
+                      className={`p-1.5 rounded ${unidad.activa
+                        ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30'
+                        : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30'}`}
                       title={unidad.activa ? 'Desactivar' : 'Activar'}
                     >
                       {unidad.activa ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                     </button>
                     <button
                       onClick={() => setEditingUnidad(unidad)}
-                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                      className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
                       title="Editar"
                     >
                       <Edit2 className="w-4 h-4" />
@@ -346,47 +352,47 @@ export default function GestionUnidadesPage() {
       {/* Modal crear/editar unidad */}
       {(showModal || editingUnidad) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold">{editingUnidad ? 'Editar Unidad' : 'Nueva Unidad'}</h3>
-              <button onClick={() => { setShowModal(false); setEditingUnidad(null); }} className="p-1 hover:bg-gray-100 rounded">
-                <X className="w-5 h-5" />
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+              <h3 className="text-lg font-semibold dark:text-gray-100">{editingUnidad ? 'Editar Unidad' : 'Nueva Unidad'}</h3>
+              <button onClick={() => { setShowModal(false); setEditingUnidad(null); }} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                <X className="w-5 h-5 dark:text-gray-400" />
               </button>
             </div>
             <div className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Codigo *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Codigo *</label>
                   <input
                     type="text"
                     value={editingUnidad?.codigo || formData.codigo}
                     onChange={(e) => editingUnidad
                       ? setEditingUnidad({ ...editingUnidad, codigo: e.target.value })
                       : setFormData({ ...formData, codigo: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                     disabled={!!editingUnidad}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Placa *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Placa *</label>
                   <input
                     type="text"
                     value={editingUnidad?.placa || formData.placa}
                     onChange={(e) => editingUnidad
                       ? setEditingUnidad({ ...editingUnidad, placa: e.target.value })
                       : setFormData({ ...formData, placa: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo</label>
                 <select
                   value={editingUnidad?.tipo_unidad || formData.tipo_unidad}
                   onChange={(e) => editingUnidad
                     ? setEditingUnidad({ ...editingUnidad, tipo_unidad: e.target.value })
                     : setFormData({ ...formData, tipo_unidad: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                 >
                   {tipos.map((t) => <option key={t} value={t}>{t}</option>)}
                   {!tipos.includes(editingUnidad?.tipo_unidad || formData.tipo_unidad) && (
@@ -398,47 +404,47 @@ export default function GestionUnidadesPage() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Marca</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Marca</label>
                   <input
                     type="text"
                     value={editingUnidad?.marca || formData.marca}
                     onChange={(e) => editingUnidad
                       ? setEditingUnidad({ ...editingUnidad, marca: e.target.value })
                       : setFormData({ ...formData, marca: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Modelo</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Modelo</label>
                   <input
                     type="text"
                     value={editingUnidad?.modelo || formData.modelo}
                     onChange={(e) => editingUnidad
                       ? setEditingUnidad({ ...editingUnidad, modelo: e.target.value })
                       : setFormData({ ...formData, modelo: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Año</label>
                   <input
                     type="number"
                     value={editingUnidad?.anio || formData.anio}
                     onChange={(e) => editingUnidad
                       ? setEditingUnidad({ ...editingUnidad, anio: parseInt(e.target.value) })
                       : setFormData({ ...formData, anio: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sede *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sede *</label>
                 <select
                   value={editingUnidad?.sede_id || formData.sede_id}
                   onChange={(e) => editingUnidad
                     ? setEditingUnidad({ ...editingUnidad, sede_id: parseInt(e.target.value) })
                     : setFormData({ ...formData, sede_id: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                 >
                   {sedes.map((s: Sede) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
                 </select>
@@ -446,12 +452,12 @@ export default function GestionUnidadesPage() {
 
               {/* Custom Fields Inputs */}
               {customFields.filter((f: CampoPersonalizado) => f.activo).length > 0 && (
-                <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">Información Adicional</h4>
+                <div className="border-t dark:border-gray-700 pt-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Información Adicional</h4>
                   <div className="grid grid-cols-2 gap-4">
                     {customFields.filter((f: CampoPersonalizado) => f.activo).map((field: CampoPersonalizado) => (
                       <div key={field.id} className={field.tipo === 'text' ? 'col-span-2' : ''}>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">{field.etiqueta}</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{field.etiqueta}</label>
                         {field.tipo === 'select' ? (
                           <select
                             value={(editingUnidad ? editingUnidad.custom_fields : formData.custom_fields)?.[field.clave] || ''}
@@ -469,7 +475,7 @@ export default function GestionUnidadesPage() {
                                 });
                               }
                             }}
-                            className="w-full px-3 py-2 border rounded-lg"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                           >
                             <option value="">Seleccionar...</option>
                           </select>
@@ -491,7 +497,7 @@ export default function GestionUnidadesPage() {
                                 });
                               }
                             }}
-                            className="w-full px-3 py-2 border rounded-lg"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                           />
                         )}
                       </div>
@@ -500,10 +506,10 @@ export default function GestionUnidadesPage() {
                 </div>
               )}
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t">
+            <div className="flex justify-end gap-2 p-4 border-t dark:border-gray-700">
               <button
                 onClick={() => { setShowModal(false); setEditingUnidad(null); }}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
               >
                 Cancelar
               </button>
@@ -528,29 +534,31 @@ export default function GestionUnidadesPage() {
       {/* Modal Configuracion Columnas */}
       {showColumnConfig && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold">Configurar Campos</h3>
-              <button onClick={() => setShowColumnConfig(false)} className="p-1 hover:bg-gray-100 rounded">
-                <X className="w-5 h-5" />
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg mx-4">
+            <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+              <h3 className="text-lg font-semibold dark:text-gray-100">Configurar Campos</h3>
+              <button onClick={() => setShowColumnConfig(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                <X className="w-5 h-5 dark:text-gray-400" />
               </button>
             </div>
             <div className="p-4 space-y-6">
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Campos Personalizados</h4>
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Campos Personalizados</h4>
                 {customFields.length === 0 ? (
-                  <p className="text-sm text-gray-500 italic">No hay campos personalizados.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">No hay campos personalizados.</p>
                 ) : (
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {customFields.map((field: CampoPersonalizado) => (
-                      <div key={field.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div key={field.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{field.etiqueta}</p>
-                          <p className="text-xs text-gray-500">Clave: {field.clave}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{field.etiqueta}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Clave: {field.clave}</p>
                         </div>
                         <button
                           onClick={() => toggleFieldMutation.mutate({ id: field.id, activo: !field.activo })}
-                          className={`px-2 py-1 text-xs font-medium rounded ${field.activo ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}
+                          className={`px-2 py-1 text-xs font-medium rounded ${field.activo
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                            : 'bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-300'}`}
                         >
                           {field.activo ? 'Visible' : 'Oculto'}
                         </button>
@@ -559,8 +567,8 @@ export default function GestionUnidadesPage() {
                   </div>
                 )}
               </div>
-              <div className="border-t pt-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+              <div className="border-t dark:border-gray-700 pt-4">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                   <Plus className="w-4 h-4" /> Agregar Nuevo Campo
                 </h4>
                 <div className="grid grid-cols-2 gap-3 mb-3">
@@ -570,7 +578,7 @@ export default function GestionUnidadesPage() {
                       placeholder="Etiqueta"
                       value={newFieldData.etiqueta || ''}
                       onChange={(e) => setNewFieldData({ ...newFieldData, etiqueta: e.target.value })}
-                      className="w-full px-3 py-2 border rounded text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
                     />
                   </div>
                   <div>
@@ -579,14 +587,14 @@ export default function GestionUnidadesPage() {
                       placeholder="Clave"
                       value={newFieldData.clave || ''}
                       onChange={(e) => setNewFieldData({ ...newFieldData, clave: e.target.value.toLowerCase().replace(/\s/g, '_') })}
-                      className="w-full px-3 py-2 border rounded text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
                     />
                   </div>
                   <div>
                     <select
                       value={newFieldData.tipo || 'text'}
                       onChange={(e) => setNewFieldData({ ...newFieldData, tipo: e.target.value as any })}
-                      className="w-full px-3 py-2 border rounded text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                     >
                       <option value="text">Texto</option>
                       <option value="number">Numero</option>

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { eventosAPI, geografiaAPI, situacionesAPI } from '../services/api';
 import { Plus, MapPin, AlertTriangle, Truck, Save, X, ArrowLeft } from 'lucide-react';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function EventosPage() {
     const navigate = useNavigate();
@@ -96,50 +97,53 @@ export default function EventosPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-6">
+        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
             <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-6">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => navigate('/dashboard')}
-                            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                            className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
                             title="Regresar"
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-800">Eventos de Larga Duracion</h1>
-                            <p className="text-gray-600">Gestion de derrumbes, obras y situaciones persistentes</p>
+                            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Eventos de Larga Duracion</h1>
+                            <p className="text-gray-600 dark:text-gray-400">Gestion de derrumbes, obras y situaciones persistentes</p>
                         </div>
                     </div>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                    >
-                        <Plus className="w-5 h-5" />
-                        Nuevo Evento
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <ThemeToggle />
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                        >
+                            <Plus className="w-5 h-5" />
+                            Nuevo Evento
+                        </button>
+                    </div>
                 </div>
 
                 {/* Lista de Eventos */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {eventos.map((evento: any) => (
-                        <div key={evento.id} className="bg-white rounded-xl shadow-sm border-l-4 border-blue-500 overflow-hidden">
+                        <div key={evento.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border-l-4 border-blue-500 overflow-hidden">
                             <div className="p-5">
                                 <div className="flex justify-between items-start mb-3">
-                                    <span className={`px-2 py-1 rounded text-xs font-semibold ${evento.importancia === 'CRITICA' ? 'bg-red-100 text-red-800' :
+                                    <span className={`px-2 py-1 rounded text-xs font-semibold ${evento.importancia === 'CRITICA' ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400' :
                                             evento.importancia === 'ALTA' ? 'bg-orange-100 text-orange-800' :
-                                                'bg-blue-100 text-blue-800'
+                                                'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400'
                                         }`}>
                                         {evento.importancia}
                                     </span>
                                     <span className="text-gray-400 text-xs">#{evento.id}</span>
                                 </div>
 
-                                <h3 className="text-lg font-bold text-gray-900 mb-2">{evento.titulo}</h3>
-                                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{evento.descripcion}</p>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">{evento.titulo}</h3>
+                                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">{evento.descripcion}</p>
 
-                                <div className="space-y-2 text-sm text-gray-500 mb-4">
+                                <div className="space-y-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
                                     <div className="flex items-center gap-2">
                                         <AlertTriangle className="w-4 h-4" />
                                         <span>{evento.tipo}</span>
@@ -154,10 +158,10 @@ export default function EventosPage() {
                                     </div>
                                 </div>
 
-                                <div className="pt-4 border-t border-gray-100 flex gap-2">
+                                <div className="pt-4 border-t border-gray-100 dark:border-gray-700 flex gap-2">
                                     <button
                                         onClick={() => openAssignModal(evento)}
-                                        className="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-700 py-2 rounded text-sm font-medium transition"
+                                        className="flex-1 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 rounded text-sm font-medium transition"
                                     >
                                         Asignar Unidad
                                     </button>
@@ -168,7 +172,7 @@ export default function EventosPage() {
                     ))}
 
                     {eventos.length === 0 && !isLoading && (
-                        <div className="col-span-full py-12 text-center text-gray-500 bg-white rounded-xl">
+                        <div className="col-span-full py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl">
                             No hay eventos activos registrados.
                         </div>
                     )}
@@ -178,18 +182,18 @@ export default function EventosPage() {
             {/* Modal Crear Evento */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
-                        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-                            <h2 className="text-xl font-bold">Nuevo Evento</h2>
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg">
+                        <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                            <h2 className="text-xl font-bold dark:text-gray-100">Nuevo Evento</h2>
                             <button onClick={() => setIsModalOpen(false)}><X className="w-6 h-6 text-gray-400" /></button>
                         </div>
                         <form onSubmit={handleCreate} className="p-6 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Título</label>
                                 <input
                                     type="text"
                                     required
-                                    className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400 px-3 py-2"
                                     value={formData.titulo}
                                     onChange={e => setFormData({ ...formData, titulo: e.target.value })}
                                     placeholder="Ej: Derrumbe Km 20"
@@ -198,9 +202,9 @@ export default function EventosPage() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo</label>
                                     <select
-                                        className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 px-3 py-2"
                                         value={formData.tipo}
                                         onChange={e => setFormData({ ...formData, tipo: e.target.value })}
                                     >
@@ -213,9 +217,9 @@ export default function EventosPage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Importancia</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Importancia</label>
                                     <select
-                                        className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 px-3 py-2"
                                         value={formData.importancia}
                                         onChange={e => setFormData({ ...formData, importancia: e.target.value })}
                                     >
@@ -229,9 +233,9 @@ export default function EventosPage() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Ruta</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ruta</label>
                                     <select
-                                        className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 px-3 py-2"
                                         value={formData.ruta_id}
                                         onChange={e => setFormData({ ...formData, ruta_id: e.target.value })}
                                     >
@@ -242,11 +246,11 @@ export default function EventosPage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Kilómetro</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kilómetro</label>
                                     <input
                                         type="number"
                                         step="0.1"
-                                        className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 px-3 py-2"
                                         value={formData.km}
                                         onChange={e => setFormData({ ...formData, km: e.target.value })}
                                     />
@@ -254,9 +258,9 @@ export default function EventosPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
                                 <textarea
-                                    className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 px-3 py-2"
                                     rows={3}
                                     value={formData.descripcion}
                                     onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
@@ -267,7 +271,7 @@ export default function EventosPage() {
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
-                                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                                    className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
                                 >
                                     Cancelar
                                 </button>
@@ -287,20 +291,20 @@ export default function EventosPage() {
             {/* Modal Asignar Unidad */}
             {isAssignModalOpen && selectedEvento && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-                        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md">
+                        <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                             <div>
-                                <h2 className="text-xl font-bold">Asignar Unidad</h2>
-                                <p className="text-sm text-gray-500">{selectedEvento.titulo}</p>
+                                <h2 className="text-xl font-bold dark:text-gray-100">Asignar Unidad</h2>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{selectedEvento.titulo}</p>
                             </div>
                             <button onClick={() => setIsAssignModalOpen(false)}><X className="w-6 h-6 text-gray-400" /></button>
                         </div>
                         <form onSubmit={handleAssign} className="p-6 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Seleccionar Unidad</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Seleccionar Unidad</label>
                                 <select
                                     required
-                                    className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 px-3 py-2"
                                     value={assignData.unidad_id}
                                     onChange={e => setAssignData({ unidad_id: e.target.value })}
                                 >
@@ -311,7 +315,7 @@ export default function EventosPage() {
                                         </option>
                                     ))}
                                 </select>
-                                <p className="text-xs text-gray-500 mt-2">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                     Solo se muestran unidades que actualmente están en salida (activas).
                                 </p>
                             </div>
@@ -320,7 +324,7 @@ export default function EventosPage() {
                                 <button
                                     type="button"
                                     onClick={() => setIsAssignModalOpen(false)}
-                                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                                    className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
                                 >
                                     Cancelar
                                 </button>

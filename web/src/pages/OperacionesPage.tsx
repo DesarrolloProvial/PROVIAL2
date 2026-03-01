@@ -9,6 +9,7 @@ import CambiarPasswordModal from '../components/CambiarPasswordModal';
 import DashboardView from '../components/operaciones/DashboardView';
 import BrigadasView from '../components/operaciones/BrigadasView';
 import UnidadesView from '../components/operaciones/UnidadesView';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function OperacionesPage() {
   const { user, logout } = useAuthStore();
@@ -82,18 +83,18 @@ export default function OperacionesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header limpio */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 dark:bg-gray-800 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3">
             {/* Título + Usuario */}
             <div className="flex items-center gap-4">
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-gray-900">
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">
                   Operaciones
                 </h1>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {user?.nombre || user?.username} - {user?.sede_nombre || 'Todas las sedes'}
                 </p>
               </div>
@@ -104,21 +105,22 @@ export default function OperacionesPage() {
               <button
                 onClick={handleRefresh}
                 disabled={isLoading}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700"
                 title="Actualizar"
               >
                 <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
               </button>
+              <ThemeToggle />
               <button
                 onClick={() => setShowCambiarPassword(true)}
-                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/30"
                 title="Cambiar contraseña"
               >
                 <Lock className="w-5 h-5" />
               </button>
               <button
                 onClick={() => { logout(); }}
-                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-red-900/30"
                 title="Cerrar sesion"
               >
                 <LogOut className="w-5 h-5" />
@@ -132,7 +134,7 @@ export default function OperacionesPage() {
               onClick={() => setVistaActual('dashboard')}
               className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${vistaActual === 'dashboard'
                 ? 'bg-blue-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
+                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                 }`}
             >
               Dashboard
@@ -141,7 +143,7 @@ export default function OperacionesPage() {
               onClick={() => setVistaActual('brigadas')}
               className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${vistaActual === 'brigadas'
                 ? 'bg-blue-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
+                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                 }`}
             >
               Brigadas
@@ -150,12 +152,12 @@ export default function OperacionesPage() {
               onClick={() => setVistaActual('unidades')}
               className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${vistaActual === 'unidades'
                 ? 'bg-blue-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
+                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                 }`}
             >
               Unidades
             </button>
-            <div className="w-px bg-gray-300 mx-1" />
+            <div className="w-px bg-gray-300 dark:bg-gray-600 mx-1" />
             <button
               onClick={handleCrearAsignacion}
               className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap bg-green-600 text-white hover:bg-green-700"
@@ -165,13 +167,13 @@ export default function OperacionesPage() {
 
             <button
               onClick={() => navigate('/operaciones/brigadas')}
-              className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap text-gray-600 hover:bg-gray-100"
+              className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
             >
               Gest. Brigadas
             </button>
             <button
               onClick={() => navigate('/operaciones/unidades')}
-              className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap text-gray-600 hover:bg-gray-100"
+              className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
             >
               Gest. Unidades
             </button>
@@ -179,7 +181,7 @@ export default function OperacionesPage() {
             {esAdminCentral && (
               <button
                 onClick={() => navigate('/operaciones/dashboard-sedes')}
-                className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap text-gray-600 hover:bg-gray-100"
+                className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
               >
                 Sedes
               </button>
@@ -193,12 +195,12 @@ export default function OperacionesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Error Banner */}
         {errorDashboard && vistaActual === 'dashboard' && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 dark:bg-red-900/20 dark:border-red-800">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
+              <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 dark:text-red-400" />
               <div>
-                <h3 className="font-semibold text-red-800">Error al cargar datos</h3>
-                <p className="text-sm text-red-600 mt-1">
+                <h3 className="font-semibold text-red-800 dark:text-red-300">Error al cargar datos</h3>
+                <p className="text-sm text-red-600 mt-1 dark:text-red-400">
                   No se pudieron obtener los datos del dashboard. Verifica tu conexión.
                 </p>
                 <button
@@ -230,4 +232,3 @@ export default function OperacionesPage() {
     </div>
   );
 }
-

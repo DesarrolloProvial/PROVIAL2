@@ -8,6 +8,7 @@ import {
   TipoEmergenciaVial,
 } from '../services/movimientos.service';
 import { geografiaAPI, situacionesAPI } from '../services/api';
+import ThemeToggle from '../components/ThemeToggle';
 import {
   ArrowLeft,
   Plus,
@@ -281,15 +282,15 @@ export default function SituacionesPersistentesPage() {
   const getImportanciaBadge = (importancia: string) => {
     switch (importancia) {
       case 'CRITICA':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-400 dark:border-red-700';
       case 'ALTA':
         return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'NORMAL':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-700';
       case 'BAJA':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600';
     }
   };
 
@@ -312,7 +313,7 @@ export default function SituacionesPersistentesPage() {
     return (
       <div
         key={situacion.id}
-        className={`bg-white rounded-xl shadow-sm border-l-4 overflow-hidden ${
+        className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border-l-4 overflow-hidden ${
           situacion.importancia === 'CRITICA'
             ? 'border-red-500'
             : situacion.importancia === 'ALTA'
@@ -331,14 +332,14 @@ export default function SituacionesPersistentesPage() {
                 {situacion.tipo}
               </span>
             </div>
-            <span className="text-gray-400 text-xs font-mono">{situacion.numero}</span>
+            <span className="text-gray-400 dark:text-gray-500 text-xs font-mono">{situacion.numero}</span>
           </div>
 
           {/* Title */}
-          <h3 className="text-lg font-bold text-gray-900 mb-2">{situacion.titulo}</h3>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">{situacion.titulo}</h3>
 
           {/* Location */}
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3">
             <MapPin className="w-4 h-4" />
             <span>
               {situacion.ruta_codigo || 'Sin ruta'}{' '}
@@ -349,13 +350,13 @@ export default function SituacionesPersistentesPage() {
 
           {/* Description */}
           {situacion.descripcion && (
-            <p className="text-gray-600 text-sm mb-3 line-clamp-2">{situacion.descripcion}</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">{situacion.descripcion}</p>
           )}
 
           {/* Units assigned */}
           <div className="flex items-center gap-2 text-sm mb-3">
-            <Truck className="w-4 h-4 text-gray-500" />
-            <span className="font-medium">
+            <Truck className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            <span className="font-medium dark:text-gray-200">
               {situacion.unidades_asignadas_count} unidad(es) asignada(s)
             </span>
           </div>
@@ -366,7 +367,7 @@ export default function SituacionesPersistentesPage() {
               {situacion.unidades_asignadas.map((u) => (
                 <span
                   key={u.unidad_id}
-                  className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium"
+                  className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400 rounded text-xs font-medium"
                 >
                   {u.unidad_codigo}
                 </span>
@@ -375,7 +376,7 @@ export default function SituacionesPersistentesPage() {
           )}
 
           {/* Dates */}
-          <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
+          <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mb-4">
             <div className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
               Inicio: {new Date(situacion.fecha_inicio).toLocaleDateString('es-GT')}
@@ -390,7 +391,7 @@ export default function SituacionesPersistentesPage() {
           {/* Expand/collapse */}
           <button
             onClick={() => toggleExpand(situacion.id)}
-            className="w-full flex items-center justify-center gap-1 text-sm text-gray-500 hover:text-gray-700 py-2 border-t border-gray-100"
+            className="w-full flex items-center justify-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 py-2 border-t border-gray-100 dark:border-gray-700"
           >
             {isExpanded ? (
               <>
@@ -407,11 +408,11 @@ export default function SituacionesPersistentesPage() {
 
           {/* Expanded actions */}
           {isExpanded && (
-            <div className="pt-3 border-t border-gray-100 space-y-2">
+            <div className="pt-3 border-t border-gray-100 dark:border-gray-700 space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => openDetailModal(situacion)}
-                  className="flex items-center justify-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm"
+                  className="flex items-center justify-center gap-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-sm dark:text-gray-300"
                 >
                   <Eye className="w-4 h-4" />
                   Ver Detalle
@@ -419,7 +420,7 @@ export default function SituacionesPersistentesPage() {
                 {situacion.estado === 'ACTIVA' && (
                   <button
                     onClick={() => openAssignModal(situacion)}
-                    className="flex items-center justify-center gap-1 px-3 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg text-sm"
+                    className="flex items-center justify-center gap-1 px-3 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-400 text-green-700 rounded-lg text-sm"
                   >
                     <Plus className="w-4 h-4" />
                     Asignar Unidad
@@ -431,7 +432,7 @@ export default function SituacionesPersistentesPage() {
                   <>
                     <button
                       onClick={() => pausarMutation.mutate(situacion.id)}
-                      className="flex items-center justify-center gap-1 px-3 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg text-sm"
+                      className="flex items-center justify-center gap-1 px-3 py-2 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-400 text-yellow-700 rounded-lg text-sm"
                     >
                       <Pause className="w-4 h-4" />
                       Pausar
@@ -442,7 +443,7 @@ export default function SituacionesPersistentesPage() {
                           finalizarMutation.mutate(situacion.id);
                         }
                       }}
-                      className="flex items-center justify-center gap-1 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm col-span-2"
+                      className="flex items-center justify-center gap-1 px-3 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400 text-red-700 rounded-lg text-sm col-span-2"
                     >
                       <Square className="w-4 h-4" />
                       Finalizar
@@ -452,7 +453,7 @@ export default function SituacionesPersistentesPage() {
                 {situacion.estado === 'EN_PAUSA' && (
                   <button
                     onClick={() => reactivarMutation.mutate(situacion.id)}
-                    className="flex items-center justify-center gap-1 px-3 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg text-sm col-span-3"
+                    className="flex items-center justify-center gap-1 px-3 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-400 text-green-700 rounded-lg text-sm col-span-3"
                   >
                     <Play className="w-4 h-4" />
                     Reactivar
@@ -467,41 +468,44 @@ export default function SituacionesPersistentesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/dashboard')}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Situaciones Persistentes</h1>
-              <p className="text-gray-600">Derrumbes, obras viales y situaciones de larga duracion</p>
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Situaciones Persistentes</h1>
+              <p className="text-gray-600 dark:text-gray-400">Derrumbes, obras viales y situaciones de larga duracion</p>
             </div>
           </div>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            Nueva Situacion
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              Nueva Situacion
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="border-b border-gray-200">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+          <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="flex -mb-px">
               <button
                 onClick={() => setActiveTab('activas')}
                 className={`px-6 py-4 text-sm font-medium border-b-2 ${
                   activeTab === 'activas'
                     ? 'border-green-500 text-green-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
                 <Play className="w-4 h-4 inline mr-2" />
@@ -512,7 +516,7 @@ export default function SituacionesPersistentesPage() {
                 className={`px-6 py-4 text-sm font-medium border-b-2 ${
                   activeTab === 'pausadas'
                     ? 'border-yellow-500 text-yellow-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
                 <Pause className="w-4 h-4 inline mr-2" />
@@ -523,7 +527,7 @@ export default function SituacionesPersistentesPage() {
                 className={`px-6 py-4 text-sm font-medium border-b-2 ${
                   activeTab === 'finalizadas'
                     ? 'border-gray-500 text-gray-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
                 <Square className="w-4 h-4 inline mr-2" />
@@ -536,9 +540,9 @@ export default function SituacionesPersistentesPage() {
         {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loadingActivas ? (
-            <div className="col-span-full text-center py-8 text-gray-500">Cargando...</div>
+            <div className="col-span-full text-center py-8 text-gray-500 dark:text-gray-400">Cargando...</div>
           ) : getSituaciones().length === 0 ? (
-            <div className="col-span-full text-center py-8 text-gray-500">
+            <div className="col-span-full text-center py-8 text-gray-500 dark:text-gray-400">
               No hay situaciones {activeTab}
             </div>
           ) : (
@@ -550,31 +554,31 @@ export default function SituacionesPersistentesPage() {
       {/* Create Modal */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="p-6 border-b border-gray-200 flex-shrink-0">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Nueva Situacion Extraordinaria</h2>
-                  <p className="text-sm text-gray-500">Formulario completo de emergencia vial</p>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Nueva Situacion Extraordinaria</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Formulario completo de emergencia vial</p>
                 </div>
                 <button
                   onClick={() => { setIsCreateModalOpen(false); resetForm(); }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                 >
                   <X className="w-6 h-6" />
                 </button>
               </div>
 
               {/* Form Tabs */}
-              <div className="flex gap-1 mt-4 border-b border-gray-200">
+              <div className="flex gap-1 mt-4 border-b border-gray-200 dark:border-gray-700">
                 <button
                   type="button"
                   onClick={() => setFormTab('general')}
                   className={`px-4 py-2 text-sm font-medium rounded-t-lg flex items-center gap-2 ${
                     formTab === 'general'
-                      ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-500'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                      ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-b-2 border-blue-500'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                   }`}
                 >
                   <MapPin className="w-4 h-4" />
@@ -586,7 +590,7 @@ export default function SituacionesPersistentesPage() {
                   className={`px-4 py-2 text-sm font-medium rounded-t-lg flex items-center gap-2 ${
                     formTab === 'obstruccion'
                       ? 'bg-orange-50 text-orange-700 border-b-2 border-orange-500'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                   }`}
                 >
                   <AlertTriangle className="w-4 h-4" />
@@ -598,7 +602,7 @@ export default function SituacionesPersistentesPage() {
                   className={`px-4 py-2 text-sm font-medium rounded-t-lg flex items-center gap-2 ${
                     formTab === 'autoridades'
                       ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-500'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                   }`}
                 >
                   <Shield className="w-4 h-4" />
@@ -610,7 +614,7 @@ export default function SituacionesPersistentesPage() {
                   className={`px-4 py-2 text-sm font-medium rounded-t-lg flex items-center gap-2 ${
                     formTab === 'socorro'
                       ? 'bg-green-50 text-green-700 border-b-2 border-green-500'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                   }`}
                 >
                   <Heart className="w-4 h-4" />
@@ -626,12 +630,12 @@ export default function SituacionesPersistentesPage() {
                 {formTab === 'general' && (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Titulo *</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titulo *</label>
                       <input
                         type="text"
                         value={formData.titulo}
                         onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                         placeholder="Ej: Derrumbe Km 45 CA-1"
                         required
                       />
@@ -639,11 +643,11 @@ export default function SituacionesPersistentesPage() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Emergencia *</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo de Emergencia *</label>
                         <select
                           value={formData.tipo_emergencia_id}
                           onChange={(e) => setFormData({ ...formData, tipo_emergencia_id: e.target.value })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100"
                           required
                         >
                           <option value="">-- Seleccionar --</option>
@@ -653,11 +657,11 @@ export default function SituacionesPersistentesPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Importancia</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Importancia</label>
                         <select
                           value={formData.importancia}
                           onChange={(e) => setFormData({ ...formData, importancia: e.target.value })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100"
                         >
                           <option value="BAJA">Baja</option>
                           <option value="NORMAL">Normal</option>
@@ -668,11 +672,11 @@ export default function SituacionesPersistentesPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Ruta</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ruta</label>
                       <select
                         value={formData.ruta_id}
                         onChange={(e) => setFormData({ ...formData, ruta_id: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100"
                       >
                         <option value="">-- Seleccionar ruta --</option>
                         {rutas.map((r: any) => (
@@ -683,31 +687,31 @@ export default function SituacionesPersistentesPage() {
 
                     <div className="grid grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Km Inicio</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Km Inicio</label>
                         <input
                           type="number"
                           step="0.1"
                           value={formData.km_inicio}
                           onChange={(e) => setFormData({ ...formData, km_inicio: e.target.value })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Km Fin</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Km Fin</label>
                         <input
                           type="number"
                           step="0.1"
                           value={formData.km_fin}
                           onChange={(e) => setFormData({ ...formData, km_fin: e.target.value })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Sentido</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sentido</label>
                         <select
                           value={formData.sentido}
                           onChange={(e) => setFormData({ ...formData, sentido: e.target.value })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100"
                         >
                           <option value="NORTE_SUR">Norte-Sur</option>
                           <option value="SUR_NORTE">Sur-Norte</option>
@@ -717,22 +721,22 @@ export default function SituacionesPersistentesPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Jurisdiccion</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jurisdiccion</label>
                       <input
                         type="text"
                         value={formData.jurisdiccion}
                         onChange={(e) => setFormData({ ...formData, jurisdiccion: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                         placeholder="Ej: Escuintla, Guatemala"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Descripcion</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripcion</label>
                       <textarea
                         value={formData.descripcion}
                         onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                         rows={3}
                         placeholder="Describe la situacion..."
                       />
@@ -743,7 +747,7 @@ export default function SituacionesPersistentesPage() {
                 {/* Tab: Obstruccion */}
                 {formTab === 'obstruccion' && (
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Detalles de Obstruccion</h3>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Detalles de Obstruccion</h3>
                     <ObstruccionForm
                       value={obstruccionData}
                       onChange={setObstruccionData}
@@ -754,7 +758,7 @@ export default function SituacionesPersistentesPage() {
                 {/* Tab: Autoridades */}
                 {formTab === 'autoridades' && (
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Autoridades Presentes</h3>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Autoridades Presentes</h3>
                     <AutoridadesSocorroForm
                       tipo="autoridad"
                       value={autoridadesData}
@@ -766,7 +770,7 @@ export default function SituacionesPersistentesPage() {
                 {/* Tab: Socorro */}
                 {formTab === 'socorro' && (
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Unidades de Socorro</h3>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Unidades de Socorro</h3>
                     <AutoridadesSocorroForm
                       tipo="socorro"
                       value={socorroData}
@@ -777,11 +781,11 @@ export default function SituacionesPersistentesPage() {
               </div>
 
               {/* Footer */}
-              <div className="p-6 border-t border-gray-200 bg-gray-50 flex gap-3">
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex gap-3">
                 <button
                   type="button"
                   onClick={() => { setIsCreateModalOpen(false); resetForm(); }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100"
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
                 >
                   Cancelar
                 </button>
@@ -808,13 +812,13 @@ export default function SituacionesPersistentesPage() {
       {/* Assign Modal */}
       {isAssignModalOpen && selectedSituacion && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">Asignar Unidad</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Asignar Unidad</h2>
                 <button
                   onClick={() => { setIsAssignModalOpen(false); setAssignData({ unidad_id: '', observaciones: '' }); }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -822,18 +826,18 @@ export default function SituacionesPersistentesPage() {
             </div>
 
             <div className="p-6">
-              <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                <div className="font-medium">{selectedSituacion.titulo}</div>
-                <div className="text-sm text-gray-500">{selectedSituacion.numero}</div>
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-4">
+                <div className="font-medium dark:text-gray-200">{selectedSituacion.titulo}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{selectedSituacion.numero}</div>
               </div>
 
               <form onSubmit={handleAssign} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Seleccionar Unidad</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Seleccionar Unidad</label>
                   <select
                     value={assignData.unidad_id}
                     onChange={(e) => setAssignData({ ...assignData, unidad_id: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100"
                     required
                   >
                     <option value="">-- Seleccionar --</option>
@@ -852,11 +856,11 @@ export default function SituacionesPersistentesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observaciones</label>
                   <textarea
                     value={assignData.observaciones}
                     onChange={(e) => setAssignData({ ...assignData, observaciones: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                     rows={2}
                     placeholder="Observaciones de la asignacion..."
                   />
@@ -866,7 +870,7 @@ export default function SituacionesPersistentesPage() {
                   <button
                     type="button"
                     onClick={() => { setIsAssignModalOpen(false); setAssignData({ unidad_id: '', observaciones: '' }); }}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   >
                     Cancelar
                   </button>
@@ -888,16 +892,16 @@ export default function SituacionesPersistentesPage() {
       {/* Detail Modal */}
       {isDetailModalOpen && selectedSituacion && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">{selectedSituacion.titulo}</h2>
-                  <p className="text-sm text-gray-500">{selectedSituacion.numero}</p>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{selectedSituacion.titulo}</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{selectedSituacion.numero}</p>
                 </div>
                 <button
                   onClick={() => setIsDetailModalOpen(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -908,46 +912,46 @@ export default function SituacionesPersistentesPage() {
               {/* Info basica */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-sm text-gray-500">Tipo</span>
-                  <p className="font-medium">{selectedSituacion.tipo}</p>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Tipo</span>
+                  <p className="font-medium dark:text-gray-200">{selectedSituacion.tipo}</p>
                 </div>
                 <div>
-                  <span className="text-sm text-gray-500">Importancia</span>
-                  <p className="font-medium">{selectedSituacion.importancia}</p>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Importancia</span>
+                  <p className="font-medium dark:text-gray-200">{selectedSituacion.importancia}</p>
                 </div>
                 <div>
-                  <span className="text-sm text-gray-500">Ubicacion</span>
-                  <p className="font-medium">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Ubicacion</span>
+                  <p className="font-medium dark:text-gray-200">
                     {selectedSituacion.ruta_codigo} Km {selectedSituacion.km_inicio}
                     {selectedSituacion.km_fin && ` - ${selectedSituacion.km_fin}`}
                   </p>
                 </div>
                 <div>
-                  <span className="text-sm text-gray-500">Creado por</span>
-                  <p className="font-medium">{selectedSituacion.creado_por_nombre}</p>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Creado por</span>
+                  <p className="font-medium dark:text-gray-200">{selectedSituacion.creado_por_nombre}</p>
                 </div>
               </div>
 
               {selectedSituacion.descripcion && (
                 <div>
-                  <span className="text-sm text-gray-500">Descripcion</span>
-                  <p className="mt-1">{selectedSituacion.descripcion}</p>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Descripcion</span>
+                  <p className="mt-1 dark:text-gray-200">{selectedSituacion.descripcion}</p>
                 </div>
               )}
 
               {/* Unidades asignadas */}
               <div>
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
                   <Users className="w-5 h-5" />
                   Unidades Asignadas ({selectedSituacion.unidades_asignadas_count})
                 </h3>
                 {selectedSituacion.unidades_asignadas && selectedSituacion.unidades_asignadas.length > 0 ? (
                   <div className="space-y-2">
                     {selectedSituacion.unidades_asignadas.map((u) => (
-                      <div key={u.unidad_id} className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                      <div key={u.unidad_id} className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/40 rounded-lg">
                         <div>
-                          <span className="font-medium">{u.unidad_codigo}</span>
-                          <span className="text-sm text-gray-500 ml-2">
+                          <span className="font-medium dark:text-gray-200">{u.unidad_codigo}</span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
                             desde {new Date(u.fecha_asignacion).toLocaleString('es-GT')}
                           </span>
                         </div>
@@ -970,19 +974,19 @@ export default function SituacionesPersistentesPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-sm">Sin unidades asignadas</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">Sin unidades asignadas</p>
                 )}
               </div>
 
               {/* Historial de asignaciones */}
               {asignacionesHistorial.length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Historial de Asignaciones</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Historial de Asignaciones</h3>
                   <div className="space-y-2 max-h-40 overflow-y-auto">
                     {asignacionesHistorial.map((a) => (
-                      <div key={a.id} className="p-2 bg-gray-50 rounded text-sm">
-                        <span className="font-medium">{a.unidad_codigo}</span>
-                        <span className="text-gray-500 ml-2">
+                      <div key={a.id} className="p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm">
+                        <span className="font-medium dark:text-gray-200">{a.unidad_codigo}</span>
+                        <span className="text-gray-500 dark:text-gray-400 ml-2">
                           {new Date(a.fecha_hora_asignacion).toLocaleString('es-GT')}
                           {a.fecha_hora_desasignacion && (
                             <> - {new Date(a.fecha_hora_desasignacion).toLocaleString('es-GT')}</>
@@ -996,32 +1000,32 @@ export default function SituacionesPersistentesPage() {
 
               {/* Actualizaciones */}
               <div>
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
                   <MessageSquare className="w-5 h-5" />
                   Actualizaciones ({actualizaciones.length})
                 </h3>
                 {actualizaciones.length > 0 ? (
                   <div className="space-y-3 max-h-60 overflow-y-auto">
                     {actualizaciones.map((a: ActualizacionSituacion) => (
-                      <div key={a.id} className="p-3 bg-gray-50 rounded-lg">
+                      <div key={a.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <div className="flex justify-between items-start mb-1">
-                          <span className="font-medium text-sm">{a.usuario_nombre}</span>
-                          <span className="text-xs text-gray-500">
+                          <span className="font-medium text-sm dark:text-gray-200">{a.usuario_nombre}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
                             {new Date(a.fecha_hora).toLocaleString('es-GT')}
                           </span>
                         </div>
-                        <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded">
+                        <span className="text-xs text-blue-600 bg-blue-100 dark:bg-blue-900/40 dark:text-blue-400 px-2 py-0.5 rounded">
                           {a.tipo_actualizacion}
                         </span>
                         {a.contenido && (
-                          <p className="mt-2 text-sm text-gray-700">{a.contenido}</p>
+                          <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">{a.contenido}</p>
                         )}
-                        <span className="text-xs text-gray-400">Unidad: {a.unidad_codigo}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">Unidad: {a.unidad_codigo}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-sm">Sin actualizaciones</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">Sin actualizaciones</p>
                 )}
               </div>
             </div>

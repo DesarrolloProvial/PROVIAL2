@@ -19,6 +19,7 @@ import {
   Plus,
   KeyRound
 } from 'lucide-react';
+import ThemeToggle from '../components/ThemeToggle';
 
 interface Brigada {
   id: number;
@@ -189,33 +190,33 @@ export default function GestionBrigadasPage() {
   const brigadas: Brigada[] = brigadasData?.brigadas || [];
 
   const getGrupoColor = (grupo: number | null) => {
-    if (grupo === null) return 'bg-gray-100 text-gray-700';
-    if (grupo === 0) return 'bg-purple-100 text-purple-700';
-    if (grupo === 1) return 'bg-blue-100 text-blue-700';
-    return 'bg-green-100 text-green-700';
+    if (grupo === null) return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+    if (grupo === 0) return 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400';
+    if (grupo === 1) return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400';
+    return 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400';
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/super-admin')}
-              className="p-2 hover:bg-gray-100 rounded-lg"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
               title="Volver al panel"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+              <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
             <Users className="w-8 h-8 text-blue-600" />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Gestion de Brigadas</h1>
-              <p className="text-sm text-gray-500">{brigadas.length} brigadas encontradas</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Gestion de Brigadas</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{brigadas.length} brigadas encontradas</p>
             </div>
           </div>
-          <div className="flex gap-2">
-
+          <div className="flex gap-2 items-center">
+            <ThemeToggle />
             <button
               onClick={() => {
                 setEditData({});
@@ -228,7 +229,7 @@ export default function GestionBrigadasPage() {
             </button>
             <button
               onClick={() => refetch()}
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
               title="Actualizar"
             >
               <RefreshCw className="w-5 h-5" />
@@ -239,10 +240,10 @@ export default function GestionBrigadasPage() {
 
       {/* Filtros */}
       <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="bg-white rounded-lg shadow p-4 mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
           <div className="flex items-center gap-2 mb-3">
-            <Filter className="w-5 h-5 text-gray-500" />
-            <span className="font-medium text-gray-700">Filtros</span>
+            <Filter className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <span className="font-medium text-gray-700 dark:text-gray-300">Filtros</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             {/* Busqueda */}
@@ -253,7 +254,7 @@ export default function GestionBrigadasPage() {
                 placeholder="Buscar por nombre o chapa..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
               />
             </div>
 
@@ -261,7 +262,7 @@ export default function GestionBrigadasPage() {
             <select
               value={sedeFilter}
               onChange={(e) => setSedeFilter(e.target.value ? parseInt(e.target.value) : '')}
-              className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
             >
               <option value="">Todas las sedes</option>
               {sedes.map((sede: Sede) => (
@@ -273,7 +274,7 @@ export default function GestionBrigadasPage() {
             <select
               value={grupoFilter}
               onChange={(e) => setGrupoFilter(e.target.value === 'null' ? 'null' : e.target.value ? parseInt(e.target.value) : '')}
-              className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
             >
               <option value="">Todos los grupos</option>
               <option value="0">Normal (L-V)</option>
@@ -286,7 +287,7 @@ export default function GestionBrigadasPage() {
             <select
               value={activoFilter === '' ? '' : activoFilter.toString()}
               onChange={(e) => setActivoFilter(e.target.value === '' ? '' : e.target.value === 'true')}
-              className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
             >
               <option value="">Todos</option>
               <option value="true">Activos</option>
@@ -296,50 +297,50 @@ export default function GestionBrigadasPage() {
         </div>
 
         {/* Tabla */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
           {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Cargando brigadas...</div>
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">Cargando brigadas...</div>
           ) : brigadas.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No se encontraron brigadas</div>
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">No se encontraron brigadas</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-gray-50 dark:bg-gray-700 border-b dark:border-gray-600">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Brigada</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sede</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grupo</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Brigada</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Sede</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Grupo</th>
 
                     {customFields.filter((f: CampoPersonalizado) => f.activo).map((field: CampoPersonalizado) => (
-                      <th key={field.id} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th key={field.id} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                         {field.etiqueta}
                       </th>
                     ))}
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Estado</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Estado</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {brigadas.map((brigada) => (
                     <>
-                      <tr key={brigada.id} className={`hover:bg-gray-50 ${!brigada.activa ? 'bg-red-50' : ''}`}>
+                      <tr key={brigada.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${!brigada.activa ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                              <span className="text-blue-600 font-medium">
+                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                              <span className="text-blue-600 dark:text-blue-400 font-medium">
                                 {brigada.nombre?.charAt(0) || '?'}
                               </span>
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900">{brigada.nombre}</p>
-                              <p className="text-sm text-gray-500">Chapa: {brigada.chapa}</p>
+                              <p className="font-medium text-gray-900 dark:text-gray-100">{brigada.nombre}</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">Chapa: {brigada.chapa}</p>
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <Building2 className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm text-gray-700">{brigada.sede_nombre}</span>
+                            <Building2 className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">{brigada.sede_nombre}</span>
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -360,7 +361,7 @@ export default function GestionBrigadasPage() {
                           </select>
                         </td>
                         {customFields.filter((f: CampoPersonalizado) => f.activo).map((field: CampoPersonalizado) => (
-                          <td key={field.id} className="px-4 py-3 text-sm text-gray-700">
+                          <td key={field.id} className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                             {brigada.custom_fields?.[field.clave] || '-'}
                           </td>
                         ))}
@@ -368,8 +369,8 @@ export default function GestionBrigadasPage() {
                           <button
                             onClick={() => toggleActivoMutation.mutate({ id: brigada.id, activa: !brigada.activa })}
                             className={`px-3 py-1 rounded-full text-xs font-medium ${brigada.activa
-                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                              : 'bg-red-100 text-red-700 hover:bg-red-200'
+                              ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-400 dark:hover:bg-green-900/60'
+                              : 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400 dark:hover:bg-red-900/60'
                               }`}
                           >
                             {brigada.activa ? 'Activo' : 'Inactivo'}
@@ -379,7 +380,7 @@ export default function GestionBrigadasPage() {
                           <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={() => setExpandedId(expandedId === brigada.id ? null : brigada.id)}
-                              className="p-1 text-gray-500 hover:bg-gray-100 rounded"
+                              className="p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                               title="Ver detalles"
                             >
                               {expandedId === brigada.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
@@ -389,7 +390,7 @@ export default function GestionBrigadasPage() {
                                 setEditingId(brigada.id);
                                 setEditData(brigada);
                               }}
-                              className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                              className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
                               title="Editar"
                             >
                               <Edit2 className="w-5 h-5" />
@@ -400,7 +401,7 @@ export default function GestionBrigadasPage() {
                                   enableResetPasswordMutation.mutate(brigada.id);
                                 }
                               }}
-                              className="p-1 text-orange-500 hover:bg-orange-50 rounded"
+                              className="p-1 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded"
                               title="Reset Contraseña"
                             >
                               <KeyRound className="w-5 h-5" />
@@ -410,25 +411,25 @@ export default function GestionBrigadasPage() {
                       </tr>
                       {/* Fila expandida */}
                       {expandedId === brigada.id && (
-                        <tr className="bg-gray-50">
+                        <tr className="bg-gray-50 dark:bg-gray-700/50">
                           <td colSpan={5} className="px-4 py-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               <div className="flex items-center gap-2">
-                                <Phone className="w-4 h-4 text-gray-400" />
-                                <span className="text-sm">{brigada.telefono || 'Sin telefono'}</span>
+                                <Phone className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                <span className="text-sm dark:text-gray-300">{brigada.telefono || 'Sin telefono'}</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Mail className="w-4 h-4 text-gray-400" />
-                                <span className="text-sm">{brigada.email || 'Sin email'}</span>
+                                <Mail className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                <span className="text-sm dark:text-gray-300">{brigada.email || 'Sin email'}</span>
                               </div>
                               <div>
-                                <label className="text-xs text-gray-500">Cambiar sede:</label>
+                                <label className="text-xs text-gray-500 dark:text-gray-400">Cambiar sede:</label>
                                 <select
                                   value={brigada.sede_id}
                                   onChange={(e) => {
                                     cambiarSedeMutation.mutate({ id: brigada.id, sede_id: parseInt(e.target.value) });
                                   }}
-                                  className="ml-2 px-2 py-1 text-sm border rounded"
+                                  className="ml-2 px-2 py-1 text-sm border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                                 >
                                   {sedes.map((sede: Sede) => (
                                     <option key={sede.id} value={sede.id}>{sede.nombre}</option>
@@ -451,29 +452,29 @@ export default function GestionBrigadasPage() {
       {/* Modal de edicion/creacion */}
       {(editingId || isCreating) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold">{isCreating ? 'Nueva Brigada' : 'Editar Brigada'}</h3>
-              <button onClick={() => { setEditingId(null); setIsCreating(false); setEditData({}); }} className="p-1 hover:bg-gray-100 rounded">
-                <X className="w-5 h-5" />
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+              <h3 className="text-lg font-semibold dark:text-gray-100">{isCreating ? 'Nueva Brigada' : 'Editar Brigada'}</h3>
+              <button onClick={() => { setEditingId(null); setIsCreating(false); setEditData({}); }} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                <X className="w-5 h-5 dark:text-gray-400" />
               </button>
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre Completo</label>
                 <input
                   type="text"
                   value={editData.nombre || ''}
                   onChange={(e) => setEditData({ ...editData, nombre: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sede</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sede</label>
                 <select
                   value={editData.sede_id || ''}
                   onChange={(e) => setEditData({ ...editData, sede_id: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                 >
                   <option value="">Seleccionar Sede</option>
                   {sedes.map((sede: Sede) => (
@@ -484,20 +485,20 @@ export default function GestionBrigadasPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Chapa</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Chapa</label>
                   <input
                     type="text"
                     value={editData.chapa || ''}
                     onChange={(e) => setEditData({ ...editData, chapa: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Rol Brigada</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rol Brigada</label>
                   <select
                     value={editData.rol_brigada || ''}
                     onChange={(e) => setEditData({ ...editData, rol_brigada: e.target.value || null })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                   >
                     <option value="">(Ninguno)</option>
                     <option value="JEFE_BRIGADA">Jefe de Brigada</option>
@@ -507,12 +508,12 @@ export default function GestionBrigadasPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Telefono</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telefono</label>
                   <input
                     type="text"
                     value={editData.telefono || ''}
                     onChange={(e) => setEditData({ ...editData, telefono: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                   />
                 </div>
                 <div>
@@ -520,19 +521,19 @@ export default function GestionBrigadasPage() {
                     type="email"
                     value={editData.email || ''}
                     onChange={(e) => setEditData({ ...editData, email: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                   />
                 </div>
               </div>
 
               {/* Campos Personalizados en Edicion */}
               {customFields.filter((f: CampoPersonalizado) => f.activo).length > 0 && (
-                <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">Información Adicional</h4>
+                <div className="border-t dark:border-gray-700 pt-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Información Adicional</h4>
                   <div className="grid grid-cols-2 gap-4">
                     {customFields.filter((f: CampoPersonalizado) => f.activo).map((field: CampoPersonalizado) => (
                       <div key={field.id} className={field.tipo === 'text' ? 'col-span-2' : ''}>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">{field.etiqueta}</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{field.etiqueta}</label>
                         {field.tipo === 'select' ? (
                           <select
                             value={editData.custom_fields?.[field.clave] || ''}
@@ -543,7 +544,7 @@ export default function GestionBrigadasPage() {
                                 [field.clave]: e.target.value
                               }
                             })}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                           >
                             <option value="">Seleccionar...</option>
                             {/* Opciones deberian venir de field.opciones si existen */}
@@ -559,7 +560,7 @@ export default function GestionBrigadasPage() {
                                 [field.clave]: e.target.value
                               }
                             })}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                           />
                         )}
                       </div>
@@ -568,10 +569,10 @@ export default function GestionBrigadasPage() {
                 </div>
               )}
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t">
+            <div className="flex justify-end gap-2 p-4 border-t dark:border-gray-700">
               <button
                 onClick={() => { setEditingId(null); setIsCreating(false); setEditData({}); }}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
               >
                 Cancelar
               </button>
@@ -600,30 +601,32 @@ export default function GestionBrigadasPage() {
       {/* Modal de Configuracion de Columnas */}
       {showColumnConfig && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold">Configurar Columnas</h3>
-              <button onClick={() => setShowColumnConfig(false)} className="p-1 hover:bg-gray-100 rounded">
-                <X className="w-5 h-5" />
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg mx-4">
+            <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+              <h3 className="text-lg font-semibold dark:text-gray-100">Configurar Columnas</h3>
+              <button onClick={() => setShowColumnConfig(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                <X className="w-5 h-5 dark:text-gray-400" />
               </button>
             </div>
             <div className="p-4 space-y-6">
               {/* Lista de Campos Existentes */}
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Columnas Personalizadas</h4>
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Columnas Personalizadas</h4>
                 {customFields.length === 0 ? (
-                  <p className="text-sm text-gray-500 italic">No hay columnas personalizadas.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">No hay columnas personalizadas.</p>
                 ) : (
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {customFields.map((field: CampoPersonalizado) => (
-                      <div key={field.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div key={field.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{field.etiqueta}</p>
-                          <p className="text-xs text-gray-500">Clave: {field.clave} ({field.tipo})</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{field.etiqueta}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Clave: {field.clave} ({field.tipo})</p>
                         </div>
                         <button
                           onClick={() => toggleFieldMutation.mutate({ id: field.id, activo: !field.activo })}
-                          className={`px-2 py-1 text-xs font-medium rounded ${field.activo ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
+                          className={`px-2 py-1 text-xs font-medium rounded ${field.activo
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                            : 'bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-300'
                             }`}
                         >
                           {field.activo ? 'Visible' : 'Oculto'}
@@ -635,8 +638,8 @@ export default function GestionBrigadasPage() {
               </div>
 
               {/* Agregar Nuevo Campo */}
-              <div className="border-t pt-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+              <div className="border-t dark:border-gray-700 pt-4">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                   <Plus className="w-4 h-4" /> Agregar Nueva Columna
                 </h4>
                 <div className="grid grid-cols-2 gap-3 mb-3">
@@ -646,7 +649,7 @@ export default function GestionBrigadasPage() {
                       placeholder="Etiqueta (Nombre visible)"
                       value={newFieldData.etiqueta || ''}
                       onChange={(e) => setNewFieldData({ ...newFieldData, etiqueta: e.target.value })}
-                      className="w-full px-3 py-2 border rounded text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
                     />
                   </div>
                   <div>
@@ -655,14 +658,14 @@ export default function GestionBrigadasPage() {
                       placeholder="Clave (sin espacios)"
                       value={newFieldData.clave || ''}
                       onChange={(e) => setNewFieldData({ ...newFieldData, clave: e.target.value.toLowerCase().replace(/\s/g, '_') })}
-                      className="w-full px-3 py-2 border rounded text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
                     />
                   </div>
                   <div>
                     <select
                       value={newFieldData.tipo || 'text'}
                       onChange={(e) => setNewFieldData({ ...newFieldData, tipo: e.target.value as any })}
-                      className="w-full px-3 py-2 border rounded text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                     >
                       <option value="text">Texto</option>
                       <option value="number">Numero</option>

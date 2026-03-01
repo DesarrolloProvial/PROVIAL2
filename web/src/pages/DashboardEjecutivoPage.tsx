@@ -17,6 +17,7 @@ import {
 import { LogOut, RefreshCw } from 'lucide-react';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import ThemeToggle from '../components/ThemeToggle';
 
 interface DashboardData {
   resumen: {
@@ -130,12 +131,12 @@ export default function DashboardEjecutivoPage() {
   if (!dashboard) return null;
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard Ejecutivo</h1>
-          <p className="text-gray-600">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Dashboard Ejecutivo</h1>
+          <p className="text-gray-600 dark:text-gray-400">
             {user?.nombre || user?.username} - {user?.rol}
           </p>
         </div>
@@ -143,7 +144,7 @@ export default function DashboardEjecutivoPage() {
           <select
             value={dias}
             onChange={(e) => setDias(parseInt(e.target.value))}
-            className="border border-gray-300 rounded-lg px-3 py-2 bg-white"
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 dark:text-gray-100"
           >
             <option value={7}>Ultimos 7 dias</option>
             <option value={15}>Ultimos 15 dias</option>
@@ -151,6 +152,7 @@ export default function DashboardEjecutivoPage() {
             <option value={60}>Ultimos 60 dias</option>
             <option value={90}>Ultimos 90 dias</option>
           </select>
+          <ThemeToggle />
           <button
             onClick={cargarDashboard}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
@@ -160,7 +162,7 @@ export default function DashboardEjecutivoPage() {
           </button>
           <button
             onClick={() => logout()}
-            className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition flex items-center gap-2"
+            className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition flex items-center gap-2"
           >
             <LogOut className="w-4 h-4" />
             Salir
@@ -170,11 +172,11 @@ export default function DashboardEjecutivoPage() {
 
       {/* Resumen Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Brigadas Activas</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Brigadas Activas</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">
                 {dashboard.resumen.brigadas_activas}
               </p>
             </div>
@@ -186,11 +188,11 @@ export default function DashboardEjecutivoPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Unidades Activas</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Unidades Activas</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">
                 {dashboard.resumen.unidades_activas}
               </p>
             </div>
@@ -203,11 +205,11 @@ export default function DashboardEjecutivoPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Situaciones Hoy</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Situaciones Hoy</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">
                 {dashboard.resumen.situaciones_hoy}
               </p>
             </div>
@@ -219,11 +221,11 @@ export default function DashboardEjecutivoPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">KM Recorridos Hoy</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400">KM Recorridos Hoy</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">
                 {dashboard.resumen.km_recorridos_hoy.toLocaleString()}
               </p>
             </div>
@@ -238,21 +240,21 @@ export default function DashboardEjecutivoPage() {
 
       {/* Comparativa Mensual */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Comparativa Mensual - Situaciones</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Comparativa Mensual - Situaciones</h3>
           <div className="flex items-center gap-8">
             <div>
-              <p className="text-sm text-gray-500">Mes Actual</p>
-              <p className="text-2xl font-bold">{dashboard.comparativa_mensual.mes_actual.situaciones}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Mes Actual</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{dashboard.comparativa_mensual.mes_actual.situaciones}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Mes Anterior</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Mes Anterior</p>
               <p className="text-2xl font-bold text-gray-400">{dashboard.comparativa_mensual.mes_anterior.situaciones}</p>
             </div>
             <div className={`px-3 py-1 rounded-full text-sm font-medium ${
               dashboard.comparativa_mensual.variacion_situaciones >= 0
-                ? 'bg-green-100 text-green-700'
-                : 'bg-red-100 text-red-700'
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
             }`}>
               {dashboard.comparativa_mensual.variacion_situaciones >= 0 ? '+' : ''}
               {dashboard.comparativa_mensual.variacion_situaciones}%
@@ -260,21 +262,21 @@ export default function DashboardEjecutivoPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Comparativa Mensual - Kilometraje</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Comparativa Mensual - Kilometraje</h3>
           <div className="flex items-center gap-8">
             <div>
-              <p className="text-sm text-gray-500">Mes Actual</p>
-              <p className="text-2xl font-bold">{dashboard.comparativa_mensual.mes_actual.km.toLocaleString()} km</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Mes Actual</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{dashboard.comparativa_mensual.mes_actual.km.toLocaleString()} km</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Mes Anterior</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Mes Anterior</p>
               <p className="text-2xl font-bold text-gray-400">{dashboard.comparativa_mensual.mes_anterior.km.toLocaleString()} km</p>
             </div>
             <div className={`px-3 py-1 rounded-full text-sm font-medium ${
               dashboard.comparativa_mensual.variacion_km >= 0
-                ? 'bg-green-100 text-green-700'
-                : 'bg-red-100 text-red-700'
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
             }`}>
               {dashboard.comparativa_mensual.variacion_km >= 0 ? '+' : ''}
               {dashboard.comparativa_mensual.variacion_km}%
@@ -286,8 +288,8 @@ export default function DashboardEjecutivoPage() {
       {/* Graficas principales */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Situaciones por Dia */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Situaciones por Dia</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Situaciones por Dia</h3>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={dashboard.situaciones_por_dia}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -309,8 +311,8 @@ export default function DashboardEjecutivoPage() {
         </div>
 
         {/* Situaciones por Tipo (Pie) */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribucion por Tipo</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Distribucion por Tipo</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -336,8 +338,8 @@ export default function DashboardEjecutivoPage() {
       {/* Segunda fila de graficas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Estado de Unidades */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Estado de Unidades</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Estado de Unidades</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
@@ -358,14 +360,14 @@ export default function DashboardEjecutivoPage() {
             </PieChart>
           </ResponsiveContainer>
           <div className="text-center mt-2">
-            <span className="text-2xl font-bold">{dashboard.estado_unidades.total}</span>
-            <span className="text-gray-500 ml-2">Total Unidades</span>
+            <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{dashboard.estado_unidades.total}</span>
+            <span className="text-gray-500 dark:text-gray-400 ml-2">Total Unidades</span>
           </div>
         </div>
 
         {/* Situaciones por Hora */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Situaciones por Hora del Dia</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Situaciones por Hora del Dia</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={dashboard.situaciones_por_hora}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -386,8 +388,8 @@ export default function DashboardEjecutivoPage() {
       {/* Tercera fila */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Situaciones por Departamento */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Situaciones por Departamento</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Situaciones por Departamento</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={dashboard.situaciones_por_departamento} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -405,43 +407,43 @@ export default function DashboardEjecutivoPage() {
         </div>
 
         {/* Rendimiento de Brigadas */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top 10 Brigadas por Rendimiento</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Top 10 Brigadas por Rendimiento</h3>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-2 px-2 text-sm font-medium text-gray-500">#</th>
-                  <th className="text-left py-2 px-2 text-sm font-medium text-gray-500">Brigada</th>
-                  <th className="text-right py-2 px-2 text-sm font-medium text-gray-500">Situaciones</th>
-                  <th className="text-right py-2 px-2 text-sm font-medium text-gray-500">KM</th>
-                  <th className="text-right py-2 px-2 text-sm font-medium text-gray-500">Horas</th>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="text-left py-2 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">#</th>
+                  <th className="text-left py-2 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">Brigada</th>
+                  <th className="text-right py-2 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">Situaciones</th>
+                  <th className="text-right py-2 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">KM</th>
+                  <th className="text-right py-2 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">Horas</th>
                 </tr>
               </thead>
               <tbody>
                 {dashboard.rendimiento_brigadas.map((brigada, index) => (
-                  <tr key={brigada.brigada_id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <tr key={brigada.brigada_id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="py-2 px-2 text-sm">
                       <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
-                        index === 0 ? 'bg-yellow-100 text-yellow-700' :
-                        index === 1 ? 'bg-gray-100 text-gray-700' :
+                        index === 0 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400' :
+                        index === 1 ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' :
                         index === 2 ? 'bg-orange-100 text-orange-700' :
-                        'bg-gray-50 text-gray-500'
+                        'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                       }`}>
                         {index + 1}
                       </span>
                     </td>
                     <td className="py-2 px-2">
-                      <div className="text-sm font-medium text-gray-900">{brigada.nombre}</div>
-                      <div className="text-xs text-gray-500">{brigada.chapa}</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{brigada.nombre}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{brigada.chapa}</div>
                     </td>
-                    <td className="py-2 px-2 text-right text-sm font-medium text-gray-900">
+                    <td className="py-2 px-2 text-right text-sm font-medium text-gray-900 dark:text-gray-100">
                       {brigada.situaciones_atendidas}
                     </td>
-                    <td className="py-2 px-2 text-right text-sm text-gray-600">
+                    <td className="py-2 px-2 text-right text-sm text-gray-600 dark:text-gray-400">
                       {brigada.km_recorridos.toLocaleString()}
                     </td>
-                    <td className="py-2 px-2 text-right text-sm text-gray-600">
+                    <td className="py-2 px-2 text-right text-sm text-gray-600 dark:text-gray-400">
                       {brigada.horas_servicio}h
                     </td>
                   </tr>

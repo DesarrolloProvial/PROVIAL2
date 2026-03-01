@@ -10,6 +10,7 @@ import {
   asignacionesAvanzadasAPI,
   ConfiguracionVisualSede
 } from '../services/asignacionesAvanzadas.service';
+import ThemeToggle from '../components/ThemeToggle';
 import {
   ArrowLeft,
   Save,
@@ -63,27 +64,28 @@ export default function ConfiguracionSedesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate(-1)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-5 h-5 dark:text-gray-300" />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   Configuracion Visual de Sedes
                 </h1>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Personaliza colores, tipografia y alertas para cada sede
                 </p>
               </div>
             </div>
+            <ThemeToggle />
           </div>
         </div>
       </div>
@@ -99,7 +101,7 @@ export default function ConfiguracionSedesPage() {
             {configuraciones?.map((config: any) => (
               <div
                 key={config.sede_id}
-                className="bg-white rounded-lg shadow overflow-hidden"
+                className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden"
               >
                 {/* Preview */}
                 <div
@@ -149,16 +151,16 @@ export default function ConfiguracionSedesPage() {
 
                 {/* Formulario */}
                 {sedeEditando === config.sede_id ? (
-                  <div className="p-4 space-y-4 border-t">
+                  <div className="p-4 space-y-4 border-t dark:border-gray-700">
                     {/* Colores */}
                     <div>
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         <Palette className="w-4 h-4" />
                         Colores
                       </label>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-xs text-gray-500">Fondo</label>
+                          <label className="text-xs text-gray-500 dark:text-gray-400">Fondo</label>
                           <input
                             type="color"
                             value={configTemp.color_fondo || '#ffffff'}
@@ -167,7 +169,7 @@ export default function ConfiguracionSedesPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500">Header</label>
+                          <label className="text-xs text-gray-500 dark:text-gray-400">Header</label>
                           <input
                             type="color"
                             value={configTemp.color_fondo_header || '#f3f4f6'}
@@ -176,7 +178,7 @@ export default function ConfiguracionSedesPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500">Texto</label>
+                          <label className="text-xs text-gray-500 dark:text-gray-400">Texto</label>
                           <input
                             type="color"
                             value={configTemp.color_texto || '#1f2937'}
@@ -185,7 +187,7 @@ export default function ConfiguracionSedesPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500">Acento</label>
+                          <label className="text-xs text-gray-500 dark:text-gray-400">Acento</label>
                           <input
                             type="color"
                             value={configTemp.color_acento || '#3b82f6'}
@@ -198,17 +200,17 @@ export default function ConfiguracionSedesPage() {
 
                     {/* Tipografía */}
                     <div>
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         <Type className="w-4 h-4" />
                         Tipografia
                       </label>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-xs text-gray-500">Fuente</label>
+                          <label className="text-xs text-gray-500 dark:text-gray-400">Fuente</label>
                           <select
                             value={configTemp.fuente || 'Inter'}
                             onChange={(e) => setConfigTemp({ ...configTemp, fuente: e.target.value })}
-                            className="w-full px-2 py-1 border rounded text-sm"
+                            className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-700 dark:text-gray-100"
                           >
                             <option value="Inter">Inter</option>
                             <option value="Arial">Arial</option>
@@ -218,11 +220,11 @@ export default function ConfiguracionSedesPage() {
                           </select>
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500">Tamano</label>
+                          <label className="text-xs text-gray-500 dark:text-gray-400">Tamano</label>
                           <select
                             value={configTemp.tamano_fuente || 'normal'}
                             onChange={(e) => setConfigTemp({ ...configTemp, tamano_fuente: e.target.value as any })}
-                            className="w-full px-2 py-1 border rounded text-sm"
+                            className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-700 dark:text-gray-100"
                           >
                             <option value="small">Pequeno</option>
                             <option value="normal">Normal</option>
@@ -234,7 +236,7 @@ export default function ConfiguracionSedesPage() {
 
                     {/* Alertas */}
                     <div>
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         <Bell className="w-4 h-4" />
                         Alertas de Rotacion
                       </label>
@@ -249,11 +251,11 @@ export default function ConfiguracionSedesPage() {
                             })}
                             className="rounded"
                           />
-                          <span className="text-sm">Alertar rotacion de rutas</span>
+                          <span className="text-sm dark:text-gray-300">Alertar rotacion de rutas</span>
                         </label>
                         {configTemp.alerta_rotacion_rutas_activa && (
                           <div>
-                            <label className="text-xs text-gray-500">
+                            <label className="text-xs text-gray-500 dark:text-gray-400">
                               Umbral (veces en misma ruta)
                             </label>
                             <input
@@ -265,7 +267,7 @@ export default function ConfiguracionSedesPage() {
                                 ...configTemp,
                                 umbral_rotacion_rutas: parseInt(e.target.value)
                               })}
-                              className="w-full px-2 py-1 border rounded text-sm"
+                              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-700 dark:text-gray-100"
                             />
                           </div>
                         )}
@@ -279,7 +281,7 @@ export default function ConfiguracionSedesPage() {
                           setSedeEditando(null);
                           setConfigTemp({});
                         }}
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                        className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 dark:text-gray-300"
                       >
                         Cancelar
                       </button>
@@ -294,10 +296,10 @@ export default function ConfiguracionSedesPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="p-4 border-t">
+                  <div className="p-4 border-t dark:border-gray-700">
                     <button
                       onClick={() => iniciarEdicion(config)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center justify-center gap-2 dark:text-gray-300"
                     >
                       <Palette className="w-4 h-4" />
                       Editar configuracion

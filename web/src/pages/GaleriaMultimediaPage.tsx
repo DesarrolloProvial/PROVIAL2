@@ -24,6 +24,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import api from '../services/api';
+import ThemeToggle from '../components/ThemeToggle';
 
 interface MultimediaItem {
   id: number;
@@ -110,24 +111,24 @@ export default function GaleriaMultimediaPage() {
   // Obtener badge de tipo situación
   const getTipoBadge = (tipo: string) => {
     const colors: Record<string, string> = {
-      INCIDENTE: 'bg-red-100 text-red-800',
-      ASISTENCIA_VEHICULAR: 'bg-blue-100 text-blue-800',
+      INCIDENTE: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400',
+      ASISTENCIA_VEHICULAR: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400',
       EMERGENCIA: 'bg-orange-100 text-orange-800',
-      PATRULLAJE: 'bg-gray-100 text-gray-800',
+      PATRULLAJE: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
     };
-    return colors[tipo] || 'bg-gray-100 text-gray-800';
+    return colors[tipo] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
   };
 
   // Obtener badge de completitud
   const getCompletitudBadge = (fotos: number, videos: number) => {
     const isComplete = fotos >= 3 && videos >= 1;
     return isComplete ? (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-green-100 text-green-800 rounded-full">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400 rounded-full">
         <CheckCircle2 size={12} />
         Completa
       </span>
     ) : (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-amber-100 text-amber-800 dark:bg-yellow-900/40 dark:text-yellow-400 rounded-full">
         <AlertTriangle size={12} />
         {fotos}/3 fotos, {videos}/1 video
       </span>
@@ -135,39 +136,42 @@ export default function GaleriaMultimediaPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
                 title="Regresar"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                   <Camera className="text-purple-600" />
                   Galeria Multimedia
                 </h1>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   Fotos y videos de situaciones para analisis y difusion
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
+              <ThemeToggle />
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
-                  showFilters ? 'bg-purple-50 border-purple-300' : 'bg-white border-gray-200'
+                  showFilters
+                    ? 'bg-purple-50 border-purple-300 dark:bg-purple-900/30 dark:border-purple-700'
+                    : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600'
                 }`}
               >
                 <Filter size={18} />
-                Filtros
+                <span className="dark:text-gray-300">Filtros</span>
               </button>
               <button
                 onClick={() => refetch()}
@@ -180,38 +184,38 @@ export default function GaleriaMultimediaPage() {
 
           {/* Panel de filtros */}
           {showFilters && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border dark:border-gray-600">
               <div className="grid grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Desde
                   </label>
                   <input
                     type="date"
                     value={filtros.desde}
                     onChange={(e) => setFiltros({ ...filtros, desde: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Hasta
                   </label>
                   <input
                     type="date"
                     value={filtros.hasta}
                     onChange={(e) => setFiltros({ ...filtros, hasta: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Tipo de Situación
                   </label>
                   <select
                     value={filtros.tipoSituacion}
                     onChange={(e) => setFiltros({ ...filtros, tipoSituacion: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100"
                   >
                     <option value="">Todos</option>
                     <option value="INCIDENTE">Incidentes</option>
@@ -229,7 +233,7 @@ export default function GaleriaMultimediaPage() {
                       }
                       className="w-4 h-4 text-purple-600 rounded"
                     />
-                    <span className="text-sm text-gray-700">Solo incompletas</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Solo incompletas</span>
                   </label>
                 </div>
               </div>
@@ -246,9 +250,9 @@ export default function GaleriaMultimediaPage() {
           </div>
         ) : data?.situaciones.length === 0 ? (
           <div className="text-center py-16">
-            <Camera size={48} className="mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-600">No hay multimedia</h3>
-            <p className="text-gray-400">
+            <Camera size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+            <h3 className="text-lg font-medium text-gray-600 dark:text-gray-400">No hay multimedia</h3>
+            <p className="text-gray-400 dark:text-gray-500">
               No se encontraron situaciones con los filtros seleccionados
             </p>
           </div>
@@ -257,10 +261,10 @@ export default function GaleriaMultimediaPage() {
             {data?.situaciones.map((situacion) => (
               <div
                 key={situacion.situacion_id}
-                className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow"
               >
                 {/* Preview de multimedia */}
-                <div className="relative h-48 bg-gray-100">
+                <div className="relative h-48 bg-gray-100 dark:bg-gray-700">
                   {situacion.multimedia.length > 0 ? (
                     <div className="grid grid-cols-3 h-full gap-0.5">
                       {situacion.multimedia.slice(0, 3).map((item, idx) => (
@@ -310,7 +314,7 @@ export default function GaleriaMultimediaPage() {
                 {/* Info de la situación */}
                 <div className="p-4">
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-gray-800">
+                    <h3 className="font-semibold text-gray-800 dark:text-gray-200">
                       {situacion.numero_situacion}
                     </h3>
                     {getCompletitudBadge(
@@ -319,7 +323,7 @@ export default function GaleriaMultimediaPage() {
                     )}
                   </div>
 
-                  <div className="space-y-1 text-sm text-gray-600">
+                  <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center gap-2">
                       <MapPin size={14} />
                       <span>
@@ -341,7 +345,7 @@ export default function GaleriaMultimediaPage() {
                     </div>
                     {situacion.unidad_codigo && (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">
+                        <span className="text-xs bg-gray-100 dark:bg-gray-700 dark:text-gray-300 px-2 py-0.5 rounded">
                           🚓 Unidad {situacion.unidad_codigo}
                         </span>
                       </div>
@@ -349,7 +353,7 @@ export default function GaleriaMultimediaPage() {
                   </div>
 
                   {situacion.descripcion && (
-                    <p className="mt-2 text-sm text-gray-500 line-clamp-2">
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
                       {situacion.descripcion}
                     </p>
                   )}
@@ -358,15 +362,15 @@ export default function GaleriaMultimediaPage() {
                   <div className="mt-4 flex items-center gap-2">
                     <button
                       onClick={() => openModal(situacion, 0)}
-                      className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 text-sm"
+                      className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/50 text-sm"
                     >
                       <Eye size={16} />
                       Ver
                     </button>
-                    <button className="flex items-center justify-center gap-1 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 text-sm">
+                    <button className="flex items-center justify-center gap-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 text-sm">
                       <Download size={16} />
                     </button>
-                    <button className="flex items-center justify-center gap-1 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 text-sm">
+                    <button className="flex items-center justify-center gap-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 text-sm">
                       <Share2 size={16} />
                     </button>
                   </div>
@@ -379,7 +383,7 @@ export default function GaleriaMultimediaPage() {
         {/* Paginación */}
         {data && data.total > 50 && (
           <div className="mt-6 flex justify-center">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Mostrando {data.situaciones.length} de {data.total} situaciones
             </p>
           </div>

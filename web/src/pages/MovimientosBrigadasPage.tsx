@@ -19,6 +19,7 @@ import {
   Check,
   AlertTriangle
 } from 'lucide-react';
+import ThemeToggle from '../components/ThemeToggle';
 
 type TabType = 'ubicaciones' | 'prestamos' | 'divisiones';
 
@@ -230,13 +231,13 @@ export default function MovimientosBrigadasPage() {
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
       case 'CON_UNIDAD':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400';
       case 'PRESTADO':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400';
       case 'EN_PUNTO_FIJO':
         return 'bg-orange-100 text-orange-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
   };
 
@@ -254,23 +255,24 @@ export default function MovimientosBrigadasPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/dashboard')}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Movimientos de Brigadas</h1>
-              <p className="text-gray-600">Prestamos, divisiones y cambios de unidad</p>
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Movimientos de Brigadas</h1>
+              <p className="text-gray-600 dark:text-gray-400">Prestamos, divisiones y cambios de unidad</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <ThemeToggle />
             <button
               onClick={openPrestamoModal}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
@@ -289,15 +291,15 @@ export default function MovimientosBrigadasPage() {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="border-b border-gray-200">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+          <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="flex -mb-px">
               <button
                 onClick={() => setActiveTab('ubicaciones')}
                 className={`px-6 py-4 text-sm font-medium border-b-2 ${
                   activeTab === 'ubicaciones'
                     ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
                 <Users className="w-4 h-4 inline mr-2" />
@@ -308,7 +310,7 @@ export default function MovimientosBrigadasPage() {
                 className={`px-6 py-4 text-sm font-medium border-b-2 ${
                   activeTab === 'prestamos'
                     ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
                 <ArrowRightLeft className="w-4 h-4 inline mr-2" />
@@ -319,7 +321,7 @@ export default function MovimientosBrigadasPage() {
                 className={`px-6 py-4 text-sm font-medium border-b-2 ${
                   activeTab === 'divisiones'
                     ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
                 <MapPin className="w-4 h-4 inline mr-2" />
@@ -333,42 +335,42 @@ export default function MovimientosBrigadasPage() {
             {activeTab === 'ubicaciones' && (
               <div className="overflow-x-auto">
                 {loadingUbicaciones ? (
-                  <div className="text-center py-8 text-gray-500">Cargando...</div>
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">Cargando...</div>
                 ) : ubicaciones.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     No hay brigadas con ubicacion activa
                   </div>
                 ) : (
                   <table className="w-full">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Brigada</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unidad Actual</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unidad Origen</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ubicacion</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Desde</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Brigada</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Estado</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Unidad Actual</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Unidad Origen</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Ubicacion</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Desde</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {ubicaciones.map((u) => (
-                        <tr key={u.usuario_id} className="hover:bg-gray-50">
+                        <tr key={u.usuario_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                           <td className="px-4 py-4">
-                            <div className="font-medium text-gray-900">{u.nombre_completo}</div>
-                            <div className="text-sm text-gray-500">@{u.username}</div>
+                            <div className="font-medium text-gray-900 dark:text-gray-100">{u.nombre_completo}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">@{u.username}</div>
                           </td>
                           <td className="px-4 py-4">
                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${getEstadoBadge(u.estado)}`}>
                               {getEstadoLabel(u.estado)}
                             </span>
                           </td>
-                          <td className="px-4 py-4 font-medium">
+                          <td className="px-4 py-4 font-medium text-gray-900 dark:text-gray-100">
                             {u.unidad_actual_codigo || '-'}
                           </td>
-                          <td className="px-4 py-4 text-gray-600">
+                          <td className="px-4 py-4 text-gray-600 dark:text-gray-400">
                             {u.unidad_origen_codigo}
                           </td>
-                          <td className="px-4 py-4 text-sm text-gray-600">
+                          <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">
                             {u.estado === 'EN_PUNTO_FIJO' ? (
                               <div>
                                 <div>{u.punto_fijo_ruta_codigo} Km {u.punto_fijo_km}</div>
@@ -380,7 +382,7 @@ export default function MovimientosBrigadasPage() {
                               '-'
                             )}
                           </td>
-                          <td className="px-4 py-4 text-sm text-gray-500">
+                          <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
                             {new Date(u.inicio_ubicacion).toLocaleString('es-GT')}
                           </td>
                         </tr>
@@ -394,25 +396,25 @@ export default function MovimientosBrigadasPage() {
             {activeTab === 'prestamos' && (
               <div className="space-y-4">
                 {brigadasPrestados.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     No hay brigadas prestados actualmente
                   </div>
                 ) : (
                   brigadasPrestados.map((b) => (
-                    <div key={b.usuario_id} className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <div key={b.usuario_id} className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-semibold text-gray-900">{b.nombre_completo}</h3>
-                          <p className="text-sm text-gray-600">@{b.username}</p>
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100">{b.nombre_completo}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">@{b.username}</p>
                           <div className="mt-2 text-sm">
-                            <span className="text-gray-500">Origen:</span>{' '}
-                            <span className="font-medium">{b.unidad_origen_codigo}</span>
-                            <span className="mx-2">→</span>
-                            <span className="text-gray-500">Actual:</span>{' '}
+                            <span className="text-gray-500 dark:text-gray-400">Origen:</span>{' '}
+                            <span className="font-medium text-gray-900 dark:text-gray-100">{b.unidad_origen_codigo}</span>
+                            <span className="mx-2 text-gray-500 dark:text-gray-400">→</span>
+                            <span className="text-gray-500 dark:text-gray-400">Actual:</span>{' '}
                             <span className="font-medium text-blue-600">{b.unidad_actual_codigo}</span>
                           </div>
                           {b.motivo && (
-                            <p className="mt-1 text-sm text-gray-500">Motivo: {b.motivo}</p>
+                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Motivo: {b.motivo}</p>
                           )}
                         </div>
                         <button
@@ -432,30 +434,30 @@ export default function MovimientosBrigadasPage() {
             {activeTab === 'divisiones' && (
               <div className="space-y-4">
                 {brigadasPuntoFijo.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     No hay brigadas en punto fijo actualmente
                   </div>
                 ) : (
                   brigadasPuntoFijo.map((b) => (
-                    <div key={b.usuario_id} className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                    <div key={b.usuario_id} className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-semibold text-gray-900">{b.nombre_completo}</h3>
-                          <p className="text-sm text-gray-600">@{b.username}</p>
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100">{b.nombre_completo}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">@{b.username}</p>
                           <div className="mt-2 text-sm space-y-1">
-                            <div>
+                            <div className="text-gray-700 dark:text-gray-300">
                               <MapPin className="w-4 h-4 inline mr-1 text-orange-600" />
                               {b.punto_fijo_ruta_codigo} Km {b.punto_fijo_km} - {b.punto_fijo_sentido}
                             </div>
                             {b.punto_fijo_descripcion && (
-                              <p className="text-gray-600">{b.punto_fijo_descripcion}</p>
+                              <p className="text-gray-600 dark:text-gray-400">{b.punto_fijo_descripcion}</p>
                             )}
                             {b.situacion_persistente_titulo && (
-                              <p className="text-orange-700 font-medium">
+                              <p className="text-orange-700 dark:text-orange-400 font-medium">
                                 Situacion: {b.situacion_persistente_titulo}
                               </p>
                             )}
-                            <p className="text-gray-500">
+                            <p className="text-gray-500 dark:text-gray-400">
                               Unidad origen: {b.unidad_origen_codigo}
                             </p>
                           </div>
@@ -480,16 +482,16 @@ export default function MovimientosBrigadasPage() {
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                   {modalType === 'prestamo' && 'Prestar Brigada'}
                   {modalType === 'retorno' && 'Retornar Brigada'}
                   {modalType === 'division' && 'Division de Fuerza'}
                   {modalType === 'reunion' && 'Reunir con Unidad'}
                 </h2>
-                <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
+                <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -499,13 +501,13 @@ export default function MovimientosBrigadasPage() {
               {/* Seleccionar unidad origen (para prestamo y division) */}
               {(modalType === 'prestamo' || modalType === 'division') && !selectedBrigada && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Seleccionar Unidad Origen
                   </label>
                   <select
                     value={selectedUnidad || ''}
                     onChange={(e) => setSelectedUnidad(Number(e.target.value))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100"
                     required
                   >
                     <option value="">-- Seleccionar unidad --</option>
@@ -523,11 +525,11 @@ export default function MovimientosBrigadasPage() {
               {/* Seleccionar brigada (para prestamo y division) */}
               {(modalType === 'prestamo' || modalType === 'division') && selectedUnidad && !selectedBrigada && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Seleccionar Brigada
                   </label>
                   {brigadasParaPrestamo.length === 0 ? (
-                    <p className="text-gray-500 text-sm">No hay brigadas disponibles en esta unidad</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">No hay brigadas disponibles en esta unidad</p>
                   ) : (
                     <div className="space-y-2">
                       {brigadasParaPrestamo.map((b) => (
@@ -535,10 +537,10 @@ export default function MovimientosBrigadasPage() {
                           key={b.usuario_id}
                           type="button"
                           onClick={() => setSelectedBrigada(b)}
-                          className="w-full text-left p-3 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50"
+                          className="w-full text-left p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                         >
-                          <div className="font-medium">{b.nombre_completo}</div>
-                          <div className="text-sm text-gray-500">@{b.username}</div>
+                          <div className="font-medium text-gray-900 dark:text-gray-100">{b.nombre_completo}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">@{b.username}</div>
                         </button>
                       ))}
                     </div>
@@ -548,12 +550,12 @@ export default function MovimientosBrigadasPage() {
 
               {/* Info del brigada seleccionado */}
               {selectedBrigada && (
-                <div className="bg-gray-50 rounded-lg p-3">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
                   <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-gray-600" />
+                    <Users className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <div>
-                      <div className="font-medium">{selectedBrigada.nombre_completo}</div>
-                      <div className="text-sm text-gray-500">@{selectedBrigada.username}</div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">{selectedBrigada.nombre_completo}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">@{selectedBrigada.username}</div>
                     </div>
                   </div>
                 </div>
@@ -562,13 +564,13 @@ export default function MovimientosBrigadasPage() {
               {/* Unidad destino (para prestamo y reunion) */}
               {(modalType === 'prestamo' || modalType === 'reunion') && selectedBrigada && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Unidad Destino
                   </label>
                   <select
                     value={formData.unidad_destino_id}
                     onChange={(e) => setFormData({ ...formData, unidad_destino_id: Number(e.target.value) })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100"
                     required
                   >
                     <option value="">-- Seleccionar unidad --</option>
@@ -590,13 +592,13 @@ export default function MovimientosBrigadasPage() {
               {/* Ruta */}
               {selectedBrigada && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Ruta
                   </label>
                   <select
                     value={formData.ruta_id}
                     onChange={(e) => setFormData({ ...formData, ruta_id: Number(e.target.value) })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100"
                     required
                   >
                     <option value="">-- Seleccionar ruta --</option>
@@ -612,7 +614,7 @@ export default function MovimientosBrigadasPage() {
               {/* Kilometro */}
               {selectedBrigada && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Kilometro
                   </label>
                   <input
@@ -620,7 +622,7 @@ export default function MovimientosBrigadasPage() {
                     step="0.1"
                     value={formData.km}
                     onChange={(e) => setFormData({ ...formData, km: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100"
                     required
                   />
                 </div>
@@ -629,13 +631,13 @@ export default function MovimientosBrigadasPage() {
               {/* Sentido (solo para division) */}
               {modalType === 'division' && selectedBrigada && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Sentido
                   </label>
                   <select
                     value={formData.sentido}
                     onChange={(e) => setFormData({ ...formData, sentido: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100"
                   >
                     <option value="NORTE_SUR">Norte - Sur</option>
                     <option value="SUR_NORTE">Sur - Norte</option>
@@ -648,14 +650,14 @@ export default function MovimientosBrigadasPage() {
               {/* Descripcion (solo para division) */}
               {modalType === 'division' && selectedBrigada && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Descripcion del Punto
                   </label>
                   <input
                     type="text"
                     value={formData.descripcion}
                     onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                     placeholder="Ej: Frente a gasolinera..."
                   />
                 </div>
@@ -664,13 +666,13 @@ export default function MovimientosBrigadasPage() {
               {/* Motivo */}
               {selectedBrigada && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Motivo
                   </label>
                   <textarea
                     value={formData.motivo}
                     onChange={(e) => setFormData({ ...formData, motivo: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                     rows={2}
                     required={modalType === 'prestamo' || modalType === 'division'}
                     placeholder="Ingrese el motivo..."
@@ -680,9 +682,9 @@ export default function MovimientosBrigadasPage() {
 
               {/* Warning para division */}
               {modalType === 'division' && selectedBrigada && (
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-start gap-2">
+                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 flex items-start gap-2">
                   <AlertTriangle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-orange-800">
+                  <div className="text-sm text-orange-800 dark:text-orange-400">
                     El brigada se quedara en este punto fijo y no podra crear situaciones normales.
                     Solo podra agregar informacion a situaciones persistentes.
                   </div>
@@ -695,7 +697,7 @@ export default function MovimientosBrigadasPage() {
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   >
                     Cancelar
                   </button>

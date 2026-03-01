@@ -7,6 +7,7 @@ import FormularioPatrullaje from '../components/FormularioPatrullaje';
 import FormularioOtros from '../components/FormularioOtros';
 import FormularioHechoTransito from '../components/FormularioHechoTransito';
 import FormularioEmergencia from '../components/FormularioEmergencia';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function EditarSituacionPage() {
     const { id } = useParams<{ id: string }>();
@@ -49,10 +50,10 @@ export default function EditarSituacionPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+            <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
                 <div className="text-center">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" />
-                    <p className="mt-4 text-gray-600">Cargando situación...</p>
+                    <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando situación...</p>
                 </div>
             </div>
         );
@@ -60,10 +61,10 @@ export default function EditarSituacionPage() {
 
     if (error || !situacion) {
         return (
-            <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-                <div className="bg-white rounded-lg shadow-lg p-8 max-w-md">
+            <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-md">
                     <h2 className="text-xl font-bold text-red-600 mb-4">Error</h2>
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
                         No se pudo cargar la situación. {(error as any)?.message || ''}
                     </p>
                     <button
@@ -99,67 +100,68 @@ export default function EditarSituacionPage() {
     const tipoFormulario = getTipoFormulario();
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
             {/* Header */}
-            <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+            <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
                 <div className="max-w-5xl mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <button
                                 onClick={() => navigate(-1)}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition"
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition"
                             >
-                                <ArrowLeft className="w-6 h-6 text-gray-600" />
+                                <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                             </button>
                             <div>
-                                <h1 className="text-xl font-bold text-gray-800">
+                                <h1 className="text-xl font-bold text-gray-800 dark:text-gray-200">
                                     Editar Situación #{situacion.numero_situacion || situacion.id}
                                 </h1>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
                                     {situacion.tipo_situacion?.replace(/_/g, ' ')} - {situacion.unidad_codigo}
                                 </p>
                             </div>
                         </div>
+                        <ThemeToggle />
                     </div>
                 </div>
             </div>
 
             {/* Content */}
             <div className="max-w-5xl mx-auto px-4 py-6">
-                <div className="bg-white rounded-lg shadow-lg p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
                     {/* Información General */}
-                    <div className="mb-6 pb-6 border-b border-gray-200">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4">Información General</h2>
+                    <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Información General</h2>
                         <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                                <span className="font-medium text-gray-600">Unidad:</span>
-                                <span className="ml-2 text-gray-900">{situacion.unidad_codigo}</span>
+                                <span className="font-medium text-gray-600 dark:text-gray-400">Unidad:</span>
+                                <span className="ml-2 text-gray-900 dark:text-gray-100">{situacion.unidad_codigo}</span>
                             </div>
                             <div>
-                                <span className="font-medium text-gray-600">Estado:</span>
+                                <span className="font-medium text-gray-600 dark:text-gray-400">Estado:</span>
                                 <span className={`ml-2 px-2 py-1 rounded-full text-xs ${situacion.estado === 'ACTIVA'
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-gray-100 text-gray-800'
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400'
+                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
                                     }`}>
                                     {situacion.estado}
                                 </span>
                             </div>
                             <div>
-                                <span className="font-medium text-gray-600">Fecha:</span>
-                                <span className="ml-2 text-gray-900">
+                                <span className="font-medium text-gray-600 dark:text-gray-400">Fecha:</span>
+                                <span className="ml-2 text-gray-900 dark:text-gray-100">
                                     {new Date(situacion.created_at).toLocaleString('es-GT')}
                                 </span>
                             </div>
                             <div>
-                                <span className="font-medium text-gray-600">Creado por:</span>
-                                <span className="ml-2 text-gray-900">{situacion.creado_por_nombre}</span>
+                                <span className="font-medium text-gray-600 dark:text-gray-400">Creado por:</span>
+                                <span className="ml-2 text-gray-900 dark:text-gray-100">{situacion.creado_por_nombre}</span>
                             </div>
                         </div>
                     </div>
 
                     {/* Formulario según tipo */}
                     <div>
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
                             Detalles de {situacion.tipo_situacion?.replace(/_/g, ' ')}
                         </h2>
 
@@ -181,10 +183,10 @@ export default function EditarSituacionPage() {
                     </div>
 
                     {/* Botones de acción */}
-                    <div className="mt-6 pt-6 border-t border-gray-200 flex justify-end gap-3">
+                    <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
                         <button
                             onClick={() => navigate(-1)}
-                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                            className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50"
                         >
                             Cancelar
                         </button>
