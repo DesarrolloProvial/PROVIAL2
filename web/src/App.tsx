@@ -31,6 +31,9 @@ import VerActividadPage from './pages/VerActividadPage';
 import ImportExcelPage from './pages/ImportExcelPage';
 import DashboardEstadisticasPage from './pages/DashboardEstadisticasPage';
 import DispositivosPage from './pages/DispositivosPage';
+import TransportesHubPage from './pages/TransportesHubPage';
+import CombustiblePage from './pages/transportes/CombustiblePage';
+import Inspecciones360Page from './pages/transportes/Inspecciones360Page';
 
 // Crear QueryClient
 const queryClient = new QueryClient({
@@ -63,6 +66,21 @@ function OperacionesRoute({ children }: { children: React.ReactNode }) {
 
   // ENCARGADO_NOMINAS puede acceder en modo lectura
   if (user?.rol !== 'OPERACIONES' && user?.rol !== 'ADMIN' && user?.rol !== 'SUPER_ADMIN' && user?.rol !== 'ENCARGADO_NOMINAS') {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// Componente para rutas de Transportes (TRANSPORTES, ADMIN, SUPER_ADMIN)
+function TransportesRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, user } = useAuthStore();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user?.rol !== 'TRANSPORTES' && user?.rol !== 'ADMIN' && user?.rol !== 'SUPER_ADMIN') {
     return <Navigate to="/login" replace />;
   }
 
@@ -136,6 +154,11 @@ function RoleBasedRedirect() {
   // Accidentología y Comunicación Social van al dashboard ejecutivo por ahora
   if (user?.rol === 'ACCIDENTOLOGIA' || user?.rol === 'COMUNICACION_SOCIAL') {
     return <Navigate to="/dashboard-ejecutivo" replace />;
+  }
+
+  // Transportes va a su hub
+  if (user?.rol === 'TRANSPORTES') {
+    return <Navigate to="/transportes" replace />;
   }
 
   // COP va al mapa de monitoreo
@@ -381,6 +404,44 @@ function App() {
                 <DashboardEjecutivoPage />
               </ProtectedRoute>
             }
+          />
+          {/* ── Transportes ──────────────────────────────────────────── */}
+          <Route
+            path="/transportes"
+            element={
+              <TransportesRoute>
+                <TransportesHubPage />
+              </TransportesRoute>
+            }
+          />
+          <Route
+            path="/transportes/unidades"
+            element={
+              <TransportesRoute>
+                <UnidadesPage />
+              </TransportesRoute>
+            }
+          />
+          <Route
+            path="/transportes/combustible"
+            element={
+              <TransportesRoute>
+                <CombustiblePage />
+              </TransportesRoute>
+            }
+          />
+          <Route
+            path="/transportes/inspecciones360"
+            element={
+              <TransportesRoute>
+                <Inspecciones360Page />
+              </TransportesRoute>
+            }
+          />
+          {/* Redirigir ruta antigua de unidades a Transportes */}
+          <Route
+            path="/operaciones/unidades"
+            element={<Navigate to="/transportes/unidades" replace />}
           />
           <Route path="/" element={<RoleBasedRedirect />} />
           <Route path="*" element={<RoleBasedRedirect />} />

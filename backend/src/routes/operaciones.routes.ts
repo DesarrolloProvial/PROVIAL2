@@ -114,7 +114,7 @@ router.post(
 router.get(
   '/combustible/unidad/:id',
   authenticate,
-  authorize('OPERACIONES', 'BRIGADA', 'ADMIN'),
+  authorize('OPERACIONES', 'BRIGADA', 'ADMIN', 'TRANSPORTES'),
   getHistorialCombustible
 );
 

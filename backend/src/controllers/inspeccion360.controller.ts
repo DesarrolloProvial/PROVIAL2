@@ -385,7 +385,7 @@ export const Inspeccion360Controller = {
       const userRol = (req as any).user?.rol;
 
       // Si es admin, ver todas. Si no, solo las suyas como comandante
-      const comandanteId = ['SUPER_ADMIN', 'ADMIN', 'OPERACIONES'].includes(userRol)
+      const comandanteId = ['SUPER_ADMIN', 'ADMIN', 'OPERACIONES', 'TRANSPORTES'].includes(userRol)
         ? undefined
         : userId;
 
