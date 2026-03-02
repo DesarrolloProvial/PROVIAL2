@@ -20,45 +20,41 @@ import { authenticate, authorize } from '../middlewares/auth';
 
 const router = Router();
 
-// Listar unidades (Operaciones, Admin, Encargado Nóminas)
-// ENCARGADO_NOMINAS: Si puede_ver_todas_sedes=true ve todas, sino solo su sede
-router.get('/', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS', 'TRANSPORTES'), listarUnidades);
+// Listar unidades — solo Transportes y Admin (Operaciones ya no gestiona unidades)
+router.get('/', authenticate, authorize('TRANSPORTES', 'ADMIN', 'ENCARGADO_NOMINAS'), listarUnidades);
 
 // Listar tipos de unidad
-router.get('/tipos', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS', 'TRANSPORTES'), listarTiposUnidad);
+router.get('/tipos', authenticate, authorize('TRANSPORTES', 'ADMIN', 'ENCARGADO_NOMINAS'), listarTiposUnidad);
 
-// Listar unidades activas
-router.get('/activas', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS', 'COP', 'BRIGADA', 'TRANSPORTES'), listarUnidadesActivas);
+// Listar unidades activas — acceso más amplio para selección en formularios
+// COP y BRIGADA lo usan para monitoreo y reportes; Operaciones usa /operaciones/unidades/disponibles
+router.get('/activas', authenticate, authorize('TRANSPORTES', 'ADMIN', 'ENCARGADO_NOMINAS', 'COP', 'BRIGADA'), listarUnidadesActivas);
 
 // Reservar numero de situacion para salida activa (sistema offline-first)
 // IMPORTANTE: Esta ruta debe ir ANTES de /:id para que no sea capturada como ID
 router.get('/:codigo/reservar-numero-salida', authenticate, authorize('BRIGADA'), reservarNumeroSalida);
 
-// Obtener unidad específica (COP puede ver para acceder a bitácora)
-router.get('/:id', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS', 'COP', 'TRANSPORTES'), obtenerUnidad);
+// Obtener unidad específica — COP puede ver para acceder a bitácora
+router.get('/:id', authenticate, authorize('TRANSPORTES', 'ADMIN', 'ENCARGADO_NOMINAS', 'COP'), obtenerUnidad);
 
 // Obtener última asignación de unidad
-router.get('/:id/ultima-asignacion', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS', 'TRANSPORTES'), obtenerUltimaAsignacion);
+router.get('/:id/ultima-asignacion', authenticate, authorize('TRANSPORTES', 'ADMIN', 'ENCARGADO_NOMINAS'), obtenerUltimaAsignacion);
 
-// Crear unidad (solo Admin - Transportes no crea unidades)
-router.post('/', authenticate, authorize('ADMIN'), crearUnidad);
+// Crear unidad — Transportes y Admin (Operaciones ya no tiene este permiso)
+router.post('/', authenticate, authorize('TRANSPORTES', 'ADMIN'), crearUnidad);
 
-// Actualizar unidad (Transportes puede editar datos de unidades)
-router.put('/:id', authenticate, authorize('OPERACIONES', 'ADMIN', 'TRANSPORTES'), actualizarUnidad);
+// Editar, activar, desactivar y transferir — Transportes y Admin
+router.put('/:id', authenticate, authorize('TRANSPORTES', 'ADMIN'), actualizarUnidad);
+router.put('/:id/desactivar', authenticate, authorize('TRANSPORTES', 'ADMIN'), desactivarUnidad);
+router.put('/:id/activar', authenticate, authorize('TRANSPORTES', 'ADMIN'), activarUnidad);
+router.put('/:id/transferir', authenticate, authorize('TRANSPORTES', 'ADMIN'), transferirUnidad);
 
-// Desactivar/Activar unidad
-router.put('/:id/desactivar', authenticate, authorize('OPERACIONES', 'ADMIN', 'TRANSPORTES'), desactivarUnidad);
-router.put('/:id/activar', authenticate, authorize('OPERACIONES', 'ADMIN', 'TRANSPORTES'), activarUnidad);
-
-// Transferir unidad a otra sede
-router.put('/:id/transferir', authenticate, authorize('OPERACIONES', 'ADMIN', 'TRANSPORTES'), transferirUnidad);
-
-// Eliminar unidad (solo Admin)
+// Eliminar unidad (solo si no tiene historial) — solo Admin
 router.delete('/:id', authenticate, authorize('ADMIN'), eliminarUnidad);
 
-// Gestión de tripulación
-router.get('/:id/tripulacion', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS', 'TRANSPORTES'), getTripulacionUnidad);
-router.post('/:id/asignar-brigada', authenticate, authorize('OPERACIONES', 'ADMIN', 'TRANSPORTES'), asignarBrigadaUnidad);
-router.delete('/:id/desasignar-brigada/:brigadaId', authenticate, authorize('OPERACIONES', 'ADMIN', 'TRANSPORTES'), desasignarBrigadaUnidad);
+// Gestión de tripulación permanente
+router.get('/:id/tripulacion', authenticate, authorize('TRANSPORTES', 'ADMIN', 'ENCARGADO_NOMINAS'), getTripulacionUnidad);
+router.post('/:id/asignar-brigada', authenticate, authorize('TRANSPORTES', 'ADMIN'), asignarBrigadaUnidad);
+router.delete('/:id/desasignar-brigada/:brigadaId', authenticate, authorize('TRANSPORTES', 'ADMIN'), desasignarBrigadaUnidad);
 
 export default router;

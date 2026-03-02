@@ -52,14 +52,14 @@ router.get(
 router.get(
   '/unidades/estadisticas',
   authenticate,
-  authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'),
+  authorize('TRANSPORTES', 'ADMIN', 'ENCARGADO_NOMINAS'),
   getEstadisticasUnidades
 );
 
 router.get(
   '/unidades/estadisticas/:id',
   authenticate,
-  authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'),
+  authorize('TRANSPORTES', 'ADMIN', 'ENCARGADO_NOMINAS'),
   getEstadisticasUnidad
 );
 
@@ -77,7 +77,7 @@ router.get(
 router.get(
   '/unidades/disponibles',
   authenticate,
-  authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'),
+  authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS', 'TRANSPORTES'),
   getUnidadesDisponibles
 );
 
