@@ -14,7 +14,8 @@ import {
   desasignarBrigadaUnidad,
   getTripulacionUnidad,
   obtenerUltimaAsignacion,
-  reservarNumeroSalida
+  reservarNumeroSalida,
+  setDisponibilidadTransportes
 } from '../controllers/unidades.controller';
 import { authenticate, authorize } from '../middlewares/auth';
 
@@ -51,6 +52,9 @@ router.put('/:id/transferir', authenticate, authorize('TRANSPORTES', 'ADMIN'), t
 
 // Eliminar unidad (solo si no tiene historial) — solo Admin
 router.delete('/:id', authenticate, authorize('ADMIN'), eliminarUnidad);
+
+// Disponibilidad por Transportes — Transportes y Admin
+router.put('/:id/disponibilidad-transportes', authenticate, authorize('TRANSPORTES', 'ADMIN', 'SUPER_ADMIN'), setDisponibilidadTransportes);
 
 // Gestión de tripulación permanente
 router.get('/:id/tripulacion', authenticate, authorize('TRANSPORTES', 'ADMIN', 'ENCARGADO_NOMINAS'), getTripulacionUnidad);

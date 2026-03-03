@@ -30,16 +30,15 @@ export interface EstadisticasUnidad {
   sede_id: number;
   sede_nombre: string;
   activa: boolean;
-  combustible_actual: number;
-  capacidad_combustible: number | null;
+  nivel_combustible: string | null;    // 'RESERVA','1/4','LLENO', etc.
+  combustible_actual: number | null;   // decimal 0-1.0
+  tipo_combustible: string | null;     // 'GASOLINA' o 'DIESEL'
   odometro_actual: number;
   turnos_ultimo_mes: number;
   turnos_ultimo_trimestre: number;
   ultimo_turno_fecha: Date | null;
   dias_desde_ultimo_uso: number | null;
   proximo_turno_fecha: Date | null;
-  consumo_promedio_diario: number | null;
-  rendimiento_promedio: number | null;
   km_ultimo_mes: number | null;
 }
 
@@ -75,16 +74,16 @@ export interface CombustibleRegistro {
   asignacion_id: number | null;
   turno_id: number | null;
   tipo: 'INICIAL' | 'RECARGA' | 'FINAL' | 'AJUSTE';
-  combustible_anterior: number;
-  combustible_agregado: number;
-  combustible_nuevo: number;
-  combustible_consumido: number | null;
+  nivel_anterior: string | null;       // texto: 'RESERVA','1/4', etc.
+  nivel_nuevo: string | null;          // texto
+  combustible_anterior: number | null; // decimal 0-1.0
+  combustible_nuevo: number | null;    // decimal 0-1.0
   odometro_anterior: number | null;
   odometro_actual: number | null;
   km_recorridos: number | null;
-  rendimiento_km_litro: number | null;
   observaciones: string | null;
   registrado_por: number;
+  registrado_por_nombre?: string;
   created_at: Date;
 }
 
@@ -93,10 +92,10 @@ export interface CreateCombustibleDTO {
   asignacion_id?: number;
   turno_id?: number;
   tipo: 'INICIAL' | 'RECARGA' | 'FINAL' | 'AJUSTE';
-  combustible_anterior: number;
-  combustible_agregado?: number;
+  nivel_anterior?: string | null;
+  nivel_nuevo: string;
+  combustible_anterior?: number;
   combustible_nuevo: number;
-  combustible_consumido?: number;
   odometro_anterior?: number;
   odometro_actual?: number;
   km_recorridos?: number;
@@ -221,39 +220,41 @@ export const OperacionesModel = {
   // ========================================
 
   async registrarCombustible(data: CreateCombustibleDTO): Promise<CombustibleRegistro> {
-    // Calcular rendimiento si es tipo FINAL
-    let rendimiento_km_litro = null;
-    if (data.tipo === 'FINAL' && data.km_recorridos && data.combustible_consumido) {
-      if (data.combustible_consumido > 0) {
-        rendimiento_km_litro = data.km_recorridos / data.combustible_consumido;
-      }
-    }
+    return db.tx(async (t) => {
+      const registro = await t.one(
+        `INSERT INTO combustible_registro (
+          unidad_id, asignacion_id, turno_id, tipo,
+          nivel_anterior, nivel_nuevo,
+          combustible_anterior, combustible_nuevo,
+          odometro_anterior, odometro_actual, km_recorridos,
+          observaciones, registrado_por
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        RETURNING *`,
+        [
+          data.unidad_id,
+          data.asignacion_id || null,
+          data.turno_id || null,
+          data.tipo,
+          data.nivel_anterior || null,
+          data.nivel_nuevo,
+          data.combustible_anterior ?? null,
+          data.combustible_nuevo,
+          data.odometro_anterior || null,
+          data.odometro_actual || null,
+          data.km_recorridos || null,
+          data.observaciones || null,
+          data.registrado_por,
+        ]
+      );
 
-    return db.one(
-      `INSERT INTO combustible_registro (
-        unidad_id, asignacion_id, turno_id, tipo,
-        combustible_anterior, combustible_agregado, combustible_nuevo, combustible_consumido,
-        odometro_anterior, odometro_actual, km_recorridos,
-        rendimiento_km_litro, observaciones, registrado_por
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-      RETURNING *`,
-      [
-        data.unidad_id,
-        data.asignacion_id || null,
-        data.turno_id || null,
-        data.tipo,
-        data.combustible_anterior,
-        data.combustible_agregado || 0,
-        data.combustible_nuevo,
-        data.combustible_consumido || null,
-        data.odometro_anterior || null,
-        data.odometro_actual || null,
-        data.km_recorridos || null,
-        rendimiento_km_litro,
-        data.observaciones || null,
-        data.registrado_por,
-      ]
-    );
+      // Actualizar nivel actual en la unidad
+      await t.none(
+        'UPDATE unidad SET combustible_actual = $1, nivel_combustible = $2, updated_at = NOW() WHERE id = $3',
+        [data.combustible_nuevo, data.nivel_nuevo, data.unidad_id]
+      );
+
+      return registro;
+    });
   },
 
   async getHistorialCombustible(
@@ -261,9 +262,11 @@ export const OperacionesModel = {
     limit: number = 50
   ): Promise<CombustibleRegistro[]> {
     return db.manyOrNone(
-      `SELECT * FROM combustible_registro
-       WHERE unidad_id = $1
-       ORDER BY created_at DESC
+      `SELECT cr.*, u.nombre_completo AS registrado_por_nombre
+       FROM combustible_registro cr
+       LEFT JOIN usuario u ON cr.registrado_por = u.id
+       WHERE cr.unidad_id = $1
+       ORDER BY cr.created_at DESC
        LIMIT $2`,
       [unidadId, limit]
     );
@@ -347,7 +350,10 @@ export const OperacionesModel = {
         un.sede_id,
         s.nombre as sede_nombre,
         un.combustible_actual,
-        un.capacidad_combustible,
+        un.nivel_combustible,
+        un.tipo_combustible,
+        un.disponible_transportes,
+        un.instrucciones_transportes,
         un.odometro_actual,
         eu.turnos_ultimo_mes,
         eu.ultimo_turno_fecha,

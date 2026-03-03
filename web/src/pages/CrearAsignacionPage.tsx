@@ -443,7 +443,7 @@ export default function CrearAsignacionPage() {
                           className="mt-1"
                         />
                         <div className="flex-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-bold text-gray-900 dark:text-gray-100">{unidad.codigo}</span>
                             <span className="text-gray-700 dark:text-gray-300 text-sm">
                               {unidad.marca} {unidad.modelo}
@@ -453,8 +453,18 @@ export default function CrearAsignacionPage() {
                             ) : (
                               <AlertCircle className="h-4 w-4 text-amber-500" />
                             )}
+                            {unidad.disponible_transportes === false && (
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                                No autorizada
+                              </span>
+                            )}
                           </div>
                           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{unidad.mensaje}</p>
+                          {unidad.instrucciones_transportes && (
+                            <p className="text-xs text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded px-2 py-1 mt-1.5">
+                              Transportes: {unidad.instrucciones_transportes}
+                            </p>
+                          )}
                           <div className="flex gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
                             <span>Odometro: {unidad.odometro_actual?.toLocaleString()} km</span>
                             <span>Turnos mes: {unidad.turnos_ultimo_mes}</span>

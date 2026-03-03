@@ -45,6 +45,16 @@ export default function DashboardSedesPage() {
   const [asignacionExpandida, setAsignacionExpandida] = useState<number | null>(null);
   const [incluirBorradores, setIncluirBorradores] = useState(true);
 
+  // Modal de selección para publicar
+  const [modalPublicar, setModalPublicar] = useState<{
+    visible: boolean;
+    sede: SedeConAsignaciones | null;
+    seleccionadas: Set<number>;
+  }>({ visible: false, sede: null, seleccionadas: new Set() });
+
+  // Banner de confirmación tras publicar
+  const [banner, setBanner] = useState<{ codigos: string[]; sedeName: string } | null>(null);
+
   // Modal para avisos
   const [modalAviso, setModalAviso] = useState<{
     visible: boolean;
@@ -61,10 +71,17 @@ export default function DashboardSedesPage() {
 
   // Mutations
   const publicarMutation = useMutation({
-    mutationFn: (turnoId: number) => asignacionesAvanzadasAPI.publicarTurno(turnoId),
-    onSuccess: (data) => {
+    mutationFn: ({ turnoId, asignacionIds }: { turnoId: number; asignacionIds: number[] }) =>
+      asignacionesAvanzadasAPI.publicarTurno(turnoId, asignacionIds),
+    onSuccess: (resp, variables) => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones-por-sede'] });
-      console.log('Nómina publicada:', data.data);
+      const codigos: string[] = resp.data?.codigos ?? [];
+      const sedeName = modalPublicar.sede?.sede_nombre ?? '';
+      if (codigos.length > 0) {
+        setBanner({ codigos, sedeName });
+        setTimeout(() => setBanner(null), 6000);
+      }
+      setModalPublicar({ visible: false, sede: null, seleccionadas: new Set() });
     },
     onError: (error: any) => {
       console.error('Error al publicar nómina:', error.response?.data?.error || error.message);
@@ -74,15 +91,32 @@ export default function DashboardSedesPage() {
 
   const despublicarMutation = useMutation({
     mutationFn: (turnoId: number) => asignacionesAvanzadasAPI.despublicarTurno(turnoId),
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones-por-sede'] });
-      console.log('Nómina despublicada:', data.data);
     },
     onError: (error: any) => {
       console.error('Error al despublicar nómina:', error.response?.data?.error || error.message);
       alert(error.response?.data?.error || 'Error al despublicar nómina');
     }
   });
+
+  function abrirModalPublicar(sede: SedeConAsignaciones) {
+    const borradoresIds = new Set<number>(
+      sede.asignaciones
+        .filter(a => a.estado_nomina === 'BORRADOR' || !a.estado_nomina)
+        .map(a => a.asignacion_id)
+    );
+    setModalPublicar({ visible: true, sede, seleccionadas: borradoresIds });
+  }
+
+  function toggleSeleccion(asignacionId: number) {
+    setModalPublicar(prev => {
+      const next = new Set(prev.seleccionadas);
+      if (next.has(asignacionId)) next.delete(asignacionId);
+      else next.add(asignacionId);
+      return { ...prev, seleccionadas: next };
+    });
+  }
 
   const crearAvisoMutation = useMutation({
     mutationFn: ({ asignacionId, data }: { asignacionId: number; data: any }) =>
@@ -201,6 +235,22 @@ export default function DashboardSedesPage() {
         </div>
       </div>
 
+      {/* Banner de confirmación de publicación */}
+      {banner && (
+        <div className="bg-green-600 text-white px-4 py-3 flex items-center justify-between gap-4 shadow">
+          <div className="flex items-center gap-2">
+            <Send className="w-4 h-4 shrink-0" />
+            <span className="font-medium">
+              Publicadas en {banner.sedeName}:&nbsp;
+              <span className="font-bold">{banner.codigos.join(', ')}</span>
+            </span>
+          </div>
+          <button onClick={() => setBanner(null)} className="p-1 hover:bg-green-700 rounded">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Content */}
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {isLoading ? (
@@ -217,17 +267,118 @@ export default function DashboardSedesPage() {
                 onToggle={() => toggleSede(sede.sede_id)}
                 asignacionExpandida={asignacionExpandida}
                 onExpandAsignacion={setAsignacionExpandida}
-                onPublicar={(turnoId) => publicarMutation.mutate(turnoId)}
+                onPublicar={() => abrirModalPublicar(sede)}
                 onDespublicar={(turnoId) => despublicarMutation.mutate(turnoId)}
                 onAgregarAviso={(asignacionId) => setModalAviso({ visible: true, asignacionId })}
                 onEliminarAviso={(avisoId) => eliminarAvisoMutation.mutate(avisoId)}
-                publicando={publicarMutation.isPending}
+                publicando={publicarMutation.isPending && (publicarMutation.variables as any)?.turnoId === sede.turno_id}
                 puedeEditar={data.permisos?.puedeEditar ?? false}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Modal: Seleccionar unidades a publicar */}
+      {modalPublicar.visible && modalPublicar.sede && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh]">
+            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <Send className="w-5 h-5 text-green-600" />
+                  Publicar Asignaciones
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                  {modalPublicar.sede.sede_nombre} — selecciona las unidades a publicar
+                </p>
+              </div>
+              <button
+                onClick={() => setModalPublicar({ visible: false, sede: null, seleccionadas: new Set() })}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              >
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {modalPublicar.sede.asignaciones
+                .filter(a => a.estado_nomina === 'BORRADOR' || !a.estado_nomina)
+                .length === 0 ? (
+                <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-6">
+                  No hay asignaciones en borrador para publicar
+                </p>
+              ) : (
+                modalPublicar.sede.asignaciones
+                  .filter(a => a.estado_nomina === 'BORRADOR' || !a.estado_nomina)
+                  .map(asig => (
+                    <label
+                      key={asig.asignacion_id}
+                      className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={modalPublicar.seleccionadas.has(asig.asignacion_id)}
+                        onChange={() => toggleSeleccion(asig.asignacion_id)}
+                        className="w-4 h-4 accent-green-600"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Truck className="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0" />
+                          <span className="font-semibold text-gray-900 dark:text-gray-100">
+                            {asig.unidad_codigo}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            ({asig.tipo_unidad})
+                          </span>
+                        </div>
+                        {asig.ruta_nombre && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                            <MapPin className="w-3 h-3 inline mr-0.5" />
+                            {asig.ruta_nombre}
+                            {asig.sentido ? ` (${asig.sentido})` : ''}
+                          </p>
+                        )}
+                      </div>
+                    </label>
+                  ))
+              )}
+            </div>
+
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {modalPublicar.seleccionadas.size} seleccionada(s)
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setModalPublicar({ visible: false, sede: null, seleccionadas: new Set() })}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    if (!modalPublicar.sede?.turno_id || modalPublicar.seleccionadas.size === 0) return;
+                    publicarMutation.mutate({
+                      turnoId: modalPublicar.sede.turno_id,
+                      asignacionIds: [...modalPublicar.seleccionadas],
+                    });
+                  }}
+                  disabled={publicarMutation.isPending || modalPublicar.seleccionadas.size === 0}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {publicarMutation.isPending ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  Publicar ({modalPublicar.seleccionadas.size})
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Agregar Aviso */}
       {modalAviso.visible && (
@@ -315,7 +466,7 @@ interface SedeCardProps {
   onToggle: () => void;
   asignacionExpandida: number | null;
   onExpandAsignacion: (id: number | null) => void;
-  onPublicar: (turnoId: number) => void;
+  onPublicar: () => void;
   onDespublicar: (turnoId: number) => void;
   onAgregarAviso: (asignacionId: number) => void;
   onEliminarAviso: (avisoId: number) => void;
@@ -399,7 +550,7 @@ function SedeCard({
                 if (sede.publicado) {
                   onDespublicar(sede.turno_id!);
                 } else {
-                  onPublicar(sede.turno_id!);
+                  onPublicar();
                 }
               }}
               disabled={publicando}

@@ -322,7 +322,8 @@ export const TurnoModel = {
   // Registrar combustible
   async registrarCombustible(data: {
     asignacion_id: number;
-    combustible: number;
+    nivel_fraccion: string;
+    nivel_decimal: number;
     tipo: 'INICIAL' | 'ACTUAL' | 'FINAL';
     observaciones?: string;
     registrado_por: number;
@@ -330,15 +331,18 @@ export const TurnoModel = {
     return db.tx(async (t) => {
       const registro = await t.one(
         `INSERT INTO registro_combustible
-        (asignacion_id, combustible, tipo, observaciones, registrado_por)
+        (asignacion_id, nivel_fraccion, tipo, observaciones, registrado_por)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING *`,
-        [data.asignacion_id, data.combustible, data.tipo, data.observaciones, data.registrado_por]
+        [data.asignacion_id, data.nivel_fraccion, data.tipo, data.observaciones, data.registrado_por]
       );
 
-      // Actualizar combustible de la unidad
+      // Actualizar nivel de combustible de la unidad
       const asignacion = await t.one('SELECT unidad_id FROM asignacion_unidad WHERE id = $1', [data.asignacion_id]);
-      await t.none('UPDATE unidad SET combustible_actual = $1, updated_at = NOW() WHERE id = $2', [data.combustible, asignacion.unidad_id]);
+      await t.none(
+        'UPDATE unidad SET combustible_actual = $1, nivel_combustible = $2, updated_at = NOW() WHERE id = $3',
+        [data.nivel_decimal, data.nivel_fraccion, asignacion.unidad_id]
+      );
 
       return registro;
     });
@@ -437,23 +441,35 @@ export const TurnoModel = {
     await db.none('DELETE FROM tripulacion_turno WHERE asignacion_id = $1', [asignacionId]);
   },
 
-  // Liberar nómina (cambiar todas las asignaciones de BORRADOR a LIBERADA)
-  async liberarNomina(turnoId: number, sedeId?: number): Promise<number> {
+  // Liberar nómina (cambiar asignaciones de BORRADOR a LIBERADA)
+  // asignacionIds: si se provee, solo libera esas asignaciones; sino libera todas las BORRADOR de la sede
+  async liberarNomina(turnoId: number, sedeId?: number, asignacionIds?: number[]): Promise<{ count: number; codigos: string[] }> {
     let query = `
-      UPDATE asignacion_unidad
+      UPDATE asignacion_unidad au
       SET estado_nomina = 'LIBERADA'
-      WHERE turno_id = $1 AND estado_nomina = 'BORRADOR'
+      FROM unidad u
+      WHERE au.unidad_id = u.id
+        AND au.turno_id = $1
+        AND au.estado_nomina = 'BORRADOR'
     `;
     const params: any[] = [turnoId];
+    let paramCount = 1;
 
-    // Filtrar por sede si se proporciona
     if (sedeId) {
-      query += ` AND unidad_id IN (SELECT id FROM unidad WHERE sede_id = $2)`;
       params.push(sedeId);
+      query += ` AND u.sede_id = $${++paramCount}`;
     }
 
+    if (asignacionIds && asignacionIds.length > 0) {
+      params.push(asignacionIds);
+      query += ` AND au.id = ANY($${++paramCount}::int[])`;
+    }
+
+    query += ` RETURNING u.codigo`;
+
     const result = await db.result(query, params);
-    return result.rowCount;
+    const codigos = (result.rows as { codigo: string }[]).map(r => r.codigo);
+    return { count: result.rowCount, codigos };
   },
 
   // Contar asignaciones en borrador

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import {
-  Truck, Fuel, ClipboardCheck,
+  Truck, Fuel, ClipboardCheck, CheckSquare,
   LogOut, Building2, User, ChevronRight,
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
@@ -47,6 +47,15 @@ export default function TransportesHubPage() {
       path: '/transportes/inspecciones360',
       color: 'text-purple-600 dark:text-purple-400',
       bgColor: 'bg-purple-50 hover:bg-purple-100 border-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 dark:border-purple-800',
+    },
+    {
+      id: 'disponibilidad',
+      title: 'Disponibilidad',
+      description: 'Autorizar unidades para Operaciones con instrucciones',
+      icon: <CheckSquare className="w-8 h-8" />,
+      path: '/transportes/disponibilidad',
+      color: 'text-green-600 dark:text-green-400',
+      bgColor: 'bg-green-50 hover:bg-green-100 border-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 dark:border-green-800',
     },
   ];
 
@@ -113,7 +122,7 @@ export default function TransportesHubPage() {
         </div>
 
         {/* Cards grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {menuOptions.map((option) => (
             <button
               key={option.id}
@@ -141,7 +150,7 @@ export default function TransportesHubPage() {
           <QuickStat label="Rol" value={user?.rol || '-'} />
           <QuickStat label="Sede" value={user?.sede_nombre || 'Global'} />
           <QuickStat label="Usuario" value={user?.username || '-'} />
-          <QuickStat label="Módulos" value="3" highlight />
+          <QuickStat label="Módulos" value="4" highlight />
         </div>
       </main>
 

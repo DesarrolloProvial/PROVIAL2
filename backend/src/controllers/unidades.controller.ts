@@ -137,6 +137,7 @@ export async function crearUnidad(req: Request, res: Response) {
       anio,
       placa,
       sede_id,
+      tipo_combustible,
       custom_fields
     } = req.body;
 
@@ -150,11 +151,15 @@ export async function crearUnidad(req: Request, res: Response) {
       return res.status(409).json({ error: 'Ya existe una unidad con ese codigo' });
     }
 
+    const tipoCombustibleValido = ['GASOLINA', 'DIESEL'].includes(tipo_combustible)
+      ? tipo_combustible
+      : 'GASOLINA';
+
     const unidad = await db.one(`
-      INSERT INTO unidad (codigo, tipo_unidad, marca, modelo, anio, placa, sede_id, custom_fields)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO unidad (codigo, tipo_unidad, marca, modelo, anio, placa, sede_id, tipo_combustible, custom_fields)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
-    `, [codigo, tipo_unidad, marca, modelo, anio, placa, sede_id, custom_fields || {}]);
+    `, [codigo, tipo_unidad, marca, modelo, anio, placa, sede_id, tipoCombustibleValido, custom_fields || {}]);
 
     return res.status(201).json({ message: 'Unidad creada exitosamente', unidad });
   } catch (error: any) {
@@ -177,6 +182,7 @@ export async function actualizarUnidad(req: Request, res: Response) {
       anio,
       placa,
       sede_id,
+      tipo_combustible,
       custom_fields
     } = req.body;
 
@@ -193,11 +199,12 @@ export async function actualizarUnidad(req: Request, res: Response) {
         anio = COALESCE($4, anio),
         placa = COALESCE($5, placa),
         sede_id = COALESCE($6, sede_id),
-        custom_fields = COALESCE($8, custom_fields),
+        tipo_combustible = COALESCE($8, tipo_combustible),
+        custom_fields = COALESCE($9, custom_fields),
         updated_at = NOW()
       WHERE id = $7
       RETURNING *
-    `, [tipo_unidad, marca, modelo, anio, placa, sede_id, id, custom_fields]);
+    `, [tipo_unidad, marca, modelo, anio, placa, sede_id, id, tipo_combustible, custom_fields]);
 
     return res.json({ message: 'Unidad actualizada exitosamente', unidad: result });
   } catch (error) {
@@ -542,5 +549,44 @@ export async function reservarNumeroSalida(req: Request, res: Response) {
       error: 'Error al reservar numero',
       message: error.message
     });
+  }
+}
+
+// PUT /api/unidades/:id/disponibilidad-transportes
+// Transportes (o Admin) marca una unidad como disponible/no disponible y deja instrucciones
+export async function setDisponibilidadTransportes(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { disponible, instrucciones } = req.body as { disponible: boolean; instrucciones?: string };
+
+    if (typeof disponible !== 'boolean') {
+      return res.status(400).json({ error: 'El campo "disponible" es requerido y debe ser booleano' });
+    }
+
+    const unidad = await db.oneOrNone('SELECT id FROM unidad WHERE id = $1', [id]);
+    if (!unidad) {
+      return res.status(404).json({ error: 'Unidad no encontrada' });
+    }
+
+    await db.none(
+      `UPDATE unidad
+       SET disponible_transportes  = $1,
+           instrucciones_transportes = $2,
+           updated_at               = NOW()
+       WHERE id = $3`,
+      [disponible, instrucciones ?? null, id]
+    );
+
+    const actualizada = await db.one(
+      `SELECT u.*, s.nombre AS sede_nombre
+       FROM unidad u JOIN sede s ON u.sede_id = s.id
+       WHERE u.id = $1`,
+      [id]
+    );
+
+    return res.json(actualizada);
+  } catch (error: any) {
+    console.error('Error en setDisponibilidadTransportes:', error);
+    return res.status(500).json({ error: 'Error al actualizar disponibilidad' });
   }
 }

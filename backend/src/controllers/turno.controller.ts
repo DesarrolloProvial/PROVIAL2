@@ -473,10 +473,10 @@ export async function registrarCombustible(req: Request, res: Response) {
       return res.status(401).json({ error: 'No autorizado' });
     }
 
-    const { combustible, tipo, observaciones } = req.body;
+    const { nivel_fraccion, nivel_decimal, tipo, observaciones } = req.body;
 
-    if (combustible === undefined || combustible === null) {
-      return res.status(400).json({ error: 'El combustible es requerido' });
+    if (!nivel_fraccion) {
+      return res.status(400).json({ error: 'El nivel de combustible es requerido (nivel_fraccion)' });
     }
 
     if (!tipo || !['INICIAL', 'ACTUAL', 'FINAL'].includes(tipo)) {
@@ -497,7 +497,8 @@ export async function registrarCombustible(req: Request, res: Response) {
     // Registrar el combustible
     const registro = await TurnoModel.registrarCombustible({
       asignacion_id: miAsignacion.asignacion_id,
-      combustible: parseFloat(combustible),
+      nivel_fraccion,
+      nivel_decimal: parseFloat(nivel_decimal) || 0,
       tipo,
       observaciones,
       registrado_por: req.user.userId
@@ -754,36 +755,50 @@ export async function deleteAsignacion(req: Request, res: Response) {
 }
 
 // POST /api/turnos/:turnoId/liberar-nomina - Liberar nómina (cambiar borradores a liberadas)
+// Body opcional: { asignacion_ids: number[] } para publicación selectiva
 export async function liberarNomina(req: Request, res: Response) {
   try {
     const { turnoId } = req.params;
     const userSedeId = req.user?.sede;
     const userRol = req.user?.rol;
+    const { asignacion_ids } = req.body as { asignacion_ids?: number[] };
 
     // Solo ENCARGADO_NOMINAS, OPERACIONES, ADMIN y SUPER_ADMIN pueden liberar nómina
     if (!['ENCARGADO_NOMINAS', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN'].includes(userRol || '')) {
       return res.status(403).json({ error: 'No tienes permisos para liberar nómina' });
     }
 
-    // Contar borradores antes de liberar
-    const countBorradores = await TurnoModel.countBorradores(parseInt(turnoId), userSedeId);
+    // Si no se especifican IDs, verificar que haya borradores disponibles
+    if (!asignacion_ids || asignacion_ids.length === 0) {
+      const countBorradores = await TurnoModel.countBorradores(parseInt(turnoId), userSedeId);
+      if (countBorradores === 0) {
+        return res.status(400).json({
+          error: 'No hay asignaciones en borrador para liberar',
+          count: 0
+        });
+      }
+    }
 
-    if (countBorradores === 0) {
+    // Liberar nómina (selectiva si se pasan IDs, total si no)
+    const { count: liberadas, codigos } = await TurnoModel.liberarNomina(
+      parseInt(turnoId),
+      userSedeId,
+      asignacion_ids && asignacion_ids.length > 0 ? asignacion_ids : undefined
+    );
+
+    if (liberadas === 0) {
       return res.status(400).json({
-        error: 'No hay asignaciones en borrador para liberar',
+        error: 'No se liberó ninguna asignación. Verifique que estén en borrador.',
         count: 0
       });
     }
 
-    // Liberar nómina
-    const liberadas = await TurnoModel.liberarNomina(parseInt(turnoId), userSedeId);
-
     // TODO: Enviar notificaciones push a brigadas asignados
-    // Esto requiere integración con servicio de notificaciones
 
     return res.json({
       message: `${liberadas} asignación(es) liberada(s) exitosamente`,
       count: liberadas,
+      codigos,
       turno_id: parseInt(turnoId)
     });
   } catch (error) {

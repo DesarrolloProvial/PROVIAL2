@@ -99,6 +99,8 @@ export interface UnidadDisponible {
   mensaje: string;
   dias_descanso: number;
   combustible_suficiente: boolean;
+  disponible_transportes: boolean;
+  instrucciones_transportes: string | null;
 }
 
 export interface ValidacionBrigada {

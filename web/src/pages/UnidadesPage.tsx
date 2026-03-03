@@ -356,26 +356,29 @@ export default function UnidadesPage() {
               ) : (
                 unidades.map((unidad) => (
                   <tr key={unidad.id} className={!unidad.activa ? 'bg-gray-50 dark:bg-gray-700/50' : ''}>
-                    <td className="px-4 py-3 font-mono text-sm font-semibold dark:text-gray-100">{unidad.codigo}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTipoColor(unidad.tipo_unidad)}`}>
-                        {unidad.tipo_unidad}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm dark:text-gray-300">
-                      {unidad.marca || unidad.modelo ? `${unidad.marca || ''} ${unidad.modelo || ''}`.trim() : '-'}
-                      {unidad.anio && <span className="text-gray-500 dark:text-gray-400 ml-1">({unidad.anio})</span>}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-mono dark:text-gray-300">{unidad.placa || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{unidad.sede_nombre}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${unidad.activa
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400'
-                        : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400'
-                        }`}>
-                        {unidad.activa ? 'Activa' : 'Inactiva'}
-                      </span>
-                    </td>
+                    {isColumnVisible('codigo') && <td className="px-4 py-3 font-mono text-sm font-semibold dark:text-gray-100">{unidad.codigo}</td>}
+                    {isColumnVisible('tipo_unidad') && (
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTipoColor(unidad.tipo_unidad)}`}>
+                          {unidad.tipo_unidad}
+                        </span>
+                      </td>
+                    )}
+                    {isColumnVisible('marca') && <td className="px-4 py-3 text-sm dark:text-gray-300">{unidad.marca || '-'}</td>}
+                    {isColumnVisible('modelo') && <td className="px-4 py-3 text-sm dark:text-gray-300">{unidad.modelo || '-'}</td>}
+                    {isColumnVisible('anio') && <td className="px-4 py-3 text-sm dark:text-gray-300">{unidad.anio || '-'}</td>}
+                    {isColumnVisible('placa') && <td className="px-4 py-3 text-sm font-mono dark:text-gray-300">{unidad.placa || '-'}</td>}
+                    {isColumnVisible('sede') && <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{unidad.sede_nombre}</td>}
+                    {isColumnVisible('estado') && (
+                      <td className="px-4 py-3 text-center">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${unidad.activa
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400'
+                          }`}>
+                          {unidad.activa ? 'Activa' : 'Inactiva'}
+                        </span>
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-2">
 

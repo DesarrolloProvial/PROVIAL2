@@ -53,7 +53,9 @@ export interface AsignacionPorSede {
   situacion_fija_id: number | null;
   situacion_fija_titulo: string | null;
   situacion_fija_tipo: string | null;
-  // Estado
+  // Estado de nómina
+  estado_nomina: string | null;
+  // Estado de salida
   en_ruta: boolean;
   salida_estado: string | null;
   // Datos adicionales (se agregan después)
@@ -124,6 +126,7 @@ export interface AsignacionConDetalle {
   situacion_fija_id: number | null;
   situacion_fija_titulo: string | null;
   situacion_fija_tipo: string | null;
+  estado_nomina: string | null;
   en_ruta: boolean;
   salida_estado: string | null;
   tripulacion: TripulacionDetalle[];
@@ -317,6 +320,7 @@ export const AsignacionAvanzadaModel = {
           situacion_fija_id: asig.situacion_fija_id,
           situacion_fija_titulo: asig.situacion_fija_titulo,
           situacion_fija_tipo: asig.situacion_fija_tipo,
+          estado_nomina: asig.estado_nomina,
           en_ruta: asig.en_ruta,
           salida_estado: asig.salida_estado,
           tripulacion: tripulacionMap.get(asig.asignacion_id) || [],

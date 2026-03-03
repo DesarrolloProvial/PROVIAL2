@@ -34,6 +34,7 @@ import DispositivosPage from './pages/DispositivosPage';
 import TransportesHubPage from './pages/TransportesHubPage';
 import CombustiblePage from './pages/transportes/CombustiblePage';
 import Inspecciones360Page from './pages/transportes/Inspecciones360Page';
+import DisponibilidadPage from './pages/transportes/DisponibilidadPage';
 
 // Crear QueryClient
 const queryClient = new QueryClient({
@@ -435,6 +436,14 @@ function App() {
             element={
               <TransportesRoute>
                 <Inspecciones360Page />
+              </TransportesRoute>
+            }
+          />
+          <Route
+            path="/transportes/disponibilidad"
+            element={
+              <TransportesRoute>
+                <DisponibilidadPage />
               </TransportesRoute>
             }
           />

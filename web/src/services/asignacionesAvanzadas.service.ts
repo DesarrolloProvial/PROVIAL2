@@ -49,6 +49,7 @@ export interface AsignacionConDetalle {
   situacion_fija_id: number | null;
   situacion_fija_titulo: string | null;
   situacion_fija_tipo: string | null;
+  estado_nomina: string | null;
   en_ruta: boolean;
   salida_estado: string | null;
   tripulacion: TripulacionDetalle[];
@@ -148,9 +149,11 @@ export const asignacionesAvanzadasAPI = {
     return response.data as RespuestaAsignacionesPorSede;
   },
 
-  // Publicar // Liberar nómina (publicar asignaciones)
-  publicarTurno: async (turnoId: number) => {
-    return api.post(`/turnos/${turnoId}/liberar-nomina`);
+  // Liberar nómina — acepta lista opcional de asignacion_ids para publicación selectiva
+  publicarTurno: async (turnoId: number, asignacionIds?: number[]) => {
+    return api.post(`/turnos/${turnoId}/liberar-nomina`, {
+      asignacion_ids: asignacionIds && asignacionIds.length > 0 ? asignacionIds : undefined,
+    });
   },
 
   // Despublicar turno (volver a borrador) - Deprecated, mantener por compatibilidad
