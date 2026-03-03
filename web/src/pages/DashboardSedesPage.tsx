@@ -73,7 +73,7 @@ export default function DashboardSedesPage() {
   const publicarMutation = useMutation({
     mutationFn: ({ turnoId, asignacionIds }: { turnoId: number; asignacionIds: number[] }) =>
       asignacionesAvanzadasAPI.publicarTurno(turnoId, asignacionIds),
-    onSuccess: (resp, variables) => {
+    onSuccess: (resp, _variables) => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones-por-sede'] });
       const codigos: string[] = resp.data?.codigos ?? [];
       const sedeName = modalPublicar.sede?.sede_nombre ?? '';

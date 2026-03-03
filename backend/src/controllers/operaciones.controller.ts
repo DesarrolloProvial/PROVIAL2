@@ -33,9 +33,9 @@ export async function getDashboardOperaciones(req: Request, res: Response) {
       (b) => b.dias_desde_ultimo_turno !== null && b.dias_desde_ultimo_turno < 2
     );
 
-    // Unidades con poco combustible
+    // Unidades con poco combustible (menos de 1/4 de tanque)
     const unidadesBajoCombustible = unidades.filter(
-      (u) => u.combustible_actual < 20
+      (u) => u.combustible_actual !== null && u.combustible_actual < 0.25
     );
 
     return res.json({
@@ -326,10 +326,10 @@ export async function registrarCombustible(req: Request, res: Response) {
       asignacion_id,
       turno_id,
       tipo,
+      nivel_anterior,
+      nivel_nuevo,
       combustible_anterior,
-      combustible_agregado,
       combustible_nuevo,
-      combustible_consumido,
       odometro_anterior,
       odometro_actual,
       km_recorridos,
@@ -339,10 +339,10 @@ export async function registrarCombustible(req: Request, res: Response) {
     const userId = req.user!.userId;
 
     // Validaciones
-    if (!unidad_id || !tipo || combustible_anterior === undefined || combustible_nuevo === undefined) {
+    if (!unidad_id || !tipo || !nivel_nuevo || combustible_nuevo === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'Campos requeridos: unidad_id, tipo, combustible_anterior, combustible_nuevo',
+        message: 'Campos requeridos: unidad_id, tipo, nivel_nuevo, combustible_nuevo',
       });
     }
 
@@ -351,10 +351,10 @@ export async function registrarCombustible(req: Request, res: Response) {
       asignacion_id,
       turno_id,
       tipo,
-      combustible_anterior,
-      combustible_agregado,
+      nivel_anterior: nivel_anterior ?? null,
+      nivel_nuevo,
+      combustible_anterior: combustible_anterior ?? null,
       combustible_nuevo,
-      combustible_consumido,
       odometro_anterior,
       odometro_actual,
       km_recorridos,
