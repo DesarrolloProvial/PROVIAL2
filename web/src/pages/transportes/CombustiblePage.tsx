@@ -45,6 +45,7 @@ interface Sede {
 interface AjusteFormData {
   nivel_anterior: string | null;
   nivel_nuevo: string;
+  tipo_combustible: string;
   odometro_actual: string;
   observaciones: string;
 }
@@ -139,6 +140,7 @@ export default function CombustiblePage() {
   const [ajusteForm, setAjusteForm] = useState<AjusteFormData>({
     nivel_anterior: null,
     nivel_nuevo: '',
+    tipo_combustible: 'GASOLINA',
     odometro_actual: '',
     observaciones: '',
   });
@@ -183,11 +185,15 @@ export default function CombustiblePage() {
   // ── Mutaciones ───────────────────────────────────────────────────────────────
 
   const ajusteMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!ajusteForm.nivel_nuevo) {
         throw new Error('Debes seleccionar el nivel de combustible nuevo.');
       }
       const nivelObj = NIVELES.find(n => n.value === ajusteForm.nivel_nuevo);
+      // Update fuel type on the unit if it changed
+      if (ajusteUnidad && ajusteForm.tipo_combustible !== (ajusteUnidad.tipo_combustible ?? 'GASOLINA')) {
+        await api.put(`/unidades/${ajusteUnidad.id}`, { tipo_combustible: ajusteForm.tipo_combustible });
+      }
       return transportesService.registrarAjusteCombustible({
         unidad_id: ajusteUnidad!.id,
         tipo: 'AJUSTE',
@@ -228,6 +234,7 @@ export default function CombustiblePage() {
     setAjusteForm({
       nivel_anterior: unidad.nivel_combustible ?? null,
       nivel_nuevo: '',
+      tipo_combustible: unidad.tipo_combustible ?? 'GASOLINA',
       odometro_actual: '',
       observaciones: '',
     });
@@ -236,7 +243,7 @@ export default function CombustiblePage() {
 
   function cerrarAjusteModal() {
     setAjusteUnidad(null);
-    setAjusteForm({ nivel_anterior: null, nivel_nuevo: '', odometro_actual: '', observaciones: '' });
+    setAjusteForm({ nivel_anterior: null, nivel_nuevo: '', tipo_combustible: 'GASOLINA', odometro_actual: '', observaciones: '' });
     setAjusteError(null);
   }
 
@@ -536,8 +543,10 @@ export default function CombustiblePage() {
           className="fixed inset-0 bg-black/60 dark:bg-black/70 flex items-center justify-center z-50 p-4"
           onClick={(e) => { if (e.target === e.currentTarget && !ajusteMutation.isPending) cerrarAjusteModal(); }}
         >
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md">
-            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <Fuel className="w-5 h-5 text-orange-500" />
                 <div>
@@ -552,14 +561,38 @@ export default function CombustiblePage() {
               </button>
             </div>
 
-            <form onSubmit={handleAjusteSubmit} className="p-5 space-y-4">
+            {/* Scrollable body */}
+            <form onSubmit={handleAjusteSubmit} className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
 
-              {/* Nivel anterior (read-only badge) */}
+              {/* Tipo de combustible */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Tipo de combustible
+                </label>
+                <div className="flex gap-2">
+                  {['GASOLINA', 'DIESEL'].map(tipo => (
+                    <button
+                      key={tipo}
+                      type="button"
+                      onClick={() => setAjusteForm(f => ({ ...f, tipo_combustible: tipo }))}
+                      className={`flex-1 py-2.5 rounded-lg text-sm font-semibold border-2 transition-all ${
+                        ajusteForm.tipo_combustible === tipo
+                          ? tipo === 'DIESEL'
+                            ? 'border-blue-500 bg-blue-500 text-white'
+                            : 'border-orange-500 bg-orange-500 text-white'
+                          : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500'
+                      }`}
+                    >
+                      {tipo}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Nivel anterior (read-only) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nivel anterior</label>
-                <span className={`inline-flex px-3 py-1.5 rounded-lg text-sm font-semibold ${getNivelBadgeClass(
-                  ajusteUnidad.combustible_actual
-                )}`}>
+                <span className={`inline-flex px-3 py-1.5 rounded-lg text-sm font-semibold ${getNivelBadgeClass(ajusteUnidad.combustible_actual)}`}>
                   {ajusteForm.nivel_anterior ?? 'Sin datos'}
                 </span>
               </div>
@@ -571,7 +604,7 @@ export default function CombustiblePage() {
                 </label>
                 <FuelSelectorWeb
                   value={ajusteForm.nivel_nuevo}
-                  onChange={(nivel) => setAjusteForm({ ...ajusteForm, nivel_nuevo: nivel })}
+                  onChange={(nivel) => setAjusteForm(f => ({ ...f, nivel_nuevo: nivel }))}
                 />
                 {ajusteForm.nivel_nuevo && (
                   <p className="mt-2 text-xs text-orange-600 dark:text-orange-400 font-medium">
@@ -592,7 +625,7 @@ export default function CombustiblePage() {
                     step="1"
                     placeholder="0"
                     value={ajusteForm.odometro_actual}
-                    onChange={(e) => setAjusteForm({ ...ajusteForm, odometro_actual: e.target.value })}
+                    onChange={(e) => setAjusteForm(f => ({ ...f, odometro_actual: e.target.value }))}
                     className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent transition placeholder-gray-400 dark:placeholder-gray-500"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 dark:text-gray-500">km</span>
@@ -605,10 +638,10 @@ export default function CombustiblePage() {
                   Observaciones <span className="text-gray-400 dark:text-gray-500 font-normal">(opcional)</span>
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   placeholder="Motivo del ajuste, novedades..."
                   value={ajusteForm.observaciones}
-                  onChange={(e) => setAjusteForm({ ...ajusteForm, observaciones: e.target.value })}
+                  onChange={(e) => setAjusteForm(f => ({ ...f, observaciones: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent transition placeholder-gray-400 dark:placeholder-gray-500 resize-none"
                 />
               </div>
@@ -619,29 +652,31 @@ export default function CombustiblePage() {
                   <p className="text-sm text-red-600 dark:text-red-400">{ajusteError}</p>
                 </div>
               )}
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={cerrarAjusteModal}
-                  disabled={ajusteMutation.isPending}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition disabled:opacity-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={ajusteMutation.isPending || !ajusteForm.nivel_nuevo}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {ajusteMutation.isPending ? (
-                    <><RefreshCw className="w-4 h-4 animate-spin" />Guardando...</>
-                  ) : (
-                    <><Fuel className="w-4 h-4" />Registrar Ajuste</>
-                  )}
-                </button>
-              </div>
             </form>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-2 px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <button
+                type="button"
+                onClick={cerrarAjusteModal}
+                disabled={ajusteMutation.isPending}
+                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleAjusteSubmit}
+                disabled={ajusteMutation.isPending || !ajusteForm.nivel_nuevo}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {ajusteMutation.isPending ? (
+                  <><RefreshCw className="w-4 h-4 animate-spin" />Guardando...</>
+                ) : (
+                  <><Fuel className="w-4 h-4" />Registrar Ajuste</>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
