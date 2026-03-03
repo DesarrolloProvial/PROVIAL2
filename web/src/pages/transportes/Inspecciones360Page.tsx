@@ -16,6 +16,9 @@ import {
   ChevronRight,
   AlertCircle,
   Layers,
+  Pencil,
+  Trash2,
+  Plus,
 } from 'lucide-react';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -228,6 +231,156 @@ function ItemRow({ item }: { item: ItemPlantilla }) {
 
 // ── Template detail modal ──────────────────────────────────────────────────────
 
+const TIPOS_UNIDAD_PLANTILLA = [
+  { value: 'DEFAULT',  label: 'DEFAULT (todas las unidades)' },
+  { value: 'PICK-UP',  label: 'Pick-up' },
+  { value: 'MOTO',     label: 'Motocicleta' },
+  { value: 'CAMION',   label: 'Camión' },
+  { value: 'GRUA',     label: 'Grúa' },
+  { value: 'BUS',      label: 'Bus' },
+  { value: 'JEEP',     label: 'Jeep/SUV' },
+];
+
+type EditItem = { id: string; descripcion: string; tipo: ItemPlantilla['tipo']; requerido: boolean };
+type EditSeccion = { id: string; nombre: string; items: EditItem[] };
+
+function plantillaToEdits(p: Plantilla360) {
+  return {
+    nombre: p.nombre,
+    activa: p.activa,
+    secciones: p.secciones.map(s => ({
+      id: s.id,
+      nombre: s.nombre,
+      items: s.items.map(item => ({
+        id: item.id,
+        descripcion: item.descripcion,
+        tipo: item.tipo,
+        requerido: item.requerido,
+      })),
+    })),
+  };
+}
+
+function SectionEditor({
+  secciones,
+  onChange,
+}: {
+  secciones: EditSeccion[];
+  onChange: (secs: EditSeccion[]) => void;
+}) {
+  const addSeccion = () => {
+    onChange([...secciones, { id: `new-${Date.now()}`, nombre: 'Nueva sección', items: [] }]);
+  };
+  const removeSeccion = (idx: number) => {
+    onChange(secciones.filter((_, i) => i !== idx));
+  };
+  const updateSeccionNombre = (idx: number, nombre: string) => {
+    const secs = [...secciones];
+    secs[idx] = { ...secs[idx], nombre };
+    onChange(secs);
+  };
+  const addItem = (secIdx: number) => {
+    const secs = [...secciones];
+    secs[secIdx] = {
+      ...secs[secIdx],
+      items: [...secs[secIdx].items, { id: `new-${Date.now()}-${Math.random()}`, descripcion: '', tipo: 'CHECK', requerido: false }],
+    };
+    onChange(secs);
+  };
+  const removeItem = (secIdx: number, itemIdx: number) => {
+    const secs = [...secciones];
+    secs[secIdx] = { ...secs[secIdx], items: secs[secIdx].items.filter((_, i) => i !== itemIdx) };
+    onChange(secs);
+  };
+  const updateItem = (secIdx: number, itemIdx: number, field: string, value: any) => {
+    const secs = [...secciones];
+    const items = [...secs[secIdx].items];
+    items[itemIdx] = { ...items[itemIdx], [field]: value };
+    secs[secIdx] = { ...secs[secIdx], items };
+    onChange(secs);
+  };
+
+  return (
+    <div className="space-y-3">
+      {secciones.map((sec, secIdx) => (
+        <div key={sec.id} className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
+          {/* Section header */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-700/60">
+            <input
+              type="text"
+              value={sec.nombre}
+              onChange={e => updateSeccionNombre(secIdx, e.target.value)}
+              className="flex-1 text-sm font-medium bg-transparent border-b border-gray-300 dark:border-gray-500 focus:outline-none focus:border-blue-500 text-gray-800 dark:text-gray-200 placeholder-gray-400"
+              placeholder="Nombre de sección"
+            />
+            <button
+              type="button"
+              onClick={() => removeSeccion(secIdx)}
+              className="p-1 text-red-400 hover:text-red-600 dark:hover:text-red-400 flex-shrink-0"
+              title="Eliminar sección"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+          {/* Items */}
+          <div className="p-2 space-y-1.5 bg-white dark:bg-gray-800">
+            {sec.items.map((item, itemIdx) => (
+              <div key={item.id} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={item.descripcion}
+                  onChange={e => updateItem(secIdx, itemIdx, 'descripcion', e.target.value)}
+                  placeholder="Descripción del ítem"
+                  className="flex-1 text-sm border border-gray-200 dark:border-gray-600 rounded px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400"
+                />
+                <select
+                  value={item.tipo}
+                  onChange={e => updateItem(secIdx, itemIdx, 'tipo', e.target.value)}
+                  className="text-xs border border-gray-200 dark:border-gray-600 rounded px-1.5 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                >
+                  <option value="CHECK">CHECK</option>
+                  <option value="TEXTO">TEXTO</option>
+                  <option value="NUMERO">NUMERO</option>
+                </select>
+                <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 cursor-pointer whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={item.requerido}
+                    onChange={e => updateItem(secIdx, itemIdx, 'requerido', e.target.checked)}
+                    className="w-3.5 h-3.5 cursor-pointer"
+                  />
+                  Req.
+                </label>
+                <button
+                  type="button"
+                  onClick={() => removeItem(secIdx, itemIdx)}
+                  className="p-1 text-red-400 hover:text-red-600 dark:hover:text-red-400 flex-shrink-0"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => addItem(secIdx)}
+              className="w-full flex items-center justify-center gap-1 py-1.5 text-xs text-blue-600 dark:text-blue-400 border border-dashed border-blue-300 dark:border-blue-700 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            >
+              <Plus className="w-3 h-3" /> Agregar ítem
+            </button>
+          </div>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={addSeccion}
+        className="w-full flex items-center justify-center gap-1.5 py-2 text-sm text-blue-600 dark:text-blue-400 border border-dashed border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+      >
+        <Plus className="w-4 h-4" /> Agregar sección
+      </button>
+    </div>
+  );
+}
+
 interface PlantillaModalProps {
   plantilla: Plantilla360;
   onClose: () => void;
@@ -237,13 +390,28 @@ interface PlantillaModalProps {
 function PlantillaModal({ plantilla, onClose, onUpdated }: PlantillaModalProps) {
   const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
-  const [activaEdit, setActivaEdit] = useState(plantilla.activa);
+  const [edits, setEdits] = useState(() => plantillaToEdits(plantilla));
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const updateMutation = useMutation({
     mutationFn: () =>
-      transportesService.actualizarPlantilla(plantilla.id, { activa: activaEdit }),
+      transportesService.actualizarPlantilla(plantilla.id, {
+        nombre: edits.nombre,
+        activa: edits.activa,
+        secciones: edits.secciones.map((s, sIdx) => ({
+          id: s.id,
+          nombre: s.nombre,
+          orden: sIdx,
+          items: s.items.map((item, iIdx) => ({
+            id: item.id,
+            descripcion: item.descripcion,
+            tipo: item.tipo,
+            requerido: item.requerido,
+            orden: iIdx,
+          })),
+        })),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plantillas-360'] });
       setSaveSuccess(true);
@@ -261,32 +429,41 @@ function PlantillaModal({ plantilla, onClose, onUpdated }: PlantillaModalProps) 
     },
   });
 
-  const totalItems = plantilla.secciones.reduce(
-    (acc, s) => acc + s.items.length,
-    0
-  );
+  const totalItems = plantilla.secciones.reduce((acc, s) => acc + s.items.length, 0);
+
+  const handleCancel = () => {
+    setEditMode(false);
+    setEdits(plantillaToEdits(plantilla));
+    setSaveError(null);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={!updateMutation.isPending ? onClose : undefined}
       />
-
-      {/* Panel */}
       <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-start justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="flex-shrink-0 w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
               <Layers className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
-            <div className="min-w-0">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
-                {plantilla.nombre}
-              </h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="min-w-0 flex-1">
+              {editMode ? (
+                <input
+                  type="text"
+                  value={edits.nombre}
+                  onChange={e => setEdits(prev => ({ ...prev, nombre: e.target.value }))}
+                  className="w-full text-lg font-semibold text-gray-900 dark:text-gray-100 bg-transparent border-b border-blue-400 focus:outline-none"
+                />
+              ) : (
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
+                  {plantilla.nombre}
+                </h2>
+              )}
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 {plantilla.tipo_unidad} · v{plantilla.version} · {plantilla.secciones.length}{' '}
                 {plantilla.secciones.length === 1 ? 'sección' : 'secciones'} · {totalItems}{' '}
                 {totalItems === 1 ? 'ítem' : 'ítems'}
@@ -294,7 +471,7 @@ function PlantillaModal({ plantilla, onClose, onUpdated }: PlantillaModalProps) 
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-            <ActivaBadge activa={plantilla.activa} />
+            <ActivaBadge activa={editMode ? edits.activa : plantilla.activa} />
             <button
               type="button"
               onClick={onClose}
@@ -308,57 +485,33 @@ function PlantillaModal({ plantilla, onClose, onUpdated }: PlantillaModalProps) 
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-          {plantilla.secciones.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
-              <Layers className="w-10 h-10 mb-3 opacity-40" />
-              <p className="text-sm">Esta plantilla no tiene secciones definidas.</p>
-            </div>
-          ) : (
-            plantilla.secciones
-              .slice()
-              .sort((a, b) => a.orden - b.orden)
-              .map((seccion) => (
-                <SeccionTree key={seccion.id} seccion={seccion} />
-              ))
-          )}
-
-          {/* Edit mode panel */}
-          {editMode && (
-            <div className="border border-blue-200 dark:border-blue-700 rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20 space-y-3">
-              <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300">
-                Editar plantilla
-              </h3>
-
+          {editMode ? (
+            <div className="space-y-4">
               {/* Activa toggle */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Estado de la plantilla
                 </span>
                 <button
                   type="button"
-                  onClick={() => setActivaEdit((v) => !v)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    activaEdit
-                      ? 'bg-green-500'
-                      : 'bg-gray-300 dark:bg-gray-600'
+                  onClick={() => setEdits(prev => ({ ...prev, activa: !prev.activa }))}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    edits.activa ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
                   }`}
-                  role="switch"
-                  aria-checked={activaEdit}
                 >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                      activaEdit ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                    edits.activa ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
                 </button>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Actualmente:{' '}
-                <strong>{activaEdit ? 'Activa' : 'Inactiva'}</strong>. Solo se
-                puede tener una plantilla activa por tipo de unidad.
-              </p>
 
-              {/* Error / success feedback */}
+              {/* Secciones editor */}
+              <SectionEditor
+                secciones={edits.secciones}
+                onChange={secs => setEdits(prev => ({ ...prev, secciones: secs }))}
+              />
+
+              {/* Feedback */}
               {saveError && (
                 <div className="flex items-start gap-2 text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg px-3 py-2">
                   <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -372,6 +525,20 @@ function PlantillaModal({ plantilla, onClose, onUpdated }: PlantillaModalProps) 
                 </div>
               )}
             </div>
+          ) : (
+            plantilla.secciones.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
+                <Layers className="w-10 h-10 mb-3 opacity-40" />
+                <p className="text-sm">Esta plantilla no tiene secciones definidas.</p>
+              </div>
+            ) : (
+              plantilla.secciones
+                .slice()
+                .sort((a, b) => a.orden - b.orden)
+                .map((seccion) => (
+                  <SeccionTree key={seccion.id} seccion={seccion} />
+                ))
+            )
           )}
         </div>
 
@@ -384,17 +551,12 @@ function PlantillaModal({ plantilla, onClose, onUpdated }: PlantillaModalProps) 
           >
             Cerrar
           </button>
-
           <div className="flex gap-2">
             {editMode ? (
               <>
                 <button
                   type="button"
-                  onClick={() => {
-                    setEditMode(false);
-                    setActivaEdit(plantilla.activa);
-                    setSaveError(null);
-                  }}
+                  onClick={handleCancel}
                   disabled={updateMutation.isPending}
                   className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
                 >
@@ -406,9 +568,7 @@ function PlantillaModal({ plantilla, onClose, onUpdated }: PlantillaModalProps) 
                   disabled={updateMutation.isPending}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
-                  {updateMutation.isPending && (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  )}
+                  {updateMutation.isPending && <RefreshCw className="w-4 h-4 animate-spin" />}
                   Guardar cambios
                 </button>
               </>
@@ -418,11 +578,143 @@ function PlantillaModal({ plantilla, onClose, onUpdated }: PlantillaModalProps) 
                 onClick={() => setEditMode(true)}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-2"
               >
-                <Eye className="w-4 h-4" />
+                <Pencil className="w-4 h-4" />
                 Editar plantilla
               </button>
             )}
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Crear plantilla modal ──────────────────────────────────────────────────────
+
+interface CrearPlantillaModalProps {
+  onClose: () => void;
+  onCreated: () => void;
+}
+
+function CrearPlantillaModal({ onClose, onCreated }: CrearPlantillaModalProps) {
+  const queryClient = useQueryClient();
+  const [tipoUnidad, setTipoUnidad] = useState('DEFAULT');
+  const [nombre, setNombre] = useState('');
+  const [secciones, setSecciones] = useState<EditSeccion[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const crearMutation = useMutation({
+    mutationFn: () =>
+      transportesService.crearPlantilla({
+        tipo_unidad: tipoUnidad,
+        nombre: nombre.trim(),
+        secciones: secciones.map((s, sIdx) => ({
+          id: s.id,
+          nombre: s.nombre,
+          orden: sIdx,
+          items: s.items.map((item, iIdx) => ({
+            id: item.id,
+            descripcion: item.descripcion,
+            tipo: item.tipo,
+            requerido: item.requerido,
+            orden: iIdx,
+          })),
+        })),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plantillas-360'] });
+      onCreated();
+    },
+    onError: (err: any) => {
+      setError(err?.response?.data?.mensaje || err?.message || 'Error al crear plantilla');
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={!crearMutation.isPending ? onClose : undefined} />
+      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0">
+              <Plus className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Nueva Plantilla</h2>
+          </div>
+          <button type="button" onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+            <XCircle className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          {/* Tipo unidad */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Tipo de unidad <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={tipoUnidad}
+              onChange={e => setTipoUnidad(e.target.value)}
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+            >
+              {TIPOS_UNIDAD_PLANTILLA.map(t => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              DEFAULT se aplica a todas las unidades sin plantilla específica.
+            </p>
+          </div>
+
+          {/* Nombre */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Nombre de la plantilla <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={nombre}
+              onChange={e => setNombre(e.target.value)}
+              placeholder="Ej: Inspección general pick-up"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Secciones */}
+          <div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Secciones e ítems</p>
+            <SectionEditor secciones={secciones} onChange={setSecciones} />
+          </div>
+
+          {error && (
+            <div className="flex items-start gap-2 text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg px-3 py-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={crearMutation.isPending}
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => crearMutation.mutate()}
+            disabled={crearMutation.isPending || !nombre.trim()}
+            className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {crearMutation.isPending && <RefreshCw className="w-4 h-4 animate-spin" />}
+            Crear plantilla
+          </button>
         </div>
       </div>
     </div>
@@ -708,6 +1000,7 @@ interface PlantillasTabProps {
 
 function PlantillasTab({ plantillas, isLoading, isError, onRefetch }: PlantillasTabProps) {
   const [selected, setSelected] = useState<Plantilla360 | null>(null);
+  const [crearVisible, setCrearVisible] = useState(false);
 
   if (isLoading) {
     return (
@@ -735,88 +1028,105 @@ function PlantillasTab({ plantillas, isLoading, isError, onRefetch }: Plantillas
     );
   }
 
-  if (plantillas.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4 text-gray-500 dark:text-gray-400">
-        <Layers className="w-12 h-12 opacity-30" />
-        <p className="text-sm font-medium">No hay plantillas configuradas</p>
-        <p className="text-xs">No se encontraron plantillas de inspección.</p>
-      </div>
-    );
-  }
-
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {plantillas.map((plantilla) => {
-          const totalItems = plantilla.secciones.reduce(
-            (acc, s) => acc + s.items.length,
-            0
-          );
-          return (
-            <div
-              key={plantilla.id}
-              className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-3 hover:shadow-md dark:hover:shadow-gray-900/40 transition-shadow"
-            >
-              {/* Card header */}
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
-                    {plantilla.tipo_unidad}
-                  </p>
-                  <h3 className="mt-0.5 text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                    {plantilla.nombre}
-                  </h3>
-                </div>
-                <ActivaBadge activa={plantilla.activa} />
-              </div>
-
-              {/* Stats */}
-              <div className="flex gap-4 text-xs text-gray-500 dark:text-gray-400">
-                <div className="flex items-center gap-1">
-                  <span className="font-medium text-gray-700 dark:text-gray-300">
-                    v{plantilla.version}
-                  </span>
-                  <span>versión</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="font-medium text-gray-700 dark:text-gray-300">
-                    {plantilla.secciones.length}
-                  </span>
-                  <span>
-                    {plantilla.secciones.length === 1 ? 'sección' : 'secciones'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="font-medium text-gray-700 dark:text-gray-300">
-                    {totalItems}
-                  </span>
-                  <span>{totalItems === 1 ? 'ítem' : 'ítems'}</span>
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div className="border-t border-gray-100 dark:border-gray-700" />
-
-              {/* Action */}
-              <button
-                type="button"
-                onClick={() => setSelected(plantilla)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-              >
-                <Eye className="w-4 h-4" />
-                Ver / Editar
-              </button>
-            </div>
-          );
-        })}
+      {/* Toolbar */}
+      <div className="flex justify-end mb-4">
+        <button
+          type="button"
+          onClick={() => setCrearVisible(true)}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Nueva Plantilla
+        </button>
       </div>
+
+      {plantillas.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-4 text-gray-500 dark:text-gray-400">
+          <Layers className="w-12 h-12 opacity-30" />
+          <p className="text-sm font-medium">No hay plantillas configuradas</p>
+          <p className="text-xs">Crea la primera plantilla con el botón de arriba.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {plantillas.map((plantilla) => {
+            const totalItems = plantilla.secciones.reduce(
+              (acc, s) => acc + s.items.length,
+              0
+            );
+            return (
+              <div
+                key={plantilla.id}
+                className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-3 hover:shadow-md dark:hover:shadow-gray-900/40 transition-shadow"
+              >
+                {/* Card header */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
+                      {plantilla.tipo_unidad}
+                    </p>
+                    <h3 className="mt-0.5 text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                      {plantilla.nombre}
+                    </h3>
+                  </div>
+                  <ActivaBadge activa={plantilla.activa} />
+                </div>
+
+                {/* Stats */}
+                <div className="flex gap-4 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                      v{plantilla.version}
+                    </span>
+                    <span>versión</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                      {plantilla.secciones.length}
+                    </span>
+                    <span>
+                      {plantilla.secciones.length === 1 ? 'sección' : 'secciones'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                      {totalItems}
+                    </span>
+                    <span>{totalItems === 1 ? 'ítem' : 'ítems'}</span>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-gray-100 dark:border-gray-700" />
+
+                {/* Action */}
+                <button
+                  type="button"
+                  onClick={() => setSelected(plantilla)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                >
+                  <Eye className="w-4 h-4" />
+                  Ver / Editar
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {selected && (
         <PlantillaModal
           plantilla={selected}
           onClose={() => setSelected(null)}
           onUpdated={() => setSelected(null)}
+        />
+      )}
+
+      {crearVisible && (
+        <CrearPlantillaModal
+          onClose={() => setCrearVisible(false)}
+          onCreated={() => setCrearVisible(false)}
         />
       )}
     </>

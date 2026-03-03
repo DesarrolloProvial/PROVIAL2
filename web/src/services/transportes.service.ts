@@ -8,14 +8,13 @@ export interface CombustibleRegistro {
   asignacion_id: number | null;
   turno_id: number | null;
   tipo: 'INICIAL' | 'RECARGA' | 'FINAL' | 'AJUSTE';
-  combustible_anterior: number;
-  combustible_agregado: number | null;
-  combustible_nuevo: number;
-  combustible_consumido: number | null;
+  nivel_anterior: string | null;       // 'RESERVA','1/4','LLENO', etc.
+  nivel_nuevo: string | null;
+  combustible_anterior: number | null; // decimal 0-1.0
+  combustible_nuevo: number | null;    // decimal 0-1.0
   odometro_anterior: number | null;
   odometro_actual: number | null;
   km_recorridos: number | null;
-  rendimiento_km_litro: number | null;
   observaciones: string | null;
   registrado_por: number;
   registrado_por_nombre?: string;
@@ -25,9 +24,10 @@ export interface CombustibleRegistro {
 export interface RegistrarAjusteCombustibleDTO {
   unidad_id: number;
   tipo: 'AJUSTE';
-  combustible_anterior: number;
+  nivel_anterior: string | null;
+  nivel_nuevo: string;
+  combustible_anterior?: number;
   combustible_nuevo: number;
-  combustible_agregado?: number;
   odometro_actual?: number;
   observaciones?: string;
 }
@@ -144,6 +144,11 @@ export const transportesService = {
     } catch {
       return null;
     }
+  },
+
+  async crearPlantilla(data: { tipo_unidad: string; nombre: string; secciones?: SeccionPlantilla[] }): Promise<Plantilla360> {
+    const res = await api.post('/inspeccion360/plantillas', data);
+    return res.data;
   },
 
   async actualizarPlantilla(id: number, data: Partial<Plantilla360>): Promise<Plantilla360> {

@@ -284,10 +284,14 @@ export default function DynamicActivityFields({ activityTypeName, datos, onDatos
   // ── Abastecimiento ──
   if (name === 'Abastecimiento') {
     return (
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <NumberInput label="Combustible Inicial (Gal/%)" value={datos.combustible_inicial} onChange={v => set('combustible_inicial', v)} />
-          <NumberInput label="Combustible Final (Gal/%)" value={datos.combustible_final} onChange={v => set('combustible_final', v)} />
+      <div className="space-y-4">
+        <div>
+          <label className="text-sm font-medium text-gray-700 block mb-2">Combustible Inicial</label>
+          <FuelLevelPicker value={datos.combustible_inicial ?? ''} onChange={v => set('combustible_inicial', v)} />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-700 block mb-2">Combustible Final</label>
+          <FuelLevelPicker value={datos.combustible_final ?? ''} onChange={v => set('combustible_final', v)} />
         </div>
         <NumberInput label="Odometro Actual" value={datos.odometro} onChange={v => set('odometro', v)} />
       </div>
@@ -315,6 +319,40 @@ function NumberInput({ label, value, onChange }: { label: string; value?: number
       <label className="text-sm font-medium text-gray-700 block mb-1">{label}</label>
       <input type="number" min={0} value={value ?? ''} onChange={e => onChange(parseFloat(e.target.value) || 0)}
         className="w-full border rounded-lg px-3 py-2 text-sm" />
+    </div>
+  );
+}
+
+const NIVELES_COMBUSTIBLE = [
+  { value: 'RESERVA', label: '0',     sub: 'Reserva' },
+  { value: '1/8',     label: '⅛',     sub: '' },
+  { value: '1/4',     label: '¼',     sub: '' },
+  { value: '3/8',     label: '⅜',     sub: '' },
+  { value: '1/2',     label: '½',     sub: '' },
+  { value: '5/8',     label: '⅝',     sub: '' },
+  { value: '3/4',     label: '¾',     sub: '' },
+  { value: '7/8',     label: '⅞',     sub: '' },
+  { value: 'LLENO',   label: 'Lleno', sub: '' },
+];
+
+function FuelLevelPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="grid grid-cols-3 gap-1.5">
+      {NIVELES_COMBUSTIBLE.map(n => (
+        <button
+          key={n.value}
+          type="button"
+          onClick={() => onChange(n.value)}
+          className={`flex flex-col items-center justify-center py-2 rounded-lg border-2 transition-all ${
+            value === n.value
+              ? 'border-orange-500 bg-orange-500 text-white'
+              : 'border-gray-200 bg-white text-gray-700 hover:border-orange-300'
+          }`}
+        >
+          <span className="text-sm font-bold leading-none">{n.label}</span>
+          {n.sub && <span className="text-xs opacity-75">{n.sub}</span>}
+        </button>
+      ))}
     </div>
   );
 }
