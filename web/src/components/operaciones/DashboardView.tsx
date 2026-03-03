@@ -378,7 +378,7 @@ export default function DashboardView({ data, turnoHoy }: DashboardViewProps) {
                   </h3>
                   {data.alertas.unidadesCombustible.map((u: any) => (
                     <p key={u.unidad_id} className="text-xs text-red-700 dark:text-red-400 mt-1">
-                      <span className="font-medium">{u.unidad_codigo}</span> — {u.combustible_actual != null ? Number(u.combustible_actual).toFixed(1) : '0.0'}L
+                      <span className="font-medium">{u.unidad_codigo}</span> — {u.nivel_combustible ?? (u.combustible_actual != null ? `${Math.round(Number(u.combustible_actual) * 100)}%` : 'sin datos')}
                     </p>
                   ))}
                 </div>

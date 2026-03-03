@@ -371,7 +371,7 @@ export default function GeneradorTurnosPage() {
                             </h3>
                             {sugerencia.tipo === 'UNIDAD' && sugerencia.combustible_actual != null && (
                               <p className="text-sm text-gray-600 dark:text-gray-400">
-                                Combustible: {typeof sugerencia.combustible_actual === 'number' ? sugerencia.combustible_actual.toFixed(1) : '0.0'}L
+                                Combustible: {typeof sugerencia.combustible_actual === 'number' ? `${Math.round(sugerencia.combustible_actual * 100)}%` : 'sin datos'}
                               </p>
                             )}
                             {sugerencia.tipo === 'GARITA' && (

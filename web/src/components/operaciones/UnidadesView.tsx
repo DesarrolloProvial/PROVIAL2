@@ -64,12 +64,9 @@ export default function UnidadesView({ unidades, isLoading }: UnidadesViewProps)
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900 dark:text-gray-100">
-                        {unidad.combustible_actual != null ? Number(unidad.combustible_actual).toFixed(1) : '0.0'}L
+                        {unidad.nivel_combustible ?? (unidad.combustible_actual != null ? `${Math.round(Number(unidad.combustible_actual) * 100)}%` : 'Sin datos')}
                       </div>
-                      {unidad.capacidad_combustible && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400">de {unidad.capacidad_combustible}L</div>
-                      )}
-                      {unidad.combustible_actual < 20 && (
+                      {unidad.combustible_actual != null && unidad.combustible_actual < 0.25 && (
                         <span className="text-xs text-red-600">⚠️ Bajo</span>
                       )}
                     </td>
