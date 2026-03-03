@@ -50,7 +50,7 @@ export default function DisponibilidadPage() {
       if (user?.sede_id) params.set('sede_id', String(user.sede_id));
       params.set('activa', 'true');
       const res = await api.get(`/unidades?${params.toString()}`);
-      return res.data;
+      return res.data.unidades ?? res.data;
     },
   });
 
