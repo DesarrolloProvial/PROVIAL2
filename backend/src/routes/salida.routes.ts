@@ -16,6 +16,7 @@ import {
   getSalida,
   getUnidadesEnSalida,
   getHistorialSalidas,
+  getBitacoraUnidad,
   editarDatosSalida,
   // Relevos
   registrarRelevo,
@@ -77,6 +78,9 @@ router.get('/admin/unidades-en-salida', authenticate, authorize('COP', 'OPERACIO
 
 // Historial de salidas de una unidad
 router.get('/historial/:unidadId', authenticate, getHistorialSalidas);
+
+// Bitácora completa por unidad (salidas + situaciones + actividades + tripulación)
+router.get('/bitacora/:unidadId', authenticate, authorize('COP', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN'), getBitacoraUnidad);
 
 // ========================================
 // RELEVOS

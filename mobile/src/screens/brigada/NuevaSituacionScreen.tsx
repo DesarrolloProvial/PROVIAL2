@@ -733,14 +733,10 @@ export default function NuevaSituacionScreen() {
               </>
             )}
 
-            {/* MULTIMEDIA - Solo para tipos que requieren evidencia */}
-            {/* MULTIMEDIA - Solo para tipos que requieren evidencia */}
-            {(() => {
-              const shouldShow = ['INCIDENTE', 'ASISTENCIA_VEHICULAR', 'EMERGENCIA'].includes(tipoSeleccionado || '');
-              console.log('🔍 DEBUG MULTIMEDIA:', { tipoSeleccionado, shouldShow, infografias });
-              return shouldShow;
-            })() && (
-                <View style={[styles.card, { backgroundColor: '#FFFF00' }]}>
+            {/* MULTIMEDIA - Para todas las situaciones excepto baño */}
+            {tipoSeleccionado !== null &&
+              !nombreTipoSeleccionado.toLowerCase().includes('baño') && (
+                <View style={styles.card}>
                   <Text style={styles.cardTitle}>Evidencia Multimedia</Text>
                   <InfografiaManager
                     situacionId={draftUuid}
