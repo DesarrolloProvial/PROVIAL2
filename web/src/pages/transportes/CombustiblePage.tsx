@@ -199,7 +199,7 @@ export default function CombustiblePage() {
         tipo: 'AJUSTE',
         nivel_anterior: ajusteForm.nivel_anterior,
         nivel_nuevo: ajusteForm.nivel_nuevo,
-        combustible_anterior: ajusteForm.nivel_anterior
+        combustible_anterior: ajusteForm.nivel_anterior != null
           ? (NIVELES.find(n => n.value === ajusteForm.nivel_anterior)?.decimal ?? undefined)
           : undefined,
         combustible_nuevo: nivelObj?.decimal ?? 0,
@@ -589,18 +589,39 @@ export default function CombustiblePage() {
                 </div>
               </div>
 
-              {/* Nivel anterior (read-only) */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nivel anterior</label>
-                <span className={`inline-flex px-3 py-1.5 rounded-lg text-sm font-semibold ${getNivelBadgeClass(ajusteUnidad.combustible_actual)}`}>
-                  {ajusteForm.nivel_anterior ?? 'Sin datos'}
-                </span>
-              </div>
+              {/* Nivel anterior */}
+              {ajusteUnidad.combustible_actual === null ? (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Nivel actual (primera vez) <span className="text-red-500">*</span>
+                    </label>
+                    <span className="text-xs bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 px-2 py-0.5 rounded-full font-medium">
+                      Sin registro previo
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    Esta unidad no tiene combustible registrado. Selecciona el nivel con el que parte.
+                  </p>
+                  <FuelSelectorWeb
+                    value={ajusteForm.nivel_anterior ?? ''}
+                    onChange={(nivel) => setAjusteForm(f => ({ ...f, nivel_anterior: nivel }))}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nivel anterior</label>
+                  <span className={`inline-flex px-3 py-1.5 rounded-lg text-sm font-semibold ${getNivelBadgeClass(ajusteUnidad.combustible_actual)}`}>
+                    {ajusteForm.nivel_anterior ?? 'Sin datos'}
+                  </span>
+                </div>
+              )}
 
               {/* Selector de nivel nuevo */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Nivel nuevo <span className="text-red-500">*</span>
+                  {ajusteUnidad.combustible_actual === null ? 'Nivel nuevo (tras abastecimiento)' : 'Nivel nuevo'}{' '}
+                  <span className="text-red-500">*</span>
                 </label>
                 <FuelSelectorWeb
                   value={ajusteForm.nivel_nuevo}
@@ -667,7 +688,11 @@ export default function CombustiblePage() {
               <button
                 type="button"
                 onClick={handleAjusteSubmit}
-                disabled={ajusteMutation.isPending || !ajusteForm.nivel_nuevo}
+                disabled={
+                  ajusteMutation.isPending ||
+                  !ajusteForm.nivel_nuevo ||
+                  (ajusteUnidad.combustible_actual === null && !ajusteForm.nivel_anterior)
+                }
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {ajusteMutation.isPending ? (
