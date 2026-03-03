@@ -11,6 +11,7 @@ import {
   validarDisponibilidadUnidad,
   registrarCombustible,
   getHistorialCombustible,
+  getCombustibleTendencia,
 } from '../controllers/operaciones.controller';
 import { authenticate, authorize } from '../middlewares/auth';
 
@@ -116,6 +117,14 @@ router.get(
   authenticate,
   authorize('OPERACIONES', 'BRIGADA', 'ADMIN', 'TRANSPORTES'),
   getHistorialCombustible
+);
+
+// Tendencia de combustible de flota (analytics)
+router.get(
+  '/combustible/tendencia',
+  authenticate,
+  authorize('TRANSPORTES', 'ADMIN', 'SUPER_ADMIN'),
+  getCombustibleTendencia
 );
 
 export default router;

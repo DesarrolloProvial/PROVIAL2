@@ -92,7 +92,7 @@ export const transportesService = {
 
   async getHistorialCombustible(unidadId: number, limit = 50): Promise<CombustibleRegistro[]> {
     const res = await api.get(`/operaciones/combustible/unidad/${unidadId}?limit=${limit}`);
-    return res.data;
+    return res.data.data || res.data || [];
   },
 
   async registrarAjusteCombustible(data: RegistrarAjusteCombustibleDTO): Promise<CombustibleRegistro> {
@@ -153,6 +153,28 @@ export const transportesService = {
 
   async actualizarPlantilla(id: number, data: Partial<Plantilla360>): Promise<Plantilla360> {
     const res = await api.put(`/inspeccion360/plantillas/${id}`, data);
+    return res.data;
+  },
+
+  // ── Reparaciones ───────────────────────────────────────────────────────────
+
+  async getReparacionesActivas(): Promise<any[]> {
+    const res = await api.get('/reparaciones/activas');
+    return res.data.data || [];
+  },
+
+  async getReparacionesPorUnidad(unidadId: number): Promise<any[]> {
+    const res = await api.get(`/reparaciones/unidad/${unidadId}`);
+    return res.data.data || [];
+  },
+
+  async crearReparacion(data: { unidad_id: number; motivo: string; descripcion?: string; fecha_inicio?: string }): Promise<any> {
+    const res = await api.post('/reparaciones', data);
+    return res.data;
+  },
+
+  async completarReparacion(id: number, fecha_fin?: string): Promise<any> {
+    const res = await api.put(`/reparaciones/${id}/completar`, { fecha_fin });
     return res.data;
   },
 };

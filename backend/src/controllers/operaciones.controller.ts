@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { OperacionesModel } from '../models/operaciones.model';
+import { db } from '../config/database';
 
 // ========================================
 // DASHBOARD DE OPERACIONES
@@ -398,6 +399,51 @@ export async function getHistorialCombustible(req: Request, res: Response) {
     return res.status(500).json({
       success: false,
       message: 'Error obteniendo historial de combustible',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+}
+
+// ========================================
+// TENDENCIA DE COMBUSTIBLE (analytics)
+// ========================================
+
+export async function getCombustibleTendencia(req: Request, res: Response) {
+  try {
+    const { sede_id, dias = '30' } = req.query;
+    const userSedeId = req.user!.sede;
+    const diasNum = Math.min(parseInt(dias as string, 10) || 30, 90);
+
+    // Use the user's sede unless ADMIN/SUPER_ADMIN provides override
+    const sedeFilter = sede_id ? parseInt(sede_id as string, 10) : userSedeId;
+
+    const tendencia = await db.any(
+      `SELECT
+         DATE(cr.created_at)                    AS fecha,
+         ROUND(AVG(cr.combustible_nuevo)::numeric, 3) AS promedio_combustible,
+         COUNT(*)                               AS num_registros
+       FROM combustible_registro cr
+       JOIN unidad u ON cr.unidad_id = u.id
+       WHERE cr.created_at >= NOW() - ($1 || ' days')::INTERVAL
+         AND u.sede_id = $2
+         AND cr.combustible_nuevo IS NOT NULL
+       GROUP BY DATE(cr.created_at)
+       ORDER BY fecha ASC`,
+      [diasNum, sedeFilter]
+    );
+
+    return res.json({
+      success: true,
+      sede_id: sedeFilter,
+      dias: diasNum,
+      count: tendencia.length,
+      data: tendencia,
+    });
+  } catch (error) {
+    console.error('Error en getCombustibleTendencia:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error obteniendo tendencia de combustible',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }

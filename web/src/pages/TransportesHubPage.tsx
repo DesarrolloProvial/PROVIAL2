@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import {
-  Truck, Fuel, ClipboardCheck, CheckSquare,
+  Truck, Fuel, ClipboardCheck, CheckSquare, BarChart2,
   LogOut, Building2, User, ChevronRight,
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
@@ -56,6 +56,15 @@ export default function TransportesHubPage() {
       path: '/transportes/disponibilidad',
       color: 'text-green-600 dark:text-green-400',
       bgColor: 'bg-green-50 hover:bg-green-100 border-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 dark:border-green-800',
+    },
+    {
+      id: 'analytics',
+      title: 'Analytics de Flota',
+      description: 'Gráficas de salidas, combustible y unidades en taller',
+      icon: <BarChart2 className="w-8 h-8" />,
+      path: '/transportes/analytics',
+      color: 'text-teal-600 dark:text-teal-400',
+      bgColor: 'bg-teal-50 hover:bg-teal-100 border-teal-200 dark:bg-teal-900/20 dark:hover:bg-teal-900/40 dark:border-teal-800',
     },
   ];
 
@@ -150,7 +159,7 @@ export default function TransportesHubPage() {
           <QuickStat label="Rol" value={user?.rol || '-'} />
           <QuickStat label="Sede" value={user?.sede_nombre || 'Global'} />
           <QuickStat label="Usuario" value={user?.username || '-'} />
-          <QuickStat label="Módulos" value="4" highlight />
+          <QuickStat label="Módulos" value="5" highlight />
         </div>
       </main>
 

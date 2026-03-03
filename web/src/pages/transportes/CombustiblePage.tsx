@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
   Fuel, Truck, RefreshCw, X, ChevronRight, AlertTriangle, ArrowLeft,
+  Wrench, CheckCircle, Loader2, Plus,
 } from 'lucide-react';
 import { transportesService, CombustibleRegistro } from '../../services/transportes.service';
 import api from '../../services/api';
@@ -40,6 +41,26 @@ interface Sede {
   id: number;
   codigo: string;
   nombre: string;
+}
+
+interface ReparacionActiva {
+  id: number;
+  unidad_id: number;
+  motivo: string;
+  fecha_inicio: string;
+  dias_en_taller: number;
+}
+
+interface ReparacionHistorial extends ReparacionActiva {
+  descripcion: string | null;
+  fecha_fin: string | null;
+  estado: 'EN_REPARACION' | 'COMPLETADA' | 'CANCELADA';
+}
+
+interface RepForm {
+  motivo: string;
+  descripcion: string;
+  fecha_inicio: string;
 }
 
 interface AjusteFormData {
@@ -146,6 +167,16 @@ export default function CombustiblePage() {
   });
   const [ajusteError, setAjusteError] = useState<string | null>(null);
 
+  // Reparaciones modal
+  const [reparacionUnidad, setReparacionUnidad] = useState<Unidad | null>(null);
+  const [repTab, setRepTab] = useState<'nueva' | 'historial'>('nueva');
+  const [repForm, setRepForm] = useState<RepForm>({
+    motivo: '',
+    descripcion: '',
+    fecha_inicio: new Date().toISOString().split('T')[0],
+  });
+  const [repError, setRepError] = useState<string | null>(null);
+
   // ── Queries ─────────────────────────────────────────────────────────────────
 
   const {
@@ -180,6 +211,26 @@ export default function CombustiblePage() {
     queryKey: ['historial-combustible', historialUnidad?.id],
     queryFn: () => transportesService.getHistorialCombustible(historialUnidad!.id),
     enabled: !!historialUnidad,
+  });
+
+  const { data: reparacionesActivas = [] } = useQuery<ReparacionActiva[]>({
+    queryKey: ['reparaciones-activas-combustible'],
+    queryFn: async () => {
+      const res = await api.get('/reparaciones/activas');
+      return res.data?.data ?? [];
+    },
+  });
+
+  const {
+    data: historialRep = [],
+    isLoading: loadingHistorialRep,
+  } = useQuery<ReparacionHistorial[]>({
+    queryKey: ['reparaciones-unidad', reparacionUnidad?.id],
+    queryFn: async () => {
+      const res = await api.get(`/reparaciones/unidad/${reparacionUnidad!.id}`);
+      return res.data?.data ?? [];
+    },
+    enabled: !!reparacionUnidad && repTab === 'historial',
   });
 
   // ── Mutaciones ───────────────────────────────────────────────────────────────
@@ -224,6 +275,37 @@ export default function CombustiblePage() {
     },
   });
 
+  const crearReparacionMutation = useMutation({
+    mutationFn: async () => {
+      return api.post('/reparaciones', {
+        unidad_id: reparacionUnidad!.id,
+        motivo: repForm.motivo.trim(),
+        descripcion: repForm.descripcion.trim() || undefined,
+        fecha_inicio: repForm.fecha_inicio,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reparaciones-activas-combustible'] });
+      queryClient.invalidateQueries({ queryKey: ['reparaciones-unidad', reparacionUnidad?.id] });
+      queryClient.invalidateQueries({ queryKey: ['reparaciones-activas'] });
+      cerrarReparacionModal();
+    },
+    onError: (err: any) => {
+      setRepError(
+        err?.response?.data?.message || err?.message || 'Error al registrar la reparación.'
+      );
+    },
+  });
+
+  const completarReparacionMutation = useMutation({
+    mutationFn: (id: number) => api.put(`/reparaciones/${id}/completar`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reparaciones-activas-combustible'] });
+      queryClient.invalidateQueries({ queryKey: ['reparaciones-unidad', reparacionUnidad?.id] });
+      queryClient.invalidateQueries({ queryKey: ['reparaciones-activas'] });
+    },
+  });
+
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
   function abrirHistorial(unidad: Unidad) { setHistorialUnidad(unidad); }
@@ -251,6 +333,28 @@ export default function CombustiblePage() {
     e.preventDefault();
     setAjusteError(null);
     ajusteMutation.mutate();
+  }
+
+  function abrirReparacion(unidad: Unidad) {
+    setReparacionUnidad(unidad);
+    setRepTab('nueva');
+    setRepForm({ motivo: '', descripcion: '', fecha_inicio: new Date().toISOString().split('T')[0] });
+    setRepError(null);
+  }
+
+  function cerrarReparacionModal() {
+    setReparacionUnidad(null);
+    setRepError(null);
+  }
+
+  function handleCrearReparacion(e: React.FormEvent) {
+    e.preventDefault();
+    setRepError(null);
+    if (!repForm.motivo.trim()) {
+      setRepError('El motivo es requerido.');
+      return;
+    }
+    crearReparacionMutation.mutate();
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -345,6 +449,7 @@ export default function CombustiblePage() {
                     <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide text-xs">
                       <div className="flex items-center gap-1.5"><Fuel className="w-3.5 h-3.5" />Nivel</div>
                     </th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide text-xs">Estado</th>
                     <th className="text-right px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide text-xs">Acciones</th>
                   </tr>
                 </thead>
@@ -352,7 +457,7 @@ export default function CombustiblePage() {
 
                   {loadingUnidades && Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      {[...Array(isAdminRole ? 6 : 5)].map((__, j) => (
+                      {[...Array(isAdminRole ? 7 : 6)].map((__, j) => (
                         <td key={j} className="px-4 py-3">
                           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24" />
                         </td>
@@ -362,7 +467,7 @@ export default function CombustiblePage() {
 
                   {!loadingUnidades && unidades.length === 0 && (
                     <tr>
-                      <td colSpan={isAdminRole ? 6 : 5} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
+                      <td colSpan={isAdminRole ? 7 : 6} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
                         <Truck className="w-10 h-10 mx-auto mb-2 opacity-30" />
                         <p>No se encontraron unidades</p>
                       </td>
@@ -403,9 +508,20 @@ export default function CombustiblePage() {
                         </span>
                       </td>
 
+                      {/* Estado reparación */}
+                      <td className="px-4 py-3">
+                        {reparacionesActivas.some(r => r.unidad_id === unidad.id) ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300">
+                            <Wrench className="w-3 h-3" />En taller
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400 dark:text-gray-500">—</span>
+                        )}
+                      </td>
+
                       {/* Acciones */}
                       <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-2 flex-wrap">
                           <button
                             onClick={() => abrirHistorial(unidad)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition"
@@ -417,6 +533,12 @@ export default function CombustiblePage() {
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 rounded-lg transition"
                           >
                             <Fuel className="w-3.5 h-3.5" />Ajustar Nivel
+                          </button>
+                          <button
+                            onClick={() => abrirReparacion(unidad)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 border border-orange-200 dark:border-orange-800 rounded-lg transition"
+                          >
+                            <Wrench className="w-3.5 h-3.5" />Reparación
                           </button>
                         </div>
                       </td>
@@ -701,6 +823,206 @@ export default function CombustiblePage() {
                   <><Fuel className="w-4 h-4" />Registrar Ajuste</>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Reparaciones ──────────────────────────────────────────────── */}
+      {reparacionUnidad && (
+        <div
+          className="fixed inset-0 bg-black/60 dark:bg-black/70 flex items-center justify-center z-50 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) cerrarReparacionModal(); }}
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <Wrench className="w-5 h-5 text-orange-500" />
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Reparaciones</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {reparacionUnidad.codigo} &mdash; {reparacionUnidad.tipo_unidad}
+                  </p>
+                </div>
+              </div>
+              <button onClick={cerrarReparacionModal} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+              {(['nueva', 'historial'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setRepTab(tab)}
+                  className={`flex-1 py-2.5 text-sm font-medium capitalize transition ${
+                    repTab === tab
+                      ? 'border-b-2 border-orange-500 text-orange-600 dark:text-orange-400'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
+                >
+                  {tab === 'nueva' ? 'Nueva Reparación' : 'Historial'}
+                </button>
+              ))}
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto">
+
+              {/* Tab: Nueva */}
+              {repTab === 'nueva' && (
+                <form onSubmit={handleCrearReparacion} className="px-5 py-4 space-y-4">
+
+                  {reparacionesActivas.some(r => r.unidad_id === reparacionUnidad.id) && (
+                    <div className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 rounded-lg">
+                      <Wrench className="w-4 h-4 text-orange-500 shrink-0" />
+                      <p className="text-sm text-orange-700 dark:text-orange-300 font-medium">
+                        Esta unidad ya tiene una reparación activa.
+                      </p>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Motivo <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={repForm.motivo}
+                      onChange={(e) => setRepForm(f => ({ ...f, motivo: e.target.value }))}
+                      placeholder="Ej: Fallo de motor, cambio de llantas..."
+                      maxLength={200}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Descripción <span className="text-gray-400 dark:text-gray-500 font-normal">(opcional)</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={repForm.descripcion}
+                      onChange={(e) => setRepForm(f => ({ ...f, descripcion: e.target.value }))}
+                      placeholder="Detalles adicionales sobre la reparación..."
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent transition resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Fecha de inicio
+                    </label>
+                    <input
+                      type="date"
+                      value={repForm.fecha_inicio}
+                      onChange={(e) => setRepForm(f => ({ ...f, fecha_inicio: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                    />
+                  </div>
+
+                  {repError && (
+                    <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg">
+                      <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                      <p className="text-sm text-red-600 dark:text-red-400">{repError}</p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={cerrarReparacionModal}
+                      className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={crearReparacionMutation.isPending || !repForm.motivo.trim()}
+                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {crearReparacionMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Plus className="w-4 h-4" />
+                      )}
+                      Registrar Reparación
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Tab: Historial */}
+              {repTab === 'historial' && (
+                <div className="px-5 py-4">
+                  {loadingHistorialRep ? (
+                    <div className="space-y-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="animate-pulse bg-gray-100 dark:bg-gray-700/50 rounded-lg h-20" />
+                      ))}
+                    </div>
+                  ) : historialRep.length === 0 ? (
+                    <div className="py-10 text-center text-gray-500 dark:text-gray-400 text-sm">
+                      <Wrench className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                      Sin historial de reparaciones
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {historialRep.map((r) => {
+                        const esActiva = r.estado === 'EN_REPARACION';
+                        return (
+                          <div
+                            key={r.id}
+                            className="bg-gray-50 dark:bg-gray-700/40 rounded-lg p-4 border border-gray-100 dark:border-gray-700"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{r.motivo}</p>
+                                {r.descripcion && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{r.descripcion}</p>
+                                )}
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                  Desde {formatFecha(r.fecha_inicio + 'T00:00:00')}
+                                  {r.fecha_fin && ` → ${formatFecha(r.fecha_fin + 'T00:00:00')}`}
+                                  {' · '}
+                                  <span className="font-medium">{r.dias_en_taller}d en taller</span>
+                                </p>
+                              </div>
+                              <div className="flex flex-col items-end gap-2 shrink-0">
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                  esActiva
+                                    ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300'
+                                    : r.estado === 'COMPLETADA'
+                                    ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                                }`}>
+                                  {r.estado === 'EN_REPARACION' ? 'En taller' : r.estado === 'COMPLETADA' ? 'Completada' : 'Cancelada'}
+                                </span>
+                                {esActiva && (
+                                  <button
+                                    onClick={() => completarReparacionMutation.mutate(r.id)}
+                                    disabled={completarReparacionMutation.isPending}
+                                    className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 rounded text-xs hover:bg-green-100 dark:hover:bg-green-900/40 transition disabled:opacity-50"
+                                  >
+                                    {completarReparacionMutation.isPending ? (
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                      <CheckCircle className="w-3 h-3" />
+                                    )}
+                                    Completar
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

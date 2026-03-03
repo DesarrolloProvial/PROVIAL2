@@ -42,6 +42,7 @@ import importExcelRoutes from './importExcel.routes';
 import estadisticasRoutes from './estadisticas.routes';
 import capaMapaRoutes from './capaMapa.routes';
 import dispositivoRoutes from './dispositivo.routes';
+import reparacionesRoutes from './reparaciones.routes';
 
 const router = Router();
 
@@ -173,5 +174,8 @@ router.use('/capas-mapa', capaMapaRoutes);
 
 // Gestión de dispositivos móviles autorizados
 router.use('/admin/dispositivos', dispositivoRoutes);
+
+// Reparaciones de unidades (períodos en taller)
+router.use('/reparaciones', reparacionesRoutes);
 
 export default router;
