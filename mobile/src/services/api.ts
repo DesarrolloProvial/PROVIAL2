@@ -123,7 +123,8 @@ export const turnosAPI = {
   },
 
   async registrarCombustible(params: {
-    combustible: number;
+    nivel_fraccion: string;
+    nivel_decimal: number;
     tipo: 'INICIAL' | 'ACTUAL' | 'FINAL';
     observaciones?: string;
   }): Promise<any> {

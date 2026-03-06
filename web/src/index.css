@@ -214,6 +214,44 @@ body {
   width: 100%;
 }
 
+/* Dark mode: dim the tile layer */
+.dark .leaflet-tile-pane {
+  filter: brightness(0.72) saturate(0.75);
+}
+
+/* Dark mode: popups */
+.dark .leaflet-popup-content-wrapper {
+  background-color: #1f2937;
+  color: #f9fafb;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  border: 1px solid #374151;
+}
+.dark .leaflet-popup-tip {
+  background-color: #1f2937;
+}
+.dark .leaflet-popup-content-wrapper a {
+  color: #60a5fa;
+}
+
+/* Dark mode: zoom controls */
+.dark .leaflet-control-zoom a {
+  background-color: #374151;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
+.dark .leaflet-control-zoom a:hover {
+  background-color: #4b5563;
+}
+
+/* Dark mode: attribution */
+.dark .leaflet-control-attribution {
+  background-color: rgba(31, 41, 55, 0.85);
+  color: #9ca3af;
+}
+.dark .leaflet-control-attribution a {
+  color: #60a5fa;
+}
+
 /* ========================================
    CUSTOM SCROLLBAR
    ======================================== */

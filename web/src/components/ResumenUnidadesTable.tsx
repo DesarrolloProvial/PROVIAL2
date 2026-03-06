@@ -91,14 +91,14 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
   });
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow h-full flex flex-col">
       {/* Header con búsqueda */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-semibold text-gray-800">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
             Resumen de Unidades
           </h2>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
             {filteredResumen.length} de {resumen.length} unidades
           </span>
         </div>
@@ -108,57 +108,56 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
             placeholder="Buscar unidad, tipo, sede..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
           />
         </div>
       </div>
 
       {/* Tabla */}
-      <div className="overflow-x-auto">
+      <div className="overflow-auto flex-1">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Unidad
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Situación Actual
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Ubicación
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Ruta Activa
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Última Hora
               </th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '300px' }}>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" style={{ minWidth: '300px' }}>
                 Acciones
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {filteredResumen.map((unidad) => (
               <tr
                 key={unidad.unidad_id}
                 onClick={() => navigate(`/bitacora/${unidad.unidad_id}`)}
-                className="hover:bg-gray-50 cursor-pointer transition"
+                className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition"
               >
                 {/* Unidad */}
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div className="flex items-start gap-2">
-                    {/* Indicador de color de sede */}
                     <div
                       className="w-2 h-full min-h-[40px] rounded-full flex-shrink-0"
                       style={{ backgroundColor: unidad.sede_id ? COLORES_SEDE[unidad.sede_id] || '#6B7280' : '#6B7280' }}
                       title={unidad.sede_nombre || 'Sin sede'}
                     />
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {unidad.unidad_codigo}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         {unidad.tipo_unidad}
                       </div>
                       {unidad.sede_nombre && (
@@ -191,19 +190,19 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
                           {unidad.estado_situacion || 'EN RUTA'}
                         </span>
                         {unidad.tipo_registro === 'ACTIVIDAD' && (
-                          <span className="inline-block px-1.5 py-0.5 text-[10px] rounded bg-blue-50 text-blue-600 font-medium">
+                          <span className="inline-block px-1.5 py-0.5 text-[10px] rounded bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-medium">
                             ACT
                           </span>
                         )}
                       </div>
                       {unidad.observaciones && (
-                        <div className="text-[11px] text-gray-500 truncate max-w-[180px]" title={unidad.observaciones}>
+                        <div className="text-[11px] text-gray-500 dark:text-gray-400 truncate max-w-[180px]" title={unidad.observaciones}>
                           {unidad.observaciones}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-400">Sin actividad</span>
+                    <span className="text-sm text-gray-400 dark:text-gray-500">Sin actividad</span>
                   )}
                 </td>
 
@@ -211,17 +210,17 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
                 <td className="px-4 py-4 whitespace-nowrap">
                   {unidad.ruta_codigo ? (
                     <div className="text-sm">
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-gray-900 dark:text-gray-100">
                         {unidad.ruta_codigo} Km {unidad.km || '-'}
                       </div>
                       {unidad.sentido && (
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
                           {unidad.sentido}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-400">-</span>
+                    <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
                   )}
                 </td>
 
@@ -229,25 +228,23 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
                 <td className="px-4 py-4 whitespace-nowrap">
                   {unidad.ruta_activa_codigo || unidad.ruta_codigo ? (
                     <div className="text-sm">
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-gray-900 dark:text-gray-100">
                         {unidad.ruta_activa_codigo || unidad.ruta_codigo}
                       </div>
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-400">Sin ruta</span>
+                    <span className="text-sm text-gray-400 dark:text-gray-500">Sin ruta</span>
                   )}
                 </td>
-
-
 
                 {/* Última Hora */}
                 <td className="px-4 py-4 whitespace-nowrap">
                   {(unidad.sa_updated_at || unidad.created_at) ? (
                     <div>
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-gray-900 dark:text-gray-100">
                         {formatHora(unidad.sa_updated_at || unidad.created_at)}
                       </div>
-                      <div className="text-[11px] text-gray-400">
+                      <div className="text-[11px] text-gray-400 dark:text-gray-500">
                         {(() => {
                           const fecha = unidad.sa_updated_at || unidad.created_at;
                           if (!fecha) return '';
@@ -259,7 +256,7 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
                       </div>
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-400">-</span>
+                    <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
                   )}
                 </td>
 
@@ -271,7 +268,7 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
                         e.stopPropagation();
                         navigate(`/bitacora/${unidad.unidad_id}`);
                       }}
-                      className="flex items-center gap-1 px-2 py-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition text-xs font-medium"
+                      className="flex items-center gap-1 px-2 py-1.5 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition text-xs font-medium"
                       title="Ver bitácora"
                     >
                       <Eye className="w-3.5 h-3.5" />
@@ -282,7 +279,7 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
                         e.stopPropagation();
                         onCreateSituacion?.(unidad.unidad_id);
                       }}
-                      className="flex items-center gap-1 px-2 py-1.5 text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition text-xs font-medium"
+                      className="flex items-center gap-1 px-2 py-1.5 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 rounded-lg transition text-xs font-medium"
                       title="Crear situación para esta unidad"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -293,7 +290,7 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
                         e.stopPropagation();
                         onCreateActividad?.(unidad.unidad_id);
                       }}
-                      className="flex items-center gap-1 px-2 py-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition text-xs font-medium"
+                      className="flex items-center gap-1 px-2 py-1.5 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-lg transition text-xs font-medium"
                       title="Crear actividad para esta unidad"
                     >
                       <Activity className="w-3.5 h-3.5" />
@@ -304,7 +301,7 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
                         e.stopPropagation();
                         onSelectUnidad?.(unidad.unidad_id);
                       }}
-                      className="flex items-center gap-1 px-2 py-1.5 text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-xs font-medium"
+                      className="flex items-center gap-1 px-2 py-1.5 text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition text-xs font-medium"
                       title="Ver en mapa"
                     >
                       📍
@@ -318,7 +315,7 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
       </div>
 
       {filteredResumen.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           No se encontraron unidades
         </div>
       )}

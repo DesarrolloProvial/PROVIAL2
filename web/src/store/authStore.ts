@@ -21,10 +21,28 @@ interface AuthState {
   getSubRolCop: () => SubRolCop | null;
 }
 
+// Leer estado inicial desde localStorage de forma síncrona (evita parpadeo en recarga)
+function getInitialState(): { user: Usuario | null; accessToken: string | null; isAuthenticated: boolean } {
+  try {
+    const userStr = localStorage.getItem('user');
+    const accessToken = localStorage.getItem('accessToken');
+    if (userStr && accessToken) {
+      return { user: JSON.parse(userStr), accessToken, isAuthenticated: true };
+    }
+  } catch {
+    localStorage.removeItem('user');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+  }
+  return { user: null, accessToken: null, isAuthenticated: false };
+}
+
+const initialState = getInitialState();
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  accessToken: null,
-  isAuthenticated: false,
+  user: initialState.user,
+  accessToken: initialState.accessToken,
+  isAuthenticated: initialState.isAuthenticated,
 
   login: (user, accessToken, refreshToken) => {
     localStorage.setItem('user', JSON.stringify(user));

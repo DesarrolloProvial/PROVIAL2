@@ -142,6 +142,30 @@ function CoordClickListener({ onCoord }: { onCoord: (lat: number, lng: number) =
   return null;
 }
 
+function MapResizer({ trigger }: { trigger: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    const timer = setTimeout(() => { map.invalidateSize(); }, 320);
+    return () => clearTimeout(timer);
+  }, [trigger, map]);
+  return null;
+}
+
+function formatObstruccion(data: any): string {
+  if (!data) return '';
+  if (typeof data === 'string') {
+    try { data = JSON.parse(data); } catch { return data; }
+  }
+  if (typeof data !== 'object') return String(data);
+  const parts: string[] = [];
+  if (data.tipo) parts.push(data.tipo);
+  if (data.descripcion) parts.push(data.descripcion);
+  if (data.largo_metros) parts.push(`${data.largo_metros}m`);
+  if (data.ancho_metros) parts.push(`${data.ancho_metros}m ancho`);
+  if (data.nivel) parts.push(`Nivel: ${data.nivel}`);
+  return parts.length > 0 ? parts.join(' · ') : JSON.stringify(data);
+}
+
 export default function COPMapaPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -462,6 +486,50 @@ export default function COPMapaPage() {
           </div>
         </div>
 
+        {/* Stats de flota */}
+        <div className="px-4 pt-3 pb-0">
+          <div className="grid grid-cols-3 gap-2 text-center mb-3">
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg py-2">
+              <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">Unidades</p>
+              <p className="text-lg font-bold text-blue-700 dark:text-blue-300">{filteredUnidades.length}</p>
+            </div>
+            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg py-2">
+              <p className="text-[10px] text-red-600 dark:text-red-400 font-medium">Con Situación</p>
+              <p className="text-lg font-bold text-red-700 dark:text-red-300">
+                {filteredUnidades.filter((u: any) => u.estado_situacion === 'ACTIVA').length}
+              </p>
+            </div>
+            <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg py-2">
+              <p className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">Persistentes</p>
+              <p className="text-lg font-bold text-orange-700 dark:text-orange-300">{filteredPersistentes.length}</p>
+            </div>
+          </div>
+
+          {/* Coordenadas del clic */}
+          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 flex items-center gap-2 text-xs mb-3">
+            <span className="text-gray-400">📍</span>
+            {clickedCoord ? (
+              <>
+                <span className="font-mono text-gray-700 dark:text-gray-300 flex-1 select-all">
+                  {clickedCoord.lat.toFixed(6)}, {clickedCoord.lng.toFixed(6)}
+                </span>
+                <button
+                  onClick={copyCoord}
+                  className={`px-2 py-0.5 rounded font-medium transition flex-shrink-0 ${
+                    coordCopied
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                  }`}
+                >
+                  {coordCopied ? '✓' : 'Copiar'}
+                </button>
+              </>
+            ) : (
+              <span className="text-gray-400 dark:text-gray-500">Clic en el mapa para ver coordenadas</span>
+            )}
+          </div>
+        </div>
+
         {/* Lista de Incidentes y Situaciones */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           <div className="flex items-center justify-between mb-2">
@@ -626,7 +694,7 @@ export default function COPMapaPage() {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              <MapController center={defaultCenter} />
+              <MapResizer trigger={showSidebar} />
               <CoordClickListener onCoord={handleCoord} />
               {showHeatmap && heatmapData.length > 0 && (
                 <HeatmapLayer points={heatmapData} />
@@ -700,7 +768,7 @@ export default function COPMapaPage() {
                       <p>🚗 Carga: {unidad.carga_vehicular}</p>
                     )}
                     {unidad.obstruccion_data && (
-                      <p>🚧 Obstrucción: {typeof unidad.obstruccion_data === 'string' ? unidad.obstruccion_data : JSON.stringify(unidad.obstruccion_data)}</p>
+                      <p>🚧 Obstrucción: {formatObstruccion(unidad.obstruccion_data)}</p>
                     )}
                     {unidad.observaciones && (
                       <p className="mt-1 text-gray-700 italic">💬 {unidad.observaciones}</p>
@@ -1213,49 +1281,6 @@ export default function COPMapaPage() {
               </div>
             )}
 
-            {/* Barra flotante de coordenadas */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-white dark:bg-gray-800 rounded-lg shadow-lg px-4 py-2 flex items-center gap-3 text-sm">
-              {clickedCoord ? (
-                <>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">📍</span>
-                  <span className="font-mono text-gray-800 dark:text-gray-200 select-all">
-                    {clickedCoord.lat.toFixed(6)}, {clickedCoord.lng.toFixed(6)}
-                  </span>
-                  <button
-                    onClick={copyCoord}
-                    className={`px-2 py-0.5 rounded text-xs font-medium transition ${
-                      coordCopied
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    {coordCopied ? '✓ Copiado' : 'Copiar'}
-                  </button>
-                </>
-              ) : (
-                <span className="text-gray-400 dark:text-gray-500 text-xs">Haz clic en el mapa para ver coordenadas</span>
-              )}
-            </div>
-
-            {/* Stats flotantes */}
-            <div className="absolute bottom-4 right-4 z-[1000] bg-white/90 dark:bg-gray-800/90 backdrop-blur rounded-lg shadow-lg p-3">
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Unidades</p>
-                  <p className="text-lg font-bold text-blue-600">{filteredUnidades.length}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Con Situación Activa</p>
-                  <p className="text-lg font-bold text-red-600">
-                    {filteredUnidades.filter((u: any) => u.estado_situacion === 'ACTIVA').length}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Persistentes</p>
-                  <p className="text-lg font-bold text-orange-600">{filteredPersistentes.length}</p>
-                </div>
-              </div>
-            </div>
           </>
         ) : (
           <div className="h-full overflow-auto">

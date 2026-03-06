@@ -12,24 +12,20 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../../constants/colors';
 import { turnosAPI } from '../../services/api';
+import FuelSelector from '../../components/FuelSelector';
 
 export default function RegistroCombustibleScreen() {
   const navigation = useNavigation();
 
-  const [combustible, setCombustible] = useState('');
+  const [nivel, setNivel] = useState<string | null>(null);
+  const [nivelDecimal, setNivelDecimal] = useState<number>(0);
   const [tipo, setTipo] = useState<'INICIAL' | 'ACTUAL' | 'FINAL'>('ACTUAL');
   const [observaciones, setObservaciones] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleRegistrar = async () => {
-    if (!combustible || isNaN(parseFloat(combustible))) {
-      Alert.alert('Error', 'Debes ingresar una cantidad válida de combustible');
-      return;
-    }
-
-    const cantidad = parseFloat(combustible);
-    if (cantidad < 0 || cantidad > 1000) {
-      Alert.alert('Error', 'La cantidad debe estar entre 0 y 1000 litros');
+    if (!nivel) {
+      Alert.alert('Error', 'Debes seleccionar un nivel de combustible');
       return;
     }
 
@@ -37,14 +33,15 @@ export default function RegistroCombustibleScreen() {
       setLoading(true);
 
       await turnosAPI.registrarCombustible({
-        combustible: cantidad,
+        nivel_fraccion: nivel,
+        nivel_decimal: nivelDecimal,
         tipo,
         observaciones: observaciones.trim() || undefined,
       });
 
       Alert.alert(
         'Registro Exitoso',
-        'El combustible ha sido registrado correctamente',
+        'El nivel de combustible ha sido registrado correctamente',
         [
           {
             text: 'OK',
@@ -136,16 +133,16 @@ export default function RegistroCombustibleScreen() {
           </Text>
         </View>
 
-        {/* Cantidad de combustible */}
+        {/* Nivel de combustible */}
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Cantidad de Combustible (Litros)</Text>
-          <TextInput
-            style={styles.input}
-            value={combustible}
-            onChangeText={setCombustible}
-            placeholder="Ej: 45.5"
-            keyboardType="decimal-pad"
-            maxLength={6}
+          <FuelSelector
+            value={nivel}
+            onChange={(fraccion, decimal) => {
+              setNivel(fraccion);
+              setNivelDecimal(decimal);
+            }}
+            label="Nivel de Combustible"
+            required
           />
         </View>
 
@@ -191,9 +188,8 @@ export default function RegistroCombustibleScreen() {
       <View style={styles.infoCard}>
         <Text style={styles.infoTitle}>ℹ️ Información</Text>
         <Text style={styles.infoText}>
-          Este registro ayuda a llevar un control del consumo de combustible de
-          tu unidad durante la jornada. Puedes registrar el combustible en
-          cualquier momento.
+          Selecciona el nivel actual del tanque de tu unidad. Este registro
+          ayuda a llevar un control del combustible disponible durante la jornada.
         </Text>
       </View>
     </ScrollView>

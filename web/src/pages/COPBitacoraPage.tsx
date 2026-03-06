@@ -56,7 +56,7 @@ interface SalidaConEvento {
   fecha_hora_salida: string;
   fecha_hora_regreso: string | null;
   estado: string;
-  km_inicio: number | null;
+  km_inicial: number | null;
   km_final: number | null;
   km_recorridos: number | null;
   combustible_inicial: number | null;
@@ -126,7 +126,7 @@ export default function COPBitacoraPage() {
   });
 
   // Bitácora de la unidad seleccionada
-  const { data: bitacora = [], isLoading: loadingBitacora } = useQuery<SalidaConEvento[]>({
+  const { data: bitacora = [], isLoading: loadingBitacora, isError: errorBitacora } = useQuery<SalidaConEvento[]>({
     queryKey: ['cop-bitacora', selectedUnidad?.id, fechaDesde],
     queryFn: async () => {
       const params = new URLSearchParams({ limit: '50' });
@@ -251,6 +251,11 @@ export default function COPBitacoraPage() {
                 {loadingBitacora ? (
                   <div className="flex justify-center py-12">
                     <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                  </div>
+                ) : errorBitacora ? (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-center">
+                    <AlertTriangle className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                    <p className="text-sm text-red-600 dark:text-red-400">Error al cargar la bitácora</p>
                   </div>
                 ) : bitacora.length === 0 ? (
                   <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500 gap-2">

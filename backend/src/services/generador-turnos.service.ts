@@ -79,12 +79,9 @@ export class GeneradorTurnosService {
       (b) => b.disponible || (b.dias_descanso >= min_dias_descanso)
     );
 
-    // 4. Filtrar unidades con combustible suficiente (>30% de capacidad o >20L)
+    // 4. Filtrar unidades con combustible suficiente (al menos 1/4 de tanque)
     const unidadesElegibles = unidadesDisponibles.filter((u) => {
-      const combustibleMinimo = u.capacidad_combustible
-        ? u.capacidad_combustible * 0.3
-        : 20;
-      return u.combustible_actual >= combustibleMinimo;
+      return (u.combustible_actual ?? 0) >= 0.25;
     });
 
     if (brigadasElegibles.length === 0) {
@@ -213,10 +210,8 @@ export class GeneradorTurnosService {
       .map((unidad) => {
         let score = 100;
 
-        // Factor 1: Combustible disponible
-        const porcentajeCombustible = unidad.capacidad_combustible
-          ? (unidad.combustible_actual / unidad.capacidad_combustible) * 100
-          : (unidad.combustible_actual / 50) * 100; // Asumir 50L si no hay capacidad
+        // Factor 1: Combustible disponible (fracción 0-1.0 convertida a porcentaje)
+        const porcentajeCombustible = (unidad.combustible_actual ?? 0) * 100;
 
         score += Math.min(porcentajeCombustible, 50); // Máximo +50 puntos
 
@@ -478,9 +473,7 @@ export class GeneradorTurnosService {
       scoreAsignacion += unidad.score;
 
       // Razones basadas en combustible
-      const porcentajeCombustible = unidad.capacidad_combustible
-        ? (unidad.combustible_actual / unidad.capacidad_combustible) * 100
-        : (unidad.combustible_actual / 50) * 100;
+      const porcentajeCombustible = (unidad.combustible_actual ?? 0) * 100;
 
       if (porcentajeCombustible > 70) {
         razones.push('Combustible óptimo');

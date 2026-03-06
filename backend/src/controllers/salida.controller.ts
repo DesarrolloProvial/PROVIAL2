@@ -811,7 +811,7 @@ export async function getBitacoraUnidad(req: Request, res: Response) {
          s.fecha_hora_salida,
          s.fecha_hora_regreso,
          s.estado,
-         s.km_inicio,
+         s.km_inicial,
          s.km_final,
          s.km_recorridos,
          s.combustible_inicial,
