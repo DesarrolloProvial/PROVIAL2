@@ -120,18 +120,6 @@ const createPersistenteIcon = () => {
 
 const persistenteIcon = createPersistenteIcon();
 
-function MapController({ center, zoom }: { center: LatLngExpression; zoom?: number }) {
-  const map = useMap();
-  useEffect(() => {
-    if (zoom) {
-      map.setView(center, zoom);
-    } else {
-      map.setView(center, map.getZoom());
-    }
-  }, [center, zoom, map]);
-  return null;
-}
-
 function CoordClickListener({ onCoord }: { onCoord: (lat: number, lng: number) => void }) {
   const map = useMap();
   useEffect(() => {
