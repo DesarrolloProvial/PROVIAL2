@@ -5,6 +5,7 @@ import {
   crearReparacion,
   completarReparacion,
   cancelarReparacion,
+  getHistorialUnificado,
 } from '../controllers/reparaciones.controller';
 import { authenticate, authorize } from '../middlewares/auth';
 
@@ -16,6 +17,14 @@ router.get(
   authenticate,
   authorize('TRANSPORTES', 'ADMIN', 'SUPER_ADMIN'),
   getReparacionesActivas
+);
+
+// GET /api/reparaciones/historial/:unidadId?desde=&hasta=&tipos=
+router.get(
+  '/historial/:unidadId',
+  authenticate,
+  authorize('TRANSPORTES', 'ADMIN', 'SUPER_ADMIN'),
+  getHistorialUnificado
 );
 
 // GET /api/reparaciones/unidad/:id

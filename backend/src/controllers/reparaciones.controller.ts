@@ -52,6 +52,8 @@ export async function getReparacionesPorUnidad(req: Request, res: Response) {
 export async function getReparacionesActivas(req: Request, res: Response) {
   try {
     const userSedeId = req.user!.sede;
+    const userRol = req.user!.rol;
+    const verTodas = !userSedeId || userRol === 'SUPER_ADMIN' || userRol === 'ADMIN';
 
     const reparaciones = await db.any(
       `SELECT
@@ -60,6 +62,7 @@ export async function getReparacionesActivas(req: Request, res: Response) {
          u.codigo AS unidad_codigo,
          u.tipo_unidad,
          u.sede_id,
+         s.nombre AS sede_nombre,
          r.motivo,
          r.descripcion,
          r.fecha_inicio,
@@ -71,11 +74,12 @@ export async function getReparacionesActivas(req: Request, res: Response) {
          r.created_at
        FROM unidad_reparacion r
        JOIN unidad u ON r.unidad_id = u.id
+       LEFT JOIN sede s ON u.sede_id = s.id
        LEFT JOIN usuario usr ON r.registrado_por = usr.id
        WHERE r.estado = 'EN_REPARACION'
-         AND u.sede_id = $1
+         ${verTodas ? '' : 'AND u.sede_id = $/sedeId/'}
        ORDER BY r.fecha_inicio ASC`,
-      [userSedeId]
+      verTodas ? {} : { sedeId: userSedeId }
     );
 
     return res.json({
@@ -191,6 +195,102 @@ export async function completarReparacion(req: Request, res: Response) {
     return res.status(500).json({
       success: false,
       message: 'Error completando reparación',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+}
+
+export async function getHistorialUnificado(req: Request, res: Response) {
+  try {
+    const unidadId = parseInt(req.params.unidadId, 10);
+
+    const hoy = new Date().toISOString().split('T')[0];
+    const hace30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const hasta = (req.query.hasta as string) || hoy;
+    const desde = (req.query.desde as string) || hace30;
+
+    const tiposParam = (req.query.tipos as string) || 'combustible,salidas,reparaciones';
+    const tipos = tiposParam.split(',').map((t) => t.trim());
+
+    const parts: string[] = [];
+
+    if (tipos.includes('combustible')) {
+      parts.push(`
+        SELECT
+          'COMBUSTIBLE' AS categoria,
+          cr.id,
+          cr.created_at AS fecha,
+          jsonb_build_object(
+            'tipo',             cr.tipo,
+            'nivel_anterior',   cr.nivel_anterior,
+            'nivel_nuevo',      cr.nivel_nuevo,
+            'odometro_actual',  cr.odometro_actual,
+            'km_recorridos',    cr.km_recorridos,
+            'observaciones',    cr.observaciones,
+            'usuario',          u.nombre_completo
+          ) AS datos
+        FROM combustible_registro cr
+        LEFT JOIN usuario u ON cr.registrado_por = u.id
+        WHERE cr.unidad_id = $/unidadId/
+          AND cr.created_at::date BETWEEN $/desde/::date AND $/hasta/::date
+      `);
+    }
+
+    if (tipos.includes('salidas')) {
+      parts.push(`
+        SELECT
+          'SALIDA' AS categoria,
+          su.id,
+          su.fecha_hora_salida AS fecha,
+          jsonb_build_object(
+            'estado',               su.estado,
+            'km_inicial',           su.km_inicial,
+            'km_final',             su.km_final,
+            'km_recorridos',        su.km_recorridos,
+            'fecha_regreso',        su.fecha_hora_regreso,
+            'observaciones_salida', su.observaciones_salida,
+            'observaciones_regreso',su.observaciones_regreso
+          ) AS datos
+        FROM salida_unidad su
+        WHERE su.unidad_id = $/unidadId/
+          AND su.fecha_hora_salida::date BETWEEN $/desde/::date AND $/hasta/::date
+      `);
+    }
+
+    if (tipos.includes('reparaciones')) {
+      parts.push(`
+        SELECT
+          'REPARACION' AS categoria,
+          r.id,
+          r.fecha_inicio::timestamptz AS fecha,
+          jsonb_build_object(
+            'motivo',        r.motivo,
+            'descripcion',   r.descripcion,
+            'fecha_fin',     r.fecha_fin,
+            'estado',        r.estado,
+            'dias_en_taller',(CURRENT_DATE - r.fecha_inicio),
+            'usuario',       u.nombre_completo
+          ) AS datos
+        FROM unidad_reparacion r
+        LEFT JOIN usuario u ON r.registrado_por = u.id
+        WHERE r.unidad_id = $/unidadId/
+          AND r.fecha_inicio BETWEEN $/desde/::date AND $/hasta/::date
+      `);
+    }
+
+    if (parts.length === 0) {
+      return res.json({ success: true, total: 0, desde, hasta, data: [] });
+    }
+
+    const query = parts.join('\nUNION ALL\n') + '\nORDER BY fecha DESC';
+    const data = await db.any(query, { unidadId, desde, hasta });
+
+    return res.json({ success: true, total: data.length, desde, hasta, data });
+  } catch (error) {
+    console.error('Error en getHistorialUnificado:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error obteniendo historial',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }

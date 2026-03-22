@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocation } from 'react-router-dom';
 import api from '../services/api';
-import { Search, Plus, Edit2, Power, Repeat, Trash2, X, RefreshCw } from 'lucide-react';
+import { Search, Plus, Edit2, Power, Repeat, X, RefreshCw } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import { useDebounce } from '../hooks/useDebounce';
 import { useAuthStore } from '../store/authStore';
@@ -60,10 +61,6 @@ const unidadesAPI = {
     const { data } = await api.put(`/unidades/${id}/transferir`, { nueva_sede_id, motivo });
     return data;
   },
-  eliminar: async (id: number) => {
-    const { data } = await api.delete(`/unidades/${id}`);
-    return data;
-  },
   getTripulacion: async (id: number) => {
     const { data } = await api.get(`/unidades/${id}/tripulacion`);
     return data;
@@ -90,10 +87,17 @@ const TIPOS_UNIDAD = [
 export default function UnidadesPage() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+  const location = useLocation();
+
+  const isAdmin = user?.rol === 'ADMIN' || user?.rol === 'SUPER_ADMIN';
+  const backTo = location.pathname.startsWith('/transportes') ? '/transportes' : '/operaciones';
 
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
-  const [filtroSede, setFiltroSede] = useState<number | undefined>();
+  // TRANSPORTES ve solo su sede; ADMIN/SUPER_ADMIN pueden ver todas
+  const [filtroSede, setFiltroSede] = useState<number | undefined>(
+    isAdmin ? undefined : user?.sede_id ?? undefined
+  );
   const [filtroTipo, setFiltroTipo] = useState<string | undefined>();
   const [filtroActiva, setFiltroActiva] = useState<boolean | undefined>();
   const [modalCrear, setModalCrear] = useState(false);
@@ -179,13 +183,6 @@ export default function UnidadesPage() {
     },
   });
 
-  const eliminarMutation = useMutation({
-    mutationFn: unidadesAPI.eliminar,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['unidades'] });
-    },
-  });
-
   const resetForm = () => {
     setFormData({
       codigo: '',
@@ -199,9 +196,10 @@ export default function UnidadesPage() {
   };
 
   const handleCrear = () => {
+    const sedeId = isAdmin ? parseInt(formData.sede_id) : (user?.sede_id ?? parseInt(formData.sede_id));
     crearMutation.mutate({
       ...formData,
-      sede_id: parseInt(formData.sede_id),
+      sede_id: sedeId,
       anio: formData.anio ? parseInt(formData.anio) : undefined,
     });
   };
@@ -256,7 +254,7 @@ export default function UnidadesPage() {
       <PageHeader
         title="Gestion de Unidades"
         subtitle="Administra los vehiculos del sistema"
-        backTo="/operaciones"
+        backTo={backTo}
       >
         <ThemeToggle />
         <button
@@ -284,16 +282,18 @@ export default function UnidadesPage() {
                 />
               </div>
             </div>
-            <select
-              value={filtroSede || ''}
-              onChange={(e) => setFiltroSede(e.target.value ? parseInt(e.target.value) : undefined)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
-            >
-              <option value="">Todas las sedes</option>
-              {sedes.map((sede) => (
-                <option key={sede.id} value={sede.id}>{sede.nombre}</option>
-              ))}
-            </select>
+            {isAdmin && (
+              <select
+                value={filtroSede || ''}
+                onChange={(e) => setFiltroSede(e.target.value ? parseInt(e.target.value) : undefined)}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
+              >
+                <option value="">Todas las sedes</option>
+                {sedes.map((sede) => (
+                  <option key={sede.id} value={sede.id}>{sede.nombre}</option>
+                ))}
+              </select>
+            )}
             <select
               value={filtroTipo || ''}
               onChange={(e) => setFiltroTipo(e.target.value || undefined)}
@@ -313,7 +313,7 @@ export default function UnidadesPage() {
               <option value="true">Activas</option>
               <option value="false">Inactivas</option>
             </select>
-            <ConfiguracionColumnas tabla="unidades" sedeId={user?.sede_id ?? undefined} />
+            {isAdmin && <ConfiguracionColumnas tabla="unidades" sedeId={user?.sede_id ?? undefined} />}
             <button
               onClick={() => { resetForm(); setModalCrear(true); }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -399,24 +399,15 @@ export default function UnidadesPage() {
                         >
                           <Power className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => setModalTransferir(unidad)}
-                          className="p-1.5 text-purple-600 hover:bg-purple-50 rounded"
-                          title="Transferir"
-                        >
-                          <Repeat className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm('Esta seguro de eliminar esta unidad?')) {
-                              eliminarMutation.mutate(unidad.id);
-                            }
-                          }}
-                          className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={() => setModalTransferir(unidad)}
+                            className="p-1.5 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded"
+                            title="Transferir a otra sede"
+                          >
+                            <Repeat className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -517,9 +508,10 @@ export default function UnidadesPage() {
               <div>
                 <label className="block text-sm font-medium mb-1 dark:text-gray-300">Sede *</label>
                 <select
-                  value={formData.sede_id}
+                  value={formData.sede_id || (isAdmin ? '' : String(user?.sede_id ?? ''))}
                   onChange={(e) => setFormData({ ...formData, sede_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
+                  disabled={!isAdmin}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <option value="">Seleccionar...</option>
                   {sedes.map((sede) => (
@@ -633,7 +625,8 @@ export default function UnidadesPage() {
                 <select
                   value={formData.sede_id}
                   onChange={(e) => setFormData({ ...formData, sede_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
+                  disabled={!isAdmin}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {sedes.map((sede) => (
                     <option key={sede.id} value={sede.id}>{sede.nombre}</option>

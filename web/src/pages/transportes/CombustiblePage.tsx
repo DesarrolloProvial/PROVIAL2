@@ -3,9 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
   Fuel, Truck, RefreshCw, X, ChevronRight, AlertTriangle, ArrowLeft,
-  Wrench, CheckCircle, Loader2, Plus,
+  Wrench, CheckCircle, Loader2, Plus, History, Search,
 } from 'lucide-react';
-import { transportesService, CombustibleRegistro } from '../../services/transportes.service';
+import { transportesService, HistorialItem } from '../../services/transportes.service';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -92,15 +92,6 @@ function getTipoCombustibleBadge(tipo: string): string {
     : 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400';
 }
 
-function getTipoBadge(tipo: CombustibleRegistro['tipo']): string {
-  switch (tipo) {
-    case 'INICIAL': return 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400';
-    case 'RECARGA': return 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400';
-    case 'FINAL':   return 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400';
-    case 'AJUSTE':  return 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400';
-    default:        return 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400';
-  }
-}
 
 function formatFecha(iso: string): string {
   try {
@@ -157,6 +148,13 @@ export default function CombustiblePage() {
 
   const [sedeFilter, setSedeFilter] = useState<number | ''>('');
   const [historialUnidad, setHistorialUnidad] = useState<Unidad | null>(null);
+  const hoy = new Date().toISOString().split('T')[0];
+  const hace30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const [histDesde, setHistDesde] = useState(hace30);
+  const [histHasta, setHistHasta] = useState(hoy);
+  const [histTipos, setHistTipos] = useState<string[]>(['combustible', 'salidas', 'reparaciones']);
+  // applied filters (updated on Buscar click)
+  const [histParams, setHistParams] = useState({ desde: hace30, hasta: hoy, tipos: ['combustible', 'salidas', 'reparaciones'] });
   const [ajusteUnidad, setAjusteUnidad] = useState<Unidad | null>(null);
   const [ajusteForm, setAjusteForm] = useState<AjusteFormData>({
     nivel_anterior: null,
@@ -207,9 +205,9 @@ export default function CombustiblePage() {
     data: historial = [],
     isLoading: loadingHistorial,
     isError: errorHistorial,
-  } = useQuery<CombustibleRegistro[]>({
-    queryKey: ['historial-combustible', historialUnidad?.id],
-    queryFn: () => transportesService.getHistorialCombustible(historialUnidad!.id),
+  } = useQuery<HistorialItem[]>({
+    queryKey: ['historial-unificado', historialUnidad?.id, histParams],
+    queryFn: () => transportesService.getHistorialUnificado(historialUnidad!.id, histParams),
     enabled: !!historialUnidad,
   });
 
@@ -241,8 +239,8 @@ export default function CombustiblePage() {
         throw new Error('Debes seleccionar el nivel de combustible nuevo.');
       }
       const nivelObj = NIVELES.find(n => n.value === ajusteForm.nivel_nuevo);
-      // Update fuel type on the unit if it changed
-      if (ajusteUnidad && ajusteForm.tipo_combustible !== (ajusteUnidad.tipo_combustible ?? 'GASOLINA')) {
+      // Guardar tipo de combustible solo si la unidad aún no lo tiene definido (primera vez)
+      if (ajusteUnidad && !ajusteUnidad.tipo_combustible) {
         await api.put(`/unidades/${ajusteUnidad.id}`, { tipo_combustible: ajusteForm.tipo_combustible });
       }
       return transportesService.registrarAjusteCombustible({
@@ -308,8 +306,23 @@ export default function CombustiblePage() {
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
-  function abrirHistorial(unidad: Unidad) { setHistorialUnidad(unidad); }
+  function abrirHistorial(unidad: Unidad) {
+    setHistDesde(hace30);
+    setHistHasta(hoy);
+    setHistTipos(['combustible', 'salidas', 'reparaciones']);
+    setHistParams({ desde: hace30, hasta: hoy, tipos: ['combustible', 'salidas', 'reparaciones'] });
+    setHistorialUnidad(unidad);
+  }
   function cerrarHistorial() { setHistorialUnidad(null); }
+
+  function toggleHistTipo(tipo: string) {
+    setHistTipos(prev => prev.includes(tipo) ? prev.filter(t => t !== tipo) : [...prev, tipo]);
+  }
+
+  function buscarHistorial() {
+    if (histTipos.length === 0) return;
+    setHistParams({ desde: histDesde, hasta: histHasta, tipos: histTipos });
+  }
 
   function abrirAjuste(unidad: Unidad) {
     setAjusteUnidad(unidad);
@@ -557,17 +570,16 @@ export default function CombustiblePage() {
           className="fixed inset-0 bg-black/60 dark:bg-black/70 flex items-center justify-center z-50 p-4"
           onClick={(e) => { if (e.target === e.currentTarget) cerrarHistorial(); }}
         >
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[85vh]">
-            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <Fuel className="w-5 h-5 text-orange-500" />
+                <History className="w-5 h-5 text-blue-500" />
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Historial de Combustible</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Historial de Unidad</h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {historialUnidad.codigo} &mdash; {historialUnidad.tipo_unidad}
-                    {historialUnidad.nivel_combustible && (
-                      <span className="ml-2 font-medium">Nivel actual: {historialUnidad.nivel_combustible}</span>
-                    )}
+                    {historialUnidad.codigo} — {historialUnidad.tipo_unidad} · {historialUnidad.sede_nombre}
                   </p>
                 </div>
               </div>
@@ -576,10 +588,69 @@ export default function CombustiblePage() {
               </button>
             </div>
 
+            {/* Filtros */}
+            <div className="px-5 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 space-y-3">
+              {/* Rango de fechas */}
+              <div className="flex flex-wrap gap-3 items-end">
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Desde</label>
+                  <input
+                    type="date"
+                    value={histDesde}
+                    onChange={(e) => setHistDesde(e.target.value)}
+                    max={histHasta}
+                    className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hasta</label>
+                  <input
+                    type="date"
+                    value={histHasta}
+                    onChange={(e) => setHistHasta(e.target.value)}
+                    min={histDesde}
+                    max={hoy}
+                    className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
+                  />
+                </div>
+                <button
+                  onClick={buscarHistorial}
+                  disabled={histTipos.length === 0}
+                  className="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
+                >
+                  <Search className="w-4 h-4" />
+                  Buscar
+                </button>
+              </div>
+              {/* Tipos */}
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { key: 'combustible', label: 'Combustible', color: 'orange' },
+                  { key: 'salidas',     label: 'Salidas',     color: 'blue' },
+                  { key: 'reparaciones',label: 'Reparaciones',color: 'red' },
+                ].map(({ key, label, color }) => {
+                  const active = histTipos.includes(key);
+                  const cls = {
+                    orange: active ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700' : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600',
+                    blue:   active ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700'   : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600',
+                    red:    active ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700'       : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600',
+                  }[color];
+                  return (
+                    <button key={key} onClick={() => toggleHistTipo(key)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium border transition ${cls}`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Contenido */}
             <div className="flex-1 overflow-y-auto p-5">
               {loadingHistorial && (
                 <div className="space-y-3">
-                  {Array.from({ length: 4 }).map((_, i) => (
+                  {Array.from({ length: 5 }).map((_, i) => (
                     <div key={i} className="animate-pulse bg-gray-100 dark:bg-gray-700/50 rounded-lg h-16" />
                   ))}
                 </div>
@@ -594,64 +665,25 @@ export default function CombustiblePage() {
 
               {!loadingHistorial && !errorHistorial && historial.length === 0 && (
                 <div className="py-12 text-center text-gray-500 dark:text-gray-400">
-                  <Fuel className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">Sin registros de combustible</p>
+                  <History className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">Sin registros en el rango seleccionado</p>
                 </div>
               )}
 
               {!loadingHistorial && !errorHistorial && historial.length > 0 && (
-                <div className="space-y-3">
-                  {historial.map((registro) => (
-                    <div key={registro.id} className="bg-gray-50 dark:bg-gray-700/40 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getTipoBadge(registro.tipo)}`}>
-                            {registro.tipo}
-                          </span>
-                          {/* Nivel anterior → nivel nuevo */}
-                          <div className="flex items-center gap-1.5 text-sm">
-                            <span className="text-gray-500 dark:text-gray-400">
-                              {registro.nivel_anterior ?? '?'}
-                            </span>
-                            <ChevronRight className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
-                            <span className="font-semibold text-gray-900 dark:text-gray-100">
-                              {registro.nivel_nuevo ?? '?'}
-                            </span>
-                          </div>
-                        </div>
-                        <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
-                          {formatFecha(registro.created_at as unknown as string)}
-                        </span>
-                      </div>
-
-                      {registro.odometro_actual !== null && registro.odometro_actual !== undefined && (
-                        <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                          Odómetro: {registro.odometro_actual.toLocaleString()} km
-                          {registro.km_recorridos !== null && registro.km_recorridos !== undefined && registro.km_recorridos > 0 && (
-                            <span className="ml-2">(+{registro.km_recorridos} km)</span>
-                          )}
-                        </p>
-                      )}
-
-                      {registro.registrado_por_nombre && (
-                        <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-                          Registrado por: {registro.registrado_por_nombre}
-                        </p>
-                      )}
-
-                      {registro.observaciones && (
-                        <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 rounded p-2 border border-gray-100 dark:border-gray-700">
-                          {registro.observaciones}
-                        </p>
-                      )}
-                    </div>
+                <div className="space-y-2">
+                  {historial.map((item) => (
+                    <HistorialItemCard key={`${item.categoria}-${item.id}`} item={item} />
                   ))}
                 </div>
               )}
             </div>
 
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
-              <button onClick={cerrarHistorial} className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
+            <div className="px-5 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {historial.length} registro{historial.length !== 1 ? 's' : ''} encontrado{historial.length !== 1 ? 's' : ''}
+              </span>
+              <button onClick={cerrarHistorial} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
                 Cerrar
               </button>
             </div>
@@ -691,24 +723,37 @@ export default function CombustiblePage() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Tipo de combustible
                 </label>
-                <div className="flex gap-2">
-                  {['GASOLINA', 'DIESEL'].map(tipo => (
-                    <button
-                      key={tipo}
-                      type="button"
-                      onClick={() => setAjusteForm(f => ({ ...f, tipo_combustible: tipo }))}
-                      className={`flex-1 py-2.5 rounded-lg text-sm font-semibold border-2 transition-all ${
-                        ajusteForm.tipo_combustible === tipo
-                          ? tipo === 'DIESEL'
-                            ? 'border-blue-500 bg-blue-500 text-white'
-                            : 'border-orange-500 bg-orange-500 text-white'
-                          : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500'
-                      }`}
-                    >
-                      {tipo}
-                    </button>
-                  ))}
-                </div>
+                {ajusteUnidad.tipo_combustible ? (
+                  /* Ya definido — solo lectura */
+                  <div className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border-2 ${
+                    ajusteUnidad.tipo_combustible === 'DIESEL'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                      : 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300'
+                  }`}>
+                    {ajusteUnidad.tipo_combustible}
+                    <span className="text-xs font-normal text-gray-500 dark:text-gray-400">(definido, no editable)</span>
+                  </div>
+                ) : (
+                  /* Primera vez — seleccionable */
+                  <div className="flex gap-2">
+                    {['GASOLINA', 'DIESEL'].map(tipo => (
+                      <button
+                        key={tipo}
+                        type="button"
+                        onClick={() => setAjusteForm(f => ({ ...f, tipo_combustible: tipo }))}
+                        className={`flex-1 py-2.5 rounded-lg text-sm font-semibold border-2 transition-all ${
+                          ajusteForm.tipo_combustible === tipo
+                            ? tipo === 'DIESEL'
+                              ? 'border-blue-500 bg-blue-500 text-white'
+                              : 'border-orange-500 bg-orange-500 text-white'
+                            : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500'
+                        }`}
+                      >
+                        {tipo}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Nivel anterior */}
@@ -1027,6 +1072,132 @@ export default function CombustiblePage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Historial item card ────────────────────────────────────────────────────────
+
+function formatFechaCorta(iso: string) {
+  return new Date(iso).toLocaleString('es-GT', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function HistorialItemCard({ item }: { item: HistorialItem }) {
+  const { categoria, fecha, datos } = item;
+
+  if (categoria === 'COMBUSTIBLE') {
+    const tipoBadge: Record<string, string> = {
+      INICIAL: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+      FINAL:   'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400',
+      RECARGA: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
+      AJUSTE:  'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300',
+    };
+    return (
+      <div className="flex gap-3 items-start bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30 rounded-lg p-3">
+        <div className="mt-0.5 p-1.5 rounded-md bg-orange-100 dark:bg-orange-900/40 flex-shrink-0">
+          <Fuel className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${tipoBadge[datos.tipo ?? ''] ?? ''}`}>
+                {datos.tipo}
+              </span>
+              {datos.nivel_anterior && datos.nivel_nuevo && (
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {datos.nivel_anterior} <ChevronRight className="inline w-3 h-3 text-gray-400" /> <strong>{datos.nivel_nuevo}</strong>
+                </span>
+              )}
+            </div>
+            <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">{formatFechaCorta(fecha)}</span>
+          </div>
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400">
+            {datos.odometro_actual != null && <span>Odómetro: {datos.odometro_actual.toLocaleString()} km</span>}
+            {datos.km_recorridos != null && datos.km_recorridos > 0 && <span>+{datos.km_recorridos} km</span>}
+            {datos.usuario && <span>Por: {datos.usuario}</span>}
+          </div>
+          {datos.observaciones && (
+            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 rounded px-2 py-1 border border-orange-100 dark:border-orange-900/30">
+              {datos.observaciones}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (categoria === 'SALIDA') {
+    const estadoColor: Record<string, string> = {
+      EN_SALIDA:  'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+      FINALIZADA: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
+      CANCELADA:  'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
+    };
+    return (
+      <div className="flex gap-3 items-start bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-lg p-3">
+        <div className="mt-0.5 p-1.5 rounded-md bg-blue-100 dark:bg-blue-900/40 flex-shrink-0">
+          <Truck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Salida</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${estadoColor[datos.estado ?? ''] ?? ''}`}>
+                {datos.estado}
+              </span>
+            </div>
+            <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">{formatFechaCorta(fecha)}</span>
+          </div>
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400">
+            {datos.km_inicial != null && <span>km salida: {datos.km_inicial.toLocaleString()}</span>}
+            {datos.km_final != null && <span>km regreso: {datos.km_final.toLocaleString()}</span>}
+            {datos.km_recorridos != null && datos.km_recorridos > 0 && <span>{datos.km_recorridos.toLocaleString()} km recorridos</span>}
+            {datos.fecha_regreso && <span>Regreso: {formatFechaCorta(datos.fecha_regreso)}</span>}
+          </div>
+          {(datos.observaciones_salida || datos.observaciones_regreso) && (
+            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 rounded px-2 py-1 border border-blue-100 dark:border-blue-900/30">
+              {datos.observaciones_salida || datos.observaciones_regreso}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // REPARACION
+  const repColor: Record<string, string> = {
+    EN_REPARACION: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300',
+    COMPLETADA:    'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
+    CANCELADA:     'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
+  };
+  return (
+    <div className="flex gap-3 items-start bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-lg p-3">
+      <div className="mt-0.5 p-1.5 rounded-md bg-red-100 dark:bg-red-900/40 flex-shrink-0">
+        <Wrench className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{datos.motivo}</span>
+            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${repColor[datos.estado ?? ''] ?? ''}`}>
+              {datos.estado === 'EN_REPARACION' ? 'En taller' : datos.estado}
+            </span>
+          </div>
+          <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">{formatFechaCorta(fecha)}</span>
+        </div>
+        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400">
+          {datos.dias_en_taller != null && <span>{datos.dias_en_taller} día{datos.dias_en_taller !== 1 ? 's' : ''} en taller</span>}
+          {datos.fecha_fin && <span>Salida: {datos.fecha_fin}</span>}
+          {datos.usuario && <span>Registrado por: {datos.usuario}</span>}
+        </div>
+        {datos.descripcion && (
+          <p className="mt-1 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 rounded px-2 py-1 border border-red-100 dark:border-red-900/30">
+            {datos.descripcion}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

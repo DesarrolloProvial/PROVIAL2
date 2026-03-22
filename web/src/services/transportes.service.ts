@@ -21,6 +21,34 @@ export interface CombustibleRegistro {
   created_at: string;
 }
 
+export interface HistorialItem {
+  categoria: 'COMBUSTIBLE' | 'SALIDA' | 'REPARACION';
+  id: number;
+  fecha: string;
+  datos: {
+    // COMBUSTIBLE
+    tipo?: string;
+    nivel_anterior?: string | null;
+    nivel_nuevo?: string | null;
+    odometro_actual?: number | null;
+    km_recorridos?: number | null;
+    observaciones?: string | null;
+    usuario?: string | null;
+    // SALIDA
+    estado?: string;
+    km_inicial?: number | null;
+    km_final?: number | null;
+    fecha_regreso?: string | null;
+    observaciones_salida?: string | null;
+    observaciones_regreso?: string | null;
+    // REPARACION
+    motivo?: string;
+    descripcion?: string | null;
+    fecha_fin?: string | null;
+    dias_en_taller?: number;
+  };
+}
+
 export interface RegistrarAjusteCombustibleDTO {
   unidad_id: number;
   tipo: 'AJUSTE';
@@ -93,6 +121,18 @@ export const transportesService = {
   async getHistorialCombustible(unidadId: number, limit = 50): Promise<CombustibleRegistro[]> {
     const res = await api.get(`/operaciones/combustible/unidad/${unidadId}?limit=${limit}`);
     return res.data.data || res.data || [];
+  },
+
+  async getHistorialUnificado(
+    unidadId: number,
+    params: { desde: string; hasta: string; tipos?: string[] }
+  ): Promise<HistorialItem[]> {
+    const q = new URLSearchParams();
+    q.set('desde', params.desde);
+    q.set('hasta', params.hasta);
+    if (params.tipos && params.tipos.length > 0) q.set('tipos', params.tipos.join(','));
+    const res = await api.get(`/reparaciones/historial/${unidadId}?${q.toString()}`);
+    return res.data.data || [];
   },
 
   async registrarAjusteCombustible(data: RegistrarAjusteCombustibleDTO): Promise<CombustibleRegistro> {
