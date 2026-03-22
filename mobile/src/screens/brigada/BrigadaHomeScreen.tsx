@@ -19,7 +19,7 @@ import AsignacionDetalleCard from '../../components/AsignacionDetalleCard';
 
 export default function BrigadaHomeScreen() {
   const navigation = useNavigation();
-  const { usuario, asignacion, salidaActiva, salidaHoy, ingresoActivo, verificarAcceso, refreshEstadoBrigada } = useAuthStore();
+  const { usuario, salidaActiva, salidaHoy, ingresoActivo, verificarAcceso, refreshEstadoBrigada } = useAuthStore();
   const { situacionActiva, actividadActiva, fetchMisSituacionesHoy, cerrarSituacion, cerrarActividad, isLoading } = useSituacionesStore();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -376,7 +376,7 @@ export default function BrigadaHomeScreen() {
               Cargando información de asignación...
             </Text>
           </View>
-        ) : !salidaActiva && (asignacion?.unidad_codigo || asignacionDia?.unidad_codigo) ? (
+        ) : !salidaActiva && asignacionDia?.unidad_codigo ? (
           <AsignacionDetalleCard
             titulo="Mi Asignación"
             badgeText={
@@ -390,9 +390,9 @@ export default function BrigadaHomeScreen() {
             primeraSeccionLabel={asignacionDia?.fecha && (asignacionDia.dias_para_salida || 0) > 0 ? "Fecha de Salida" : undefined}
             primeraSeccionValor={asignacionDia?.fecha && (asignacionDia.dias_para_salida || 0) > 0 ? formatFechaAsignacion(asignacionDia.fecha) : undefined}
             primeraSeccionColor={COLORS.primary}
-            unidad_codigo={asignacionDia?.unidad_codigo || asignacion?.unidad_codigo}
-            tipo_unidad={asignacionDia?.tipo_unidad || asignacion?.tipo_unidad}
-            mi_rol={asignacionDia?.mi_rol || asignacion?.rol_tripulacion}
+            unidad_codigo={asignacionDia?.unidad_codigo}
+            tipo_unidad={asignacionDia?.tipo_unidad}
+            mi_rol={asignacionDia?.mi_rol}
             es_comandante={asignacionDia?.es_comandante}
             ruta_codigo={asignacionDia?.ruta_codigo}
             sentido={asignacionDia?.sentido}
@@ -487,7 +487,7 @@ export default function BrigadaHomeScreen() {
               </Text>
             </View>
           </TouchableOpacity>
-        ) : (asignacion?.unidad_codigo || asignacionDia?.unidad_codigo) ? (
+        ) : asignacionDia?.unidad_codigo ? (
           <View style={[styles.card, styles.warningCard]}>
             <Text style={styles.warningText}>
               No has iniciado salida hoy

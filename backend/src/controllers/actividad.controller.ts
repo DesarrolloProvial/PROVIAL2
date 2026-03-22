@@ -53,22 +53,35 @@ export async function createActividad(req: Request, res: Response) {
     let resolvedSalidaId = salida_unidad_id;
     let resolvedRutaId = ruta_id;
 
-    // Siempre intentar resolver desde salida_unidad activa si faltan datos
+    // Resolver desde salida_unidad activa si faltan datos
     if (!resolvedUnidadId || !resolvedRutaId || !resolvedSalidaId) {
-      const lookupField = resolvedUnidadId ? 'su.unidad_id' : 'bu.usuario_id';
-      const lookupValue = resolvedUnidadId || userId;
-      const brigada = await db.oneOrNone(`
-        SELECT bu.unidad_id, su.id as salida_unidad_id, su.ruta_id
-        FROM brigada_unidad bu
-        JOIN salida_unidad su ON bu.unidad_id = su.unidad_id AND su.estado = 'EN_SALIDA'
-        WHERE ${lookupField} = $1
-        LIMIT 1
-      `, [lookupValue]);
-
-      if (brigada) {
-        resolvedUnidadId = resolvedUnidadId || brigada.unidad_id;
-        resolvedSalidaId = resolvedSalidaId || brigada.salida_unidad_id;
-        resolvedRutaId = resolvedRutaId || brigada.ruta_id;
+      if (resolvedUnidadId) {
+        // Tenemos unidad, buscar su salida activa directamente
+        const salida = await db.oneOrNone(`
+          SELECT id as salida_unidad_id, ruta_inicial_id as ruta_id
+          FROM salida_unidad
+          WHERE unidad_id = $1 AND estado = 'EN_SALIDA'
+          LIMIT 1
+        `, [resolvedUnidadId]);
+        if (salida) {
+          resolvedSalidaId = resolvedSalidaId || salida.salida_unidad_id;
+          resolvedRutaId = resolvedRutaId || salida.ruta_id;
+        }
+      } else {
+        // No tenemos unidad, buscar via turno del usuario
+        const turno = await db.oneOrNone(`
+          SELECT au.unidad_id, su.id as salida_unidad_id, su.ruta_inicial_id as ruta_id
+          FROM tripulacion_turno tt
+          JOIN asignacion_unidad au ON tt.asignacion_id = au.id
+          JOIN salida_unidad su ON au.unidad_id = su.unidad_id AND su.estado = 'EN_SALIDA'
+          WHERE tt.usuario_id = $1
+          LIMIT 1
+        `, [userId]);
+        if (turno) {
+          resolvedUnidadId = turno.unidad_id;
+          resolvedSalidaId = resolvedSalidaId || turno.salida_unidad_id;
+          resolvedRutaId = resolvedRutaId || turno.ruta_id;
+        }
       }
     }
 
@@ -167,14 +180,15 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
     let resolvedUnidadId = unidadId;
 
     if (!resolvedUnidadId) {
-      const brigada = await db.oneOrNone(`
-        SELECT bu.unidad_id
-        FROM brigada_unidad bu
-        WHERE bu.usuario_id = $1
+      const turno = await db.oneOrNone(`
+        SELECT au.unidad_id
+        FROM tripulacion_turno tt
+        JOIN asignacion_unidad au ON tt.asignacion_id = au.id
+        WHERE tt.usuario_id = $1
         LIMIT 1
       `, [userId]);
 
-      resolvedUnidadId = brigada?.unidad_id;
+      resolvedUnidadId = turno?.unidad_id;
     }
 
     if (!resolvedUnidadId) {

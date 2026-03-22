@@ -1,9 +1,5 @@
 import { Router } from 'express';
 import {
-  // Asignaciones permanentes
-  getMiUnidad,
-  asignarBrigadaAUnidad,
-  getTripulacion,
   // Salidas
   getMiSalidaActiva,
   getMiSalidaHoy,
@@ -25,19 +21,6 @@ import {
 import { authenticate, authorize } from '../middlewares/auth';
 
 const router = Router();
-
-// ========================================
-// ASIGNACIONES PERMANENTES
-// ========================================
-
-// Mi unidad asignada (Brigada)
-router.get('/mi-unidad', authenticate, authorize('BRIGADA'), getMiUnidad);
-
-// Asignar brigadista a unidad (Operaciones/Admin)
-router.post('/asignar-brigada', authenticate, authorize('OPERACIONES', 'ADMIN'), asignarBrigadaAUnidad);
-
-// Tripulación de una unidad
-router.get('/tripulacion/:unidadId', authenticate, getTripulacion);
 
 // ========================================
 // SALIDAS

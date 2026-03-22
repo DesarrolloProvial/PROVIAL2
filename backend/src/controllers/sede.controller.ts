@@ -97,21 +97,7 @@ export async function getMiSede(req: Request, res: Response) {
       return res.status(401).json({ error: 'No autorizado' });
     }
 
-    // 1. Primero buscar en asignación permanente (brigada_unidad)
-    const miUnidad: any = await SalidaModel.getMiUnidadAsignada(req.user.userId);
-
-    if (miUnidad) {
-      return res.json({
-        mi_sede_id: miUnidad.mi_sede_id,
-        mi_sede_codigo: miUnidad.mi_sede_codigo,
-        mi_sede_nombre: miUnidad.mi_sede_nombre,
-        unidad_sede_id: miUnidad.unidad_sede_id,
-        unidad_sede_codigo: miUnidad.unidad_sede_codigo,
-        unidad_sede_nombre: miUnidad.unidad_sede_nombre
-      });
-    }
-
-    // 2. Si no tiene asignación permanente, buscar en salida activa
+    // 1. Buscar en salida activa
     const miSalida = await SalidaModel.getMiSalidaActiva(req.user.userId);
 
     if (miSalida) {
@@ -129,7 +115,7 @@ export async function getMiSede(req: Request, res: Response) {
       }
     }
 
-    // 3. Si no tiene salida activa, buscar la sede del propio usuario
+    // 2. Si no tiene salida activa, buscar la sede del propio usuario
     const { db } = require('../config/database');
     const userSede = await db.oneOrNone(`
       SELECT u.sede_id as mi_sede_id, s.codigo as mi_sede_codigo, s.nombre as mi_sede_nombre

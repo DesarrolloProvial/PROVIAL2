@@ -117,14 +117,6 @@ export const FirebaseService = {
     }>(`
       SELECT DISTINCT u.id AS usuario_id, d.push_token, u.nombre_completo
       FROM salida_unidad su
-      JOIN brigada_unidad bu ON su.unidad_id = bu.unidad_id AND bu.activo = TRUE
-      JOIN brigada b ON bu.brigada_id = b.id
-      JOIN usuario u ON b.id = u.id
-      JOIN dispositivo_push d ON u.id = d.usuario_id AND d.activo = TRUE
-      WHERE su.id = $1
-      UNION
-      SELECT DISTINCT u.id AS usuario_id, d.push_token, u.nombre_completo
-      FROM salida_unidad su
       JOIN asignacion_unidad au ON su.id = au.salida_id OR (au.unidad_id = su.unidad_id AND au.fecha = CURRENT_DATE)
       JOIN tripulacion_turno tt ON au.id = tt.asignacion_id
       JOIN usuario u ON tt.usuario_id = u.id

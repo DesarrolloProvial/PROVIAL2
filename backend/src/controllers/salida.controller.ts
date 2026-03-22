@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { SalidaModel } from '../models/salida.model';
-import { GrupoModel } from '../models/grupo.model';
 import { TurnoModel } from '../models/turno.model';
 import { Inspeccion360Model } from '../models/inspeccion360.model';
 import { ActividadModel } from '../models/actividad.model';
@@ -42,120 +41,6 @@ function convertirCombustibleADecimal(valor: any): number | null {
   }
 
   return null;
-}
-
-// ========================================
-// ASIGNACIONES PERMANENTES
-// ========================================
-
-/**
- * GET /api/salidas/mi-unidad
- * Obtener mi unidad asignada permanentemente
- */
-export async function getMiUnidad(req: Request, res: Response) {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
-
-    const miUnidad = await SalidaModel.getMiUnidadAsignada(req.user.userId);
-
-    if (!miUnidad) {
-      return res.status(404).json({
-        error: 'No tienes unidad asignada',
-        message: 'No estás asignado permanentemente a ninguna unidad. Contacta a tu supervisor.'
-      });
-    }
-
-    return res.json(miUnidad);
-  } catch (error) {
-    console.error('Error en getMiUnidad:', error);
-    return res.status(500).json({ error: 'Error interno del servidor' });
-  }
-}
-
-/**
- * POST /api/salidas/asignar-brigada
- * Asignar brigadista a unidad permanentemente (solo Operaciones/Admin)
- */
-export async function asignarBrigadaAUnidad(req: Request, res: Response) {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
-
-    const { brigada_id, unidad_id, rol_tripulacion, observaciones } = req.body;
-
-    if (!brigada_id || !unidad_id || !rol_tripulacion) {
-      return res.status(400).json({
-        error: 'Faltan campos requeridos',
-        required: ['brigada_id', 'unidad_id', 'rol_tripulacion']
-      });
-    }
-
-    // Verificar roles válidos
-    const rolesValidos = ['PILOTO', 'COPILOTO', 'ACOMPAÑANTE'];
-    if (!rolesValidos.includes(rol_tripulacion)) {
-      return res.status(400).json({
-        error: 'Rol inválido',
-        roles_validos: rolesValidos
-      });
-    }
-
-    // Verificar que el brigada no esté de descanso (sin asignación previa)
-    // Si el grupo está en DESCANSO y no tiene asignación, verificarAccesoApp retornará false
-    const acceso = await GrupoModel.verificarAccesoApp(brigada_id);
-    if (!acceso.tiene_acceso) {
-      return res.status(400).json({
-        error: 'No se puede asignar a unidad',
-        motivo: acceso.motivo_bloqueo
-      });
-    }
-
-    const asignacion = await SalidaModel.asignarBrigadaAUnidad({
-      brigada_id,
-      unidad_id,
-      rol_tripulacion,
-      asignado_por: req.user.userId,
-      observaciones
-    });
-
-    return res.status(201).json({
-      message: 'Brigadista asignado exitosamente',
-      asignacion
-    });
-  } catch (error: any) {
-    console.error('Error en asignarBrigadaAUnidad:', error);
-
-    if (error.code === '23505') { // Unique violation
-      return res.status(409).json({
-        error: 'El brigadista ya tiene una asignación activa'
-      });
-    }
-
-    return res.status(500).json({ error: 'Error interno del servidor' });
-  }
-}
-
-/**
- * GET /api/salidas/tripulacion/:unidadId
- * Obtener tripulación de una unidad
- */
-export async function getTripulacion(req: Request, res: Response) {
-  try {
-    const { unidadId } = req.params;
-
-    const tripulacion = await SalidaModel.getTripulacionUnidad(parseInt(unidadId));
-
-    return res.json({
-      unidad_id: parseInt(unidadId),
-      tripulacion,
-      total: tripulacion.length
-    });
-  } catch (error) {
-    console.error('Error en getTripulacion:', error);
-    return res.status(500).json({ error: 'Error interno del servidor' });
-  }
 }
 
 // ========================================
@@ -244,32 +129,18 @@ export async function iniciarSalida(req: Request, res: Response) {
       return res.status(401).json({ error: 'No autorizado' });
     }
 
-    // PRIMERO: Buscar en asignaciones de turno (sistema nuevo)
+    // Buscar asignación de turno (único sistema de asignación)
     const asignacionTurno = await TurnoModel.getMiAsignacionHoy(req.user.userId);
 
-    // SEGUNDO: Si no hay asignación de turno, buscar en asignaciones permanentes
-    const miUnidad = await SalidaModel.getMiUnidadAsignada(req.user.userId);
-
-    // Determinar qué unidad usar
-    let unidadId: number | null = null;
-    let rutaInicialId: number | null = null;
-
-    if (asignacionTurno) {
-      // Usar asignación del turno
-      unidadId = asignacionTurno.unidad_id;
-      // Usar la ruta del turno si no se especifica otra
-      rutaInicialId = asignacionTurno.ruta_id || null;
-    } else if (miUnidad) {
-      // Usar asignación permanente
-      unidadId = miUnidad.unidad_id;
-    }
-
-    if (!unidadId) {
+    if (!asignacionTurno) {
       return res.status(404).json({
         error: 'No tienes unidad asignada',
-        message: 'No tienes asignación de turno ni asignación permanente. Contacta a Operaciones.'
+        message: 'No tienes asignación de turno para hoy. Contacta a Operaciones.'
       });
     }
+
+    const unidadId = asignacionTurno.unidad_id;
+    const rutaInicialId = asignacionTurno.ruta_id || null;
 
     // Verificar que no haya salida activa
     const salidaActiva = await SalidaModel.getMiSalidaActiva(req.user.userId);

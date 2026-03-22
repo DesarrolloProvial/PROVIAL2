@@ -20,18 +20,6 @@ export interface Usuario {
   fecha_inicio_ciclo: string | null;
 }
 
-export interface AsignacionActual {
-  asignacion_id: number;
-  unidad_id: number;
-  unidad_codigo: string;
-  tipo_unidad: string;
-  rol_tripulacion: 'PILOTO' | 'COPILOTO' | 'ACOMPAÑANTE';
-  fecha_asignacion: string;
-  ruta_asignada_id?: number;
-  ruta_asignada_codigo?: string;
-  turno_id?: number;
-}
-
 export interface SalidaActiva {
   salida_id: number;
   unidad_id: number;
@@ -102,7 +90,6 @@ interface AuthState {
   token: string | null;
   refreshToken: string | null;
   usuario: Usuario | null;
-  asignacion: AsignacionActual | null;
   salidaActiva: SalidaActiva | null;
   salidaHoy: SalidaHoy | null;
   ingresoActivo: IngresoActivo | null;
@@ -115,7 +102,6 @@ interface AuthState {
   login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   loadStoredAuth: () => Promise<void>;
-  refreshAsignacion: () => Promise<void>;
   refreshSalidaActiva: () => Promise<void>;
   refreshSalidaHoy: () => Promise<void>;
   refreshIngresoActivo: () => Promise<void>;
@@ -134,7 +120,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   refreshToken: null,
   usuario: null,
-  asignacion: null,
   salidaActiva: null,
   salidaHoy: null,
   ingresoActivo: null,
@@ -254,7 +239,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         token: null,
         refreshToken: null,
         usuario: null,
-        asignacion: null,
         salidaActiva: null,
         salidaHoy: null,
         ingresoActivo: null,
@@ -306,35 +290,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       console.error('Error al cargar autenticación:', error);
       set({ isLoading: false });
-    }
-  },
-
-  // ========================================
-  // REFRESH ASIGNACIÓN PERMANENTE
-  // ========================================
-  refreshAsignacion: async () => {
-    const { token, usuario } = get();
-
-    if (!token || !usuario || usuario.rol !== 'BRIGADA') {
-      return;
-    }
-
-    try {
-      const response = await axios.get(`${API_URL}/asignaciones/mi-asignacion`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      // La API devuelve el objeto asignación directamente
-      const asignacion = response.data || null;
-
-      set({ asignacion });
-    } catch (error: any) {
-      // Si no tiene asignación permanente, es normal (404)
-      if (error.response?.status === 404) {
-        set({ asignacion: null });
-      } else {
-        console.error('Error al obtener asignación:', error);
-      }
     }
   },
 
@@ -467,9 +422,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    // Primero refrescar asignacion y salida activa (el ingreso depende de la salida)
+    // Refrescar salida activa (el ingreso depende de la salida)
     await Promise.all([
-      get().refreshAsignacion(),
       get().refreshSalidaActiva(),
       get().refreshSalidaHoy(),
       get().refreshMiSede(),

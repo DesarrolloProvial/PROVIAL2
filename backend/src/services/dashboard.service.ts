@@ -149,10 +149,11 @@ export const DashboardService = {
            0
          )::INTEGER AS horas_servicio
        FROM brigada b
-       LEFT JOIN brigada_unidad bu ON b.id = bu.brigada_id AND bu.activo = TRUE
-       LEFT JOIN salida_unidad su ON bu.unidad_id = su.unidad_id
+       LEFT JOIN tripulacion_turno tt ON b.id = tt.usuario_id
+       LEFT JOIN asignacion_unidad au ON tt.asignacion_id = au.id
+       LEFT JOIN salida_unidad su ON au.unidad_id = su.unidad_id
          AND su.fecha_hora_salida >= CURRENT_DATE - INTERVAL '$1 days'
-       LEFT JOIN situacion sit ON bu.unidad_id = sit.unidad_id
+       LEFT JOIN situacion sit ON au.unidad_id = sit.unidad_id
          AND sit.created_at >= CURRENT_DATE - INTERVAL '$1 days'
        ${sedeCondition}
        GROUP BY b.id, b.nombre, b.codigo

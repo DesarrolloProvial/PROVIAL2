@@ -46,7 +46,7 @@ export default function IniciarSalidaScreen() {
   const insets = useSafeAreaInsets();
   const { editMode, salidaData } = route.params || {};
 
-  const { asignacion, salidaActiva, refreshEstadoBrigada, refreshSalidaActiva } = useAuthStore();
+  const { salidaActiva, refreshEstadoBrigada, refreshSalidaActiva } = useAuthStore();
 
   const [kmSalida, setKmSalida] = useState('');
   const [combustibleFraccion, setCombustibleFraccion] = useState<string | null>(null);
@@ -65,14 +65,14 @@ export default function IniciarSalidaScreen() {
 
   // Query para verificar estado del 360 (solo en modo creacion)
   const { data: inspeccion360Estado, isLoading: loadingInspeccion360, refetch: refetchInspeccion360 } = useQuery<Inspeccion360Estado>({
-    queryKey: ['inspeccion-360-estado', asignacionTurno?.unidad_id || asignacion?.unidad_id],
+    queryKey: ['inspeccion-360-estado', asignacionTurno?.unidad_id],
     queryFn: async () => {
-      const unidadId = asignacionTurno?.unidad_id || asignacion?.unidad_id;
+      const unidadId = asignacionTurno?.unidad_id;
       if (!unidadId) throw new Error('No hay unidad asignada');
       const response = await api.get(`/inspeccion360/verificar-unidad/${unidadId}`);
       return response.data;
     },
-    enabled: !editMode && !loadingAsignacion && !!(asignacionTurno?.unidad_id || asignacion?.unidad_id),
+    enabled: !editMode && !loadingAsignacion && !!asignacionTurno?.unidad_id,
   });
 
   // Refrescar estado al volver a la pantalla (ej: despues de hacer la inspeccion)
@@ -169,8 +169,7 @@ export default function IniciarSalidaScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editMode]); // Solo al montar
 
-  // La asignacion efectiva es la de turno o la permanente
-  const asignacionEfectiva = asignacionTurno || asignacion;
+  const asignacionEfectiva = asignacionTurno;
 
   const handleIniciarSalida = async () => {
     // Validar campos
@@ -277,7 +276,7 @@ export default function IniciarSalidaScreen() {
     );
   }
 
-  // Mostrar error si no hay ninguna asignacion (ni turno ni permanente) - SOLO en modo creación
+  // Mostrar error si no hay asignacion de turno - SOLO en modo creación
   if (!editMode && !asignacionEfectiva) {
     return (
       <View style={styles.container}>
@@ -391,9 +390,7 @@ export default function IniciarSalidaScreen() {
                 <TouchableOpacity
                   style={[styles.alertButton, { backgroundColor: COLORS.warning }]}
                   onPress={() => {
-                    const unidadId = asignacionTurno?.unidad_id || asignacion?.unidad_id;
-                    const tipoUnidad = asignacionTurno?.tipo_unidad || asignacion?.tipo_unidad;
-                    (navigation as any).navigate('Inspeccion360', { unidadId, tipoUnidad });
+                    (navigation as any).navigate('Inspeccion360', { unidadId: asignacionTurno?.unidad_id, tipoUnidad: asignacionTurno?.tipo_unidad });
                   }}
                 >
                   <Text style={styles.alertButtonText}>Iniciar Inspeccion 360</Text>
@@ -437,9 +434,7 @@ export default function IniciarSalidaScreen() {
                 <TouchableOpacity
                   style={[styles.alertButton, { backgroundColor: COLORS.danger }]}
                   onPress={() => {
-                    const unidadId = asignacionTurno?.unidad_id || asignacion?.unidad_id;
-                    const tipoUnidad = asignacionTurno?.tipo_unidad || asignacion?.tipo_unidad;
-                    (navigation as any).navigate('Inspeccion360', { unidadId, tipoUnidad });
+                    (navigation as any).navigate('Inspeccion360', { unidadId: asignacionTurno?.unidad_id, tipoUnidad: asignacionTurno?.tipo_unidad });
                   }}
                 >
                   <Text style={styles.alertButtonText}>Nueva Inspeccion 360</Text>

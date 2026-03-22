@@ -4,20 +4,6 @@ import { db } from '../config/database';
 // INTERFACES
 // ========================================
 
-export interface BrigadaUnidad {
-  id: number;
-  brigada_id: number;
-  unidad_id: number;
-  rol_tripulacion: 'PILOTO' | 'COPILOTO' | 'ACOMPAÑANTE';
-  fecha_asignacion: Date;
-  fecha_fin: Date | null;
-  activo: boolean;
-  observaciones: string | null;
-  asignado_por: number | null;
-  created_at: Date;
-  updated_at: Date;
-}
-
 export interface SalidaUnidad {
   id: number;
   unidad_id: number;
@@ -38,21 +24,6 @@ export interface SalidaUnidad {
   updated_at: Date;
 }
 
-export interface MiUnidadAsignada {
-  brigada_id: number;
-  username: string;
-  chapa: string | null;
-  nombre_completo: string;
-  asignacion_id: number;
-  unidad_id: number;
-  unidad_codigo: string;
-  tipo_unidad: string;
-  mi_rol: string;
-  fecha_asignacion: Date;
-  activo: boolean;
-  companeros: any | null; // JSON array
-}
-
 export interface MiSalidaActiva {
   brigada_id: number;
   chapa: string | null;
@@ -71,7 +42,7 @@ export interface MiSalidaActiva {
   km_inicial: number | null;
   combustible_inicial: number | null;
   tripulacion: any | null;
-  tipo_asignacion: 'PERMANENTE' | 'TURNO';
+  tipo_asignacion: 'TURNO';
   mi_rol: string | null;
   primera_situacion: any | null;
 }
@@ -96,79 +67,6 @@ export interface Relevo {
 
 export const SalidaModel = {
   // ========================================
-  // ASIGNACIONES PERMANENTES
-  // ========================================
-
-  /**
-   * Obtener mi unidad asignada permanentemente
-   */
-  async getMiUnidadAsignada(brigadaId: number): Promise<MiUnidadAsignada | null> {
-    return db.oneOrNone(
-      'SELECT * FROM v_mi_unidad_asignada WHERE brigada_id = $1',
-      [brigadaId]
-    );
-  },
-
-  /**
-   * Asignar brigadista a unidad permanentemente
-   */
-  async asignarBrigadaAUnidad(data: {
-    brigada_id: number;
-    unidad_id: number;
-    rol_tripulacion: 'PILOTO' | 'COPILOTO' | 'ACOMPAÑANTE';
-    asignado_por: number;
-    observaciones?: string;
-  }): Promise<BrigadaUnidad> {
-    return db.one(
-      `INSERT INTO brigada_unidad
-       (brigada_id, unidad_id, rol_tripulacion, asignado_por, observaciones)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [
-        data.brigada_id,
-        data.unidad_id,
-        data.rol_tripulacion,
-        data.asignado_por,
-        data.observaciones || null
-      ]
-    );
-  },
-
-  /**
-   * Finalizar asignación permanente (por reasignación o baja)
-   */
-  async finalizarAsignacion(asignacionId: number): Promise<BrigadaUnidad> {
-    return db.one(
-      `UPDATE brigada_unidad
-       SET activo = FALSE,
-           fecha_fin = NOW()
-       WHERE id = $1
-       RETURNING *`,
-      [asignacionId]
-    );
-  },
-
-  /**
-   * Obtener tripulación de una unidad
-   */
-  async getTripulacionUnidad(unidadId: number): Promise<any[]> {
-    return db.any(
-      `SELECT bu.*, u.username, u.chapa, u.nombre_completo
-       FROM brigada_unidad bu
-       JOIN usuario u ON bu.brigada_id = u.id
-       WHERE bu.unidad_id = $1
-         AND bu.activo = TRUE
-       ORDER BY
-         CASE bu.rol_tripulacion
-           WHEN 'PILOTO' THEN 1
-           WHEN 'COPILOTO' THEN 2
-           WHEN 'ACOMPAÑANTE' THEN 3
-         END`,
-      [unidadId]
-    );
-  },
-
-  // ========================================
   // SALIDAS
   // ========================================
 
@@ -183,69 +81,10 @@ export const SalidaModel = {
   },
 
   /**
-   * Obtener mi salida de hoy (activa o finalizada)
+   * Obtener mi salida de hoy (activa o finalizada) — solo por turno
    * Incluye resumen de situaciones del día
    */
   async getMiSalidaHoy(brigadaId: number): Promise<any | null> {
-    // Primero buscar en asignaciones permanentes
-    const salidaPermanente = await db.oneOrNone(`
-      SELECT
-        s.id AS salida_id,
-        s.unidad_id,
-        un.codigo AS unidad_codigo,
-        un.tipo_unidad,
-        s.estado,
-        s.fecha_hora_salida,
-        s.fecha_hora_regreso,
-        EXTRACT(EPOCH FROM COALESCE(s.fecha_hora_regreso, NOW()) - s.fecha_hora_salida) / 3600 AS horas_salida,
-        s.ruta_inicial_id,
-        r.codigo AS ruta_codigo,
-        r.nombre AS ruta_nombre,
-        s.km_inicial,
-        s.km_final,
-        s.combustible_inicial,
-        s.combustible_final,
-        s.km_recorridos,
-        s.tripulacion,
-        bu.rol_tripulacion AS mi_rol,
-        'PERMANENTE' AS tipo_asignacion,
-        (
-          SELECT COUNT(*)
-          FROM situacion sit
-          WHERE sit.salida_unidad_id = s.id
-        ) AS total_situaciones,
-        (
-          SELECT json_agg(json_build_object(
-            'id', sit.id,
-            'tipo', sit.tipo_situacion,
-            'estado', sit.estado,
-            'ruta_codigo', r2.codigo,
-            'km', sit.km,
-            'sentido', sit.sentido,
-            'clima', sit.clima,
-            'carga_vehicular', sit.carga_vehicular,
-            'created_at', sit.created_at
-          ) ORDER BY sit.created_at)
-          FROM situacion sit
-          LEFT JOIN ruta r2 ON sit.ruta_id = r2.id
-          WHERE sit.salida_unidad_id = s.id
-        ) AS situaciones
-      FROM usuario u
-      JOIN brigada_unidad bu ON u.id = bu.brigada_id AND bu.activo = true
-      JOIN unidad un ON bu.unidad_id = un.id
-      JOIN salida_unidad s ON un.id = s.unidad_id
-        AND DATE(s.fecha_hora_salida) = CURRENT_DATE
-      LEFT JOIN ruta r ON s.ruta_inicial_id = r.id
-      WHERE u.id = $1
-      ORDER BY s.fecha_hora_salida DESC
-      LIMIT 1
-    `, [brigadaId]);
-
-    if (salidaPermanente) {
-      return salidaPermanente;
-    }
-
-    // Si no hay permanente, buscar por turno (hoy, mañana, o rango que incluya hoy)
     return db.oneOrNone(`
       SELECT
         s.id AS salida_id,
@@ -298,13 +137,9 @@ export const SalidaModel = {
       LEFT JOIN ruta r ON s.ruta_inicial_id = r.id
       WHERE u.id = $1
         AND (
-          -- Turno de hoy
           t.fecha = CURRENT_DATE
-          -- Turno de mañana (permite trabajo adelantado)
           OR t.fecha = CURRENT_DATE + INTERVAL '1 day'
-          -- Turno con rango que incluye hoy
           OR (t.fecha <= CURRENT_DATE AND COALESCE(t.fecha_fin, t.fecha) >= CURRENT_DATE)
-          -- Turno activo o planificado reciente
           OR (t.estado IN ('ACTIVO', 'PLANIFICADO') AND t.fecha >= CURRENT_DATE - INTERVAL '1 day')
         )
       ORDER BY s.fecha_hora_salida DESC

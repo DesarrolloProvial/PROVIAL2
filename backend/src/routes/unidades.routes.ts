@@ -10,9 +10,6 @@ import {
   activarUnidad,
   transferirUnidad,
   eliminarUnidad,
-  asignarBrigadaUnidad,
-  desasignarBrigadaUnidad,
-  getTripulacionUnidad,
   obtenerUltimaAsignacion,
   reservarNumeroSalida,
   setDisponibilidadTransportes
@@ -55,10 +52,5 @@ router.delete('/:id', authenticate, authorize('ADMIN'), eliminarUnidad);
 
 // Disponibilidad por Transportes — Transportes y Admin
 router.put('/:id/disponibilidad-transportes', authenticate, authorize('TRANSPORTES', 'ADMIN', 'SUPER_ADMIN'), setDisponibilidadTransportes);
-
-// Gestión de tripulación permanente
-router.get('/:id/tripulacion', authenticate, authorize('TRANSPORTES', 'ADMIN', 'ENCARGADO_NOMINAS'), getTripulacionUnidad);
-router.post('/:id/asignar-brigada', authenticate, authorize('TRANSPORTES', 'ADMIN'), asignarBrigadaUnidad);
-router.delete('/:id/desasignar-brigada/:brigadaId', authenticate, authorize('TRANSPORTES', 'ADMIN'), desasignarBrigadaUnidad);
 
 export default router;
