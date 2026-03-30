@@ -380,12 +380,12 @@ export default function IniciarSalidaScreen() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Inspeccion 360</Text>
 
-            {/* Caso 1: No tiene inspeccion - debe crearla */}
+            {/* Caso 1: No tiene inspeccion - recomendado hacerla */}
             {!inspeccion360Estado.tiene_inspeccion && (
               <View style={[styles.alertBox, { backgroundColor: COLORS.warning + '20', borderLeftColor: COLORS.warning }]}>
-                <Text style={styles.alertTitle}>Inspeccion 360 Requerida</Text>
+                <Text style={styles.alertTitle}>Sin Inspeccion 360</Text>
                 <Text style={styles.alertText}>
-                  Debes completar la inspeccion vehicular 360 antes de iniciar la salida.
+                  Se recomienda completar la inspeccion vehicular 360 antes de salir.
                 </Text>
                 <TouchableOpacity
                   style={[styles.alertButton, { backgroundColor: COLORS.warning }]}
@@ -520,9 +520,7 @@ export default function IniciarSalidaScreen() {
           </TouchableOpacity>
 
           {(() => {
-            // Verificar si el 360 esta aprobado (solo en modo creacion)
-            const inspeccion360Aprobada = editMode || (inspeccion360Estado?.tiene_inspeccion && inspeccion360Estado.inspeccion?.estado === 'APROBADA');
-            const botonDeshabilitado = loading || (!editMode && !inspeccion360Aprobada);
+            const botonDeshabilitado = loading;
 
             return (
               <TouchableOpacity
