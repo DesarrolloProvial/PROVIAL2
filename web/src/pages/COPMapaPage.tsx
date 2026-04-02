@@ -5,7 +5,6 @@ import { Icon, LatLngExpression } from 'leaflet';
 import HeatmapLayer from '../components/HeatmapLayer';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { situacionesAPI, api } from '../services/api';
-import { situacionesPersistentesAPI } from '../services/movimientos.service';
 import { useNavigate } from 'react-router-dom';
 import { RefreshCw, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut, Search, Map as MapIcon, Plus, Eye, EyeOff, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import { useDashboardSocket } from '../hooks/useSocket';
