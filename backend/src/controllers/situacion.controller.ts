@@ -404,7 +404,7 @@ export async function updateSituacion(req: Request, res: Response) {
     const situacionId = parseInt(id, 10);
 
     const {
-      km, sentido, latitud, longitud, observaciones,
+      km, sentido, latitud, longitud,
       area, material_via, clima, carga_vehicular,
       danios_materiales, danios_infraestructura, descripcion_danios_infra,
       obstruccion, obstruye,
@@ -454,7 +454,7 @@ export async function updateSituacion(req: Request, res: Response) {
 
     const updateData: any = {
       actualizado_por: userId,
-      km, sentido, latitud, longitud, observaciones,
+      km, sentido, latitud, longitud,
       area,
       tipo_pavimento: material_via || tipo_pavimento,
       clima, carga_vehicular,
@@ -1071,5 +1071,74 @@ export async function getCatalogosAuxiliares(_req: Request, res: Response) {
   } catch (error: any) {
     console.error('Error getCatalogosAuxiliares:', error);
     return res.status(500).json({ error: error.message });
+  }
+}
+
+// ========================================
+// OBSERVACIONES TIMELINE
+// ========================================
+
+export async function addObservacion(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { observacion, hora_local } = req.body;
+    const userId = req.user!.userId;
+
+    if (!observacion) {
+      return res.status(400).json({ error: 'La observación no puede estar vacía' });
+    }
+
+    // Obtener info del usuario para la firma
+    const user = await db.oneOrNone('SELECT chapa, nombre_completo, rol FROM usuario WHERE id = $1', [userId]);
+    const firmaUsuario = user 
+      ? (user.chapa ? `${user.chapa} - ${user.nombre_completo}` : `${user.rol} ${user.nombre_completo}`)
+      : 'Usuario';
+
+    // Determinar la hora a guardar
+    const options: Intl.DateTimeFormatOptions = { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      timeZone: 'America/Guatemala' 
+    };
+    const formatter = new Intl.DateTimeFormat('en-US', options);
+    
+    // Obtener la hora actual usando el formatter y extraer las partes
+    const parts = formatter.formatToParts(new Date());
+    const hours = parts.find(p => p.type === 'hour')?.value;
+    const minutes = parts.find(p => p.type === 'minute')?.value;
+    const horaServidor = `${hours}:${minutes}`;
+
+    let horaFinal = horaServidor;
+    if (hora_local && hora_local !== horaServidor) {
+      // Manejar el tag de retraso offline
+      horaFinal = `¡${hora_local} / Servidor: ${horaServidor}!`;
+    }
+
+    const nuevoMensaje = JSON.stringify([{
+      hora: horaFinal,
+      usuario: firmaUsuario,
+      mensaje: observacion
+    }]);
+
+    const situacionModificada = await db.one(
+      `UPDATE situacion 
+       SET observaciones = COALESCE(observaciones, '[]'::jsonb) || $1::jsonb,
+           updated_at = NOW()
+       WHERE id = $2 
+       RETURNING *`,
+      [nuevoMensaje, id]
+    );
+
+    // Emitir socket para actualización en tiempo real en la vista web
+    emitSituacionActualizada(situacionModificada as any);
+
+    return res.status(200).json({ 
+      message: 'Observación agregada al timeline', 
+      situacion: situacionModificada 
+    });
+  } catch (error: any) {
+    console.error('Error addObservacion (situaciones):', error);
+    return res.status(500).json({ error: error.message || 'Error interno al agregar observación' });
   }
 }

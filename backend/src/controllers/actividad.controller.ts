@@ -204,3 +204,67 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
     return res.status(500).json({ error: error.message });
   }
 }
+
+// ========================================
+// OBSERVACIONES TIMELINE
+// ========================================
+
+export async function addObservacion(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { observacion, hora_local } = req.body;
+    const userId = req.user!.userId;
+
+    if (!observacion) {
+      return res.status(400).json({ error: 'La observación no puede estar vacía' });
+    }
+
+    const user = await db.oneOrNone('SELECT chapa, nombre_completo, rol FROM usuario WHERE id = $1', [userId]);
+    const firmaUsuario = user 
+      ? (user.chapa ? `${user.chapa} - ${user.nombre_completo}` : `${user.rol} ${user.nombre_completo}`)
+      : 'Usuario';
+
+    const options: Intl.DateTimeFormatOptions = { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      timeZone: 'America/Guatemala' 
+    };
+    const formatter = new Intl.DateTimeFormat('en-US', options);
+    
+    const parts = formatter.formatToParts(new Date());
+    const hours = parts.find(p => p.type === 'hour')?.value;
+    const minutes = parts.find(p => p.type === 'minute')?.value;
+    const horaServidor = `${hours}:${minutes}`;
+
+    let horaFinal = horaServidor;
+    if (hora_local && hora_local !== horaServidor) {
+      horaFinal = `¡${hora_local} / Servidor: ${horaServidor}!`;
+    }
+
+    const nuevoMensaje = JSON.stringify([{
+      hora: horaFinal,
+      usuario: firmaUsuario,
+      mensaje: observacion
+    }]);
+
+    // Ojo: asegúrate de que exista updated_at en actividad si vas a actualizarlo
+    const actividadModificada = await db.one(
+      `UPDATE actividad 
+       SET observaciones = COALESCE(observaciones, '[]'::jsonb) || $1::jsonb
+       WHERE id = $2 
+       RETURNING *`,
+      [nuevoMensaje, id]
+    );
+
+    emitToAll('actividad:actualizada', actividadModificada);
+
+    return res.status(200).json({ 
+      message: 'Observación agregada al timeline', 
+      actividad: actividadModificada 
+    });
+  } catch (error: any) {
+    console.error('Error addObservacion (actividad):', error);
+    return res.status(500).json({ error: error.message || 'Error interno al agregar observación' });
+  }
+}

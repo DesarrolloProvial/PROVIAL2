@@ -387,9 +387,8 @@ export default function SituacionDinamicaScreen() {
         // Usar TODO el draft como base y solo sobrescribir defaults/formatos
         const initial = {
             // Defaults para que no truene el UI
-            km: '',
+            // defaults básicos
             sentido: '',
-            observaciones: '',
             descripcion: '',
             tipo_hecho_id: '',
             tipo_asistencia_id: '',
@@ -569,7 +568,6 @@ export default function SituacionDinamicaScreen() {
                     sentido: formData.sentido,
                     latitud,
                     longitud,
-                    observaciones: formData.observaciones,
                     descripcion: formData.descripcion,
                     // Campos específicos (ahora con _id suffix)
                     tipo_hecho_id: formData.tipo_hecho_id || formData.tipoIncidente,
@@ -602,6 +600,27 @@ export default function SituacionDinamicaScreen() {
                 console.log('[SITUACION] Enviando update:', JSON.stringify(payload, null, 2));
 
                 await api.patch(`/situaciones/${situacionId}`, payload);
+
+                // Si hay una nueva observación en el campo de texto, enviarla
+                if (formData.nueva_observacion && formData.nueva_observacion.trim().length > 0) {
+                    try {
+                        const localTime = new Date();
+                        const hora_local = new Intl.DateTimeFormat('en-US', {
+                            hour12: false,
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            timeZone: 'America/Guatemala',
+                        }).format(localTime);
+                        
+                        await api.post(`/situaciones/${situacionId}/observaciones`, {
+                            observacion: formData.nueva_observacion.trim(),
+                            hora_local: hora_local
+                        });
+                        console.log('[SITUACION] Nueva observación guardada');
+                    } catch (error) {
+                        console.warn('[SITUACION] Error al guardar nueva observación:', error);
+                    }
+                }
 
                 // === SUBIR MULTIMEDIA (solo archivos nuevos, no re-subir existentes) ===
                 const nuevaMultimedia = (formData.multimedia || []).filter((m: any) => !m.isExisting);
@@ -669,6 +688,7 @@ export default function SituacionDinamicaScreen() {
                 // Mandar TODO el formData completo
                 ...formData,
                 // Solo sobrescribir campos calculados o forzados
+                observaciones: formData.nueva_observacion ? formData.nueva_observacion.trim() : '',
                 km: parseFloat(formData.km) || 0,
                 latitud,
                 longitud,

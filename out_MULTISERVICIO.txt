@@ -1,0 +1,10 @@
+=== MULTISERVICIO | Sheet: FORMATO PARA NUEVOS CODIGOS ===
+R1: ['EMPRESA IMPLEMENTADORA', '', '', '', '', '', '', '', '', '', '', '', '', '']
+R2: ['NO. REGISTRO:', 'FECHA', 'NOMBRE DE LA EMPRESA', 'NOMBRE DEL PROPIETARIO ', 'No. REGISTRO EMPRESA MERCANTIL', 'No. FOLIO EMPRESA MERCANTIL', 'No. LIBRO EMPRESA MERCANTIL', 'NOMBRE  REPRESENTANTE LEGAL', 'CÓDIGO ÚNICO DE IDENTIFICACIÓN – CUI ', 'No. REGISTRO', 'No. FOLIO', 'No. LIBRO', 'AUXILIARES', 'EDAD']
+R3: ['STPC-SLV-0032', '2026-01-21 00:00:00', 'Multiservicios,  RC', 'Jose Roberto Munguia Calderon', '488725', '725', '450', 'Jose Roberto Munguia Calderon', '223633348 0507', 'N/D', '312', '33', 'N/D', '51']
+R4: ['STPC-SLV-0032', '2026-01-21 00:00:00', 'Multiservicios,  RC', 'Jose Roberto Munguia Calderon', '488725', '725', '450', 'Jose Roberto Munguia Calderon', '223633348 0507', 'N/D', '312', '33', 'N/D', '51']
+R5: ['STPC-SLV-0032', '2026-01-21 00:00:00', 'Multiservicios,  RC', 'Jose Roberto Munguia Calderon', '488725', '725', '450', 'Jose Roberto Munguia Calderon', '223633348 0507', 'N/D', '312', '33', 'N/D', '51']
+R6: ['STPC-SLV-0032', '2026-01-21 00:00:00', 'Multiservicios,  RC', 'Jose Roberto Munguia Calderon', '488725', '725', '450', 'Jose Roberto Munguia Calderon', '223633348 0507', 'N/D', '312', '33', 'N/D', '52']
+R7: ['STPC-SLV-0033', '2026-01-21 00:00:00', 'Multiservicios,  RC', 'Jose Roberto Munguia Calderon', '488725', '725', '450', 'Jose Roberto Munguia Calderon', '223633348 0507', 'N/D', '312', '33', 'N/D', '53']
+R8: ['STPC-SLV-0034', '2026-01-21 00:00:00', 'Multiservicios,  RC', 'Jose Roberto Munguia Calderon', '488725', '725', '450', 'Jose Roberto Munguia Calderon', '223633348 0507', 'N/D', '312', '33', 'N/D', '54']
+R9: ['STPC-SLV-0035', '2026-01-21 00:00:00', 'Multiservicios,  RC', 'Jose Roberto Munguia Calderon', '488725', '725', '450', 'Jose Roberto Munguia Calderon', '223633348 0507', 'N/D', '312', '33', 'N/D', '55']

@@ -179,9 +179,9 @@ export const hechoTransitoForm: FormConfig = {
                 fields: [
                     {
                         name: 'observaciones',
-                        type: 'textarea',
+                        type: 'custom',
+                        component: 'ObservacionesManager',
                         label: 'Observaciones Generales',
-                        rows: 4,
                     },
                 ],
             },

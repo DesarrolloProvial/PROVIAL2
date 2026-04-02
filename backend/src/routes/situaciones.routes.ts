@@ -20,6 +20,7 @@ import {
   getCatalogo,
   getCatalogosAuxiliares,
   getHeatmapData,
+  addObservacion,
 } from '../controllers/situacion.controller';
 import {
   registrarConflicto,
@@ -107,6 +108,9 @@ router.patch('/:id/cerrar', authenticate, canEditSituacion, cerrarSituacion);
 
 // Cambiar tipo de situación (INCIDENTE <-> ASISTENCIA_VEHICULAR)
 router.patch('/:id/cambiar-tipo', authenticate, canEditSituacion, cambiarTipoSituacion);
+
+// Agregar evento al timeline de observaciones (App móvil o COP)
+router.post('/:id/observaciones', authenticate, canEditSituacion, addObservacion);
 
 // ========================================
 // GESTIÓN DE DETALLES

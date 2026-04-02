@@ -215,11 +215,8 @@ export default function COPMapaPage() {
     refetchInterval: socketConnected ? false : 30000,
   });
 
-  const { data: situacionesPersistentes = [], refetch: refetchPersistentes } = useQuery({
-    queryKey: ['situaciones-persistentes-mapa'],
-    queryFn: situacionesPersistentesAPI.getActivas,
-    refetchInterval: 60000,
-  });
+  const situacionesPersistentes: any[] = [];
+  const refetchPersistentes = async () => {};
 
   const { data: heatmapData = [] } = useQuery({
     queryKey: ['heatmap-situaciones', heatmapDias],

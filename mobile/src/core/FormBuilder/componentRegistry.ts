@@ -23,6 +23,7 @@ import MultimediaWrapper from '../../components/MultimediaWrapper';
 import ContadorVehicular from '../../components/ContadorVehicular';
 import TomadorVelocidad from '../../components/TomadorVelocidad';
 import LlamadaAtencionManager from '../../components/LlamadaAtencionManager';
+import ObservacionesManager from '../../components/ObservacionesManager';
 
 /**
  * Registro de componentes disponibles
@@ -41,6 +42,7 @@ const componentRegistry: Record<string, ComponentType<any>> = {
     'ContadorVehicular': ContadorVehicular,
     'TomadorVelocidad': TomadorVelocidad,
     'LlamadaAtencionManager': LlamadaAtencionManager,
+    'ObservacionesManager': ObservacionesManager,
 };
 
 /**

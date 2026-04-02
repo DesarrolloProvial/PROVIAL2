@@ -131,10 +131,9 @@ export const emergenciaForm: FormConfig = {
                 fields: [
                     {
                         name: 'observaciones',
-                        type: 'textarea',
-                        label: 'Descripción del Evento',
-                        placeholder: 'Detalles sobre la magnitud, daños, riesgos...',
-                        rows: 4,
+                        type: 'custom',
+                        component: 'ObservacionesManager',
+                        label: 'Descripción del Evento y Observaciones',
                     },
                 ],
             },

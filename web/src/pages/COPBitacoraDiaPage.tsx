@@ -229,7 +229,24 @@ function LogSituacion({ item }: { item: TimelineItem }) {
       <Sep />
 
       {/* Observaciones */}
-      <L label="observaciones" value={str(d.observaciones)} />
+      <div className="text-sm">
+        <span className="font-medium text-gray-500 uppercase tracking-widest text-[10px] mr-2">observaciones</span>
+        <div className="mt-2 space-y-2">
+          {Array.isArray(d.observaciones) && d.observaciones.length > 0 ? (
+            d.observaciones.map((obs: any, idx: number) => (
+              <div key={idx} className="bg-gray-50 dark:bg-gray-800 p-2 border-l-2 border-blue-500 rounded">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{obs.usuario}</span>
+                  <span className="text-xs text-gray-500 font-mono">{obs.hora} {obs.hora?.includes('¡') && <span title="Offline" className="text-red-500">⚠️</span>}</span>
+                </div>
+                <p className="text-xs text-gray-800 dark:text-gray-200">{obs.mensaje}</p>
+              </div>
+            ))
+          ) : (
+            <span className="text-gray-400 italic">ninguna</span>
+          )}
+        </div>
+      </div>
       {d.obstruccion_data && Object.keys(d.obstruccion_data).length > 0 && (
         <L label="datos obstrucción" value={JSON.stringify(d.obstruccion_data)} />
       )}

@@ -147,10 +147,9 @@ export const asistenciaVehicularForm: FormConfig = {
                 fields: [
                     {
                         name: 'observaciones',
-                        type: 'textarea',
+                        type: 'custom',
+                        component: 'ObservacionesManager',
                         label: 'Observaciones Generales',
-                        placeholder: 'Información adicional relevante...',
-                        rows: 4,
                     },
                 ],
             },

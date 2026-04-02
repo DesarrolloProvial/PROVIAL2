@@ -16,7 +16,7 @@ export interface Actividad {
   km: number | null;
   sentido: string | null;
   estado: 'ACTIVA' | 'CERRADA';
-  observaciones: string | null;
+  observaciones: any[] | null;
   datos: Record<string, any>;
   created_at: Date;
   closed_at: Date | null;
@@ -66,7 +66,18 @@ export const ActividadModel = {
       longitud: data.longitud || null,
       km: data.km || null,
       sentido: data.sentido || null,
-      observaciones: data.observaciones || null,
+      observaciones: data.observaciones 
+        ? JSON.stringify([{ 
+            hora: new Intl.DateTimeFormat('en-US', { 
+              hour12: false, 
+              hour: '2-digit', 
+              minute: '2-digit', 
+              timeZone: 'America/Guatemala' 
+            }).format(new Date()),
+            usuario: 'Creador Actividad',
+            mensaje: data.observaciones 
+          }]) 
+        : JSON.stringify([]),
       datos: JSON.stringify(data.datos || {}),
       codigo_actividad: data.codigo_actividad || null,
     };

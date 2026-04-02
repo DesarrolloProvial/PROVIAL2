@@ -40,7 +40,7 @@ export interface Situacion {
   longitud?: number | null;
 
   // Observaciones
-  observaciones?: string | null;
+  observaciones?: any[] | null;
 
   // Contexto
   clima?: string | null;
@@ -213,11 +213,23 @@ export const SituacionModel = {
       // Ubicación
       km: data.km ?? null,
       sentido: data.sentido ?? null,
+      // Latitud y longitud
       latitud: data.latitud ?? null,
       longitud: data.longitud ?? null,
 
-      // Observaciones
-      observaciones: data.observaciones ?? null,
+      // Observaciones formateadas para JSONB timeline
+      observaciones: data.observaciones 
+        ? JSON.stringify([{ 
+            hora: new Intl.DateTimeFormat('en-US', { 
+              hour12: false, 
+              hour: '2-digit', 
+              minute: '2-digit', 
+              timeZone: 'America/Guatemala' 
+            }).format(new Date()),
+            usuario: 'Creador del Incidente',
+            mensaje: data.observaciones 
+          }]) 
+        : JSON.stringify([]),
 
       // Contexto
       clima: data.clima ?? null,
@@ -530,7 +542,10 @@ export const SituacionModel = {
           CASE sal.estado WHEN 'EN_SALIDA' THEN 'Inicio de Jornada' ELSE 'Fin de Jornada' END as subtipo_nombre,
           sal.estado,
           sal.observaciones_salida as descripcion,
-          sal.observaciones_regreso as observaciones,
+          CASE 
+            WHEN sal.observaciones_regreso IS NULL THEN '[]'::jsonb 
+            ELSE jsonb_build_array(jsonb_build_object('usuario', 'Sistema', 'hora', to_char(sal.fecha_hora_salida, 'HH24:MI'), 'mensaje', sal.observaciones_regreso)) 
+          END as observaciones,
           sal.fecha_hora_salida as created_at,
           r.codigo as ruta_codigo,
           sal.km_inicial as km,
@@ -561,8 +576,8 @@ export const SituacionModel = {
           s.tipo_situacion,
           cts.nombre as subtipo_nombre,
           s.estado,
-          s.observaciones as descripcion,
-          s.observaciones,
+          COALESCE(s.observaciones->0->>'mensaje', '')::text as descripcion,
+          COALESCE(s.observaciones, '[]'::jsonb) as observaciones,
           s.created_at,
           r.codigo as ruta_codigo,
           s.km,
@@ -595,8 +610,8 @@ export const SituacionModel = {
           cts.nombre as tipo_situacion,
           cts.nombre as subtipo_nombre,
           a.estado,
-          a.observaciones as descripcion,
-          a.observaciones,
+          COALESCE(a.observaciones->0->>'mensaje', '')::text as descripcion,
+          COALESCE(a.observaciones, '[]'::jsonb) as observaciones,
           a.created_at,
           r.codigo as ruta_codigo,
           a.km,

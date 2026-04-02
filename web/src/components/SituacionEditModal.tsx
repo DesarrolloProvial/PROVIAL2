@@ -62,7 +62,8 @@ export default function SituacionEditModal({ situacion, onClose, onSave, isSavin
         danios_infraestructura: false,
         descripcion_danios: '',
         descripcion: '',
-        observaciones: '',
+        observaciones: [] as any[],
+        nueva_observacion: '',
         combustible: '',
         kilometraje_unidad: '',
     });
@@ -105,7 +106,8 @@ export default function SituacionEditModal({ situacion, onClose, onSave, isSavin
                 danios_infraestructura: situacion.danios_infraestructura || false,
                 descripcion_danios: situacion.descripcion_danios || '',
                 descripcion: situacion.descripcion || '',
-                observaciones: situacion.observaciones || '',
+                observaciones: Array.isArray(situacion.observaciones) ? situacion.observaciones : [],
+                nueva_observacion: '',
                 combustible: situacion.combustible?.toString() || '',
                 kilometraje_unidad: situacion.kilometraje_unidad?.toString() || '',
             });
@@ -515,16 +517,48 @@ export default function SituacionEditModal({ situacion, onClose, onSave, isSavin
                                 </div>
                             </div>
 
-                            {/* Observaciones */}
-                            <div>
-                                <h3 className="font-semibold text-gray-800 mb-3">Observaciones</h3>
-                                <textarea
-                                    value={formData.observaciones}
-                                    onChange={(e) => handleChange('observaciones', e.target.value)}
-                                    rows={4}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                    placeholder="Observaciones adicionales..."
-                                />
+                            {/* Observaciones (Bitácora Cop) */}
+                            <div className="bg-white rounded-lg border border-gray-200">
+                                <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                                    <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                                        <FileText className="w-5 h-5 text-gray-500" />
+                                        Bitácora COP / Observaciones
+                                    </h3>
+                                </div>
+                                
+                                <div className="p-4">
+                                    {/* Timeline */}
+                                    {formData.observaciones && formData.observaciones.length > 0 ? (
+                                        <div className="space-y-4 mb-6 border-l-2 border-blue-200 pl-4 ml-2">
+                                            {formData.observaciones.map((obs: any, idx: number) => (
+                                                <div key={idx} className="relative">
+                                                    <div className="absolute -left-[23px] top-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></div>
+                                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                                        <div className="flex justify-between items-center mb-1">
+                                                            <span className="text-xs font-bold text-gray-700">{obs.usuario}</span>
+                                                            <span className="text-xs text-gray-500 font-mono">{obs.hora} {obs.hora.includes('¡') && <span title="Offline" className="text-red-500">⚠️</span>}</span>
+                                                        </div>
+                                                        <p className="text-sm text-gray-800 break-words">{obs.mensaje}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-sm text-gray-500 italic mb-4">Sin observaciones registradas en la bitácora.</div>
+                                    )}
+
+                                    {/* Nuevo Mensaje */}
+                                    <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                                        <label className="block text-sm font-medium text-blue-800 mb-2">Agregar a Bitácora</label>
+                                        <textarea
+                                            value={formData.nueva_observacion}
+                                            onChange={(e) => handleChange('nueva_observacion', e.target.value)}
+                                            rows={2}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Escriba una nueva observación. Se guardará con su usuario y hora actual."
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}

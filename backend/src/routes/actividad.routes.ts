@@ -5,6 +5,7 @@ import {
   cerrarActividad,
   getActividad,
   getMiUnidadHoy,
+  addObservacion,
 } from '../controllers/actividad.controller';
 import { authenticate, authorize } from '../middlewares/auth';
 
@@ -24,5 +25,8 @@ router.patch('/:id/cerrar', authenticate, cerrarActividad);
 
 // Obtener actividad por ID
 router.get('/:id', authenticate, getActividad);
+
+// Agregar observación (timeline)
+router.post('/:id/observaciones', authenticate, addObservacion);
 
 export default router;
