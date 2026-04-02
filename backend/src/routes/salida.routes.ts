@@ -55,9 +55,6 @@ router.post('/finalizar-jornada', authenticate, authorize('BRIGADA'), finalizarJ
 // Finalizar salida por ID (Brigada, COP, Operaciones, Admin)
 router.post('/:id/finalizar', authenticate, authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN'), finalizarSalida);
 
-// Obtener info de una salida
-router.get('/:id', authenticate, getSalida);
-
 // Unidades en salida (COP, Operaciones, Admin)
 router.get('/admin/unidades-en-salida', authenticate, authorize('COP', 'OPERACIONES', 'ADMIN'), getUnidadesEnSalida);
 
@@ -72,6 +69,9 @@ router.get('/bitacora-dia', authenticate, authorize('COP', 'OPERACIONES', 'ADMIN
 
 // Timeline completo de una salida específica
 router.get('/bitacora-timeline/:salidaId', authenticate, authorize('COP', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN', 'ENCARGADO_NOMINAS'), getBitacoraTimeline);
+
+// Obtener info de una salida por ID — debe ir AL FINAL para no interceptar rutas específicas
+router.get('/:id', authenticate, getSalida);
 
 // ========================================
 // RELEVOS
