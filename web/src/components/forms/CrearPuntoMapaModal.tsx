@@ -85,26 +85,26 @@ export default function CrearPuntoMapaModal({ isOpen, onClose, onCreated, capas,
 
   return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b bg-blue-50 rounded-t-xl">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-blue-50 dark:bg-blue-900/20 rounded-t-xl">
           <div className="flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-blue-600" />
-            <h2 className="font-bold text-gray-900">Agregar Punto al Mapa</h2>
+            <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h2 className="font-bold text-gray-900 dark:text-gray-100">Agregar Punto al Mapa</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-white/50 rounded-lg">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-1.5 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg">
+            <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
         </div>
 
         <div className="p-5 space-y-4">
-          {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
+          {error && <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">{error}</div>}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Capa *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Capa *</label>
             <select
               value={form.capa_id}
               onChange={e => set('capa_id', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="">Seleccionar capa...</option>
               {capas.map(c => (
@@ -114,18 +114,18 @@ export default function CrearPuntoMapaModal({ isOpen, onClose, onCreated, capas,
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Título *</label>
             <input
               value={form.titulo}
               onChange={e => set('titulo', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               placeholder="Nombre del punto"
             />
           </div>
 
           {/* Selector de icono */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Icono — <span className="text-2xl">{form.icono}</span>
             </label>
             <div className="grid grid-cols-8 gap-1">
@@ -137,8 +137,8 @@ export default function CrearPuntoMapaModal({ isOpen, onClose, onCreated, capas,
                   title={label}
                   className={`w-9 h-9 flex items-center justify-center text-xl rounded-lg border-2 transition ${
                     form.icono === emoji
-                      ? 'border-blue-500 bg-blue-50 shadow-sm'
-                      : 'border-transparent hover:border-gray-300 hover:bg-gray-50'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm'
+                      : 'border-transparent hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
                   {emoji}
@@ -148,52 +148,52 @@ export default function CrearPuntoMapaModal({ isOpen, onClose, onCreated, capas,
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoría</label>
             <input
               value={form.categoria}
               onChange={e => set('categoria', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               placeholder="Ej: Norte, KM 45, Zona 1..."
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Latitud *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Latitud *</label>
               <input
                 type="number" step="0.000001"
                 value={form.latitud}
                 onChange={e => set('latitud', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 placeholder="14.6407"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Longitud *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Longitud *</label>
               <input
                 type="number" step="0.000001"
                 value={form.longitud}
                 onChange={e => set('longitud', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 placeholder="-90.5133"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
             <textarea
               value={form.descripcion}
               onChange={e => set('descripcion', e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               placeholder="Descripción, notas, datos de contacto..."
             />
           </div>
         </div>
 
-        <div className="flex justify-between p-4 border-t bg-gray-50 rounded-b-xl">
-          <button onClick={onClose} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+        <div className="flex justify-between p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 rounded-b-xl">
+          <button onClick={onClose} className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 text-sm">
             Cancelar
           </button>
           <button

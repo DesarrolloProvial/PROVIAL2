@@ -440,34 +440,43 @@ export default function COPMapaPage() {
         </div>
 
         {/* Accesos Rápidos */}
-        <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+        <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">Accesos Rápidos</p>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => navigate('/movimientos-brigadas')}
-              className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-medium transition flex items-center gap-1"
+              className="px-3 py-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-medium transition flex items-center gap-1"
             >
               <span>Movimientos</span>
             </button>
             <button
               onClick={() => navigate('/situaciones-persistentes')}
-              className="px-3 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg text-xs font-medium transition flex items-center gap-1"
+              className="px-3 py-2 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 text-orange-700 dark:text-orange-300 rounded-lg text-xs font-medium transition flex items-center gap-1"
             >
               <span>Persistentes</span>
             </button>
             <button
               onClick={() => navigate('/cop/situaciones')}
-              className="px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg text-xs font-medium transition flex items-center gap-1"
+              className="px-3 py-2 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 rounded-lg text-xs font-medium transition flex items-center gap-1"
             >
               <span>Situaciones</span>
             </button>
             <button
               onClick={() => navigate('/cop/bitacora')}
-              className="px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-xs font-medium transition flex items-center gap-1"
+              className="px-3 py-2 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-lg text-xs font-medium transition flex items-center gap-1"
             >
               <span>Bitácora</span>
             </button>
           </div>
+          {/* Botón toggle sidebar - integrado en el panel */}
+          <button
+            onClick={() => setShowSidebar(s => !s)}
+            className="mt-2 w-full flex items-center justify-center gap-1.5 py-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg text-xs font-medium transition"
+            title={showSidebar ? 'Ocultar panel' : 'Mostrar panel'}
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+            <span>Ocultar panel</span>
+          </button>
         </div>
 
         {/* Stats de flota */}
@@ -580,9 +589,13 @@ export default function COPMapaPage() {
                   🚓 {unidad.unidad_codigo || `Unidad #${unidad.unidad_id}`}
                 </span>
                 <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${getEstadoBadgeColor(
-                    unidad.estado_situacion
-                  )}`}
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    unidad.estado_situacion === 'ACTIVA'
+                      ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
+                      : unidad.estado_situacion === 'CERRADA'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                  }`}
                 >
                   {unidad.estado_situacion || 'EN RUTA'}
                 </span>
@@ -658,14 +671,16 @@ export default function COPMapaPage() {
 
       {/* Área principal: Mapa o Tabla */}
       <div className="flex-1 relative">
-        {/* Sidebar toggle button */}
-        <button
-          onClick={() => setShowSidebar(s => !s)}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-[1001] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 border-l-0 shadow-md rounded-r-lg p-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
-          title={showSidebar ? 'Ocultar panel' : 'Mostrar panel'}
-        >
-          {showSidebar ? <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />}
-        </button>
+        {/* Botón para mostrar panel cuando está oculto */}
+        {!showSidebar && (
+          <button
+            onClick={() => setShowSidebar(true)}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-[1001] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 border-l-0 shadow-md rounded-r-lg p-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
+            title="Mostrar panel"
+          >
+            <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          </button>
+        )}
 
         {modoVista === 'mapa' ? (
           <>
@@ -1055,7 +1070,7 @@ export default function COPMapaPage() {
                     <button
                       onClick={() => setShowCrearCapaInline(!showCrearCapaInline)}
                       className={`flex items-center gap-1 text-xs px-2 py-1 rounded transition ${
-                        showCrearCapaInline ? 'bg-indigo-600 text-white' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700'
+                        showCrearCapaInline ? 'bg-indigo-600 text-white' : 'bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
                       }`}
                       title="Nueva capa"
                     >
@@ -1063,7 +1078,7 @@ export default function COPMapaPage() {
                     </button>
                     <button
                       onClick={() => setShowCrearPuntoModal(true)}
-                      className="flex items-center gap-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded"
+                      className="flex items-center gap-1 text-xs bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-1 rounded"
                       title="Nuevo punto"
                     >
                       <Plus className="w-3 h-3" /> Punto

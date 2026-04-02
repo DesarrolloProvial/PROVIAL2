@@ -477,27 +477,27 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
   if (step === 1) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
-          <div className="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-xl">
-            <h2 className="text-xl font-bold text-gray-900">{isEditMode ? 'Editar Situacion' : 'Nueva Situacion'}</h2>
-            <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-lg">
-              <X className="w-5 h-5" />
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 rounded-t-xl">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{isEditMode ? 'Editar Situacion' : 'Nueva Situacion'}</h2>
+            <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg">
+              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
           <div className="p-6">
-            <p className="text-gray-600 mb-4">Selecciona el tipo de situacion a reportar:</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">Selecciona el tipo de situacion a reportar:</p>
             <div className="space-y-3">
               {TIPOS_SITUACION_CREAR.map(tipo => (
                 <button
                   key={tipo.value}
                   onClick={() => { setTipoSituacion(tipo.value); setStep(2); }}
-                  className="w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition group"
+                  className="w-full flex items-center gap-4 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition group"
                 >
                   <div className={`p-3 rounded-lg ${tipo.color} text-white`}>
                     <tipo.icon className="w-6 h-6" />
                   </div>
                   <div className="text-left">
-                    <p className="font-semibold text-gray-900 group-hover:text-blue-700">{tipo.label}</p>
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-300">{tipo.label}</p>
                   </div>
                   <ChevronRight className="w-5 h-5 ml-auto text-gray-400 group-hover:text-blue-500" />
                 </button>
@@ -519,30 +519,30 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-xl">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 rounded-t-xl">
           <div className="flex items-center gap-3">
             {!isEditMode && (
               <button
                 onClick={() => setStep(1)}
-                className="p-1.5 hover:bg-gray-200 rounded-lg text-gray-500"
+                className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400"
                 title="Cambiar tipo"
               >
                 <ChevronRight className="w-4 h-4 rotate-180" />
               </button>
             )}
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
               {isEditMode ? `Editar: ${tipoConfig?.label}` : `Nueva: ${tipoConfig?.label}`}
             </h2>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-lg">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg">
+            <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b bg-white px-4">
+        <div className="flex border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4">
           {tabs.map(tab => (
             <button
               key={tab.id}
@@ -550,18 +550,18 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
               className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
                 activeTab === tab.id
                   ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >
               <tab.icon className="w-4 h-4" />
               {tab.label}
               {tab.id === 'vehiculos' && vehiculos.length > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">
+                <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full">
                   {vehiculos.length}
                 </span>
               )}
               {tab.id === 'recursos' && (gruas.length + ajustadores.length + autoridadesSeleccionadas.length + socorroSeleccionados.length) > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full">
+                <span className="ml-1 px-1.5 py-0.5 text-xs bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-full">
                   {gruas.length + ajustadores.length + autoridadesSeleccionadas.length + socorroSeleccionados.length}
                 </span>
               )}
@@ -572,7 +572,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">
               {error}
             </div>
           )}
@@ -580,7 +580,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
           {loadingEdit ? (
             <div className="flex items-center justify-center h-48">
               <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
-              <span className="ml-3 text-gray-600">Cargando datos...</span>
+              <span className="ml-3 text-gray-600 dark:text-gray-400">Cargando datos...</span>
             </div>
           ) : (<>
 
@@ -589,13 +589,13 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
             <div className="space-y-6">
               {/* Unidad */}
               <div>
-                <h3 className="font-semibold text-gray-800 mb-3">Unidad</h3>
+                <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">Unidad</h3>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Unidad *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Unidad *</label>
                   <select
                     value={form.unidad_id}
                     onChange={(e) => handleChange('unidad_id', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   >
                     <option value="">Seleccionar unidad...</option>
                     {unidades
@@ -608,7 +608,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
                     }
                   </select>
                   {form.ruta_id ? (
-                    <p className="mt-1 text-xs text-blue-600">
+                    <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
                       Ruta asignada: {rutas.find((r: any) => r.id === Number(form.ruta_id))?.codigo || form.ruta_id}
                     </p>
                   ) : (
@@ -620,11 +620,11 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
               {/* Subtipo */}
               {getSubtipoOptions().length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-gray-800 mb-3">{getSubtipoLabel()}</h3>
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">{getSubtipoLabel()}</h3>
                   <select
                     value={form.subtipo_situacion}
                     onChange={(e) => handleChange('subtipo_situacion', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   >
                     <option value="">Seleccionar...</option>
                     {getSubtipoOptions().map((s: string) => (
@@ -666,12 +666,12 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
               {/* Descripcion (emergencia) */}
               {isEmergencia && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Descripcion de Emergencia</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripcion de Emergencia</label>
                   <textarea
                     value={form.descripcion}
                     onChange={(e) => handleChange('descripcion', e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                     placeholder="Describa la emergencia..."
                   />
                 </div>
@@ -679,12 +679,12 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
 
               {/* Observaciones */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observaciones</label>
                 <textarea
                   value={form.observaciones}
                   onChange={(e) => handleChange('observaciones', e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   placeholder="Observaciones adicionales..."
                 />
               </div>
@@ -694,7 +694,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
           {/* TAB: Victimas (solo HECHO_TRANSITO) */}
           {activeTab === 'victimas' && isHechoTransito && (
             <div className="space-y-6">
-              <h3 className="font-semibold text-gray-800">Conteo de Victimas</h3>
+              <h3 className="font-semibold text-gray-800 dark:text-gray-200">Conteo de Victimas</h3>
               <VictimasFields
                 heridos={form.heridos}
                 heridos_leves={form.heridos_leves}
@@ -714,7 +714,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
           {activeTab === 'vehiculos' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-gray-800">Vehiculos Involucrados ({vehiculos.length})</h3>
+                <h3 className="font-semibold text-gray-800 dark:text-gray-200">Vehiculos Involucrados ({vehiculos.length})</h3>
                 <button
                   onClick={() => setVehiculos(prev => [...prev, emptyVehiculo()])}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -725,7 +725,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
               </div>
 
               {vehiculos.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
                   <Car className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                   <p>No hay vehiculos registrados.</p>
                   <button
@@ -817,10 +817,10 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
         </div>
 
         {/* Footer */}
-        <div className="flex justify-between items-center gap-3 p-4 border-t bg-gray-50 rounded-b-xl">
+        <div className="flex justify-between items-center gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 rounded-b-xl">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600"
           >
             Cancelar
           </button>

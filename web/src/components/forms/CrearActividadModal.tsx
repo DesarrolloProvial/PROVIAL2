@@ -237,15 +237,15 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
   if (step === 1) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
-          <div className="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-xl">
-            <h2 className="text-xl font-bold text-gray-900">{isEditMode ? 'Editar Actividad' : 'Nueva Actividad'}</h2>
-            <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-lg">
-              <X className="w-5 h-5" />
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 rounded-t-xl">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{isEditMode ? 'Editar Actividad' : 'Nueva Actividad'}</h2>
+            <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg">
+              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
-            <p className="text-gray-600 mb-4 text-sm">Selecciona la categoria y tipo de actividad:</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">Selecciona la categoria y tipo de actividad:</p>
 
             {categorias.length === 0 ? (
               <div className="text-center py-8 text-gray-400">
@@ -260,10 +260,10 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
                   const isExpanded = expandedCat === cat.id;
 
                   return (
-                    <div key={cat.id} className={`border rounded-xl overflow-hidden ${isExpanded ? config.bgColor : 'border-gray-200'}`}>
+                    <div key={cat.id} className={`border dark:border-gray-700 rounded-xl overflow-hidden ${isExpanded ? config.bgColor : 'border-gray-200'}`}>
                       <button
                         onClick={() => setExpandedCat(isExpanded ? null : cat.id)}
-                        className={`w-full flex items-center gap-3 p-3 transition hover:bg-gray-50 ${isExpanded ? config.bgColor : ''}`}
+                        className={`w-full flex items-center gap-3 p-3 transition hover:bg-gray-50 dark:hover:bg-gray-700/50 ${isExpanded ? config.bgColor : ''}`}
                       >
                         <CatIcon className={`w-5 h-5 ${config.color}`} />
                         <span className={`font-semibold ${config.color}`}>{cat.nombre}</span>
@@ -277,11 +277,11 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
                             <button
                               key={tipo.id}
                               onClick={() => selectTipo(tipo, cat.codigo)}
-                              className="w-full text-left px-3 py-2 rounded-lg hover:bg-white hover:shadow-sm transition text-sm text-gray-700 flex items-center gap-2"
+                              className="w-full text-left px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm transition text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2"
                             >
                               <span className="w-2 h-2 rounded-full bg-gray-400"></span>
                               {tipo.nombre}
-                              <ChevronRight className="w-3 h-3 ml-auto text-gray-300" />
+                              <ChevronRight className="w-3 h-3 ml-auto text-gray-300 dark:text-gray-600" />
                             </button>
                           ))}
                         </div>
@@ -304,24 +304,24 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-xl">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 rounded-t-xl">
           <div className="flex items-center gap-3">
             <button
               onClick={() => { setStep(1); setSelectedTipo(null); setDatos({}); }}
-              className="p-1.5 hover:bg-gray-200 rounded-lg text-gray-500"
+              className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400"
               title="Cambiar tipo"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">{selectedTipo?.nombre}</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{selectedTipo?.nombre}</h2>
               <span className={`text-xs font-medium ${catConfig.color}`}>{catConfig.label}</span>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-lg">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg">
+            <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
         </div>
 
@@ -334,7 +334,7 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
             </div>
           )}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">
               {error}
             </div>
           )}
@@ -342,13 +342,13 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
           {!loadingEdit && <>
           {/* Unidad */}
           <div>
-            <h3 className="font-semibold text-gray-800 mb-3">Unidad</h3>
+            <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">Unidad</h3>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Unidad *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Unidad *</label>
               <select
                 value={form.unidad_id}
                 onChange={(e) => handleChange('unidad_id', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               >
                 <option value="">Seleccionar unidad...</option>
                 {unidades
@@ -361,7 +361,7 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
                 }
               </select>
               {form.ruta_id ? (
-                <p className="mt-1 text-xs text-blue-600">
+                <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
                   Ruta asignada: {rutas.find((r: any) => r.id === Number(form.ruta_id))?.codigo || form.ruta_id}
                 </p>
               ) : (
@@ -385,7 +385,7 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
           {/* Dynamic fields based on activity type */}
           {selectedTipo && (
             <div>
-              <h3 className="font-semibold text-gray-800 mb-3">Datos de {selectedTipo.nombre}</h3>
+              <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">Datos de {selectedTipo.nombre}</h3>
               <DynamicActivityFields
                 activityTypeName={selectedTipo.nombre}
                 datos={datos}
@@ -397,23 +397,23 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
 
           {/* Observaciones */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observaciones</label>
             <textarea
               value={form.observaciones}
               onChange={(e) => handleChange('observaciones', e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               placeholder="Observaciones adicionales..."
             />
           </div>
-          </>}
+          </> }
         </div>
 
         {/* Footer */}
-        <div className="flex justify-between items-center gap-3 p-4 border-t bg-gray-50 rounded-b-xl">
+        <div className="flex justify-between items-center gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 rounded-b-xl">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600"
           >
             Cancelar
           </button>
