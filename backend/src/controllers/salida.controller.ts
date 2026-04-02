@@ -1073,22 +1073,104 @@ export async function getBitacoraTimeline(req: Request, res: Response) {
          sit.id               AS ref_id,
          sit.created_at       AS ts,
          json_build_object(
+           -- Identificación
            'id',              sit.id,
+           'codigo',          sit.codigo_situacion,
            'tipo_macro',      sit.tipo_situacion,
            'tipo_nombre',     cts.nombre,
+           'estado',          sit.estado,
+
+           -- Ubicación
            'km',              sit.km,
            'sentido',         sit.sentido,
+           'area',            sit.area,
+           'referencia',      COALESCE(sit.referencia_ubicacion, sit.direccion_detallada),
+           'departamento',    dep.nombre,
+           'municipio',       mun.nombre,
+           'latitud',         sit.latitud,
+           'longitud',        sit.longitud,
+
+           -- Observaciones y causa
            'observaciones',   sit.observaciones,
-           'cerrado_at',      sit.fecha_hora_finalizacion,
-           'creado_por_nombre', u.nombre_completo,
+           'causa_probable',  sit.causa_probable,
+           'causa_especificar', sit.causa_especificar,
+
+           -- Tiempos
+           'hora_aviso',      sit.fecha_hora_aviso,
+           'hora_llegada',    sit.fecha_hora_llegada,
+           'hora_cierre',     sit.fecha_hora_finalizacion,
+
+           -- Víctimas
+           'heridos',         sit.heridos,
+           'heridos_leves',   sit.heridos_leves,
+           'heridos_graves',  sit.heridos_graves,
+           'fallecidos',      sit.fallecidos,
+           'ilesos',          sit.ilesos,
+           'trasladados',     sit.trasladados,
+           'fugados',         sit.fugados,
+
+           -- Daños
+           'danios_materiales',      sit.danios_materiales,
+           'danios_infraestructura', sit.danios_infraestructura,
+           'danios_descripcion',     sit.danios_descripcion,
+
+           -- Condiciones de la vía
+           'clima',           sit.clima,
+           'carga_vehicular', sit.carga_vehicular,
+           'tipo_pavimento',  sit.tipo_pavimento,
+           'iluminacion',     sit.iluminacion,
+           'senalizacion',    sit.senalizacion,
+           'visibilidad',     sit.visibilidad,
+           'via_estado',      sit.via_estado,
+
+           -- Acuerdo entre involucrados
+           'acuerdo_involucrados', sit.acuerdo_involucrados,
+           'acuerdo_detalle',      sit.acuerdo_detalle,
+
+           -- Reporte / boleta
+           'reportado_por_nombre',   sit.reportado_por_nombre,
+           'reportado_por_telefono', sit.reportado_por_telefono,
+           'numero_boleta',          sit.numero_boleta,
+           'codigo_boleta',          sit.codigo_boleta,
+
+           -- Obstrucción específica
+           'obstruccion_data',  sit.obstruccion_data,
+
+           -- Quién creó y quién cerró (actualizado_por = último en modificar)
+           'creado_por_nombre',  u_cre.nombre_completo,
+           'cerrado_por_nombre', u_cer.nombre_completo,
+
+           -- Vehículos involucrados
+           'vehiculos', COALESCE(
+             (SELECT json_agg(json_build_object(
+                 'placa',          v.placa,
+                 'marca',          mv.nombre,
+                 'color',          v.color,
+                 'piloto',         COALESCE(sv.datos_piloto->>'nombre', p.nombre),
+                 'licencia',       COALESCE(sv.datos_piloto->>'licencia', p.licencia_numero::text),
+                 'estado_piloto',  sv.estado_piloto,
+                 'heridos',        sv.heridos_en_vehiculo,
+                 'fallecidos',     sv.fallecidos_en_vehiculo,
+                 'danos',          sv.danos_estimados,
+                 'sancion',        sv.sancion
+               ) ORDER BY sv.id)
+              FROM situacion_vehiculo sv
+              JOIN vehiculo v ON sv.vehiculo_id = v.id
+              LEFT JOIN marca_vehiculo mv ON v.marca_id = mv.id
+              LEFT JOIN piloto p ON sv.piloto_id = p.id
+              WHERE sv.situacion_id = sit.id
+             ), '[]'::json),
+
+           -- Multimedia (fotos y videos)
            'fotos', COALESCE(
              (SELECT json_agg(json_build_object(
                  'id',        sm.id,
                  'tipo',      sm.tipo,
                  'url',       sm.url_original,
                  'thumbnail', sm.url_thumbnail,
+                 'titulo',    sm.infografia_titulo,
                  'subido_por', usm.nombre_completo
-               ) ORDER BY sm.orden, sm.created_at)
+               ) ORDER BY sm.infografia_numero, sm.orden, sm.created_at)
               FROM situacion_multimedia sm
               LEFT JOIN usuario usm ON sm.subido_por = usm.id
               WHERE sm.situacion_id = sit.id
@@ -1096,7 +1178,10 @@ export async function getBitacoraTimeline(req: Request, res: Response) {
          ) AS datos
        FROM situacion sit
        LEFT JOIN catalogo_tipo_situacion cts ON sit.tipo_situacion_id = cts.id
-       LEFT JOIN usuario u ON sit.creado_por = u.id
+       LEFT JOIN usuario u_cre ON sit.creado_por = u_cre.id
+       LEFT JOIN usuario u_cer ON sit.actualizado_por = u_cer.id
+       LEFT JOIN departamento dep ON sit.departamento_id = dep.id
+       LEFT JOIN municipio mun ON sit.municipio_id = mun.id
        WHERE sit.salida_unidad_id = $1
 
        UNION ALL
@@ -1108,6 +1193,7 @@ export async function getBitacoraTimeline(req: Request, res: Response) {
          act.created_at       AS ts,
          json_build_object(
            'id',              act.id,
+           'codigo',          act.codigo_actividad,
            'tipo_nombre',     cts2.nombre,
            'km',              act.km,
            'sentido',         act.sentido,
