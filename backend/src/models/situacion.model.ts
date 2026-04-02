@@ -562,7 +562,7 @@ export const SituacionModel = {
           sal.combustible_inicial as salida_combustible_inicial,
           sal.tripulacion,
           NULL::jsonb as datos
-        FROM salidas sal
+        FROM salida_unidad sal
         LEFT JOIN unidad u ON sal.unidad_id = u.id
         LEFT JOIN ruta r ON sal.ruta_inicial_id = r.id
         LEFT JOIN usuario uf ON sal.finalizada_por = uf.id
@@ -595,7 +595,7 @@ export const SituacionModel = {
           sal.tripulacion,
           NULL::jsonb as datos
         FROM situacion s
-        INNER JOIN salidas sal ON s.salida_unidad_id = sal.id
+        INNER JOIN salida_unidad sal ON s.salida_unidad_id = sal.id
         LEFT JOIN unidad u ON s.unidad_id = u.id
         LEFT JOIN ruta r ON s.ruta_id = r.id
         LEFT JOIN catalogo_tipo_situacion cts ON s.tipo_situacion_id = cts.id
@@ -629,7 +629,7 @@ export const SituacionModel = {
           sal.tripulacion,
           a.datos
         FROM actividad a
-        INNER JOIN salidas sal ON a.salida_unidad_id = sal.id
+        INNER JOIN salida_unidad sal ON a.salida_unidad_id = sal.id
         LEFT JOIN unidad u ON a.unidad_id = u.id
         LEFT JOIN ruta r ON a.ruta_id = r.id
         LEFT JOIN catalogo_tipo_situacion cts ON a.tipo_actividad_id = cts.id
