@@ -113,7 +113,7 @@ const TIPO_EVENTO_BADGE: Record<string, string> = {
 
 // ── Componente: ítem del timeline ─────────────────────────────────────────────
 
-function TimelineItemView({ item, navigate }: { item: TimelineItem; navigate: (p: string) => void }) {
+function TimelineItemView({ item }: { item: TimelineItem }) {
   const hora = fmtTime(item.ts);
 
   if (item.tipo === 'SITUACION') {
@@ -151,12 +151,7 @@ function TimelineItemView({ item, navigate }: { item: TimelineItem; navigate: (p
                 <Video className="w-3 h-3" /> {videos.length} video{videos.length !== 1 ? 's' : ''}
               </span>
             )}
-            <button
-              onClick={() => navigate(`/situaciones/${d.id}`)}
-              className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Ver registro #{d.id}
-            </button>
+            <span className="text-xs text-gray-400 dark:text-gray-500">#{d.id}</span>
           </div>
         </div>
       </div>
@@ -186,12 +181,7 @@ function TimelineItemView({ item, navigate }: { item: TimelineItem; navigate: (p
             {d.closed_at && <span>Cerrada: {fmtTime(d.closed_at)}</span>}
             {d.creado_por_nombre && <span>Por: {d.creado_por_nombre}</span>}
           </div>
-          <button
-            onClick={() => navigate(`/actividades/${d.id}`)}
-            className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1"
-          >
-            Ver registro #{d.id}
-          </button>
+          <span className="text-xs text-gray-400 dark:text-gray-500 mt-1">#{d.id}</span>
         </div>
       </div>
     );
@@ -228,7 +218,7 @@ function TimelineItemView({ item, navigate }: { item: TimelineItem; navigate: (p
 
 // ── Componente: card de salida expandible ─────────────────────────────────────
 
-function SalidaCard({ salida, navigate }: { salida: SalidaDia; navigate: (p: string) => void }) {
+function SalidaCard({ salida }: { salida: SalidaDia }) {
   const [expanded, setExpanded] = useState(false);
 
   const { data: timelineData, isFetching, isError } = useQuery<TimelineData>({
@@ -376,7 +366,7 @@ function SalidaCard({ salida, navigate }: { salida: SalidaDia; navigate: (p: str
                 <p className="text-xs text-gray-400 dark:text-gray-500 ml-6 pb-2">Sin situaciones, actividades ni eventos registrados.</p>
               ) : (
                 timelineData.timeline.map((item) => (
-                  <TimelineItemView key={`${item.tipo}-${item.ref_id}`} item={item} navigate={navigate} />
+                  <TimelineItemView key={`${item.tipo}-${item.ref_id}`} item={item} />
                 ))
               )}
 
@@ -534,7 +524,7 @@ export default function COPBitacoraDiaPage() {
 
             <div className="flex flex-col gap-4">
               {salidas.map(salida => (
-                <SalidaCard key={salida.salida_id} salida={salida} navigate={navigate} />
+                <SalidaCard key={salida.salida_id} salida={salida} />
               ))}
             </div>
           </>
