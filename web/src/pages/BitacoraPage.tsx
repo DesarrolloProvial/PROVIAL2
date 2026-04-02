@@ -27,9 +27,15 @@ const TIPO_REGISTRO_STYLE: Record<string, { dot: string; border: string; bg: str
 };
 
 interface Tripulante {
-    usuario_id: number;
-    nombre_completo: string;
-    rol_tripulacion: string;
+    brigada_id?: number;
+    usuario_id?: number;
+    // BD usa: nombre + rol (función iniciar_salida_unidad)
+    nombre?: string;
+    rol?: string;
+    chapa?: string;
+    // Compat con formato antiguo
+    nombre_completo?: string;
+    rol_tripulacion?: string;
 }
 
 export default function BitacoraPage() {
@@ -274,8 +280,15 @@ export default function BitacoraPage() {
                             <div className="flex flex-wrap gap-3">
                                 {salidaActual.tripulacion.map((t: Tripulante, idx: number) => (
                                     <div key={idx} className="flex items-center gap-2 bg-white dark:bg-gray-700 px-3 py-1.5 rounded-full border border-green-200 dark:border-green-700">
-                                        <span className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase">{t.rol_tripulacion}:</span>
-                                        <span className="text-sm text-gray-800 dark:text-gray-200">{t.nombre_completo}</span>
+                                        <span className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase">
+                                            {t.rol || t.rol_tripulacion || 'TRIPULANTE'}:
+                                        </span>
+                                        <span className="text-sm text-gray-800 dark:text-gray-200">
+                                            {t.nombre || t.nombre_completo || 'Sin nombre'}
+                                        </span>
+                                        {(t.chapa) && (
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">[{t.chapa}]</span>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -375,8 +388,13 @@ export default function BitacoraPage() {
                                                         <div className="flex flex-wrap gap-2 mb-2">
                                                             {trip.map((t: Tripulante, idx: number) => (
                                                                 <span key={idx} className="inline-flex items-center gap-1 text-xs bg-white dark:bg-gray-700 px-2 py-1 rounded border border-emerald-200 dark:border-emerald-700">
-                                                                    <span className="font-semibold text-emerald-700 dark:text-emerald-400">{t.rol_tripulacion}:</span>
-                                                                    <span className="dark:text-gray-300">{t.nombre_completo}</span>
+                                                                    <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                                                                        {t.rol || t.rol_tripulacion || 'T'}:
+                                                                    </span>
+                                                                    <span className="dark:text-gray-300">
+                                                                        {t.nombre || t.nombre_completo || '-'}
+                                                                    </span>
+                                                                    {t.chapa && <span className="text-gray-400 dark:text-gray-500">[{t.chapa}]</span>}
                                                                 </span>
                                                             ))}
                                                         </div>
