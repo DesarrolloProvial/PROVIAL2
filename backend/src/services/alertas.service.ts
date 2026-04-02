@@ -185,14 +185,14 @@ export const AlertasService = {
          s.nombre AS sede_nombre,
          u.codigo AS unidad_codigo,
          u.tipo_unidad,
-         b.nombre AS brigada_nombre,
-         b.codigo AS brigada_chapa,
+         b.nombre_completo AS brigada_nombre,
+         b.chapa AS brigada_chapa,
          aten.nombre_completo AS atendida_por_nombre,
          EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - a.created_at)) / 60 AS minutos_activa
        FROM alerta a
        LEFT JOIN sede s ON a.sede_id = s.id
        LEFT JOIN unidad u ON a.unidad_id = u.id
-       LEFT JOIN brigada b ON a.brigada_id = b.id
+       LEFT JOIN usuario b ON a.brigada_id = b.id
        LEFT JOIN usuario aten ON a.atendida_por = aten.id
        WHERE a.id = $1`,
       [id]
@@ -270,12 +270,12 @@ export const AlertasService = {
          a.*,
          s.nombre AS sede_nombre,
          u.codigo AS unidad_codigo,
-         b.nombre AS brigada_nombre,
+         b.nombre_completo AS brigada_nombre,
          EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - a.created_at)) / 60 AS minutos_activa
        FROM v_mis_alertas_no_leidas a
        LEFT JOIN sede s ON a.sede_id = s.id
        LEFT JOIN unidad u ON a.unidad_id = u.id
-       LEFT JOIN brigada b ON a.brigada_id = b.id
+       LEFT JOIN usuario b ON a.brigada_id = b.id
        WHERE NOT EXISTS (
          SELECT 1 FROM alerta_leida al
          WHERE al.alerta_id = a.id AND al.usuario_id = $1
@@ -381,14 +381,14 @@ export const AlertasService = {
          s.nombre AS sede_nombre,
          u.codigo AS unidad_codigo,
          u.tipo_unidad,
-         b.nombre AS brigada_nombre,
-         b.codigo AS brigada_chapa,
+         b.nombre_completo AS brigada_nombre,
+         b.chapa AS brigada_chapa,
          aten.nombre_completo AS atendida_por_nombre,
          EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - a.created_at)) / 60 AS minutos_activa
        FROM alerta a
        LEFT JOIN sede s ON a.sede_id = s.id
        LEFT JOIN unidad u ON a.unidad_id = u.id
-       LEFT JOIN brigada b ON a.brigada_id = b.id
+       LEFT JOIN usuario b ON a.brigada_id = b.id
        LEFT JOIN usuario aten ON a.atendida_por = aten.id
        WHERE ${whereClause}
        ORDER BY a.created_at DESC

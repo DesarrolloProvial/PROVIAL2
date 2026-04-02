@@ -98,7 +98,6 @@ export const verificarNecesitaReset = async (req: Request, res: Response) => {
     const result = await pool.query(`
       SELECT id, password_reset_required, chapa
       FROM usuario u
-      LEFT JOIN brigada b ON b.usuario_id = u.id
       WHERE u.username = $1 AND u.activo = TRUE
     `, [username]);
 
@@ -136,9 +135,8 @@ export const completarResetPassword = async (req: Request, res: Response) => {
   try {
     // Buscar usuario con verificación de chapa
     const result = await pool.query(`
-      SELECT u.id, u.username, u.password_reset_required, b.chapa
+      SELECT u.id, u.username, u.password_reset_required, u.chapa
       FROM usuario u
-      LEFT JOIN brigada b ON b.usuario_id = u.id
       WHERE u.username = $1 AND u.activo = TRUE
     `, [username]);
 
@@ -203,13 +201,12 @@ export const getUsuariosConResetPendiente = async (_req: Request, res: Response)
         u.id,
         u.username,
         u.nombre_completo,
-        b.chapa,
+        u.chapa,
         s.nombre as sede_nombre,
         r.nombre as rol_nombre,
         u.password_reset_enabled_at,
         admin.nombre_completo as habilitado_por_nombre
       FROM usuario u
-      LEFT JOIN brigada b ON b.usuario_id = u.id
       LEFT JOIN sede s ON u.sede_id = s.id
       LEFT JOIN rol r ON u.rol_id = r.id
       LEFT JOIN usuario admin ON u.password_reset_by = admin.id

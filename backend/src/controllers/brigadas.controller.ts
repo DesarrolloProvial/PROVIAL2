@@ -79,7 +79,14 @@ export async function obtenerBrigada(req: Request, res: Response) {
         u.activo as activa,
         u.rol_brigada,
         u.custom_fields,
-        u.created_at
+        u.created_at,
+        u.fecha_nacimiento,
+        u.licencia_tipo,
+        u.licencia_numero,
+        u.licencia_vencimiento,
+        u.direccion,
+        u.contacto_emergencia,
+        u.telefono_emergencia
       FROM usuario u
       JOIN sede s ON u.sede_id = s.id
       JOIN rol r ON u.rol_id = r.id
@@ -153,7 +160,14 @@ export async function actualizarBrigada(req: Request, res: Response) {
       telefono,
       email,
       grupo,
-      rol_brigada
+      rol_brigada,
+      fecha_nacimiento,
+      licencia_tipo,
+      licencia_numero,
+      licencia_vencimiento,
+      direccion,
+      contacto_emergencia,
+      telefono_emergencia
     } = req.body;
 
     const brigada = await db.oneOrNone(`
@@ -185,20 +199,32 @@ export async function actualizarBrigada(req: Request, res: Response) {
 
     const result = await db.one(`
       UPDATE usuario SET
-        nombre_completo = COALESCE($1, nombre_completo),
-        sede_id = COALESCE($2, sede_id),
-        telefono = $3,
-        email = $4,
-
-        grupo = $5,
-        rol_brigada = $6,
-        chapa = COALESCE($7, chapa),
-        username = COALESCE($7, username),
-        custom_fields = COALESCE($9, custom_fields),
-        updated_at = NOW()
+        nombre_completo      = COALESCE($1, nombre_completo),
+        sede_id              = COALESCE($2, sede_id),
+        telefono             = $3,
+        email                = $4,
+        grupo                = $5,
+        rol_brigada          = $6,
+        chapa                = COALESCE($7, chapa),
+        username             = COALESCE($7, username),
+        custom_fields        = COALESCE($9, custom_fields),
+        fecha_nacimiento     = COALESCE($10, fecha_nacimiento),
+        licencia_tipo        = COALESCE($11, licencia_tipo),
+        licencia_numero      = COALESCE($12, licencia_numero),
+        licencia_vencimiento = COALESCE($13, licencia_vencimiento),
+        direccion            = COALESCE($14, direccion),
+        contacto_emergencia  = COALESCE($15, contacto_emergencia),
+        telefono_emergencia  = COALESCE($16, telefono_emergencia),
+        updated_at           = NOW()
       WHERE id = $8
-      RETURNING id, chapa, nombre_completo as nombre, telefono, email, sede_id, grupo, rol_brigada, custom_fields, activo as activa
-    `, [nombre, sede_id, telefonoValue, emailValue, grupo, rol_brigada, chapaValue, id, req.body.custom_fields || null]);
+      RETURNING id, chapa, nombre_completo as nombre, telefono, email, sede_id, grupo, rol_brigada,
+                custom_fields, activo as activa, fecha_nacimiento, licencia_tipo, licencia_numero,
+                licencia_vencimiento, direccion, contacto_emergencia, telefono_emergencia
+    `, [nombre, sede_id, telefonoValue, emailValue, grupo, rol_brigada, chapaValue, id,
+        req.body.custom_fields || null,
+        fecha_nacimiento || null, licencia_tipo || null, licencia_numero || null,
+        licencia_vencimiento || null, direccion || null, contacto_emergencia || null,
+        telefono_emergencia || null]);
 
     return res.json({ message: 'Brigada actualizada exitosamente', brigada: result });
   } catch (error) {
@@ -396,11 +422,6 @@ export async function eliminarBrigada(req: Request, res: Response) {
         error: `No se puede eliminar la brigada porque tiene historial: ${historial.join(', ')}. Use desactivar en su lugar.`
       });
     }
-
-    // Eliminar registros relacionados (los que tienen CASCADE se eliminan automáticamente)
-    // Solo necesitamos eliminar manualmente los que NO tienen CASCADE
-    await db.none('DELETE FROM brigada_unidad WHERE brigada_id = $1', [id]);
-    await db.none('DELETE FROM brigada WHERE usuario_id = $1', [id]);
 
     // Eliminar usuario
     await db.none('DELETE FROM usuario WHERE id = $1', [id]);

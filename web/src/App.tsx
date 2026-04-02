@@ -37,6 +37,7 @@ import Inspecciones360Page from './pages/transportes/Inspecciones360Page';
 import DisponibilidadPage from './pages/transportes/DisponibilidadPage';
 import FlotaAnalyticsPage from './pages/transportes/FlotaAnalyticsPage';
 import COPBitacoraPage from './pages/COPBitacoraPage';
+import COPBitacoraDiaPage from './pages/COPBitacoraDiaPage';
 
 // Crear QueryClient
 const queryClient = new QueryClient({
@@ -394,6 +395,14 @@ function App() {
           />
           <Route
             path="/cop/bitacora"
+            element={
+              <COPRoute>
+                <COPBitacoraDiaPage />
+              </COPRoute>
+            }
+          />
+          <Route
+            path="/cop/bitacora-unidad"
             element={
               <COPRoute>
                 <COPBitacoraPage />

@@ -297,6 +297,16 @@ export async function iniciarSalidaCOP(req: Request, res: Response) {
       emitUnidadCambioEstado(evento);
     }
 
+    // Registrar que fue iniciada por COP
+    await db.none(
+      `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_new, realizado_por)
+       VALUES ($1, 'INICIO_COP', $2, $3, $4)`,
+      [salidaId,
+       'Salida iniciada desde COP (sin dispositivo de brigada)',
+       JSON.stringify({ unidad_id, ruta_inicial_id: ruta_inicial_id || null }),
+       req.user.userId]
+    );
+
     return res.status(201).json({ message: 'Salida iniciada desde COP', salida_id: salidaId, salida });
   } catch (error: any) {
     console.error('Error en iniciarSalidaCOP:', error);
@@ -540,6 +550,14 @@ export async function cambiarRuta(req: Request, res: Response) {
       });
     }
 
+    // Capturar ruta anterior
+    const salidaAntes = await db.oneOrNone(
+      `SELECT su.ruta_inicial_id, r.codigo as ruta_codigo
+       FROM salida_unidad su LEFT JOIN ruta r ON su.ruta_inicial_id = r.id
+       WHERE su.id = $1`,
+      [miSalida.salida_id]
+    );
+
     // Cambiar ruta
     const success = await SalidaModel.cambiarRuta(miSalida.salida_id, nueva_ruta_id);
 
@@ -548,6 +566,18 @@ export async function cambiarRuta(req: Request, res: Response) {
         error: 'No se pudo cambiar la ruta. La salida podría no estar activa.'
       });
     }
+
+    // Obtener nueva ruta para descripción
+    const nuevaRuta = await db.oneOrNone('SELECT codigo FROM ruta WHERE id = $1', [nueva_ruta_id]);
+    await db.none(
+      `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_ant, datos_new, realizado_por)
+       VALUES ($1, 'CAMBIO_RUTA', $2, $3, $4, $5)`,
+      [miSalida.salida_id,
+       `Ruta cambiada: ${salidaAntes?.ruta_codigo ?? 'sin ruta'} → ${nuevaRuta?.codigo ?? nueva_ruta_id}`,
+       JSON.stringify({ ruta_id: salidaAntes?.ruta_inicial_id }),
+       JSON.stringify({ ruta_id: nueva_ruta_id }),
+       req.user.userId]
+    );
 
     // Obtener salida actualizada
     const salidaActualizada = await SalidaModel.getMiSalidaActiva(req.user.userId);
@@ -879,13 +909,40 @@ export async function editarDatosSalida(req: Request, res: Response) {
       UPDATE salida_unidad
       SET ${updates.join(', ')}
       WHERE id = $${paramCount}
-      RETURNING *
     `;
 
-    const { db } = require('../config/database');
-    await db.query(query, values);
+    // Capturar valores anteriores antes de actualizar
+    const salidaAntes = await db.oneOrNone(
+      'SELECT km_inicial, combustible_inicial FROM salida_unidad WHERE id = $1',
+      [miSalida.salida_id]
+    );
 
-    console.log(`✏️ [SALIDA] Datos editados por usuario ${req.user.userId}: km=${km_inicial}, combustible=${combustible_inicial}`);
+    await db.none(query, values);
+
+    // Registrar eventos de auditoría
+    if (km_inicial !== undefined && salidaAntes) {
+      await db.none(
+        `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_ant, datos_new, realizado_por)
+         VALUES ($1, 'EDICION_KM', $2, $3, $4, $5)`,
+        [miSalida.salida_id,
+         `km_inicial editado: ${salidaAntes.km_inicial} → ${km_inicial}`,
+         JSON.stringify({ km_inicial: salidaAntes.km_inicial }),
+         JSON.stringify({ km_inicial }),
+         req.user.userId]
+      );
+    }
+    if ((combustible_inicial !== undefined || combustible_inicial_fraccion !== undefined) && salidaAntes) {
+      const nuevoVal = combustible_inicial_fraccion ?? combustible_inicial;
+      await db.none(
+        `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_ant, datos_new, realizado_por)
+         VALUES ($1, 'EDICION_COMBUSTIBLE', $2, $3, $4, $5)`,
+        [miSalida.salida_id,
+         `combustible_inicial editado: ${salidaAntes.combustible_inicial} → ${nuevoVal}`,
+         JSON.stringify({ combustible_inicial: salidaAntes.combustible_inicial }),
+         JSON.stringify({ combustible_inicial: nuevoVal }),
+         req.user.userId]
+      );
+    }
 
     // Obtener salida actualizada completa
     const salidaActualizada = await SalidaModel.getMiSalidaActiva(req.user.userId);
@@ -896,6 +953,224 @@ export async function editarDatosSalida(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('Error en editarDatosSalida:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+// ========================================
+// BITÁCORA DIARIA
+// ========================================
+
+/**
+ * GET /api/salidas/bitacora-dia?fecha=2026-01-30[&sede_id=X]
+ * Todas las unidades que tuvieron salida ese día, con resumen.
+ * El timeline completo se carga por separado en bitacora-timeline/:salidaId.
+ */
+export async function getBitacoraDia(req: Request, res: Response) {
+  try {
+    const { fecha, sede_id } = req.query;
+
+    if (!fecha) {
+      return res.status(400).json({ error: 'fecha es requerida (YYYY-MM-DD)' });
+    }
+
+    const rows = await db.any(
+      `SELECT
+         s.id              AS salida_id,
+         s.unidad_id,
+         u.codigo          AS unidad_codigo,
+         u.tipo_unidad,
+         u.sede_id,
+         sede.nombre       AS sede_nombre,
+         r.codigo          AS ruta_codigo,
+         r.nombre          AS ruta_nombre,
+         s.fecha_hora_salida,
+         s.fecha_hora_regreso,
+         s.estado,
+         s.km_inicial,
+         s.km_final,
+         s.km_recorridos,
+         s.combustible_inicial,
+         s.combustible_final,
+         s.tripulacion,
+         s.observaciones_salida,
+         s.observaciones_regreso,
+         fin.nombre_completo                       AS finalizado_por_nombre,
+         COUNT(DISTINCT sit.id)::int               AS total_situaciones,
+         COUNT(DISTINCT act.id)::int               AS total_actividades,
+         COUNT(DISTINCT ev.id)::int                AS total_eventos,
+         COALESCE(
+           (SELECT json_agg(json_build_object(
+               'tipo', sit2.tipo_situacion,
+               'tipo_nombre', cts.nombre
+             ) ORDER BY sit2.created_at)
+            FROM situacion sit2
+            LEFT JOIN catalogo_tipo_situacion cts ON sit2.tipo_situacion_id = cts.id
+            WHERE sit2.salida_unidad_id = s.id
+           ), '[]'::json)                          AS situaciones_resumen
+       FROM salida_unidad s
+       JOIN unidad u    ON s.unidad_id = u.id
+       JOIN sede        ON u.sede_id = sede.id
+       LEFT JOIN ruta r ON s.ruta_inicial_id = r.id
+       LEFT JOIN usuario fin ON s.finalizada_por = fin.id
+       LEFT JOIN situacion sit ON sit.salida_unidad_id = s.id
+       LEFT JOIN actividad act ON act.salida_unidad_id = s.id
+       LEFT JOIN salida_evento ev ON ev.salida_id = s.id
+       WHERE DATE(s.fecha_hora_salida AT TIME ZONE 'America/Guatemala') = $1::date
+         AND ($2::integer IS NULL OR u.sede_id = $2)
+       GROUP BY s.id, u.codigo, u.tipo_unidad, u.sede_id, sede.nombre,
+                r.codigo, r.nombre, fin.nombre_completo
+       ORDER BY u.codigo, s.fecha_hora_salida`,
+      [fecha, sede_id ? parseInt(sede_id as string) : null]
+    );
+
+    return res.json({
+      success: true,
+      fecha,
+      total: rows.length,
+      salidas: rows,
+    });
+  } catch (error) {
+    console.error('Error en getBitacoraDia:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+/**
+ * GET /api/salidas/bitacora-timeline/:salidaId
+ * Timeline completo y ordenado de una salida específica.
+ * Incluye: inicio, situaciones (+fotos/videos), actividades, eventos (ediciones/COP/cambios ruta), fin.
+ */
+export async function getBitacoraTimeline(req: Request, res: Response) {
+  try {
+    const salidaId = parseInt(req.params.salidaId, 10);
+    if (isNaN(salidaId)) {
+      return res.status(400).json({ error: 'salidaId inválido' });
+    }
+
+    // Verificar que la salida existe
+    const salida = await db.oneOrNone(
+      `SELECT s.*, u.codigo AS unidad_codigo, u.tipo_unidad,
+              r.codigo AS ruta_codigo, r.nombre AS ruta_nombre,
+              fin.nombre_completo AS finalizado_por_nombre
+       FROM salida_unidad s
+       JOIN unidad u ON s.unidad_id = u.id
+       LEFT JOIN ruta r ON s.ruta_inicial_id = r.id
+       LEFT JOIN usuario fin ON s.finalizada_por = fin.id
+       WHERE s.id = $1`,
+      [salidaId]
+    );
+
+    if (!salida) {
+      return res.status(404).json({ error: 'Salida no encontrada' });
+    }
+
+    // Construir timeline unificado con UNION ALL
+    const eventos = await db.any(
+      `-- SITUACIONES
+       SELECT
+         'SITUACION'          AS tipo,
+         sit.id               AS ref_id,
+         sit.created_at       AS ts,
+         json_build_object(
+           'id',              sit.id,
+           'tipo_macro',      sit.tipo_situacion,
+           'tipo_nombre',     cts.nombre,
+           'km',              sit.km,
+           'sentido',         sit.sentido,
+           'observaciones',   sit.observaciones,
+           'cerrado_at',      sit.fecha_hora_finalizacion,
+           'creado_por_nombre', u.nombre_completo,
+           'fotos', COALESCE(
+             (SELECT json_agg(json_build_object(
+                 'id',        sm.id,
+                 'tipo',      sm.tipo,
+                 'url',       sm.url_original,
+                 'thumbnail', sm.url_thumbnail,
+                 'subido_por', usm.nombre_completo
+               ) ORDER BY sm.orden, sm.created_at)
+              FROM situacion_multimedia sm
+              LEFT JOIN usuario usm ON sm.subido_por = usm.id
+              WHERE sm.situacion_id = sit.id
+             ), '[]'::json)
+         ) AS datos
+       FROM situacion sit
+       LEFT JOIN catalogo_tipo_situacion cts ON sit.tipo_situacion_id = cts.id
+       LEFT JOIN usuario u ON sit.creado_por = u.id
+       WHERE sit.salida_unidad_id = $1
+
+       UNION ALL
+
+       -- ACTIVIDADES
+       SELECT
+         'ACTIVIDAD'          AS tipo,
+         act.id               AS ref_id,
+         act.created_at       AS ts,
+         json_build_object(
+           'id',              act.id,
+           'tipo_nombre',     cts2.nombre,
+           'km',              act.km,
+           'sentido',         act.sentido,
+           'observaciones',   act.observaciones,
+           'estado',          act.estado,
+           'datos',           act.datos,
+           'closed_at',       act.closed_at,
+           'creado_por_nombre', u2.nombre_completo
+         ) AS datos
+       FROM actividad act
+       LEFT JOIN catalogo_tipo_situacion cts2 ON act.tipo_actividad_id = cts2.id
+       LEFT JOIN usuario u2 ON act.creado_por = u2.id
+       WHERE act.salida_unidad_id = $1
+
+       UNION ALL
+
+       -- EVENTOS (ediciones, cambio ruta, inicio COP, etc.)
+       SELECT
+         'EVENTO'             AS tipo,
+         ev.id                AS ref_id,
+         ev.created_at        AS ts,
+         json_build_object(
+           'id',              ev.id,
+           'tipo_evento',     ev.tipo,
+           'descripcion',     ev.descripcion,
+           'datos_ant',       ev.datos_ant,
+           'datos_new',       ev.datos_new,
+           'realizado_por',   uev.nombre_completo
+         ) AS datos
+       FROM salida_evento ev
+       LEFT JOIN usuario uev ON ev.realizado_por = uev.id
+       WHERE ev.salida_id = $1
+
+       ORDER BY ts ASC`,
+      [salidaId]
+    );
+
+    return res.json({
+      success: true,
+      salida: {
+        id: salida.id,
+        unidad_id: salida.unidad_id,
+        unidad_codigo: salida.unidad_codigo,
+        tipo_unidad: salida.tipo_unidad,
+        ruta_codigo: salida.ruta_codigo,
+        ruta_nombre: salida.ruta_nombre,
+        fecha_hora_salida: salida.fecha_hora_salida,
+        fecha_hora_regreso: salida.fecha_hora_regreso,
+        estado: salida.estado,
+        km_inicial: salida.km_inicial,
+        km_final: salida.km_final,
+        km_recorridos: salida.km_recorridos,
+        combustible_inicial: salida.combustible_inicial,
+        combustible_final: salida.combustible_final,
+        tripulacion: salida.tripulacion,
+        observaciones_salida: salida.observaciones_salida,
+        observaciones_regreso: salida.observaciones_regreso,
+        finalizado_por_nombre: salida.finalizado_por_nombre,
+      },
+      timeline: eventos,
+    });
+  } catch (error) {
+    console.error('Error en getBitacoraTimeline:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

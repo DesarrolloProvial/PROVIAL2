@@ -538,6 +538,19 @@ export async function updateSituacion(req: Request, res: Response) {
     const full = await SituacionModel.getById(situacionId);
     if (full) emitSituacionActualizada(full as any);
 
+    // Log en salida_evento para el timeline de bitácora
+    const sitRow = full as any;
+    if (sitRow?.salida_unidad_id) {
+      await db.none(
+        `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_new, realizado_por)
+         VALUES ($1, 'EDICION_SITUACION', $2, $3, $4)`,
+        [sitRow.salida_unidad_id,
+         `Situación #${situacionId} editada`,
+         JSON.stringify({ situacion_id: situacionId }),
+         userId]
+      ).catch(() => {}); // no bloquear si falla el log
+    }
+
     return res.json({ message: 'Actualizado', situacion: full });
 
   } catch (error: any) {
@@ -566,14 +579,18 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
   // 1. Si el mobile envía unidad_id como query param, usar directamente
   let unidadId: number | null = req.query.unidad_id ? Number(req.query.unidad_id) : null;
 
-  // 2. Buscar en brigada_unidad
+  // 2. Buscar en turno activo de hoy
   if (!unidadId) {
     try {
-      const bu = await db.oneOrNone(
-        'SELECT unidad_id FROM brigada_unidad WHERE brigada_id = $1 AND activo = true ORDER BY created_at DESC LIMIT 1',
+      const tt = await db.oneOrNone(
+        `SELECT au.unidad_id FROM tripulacion_turno tt
+         JOIN asignacion_unidad au ON tt.asignacion_id = au.id
+         JOIN turno t ON au.turno_id = t.id
+         WHERE tt.usuario_id = $1 AND t.fecha = CURRENT_DATE
+         ORDER BY tt.created_at DESC LIMIT 1`,
         [userId]
       );
-      if (bu) unidadId = bu.unidad_id;
+      if (tt) unidadId = tt.unidad_id;
     } catch (e) { }
   }
 
@@ -748,6 +765,19 @@ export async function cerrarSituacion(req: Request, res: Response) {
 
     const situacion = await SituacionModel.cerrar(parseInt(id), userId, observaciones);
     emitSituacionCerrada(situacion as any);
+
+    // Log en salida_evento para el timeline de bitácora
+    const sit = situacion as any;
+    if (sit?.salida_unidad_id) {
+      await db.none(
+        `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_new, realizado_por)
+         VALUES ($1, 'CIERRE_SITUACION', $2, $3, $4)`,
+        [sit.salida_unidad_id,
+         `Situación #${id} cerrada`,
+         JSON.stringify({ situacion_id: parseInt(id), observaciones: observaciones || null }),
+         userId]
+      ).catch(() => {});
+    }
 
     return res.json({ message: 'Situación cerrada', situacion });
   } catch (error: any) {

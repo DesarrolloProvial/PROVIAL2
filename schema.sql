@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict qhoa7PiQaufsOvauiT8SwwsiG5VGqDGFRuBFwDGMBTZoLTVQUzYqYmxkMJ6PrsB
+\restrict dPRQfgClumlSgqgfpATmWEcqAia3lrqjnMiiwh8q1ncdDX4gHumaTaNjk3wPIPj
 
 -- Dumped from database version 17.7 (Debian 17.7-3.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -272,33 +272,17 @@ CREATE FUNCTION public.aprobar_inspeccion_360(p_inspeccion_id integer, p_aprobad
 DECLARE
     v_inspeccion RECORD;
     v_es_comandante BOOLEAN;
-    v_salida_id INT;
 BEGIN
-    -- Obtener datos de la inspección
-    SELECT i.*, s.unidad_id
-    INTO v_inspeccion
-    FROM inspeccion_360 i
-    LEFT JOIN salida_unidad s ON i.salida_id = s.id
-    WHERE i.id = p_inspeccion_id;
-
-    IF v_inspeccion IS NULL THEN
-        RETURN QUERY SELECT FALSE, 'Inspección no encontrada'::TEXT;
-        RETURN;
+    SELECT * INTO v_inspeccion FROM inspeccion_360 WHERE id = p_inspeccion_id;
+    IF NOT FOUND THEN
+        RETURN QUERY SELECT FALSE, 'Inspección no encontrada'::TEXT; RETURN;
     END IF;
-
     IF v_inspeccion.estado != 'PENDIENTE' THEN
-        RETURN QUERY SELECT FALSE, ('La inspección ya fue ' || v_inspeccion.estado)::TEXT;
-        RETURN;
+        RETURN QUERY SELECT FALSE, ('La inspección ya fue ' || v_inspeccion.estado)::TEXT; RETURN;
     END IF;
 
-    -- Verificar que el aprobador sea comandante de la unidad
+    -- Verificar que el aprobador sea comandante por turno activo
     SELECT EXISTS (
-        SELECT 1 FROM brigada_unidad bu
-        WHERE bu.brigada_id = p_aprobador_id
-          AND bu.unidad_id = v_inspeccion.unidad_id
-          AND bu.activo = TRUE
-          AND bu.es_comandante = TRUE
-        UNION
         SELECT 1 FROM tripulacion_turno tt
         JOIN asignacion_unidad au ON tt.asignacion_id = au.id
         WHERE tt.usuario_id = p_aprobador_id
@@ -306,26 +290,26 @@ BEGIN
           AND tt.es_comandante = TRUE
     ) INTO v_es_comandante;
 
+    -- Admin/COP puede aprobar sin ser comandante
     IF NOT v_es_comandante THEN
-        RETURN QUERY SELECT FALSE, 'Solo el comandante de la unidad puede aprobar la inspección'::TEXT;
-        RETURN;
+        SELECT EXISTS (
+            SELECT 1 FROM usuario u JOIN rol r ON u.rol_id = r.id
+            WHERE u.id = p_aprobador_id AND r.nombre IN ('ADMIN','COP','OPERACIONES')
+        ) INTO v_es_comandante;
     END IF;
 
-    -- Aprobar la inspección
-    UPDATE inspeccion_360
-    SET estado = 'APROBADA',
+    IF NOT v_es_comandante THEN
+        RETURN QUERY SELECT FALSE, 'No tiene permiso para aprobar esta inspección'::TEXT; RETURN;
+    END IF;
+
+    UPDATE inspeccion_360 SET
+        estado = 'APROBADA',
         aprobado_por = p_aprobador_id,
+        firma_aprobador = p_firma,
+        observaciones_comandante = p_observaciones,
         fecha_aprobacion = NOW(),
-        firma_comandante = COALESCE(p_firma, firma_comandante),
-        observaciones_comandante = COALESCE(p_observaciones, observaciones_comandante)
+        updated_at = NOW()
     WHERE id = p_inspeccion_id;
-
-    -- Actualizar la salida con la referencia a la inspección
-    IF v_inspeccion.salida_id IS NOT NULL THEN
-        UPDATE salida_unidad
-        SET inspeccion_360_id = p_inspeccion_id
-        WHERE id = v_inspeccion.salida_id;
-    END IF;
 
     RETURN QUERY SELECT TRUE, 'Inspección aprobada exitosamente'::TEXT;
 END;
@@ -1318,40 +1302,6 @@ $$;
 
 
 --
--- Name: fn_brigada_to_usuario(integer); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.fn_brigada_to_usuario(p_brigada_id integer) RETURNS integer
-    LANGUAGE plpgsql STABLE
-    AS $$
-DECLARE
-    v_usuario_id INT;
-BEGIN
-    -- Primero buscar en la relaciÃ³n directa
-    SELECT usuario_id INTO v_usuario_id FROM brigada WHERE id = p_brigada_id;
-    
-    -- Si no hay relaciÃ³n directa, buscar por chapa
-    IF v_usuario_id IS NULL THEN
-        SELECT u.id INTO v_usuario_id 
-        FROM brigada b
-        JOIN usuario u ON u.chapa = b.codigo
-        WHERE b.id = p_brigada_id
-        LIMIT 1;
-    END IF;
-    
-    RETURN v_usuario_id;
-END;
-$$;
-
-
---
--- Name: FUNCTION fn_brigada_to_usuario(p_brigada_id integer); Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON FUNCTION public.fn_brigada_to_usuario(p_brigada_id integer) IS 'Convierte brigada_id a usuario_id. Para migraciÃ³n gradual de FKs.';
-
-
---
 -- Name: fn_generar_descripcion_obstruccion(boolean, character varying, jsonb, jsonb, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2087,87 +2037,39 @@ DECLARE
     v_tripulacion JSONB;
     v_salida_existente INT;
 BEGIN
-    -- Verificar que no haya salida activa
-    SELECT id INTO v_salida_existente
-    FROM salida_unidad
-    WHERE unidad_id = p_unidad_id
-      AND estado = 'EN_SALIDA';
+    SELECT id INTO v_salida_existente FROM salida_unidad
+    WHERE unidad_id = p_unidad_id AND estado = 'EN_SALIDA';
 
     IF v_salida_existente IS NOT NULL THEN
         RAISE EXCEPTION 'La unidad ya tiene una salida activa (ID: %)', v_salida_existente;
     END IF;
 
-    -- Obtener tripulación de asignaciones permanentes
+    -- Obtener tripulación del turno activo
     SELECT json_agg(
         json_build_object(
             'brigada_id', u.id,
             'chapa', u.chapa,
             'nombre', u.nombre_completo,
-            'rol', bu.rol_tripulacion
+            'rol', tt.rol_tripulacion
         )
-        ORDER BY
-            CASE bu.rol_tripulacion
-                WHEN 'PILOTO' THEN 1
-                WHEN 'COPILOTO' THEN 2
-                WHEN 'ACOMPAÑANTE' THEN 3
-            END
+        ORDER BY CASE tt.rol_tripulacion
+            WHEN 'PILOTO' THEN 1 WHEN 'COPILOTO' THEN 2 WHEN 'ACOMPAÑANTE' THEN 3 ELSE 4
+        END
     )
     INTO v_tripulacion
-    FROM brigada_unidad bu
-    JOIN usuario u ON bu.brigada_id = u.id
-    WHERE bu.unidad_id = p_unidad_id
-      AND bu.activo = TRUE;
+    FROM tripulacion_turno tt
+    JOIN asignacion_unidad au ON tt.asignacion_id = au.id
+    JOIN turno t ON au.turno_id = t.id
+    JOIN usuario u ON tt.usuario_id = u.id
+    WHERE au.unidad_id = p_unidad_id
+      AND t.fecha = CURRENT_DATE
+      AND t.estado IN ('ACTIVO', 'PLANIFICADO');
 
-    -- Si no hay tripulación permanente, buscar en turnos
-    IF v_tripulacion IS NULL THEN
-        SELECT json_agg(
-            json_build_object(
-                'brigada_id', u.id,
-                'chapa', u.chapa,
-                'nombre', u.nombre_completo,
-                'rol', tt.rol_tripulacion
-            )
-            ORDER BY
-                CASE tt.rol_tripulacion
-                    WHEN 'PILOTO' THEN 1
-                    WHEN 'COPILOTO' THEN 2
-                    WHEN 'ACOMPAÑANTE' THEN 3
-                END
-        )
-        INTO v_tripulacion
-        FROM tripulacion_turno tt
-        JOIN asignacion_unidad au ON tt.asignacion_id = au.id
-        JOIN turno t ON au.turno_id = t.id
-        JOIN usuario u ON tt.usuario_id = u.id
-        WHERE au.unidad_id = p_unidad_id
-          AND (
-            t.fecha = CURRENT_DATE
-            OR t.fecha = CURRENT_DATE + INTERVAL '1 day'
-            OR (t.fecha <= CURRENT_DATE AND COALESCE(t.fecha_fin, t.fecha) >= CURRENT_DATE)
-            OR (t.estado IN ('ACTIVO', 'PLANIFICADO') AND t.fecha >= CURRENT_DATE - INTERVAL '1 day')
-          );
-    END IF;
-
-    -- Crear salida
-    INSERT INTO salida_unidad (
-        unidad_id,
-        ruta_inicial_id,
-        km_inicial,
-        combustible_inicial,
-        tripulacion,
-        observaciones_salida,
-        estado
-    )
-    VALUES (
-        p_unidad_id,
-        p_ruta_inicial_id,
-        p_km_inicial,
-        p_combustible_inicial,
-        v_tripulacion,
-        p_observaciones,
-        'EN_SALIDA'
-    )
+    INSERT INTO salida_unidad (unidad_id, ruta_inicial_id, km_inicial, combustible_inicial, observaciones_inicio, tripulacion)
+    VALUES (p_unidad_id, p_ruta_inicial_id, p_km_inicial, p_combustible_inicial, p_observaciones, v_tripulacion)
     RETURNING id INTO v_salida_id;
+
+    UPDATE unidad SET ultima_salida = NOW() WHERE id = p_unidad_id;
 
     RETURN v_salida_id;
 END;
@@ -2240,25 +2142,6 @@ CREATE FUNCTION public.obtener_comandante_unidad(p_unidad_id integer) RETURNS TA
     LANGUAGE plpgsql
     AS $$
 BEGIN
-    -- Primero buscar en asignaciones permanentes
-    RETURN QUERY
-    SELECT
-        u.id,
-        u.nombre_completo,
-        u.chapa,
-        'PERMANENTE'::VARCHAR
-    FROM brigada_unidad bu
-    JOIN usuario u ON bu.brigada_id = u.id
-    WHERE bu.unidad_id = p_unidad_id
-      AND bu.activo = TRUE
-      AND bu.es_comandante = TRUE
-    LIMIT 1;
-
-    IF FOUND THEN
-        RETURN;
-    END IF;
-
-    -- Si no hay permanente, buscar en turnos activos
     RETURN QUERY
     SELECT
         u.id,
@@ -4809,57 +4692,6 @@ CREATE TABLE public.boleta_secuencia (
 --
 
 COMMENT ON TABLE public.boleta_secuencia IS 'Secuencias atÃ³micas para generaciÃ³n de boletas. Previene colisiones en concurrencia.';
-
-
---
--- Name: brigada; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.brigada (
-    id integer NOT NULL,
-    codigo character varying(20) NOT NULL,
-    nombre character varying(100) NOT NULL,
-    sede_id integer NOT NULL,
-    activa boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    fecha_nacimiento date,
-    licencia_tipo character varying(5),
-    licencia_numero character varying(30),
-    licencia_vencimiento date,
-    telefono character varying(20),
-    email character varying(100),
-    direccion text,
-    contacto_emergencia character varying(150),
-    telefono_emergencia character varying(20),
-    usuario_id integer
-);
-
-
---
--- Name: TABLE brigada; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON TABLE public.brigada IS 'Brigadas de trabajo';
-
-
---
--- Name: brigada_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.brigada_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: brigada_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.brigada_id_seq OWNED BY public.brigada.id;
 
 
 --
@@ -7524,6 +7356,42 @@ ALTER SEQUENCE public.ruta_id_seq OWNED BY public.ruta.id;
 
 
 --
+-- Name: salida_evento; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.salida_evento (
+    id integer NOT NULL,
+    salida_id integer NOT NULL,
+    tipo character varying(50) NOT NULL,
+    descripcion text NOT NULL,
+    datos_ant jsonb,
+    datos_new jsonb,
+    realizado_por integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: salida_evento_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.salida_evento_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: salida_evento_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.salida_evento_id_seq OWNED BY public.salida_evento.id;
+
+
+--
 -- Name: salida_unidad; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -9016,6 +8884,13 @@ CREATE TABLE public.usuario (
     password_reset_enabled_at timestamp without time zone,
     custom_fields jsonb DEFAULT '{}'::jsonb,
     reset_password_enabled boolean DEFAULT false NOT NULL,
+    fecha_nacimiento date,
+    licencia_tipo character varying(5),
+    licencia_numero character varying(30),
+    licencia_vencimiento date,
+    direccion text,
+    contacto_emergencia character varying(150),
+    telefono_emergencia character varying(20),
     CONSTRAINT usuario_grupo_check CHECK (((grupo IS NULL) OR (grupo = ANY (ARRAY[0, 1, 2])))),
     CONSTRAINT usuario_rol_brigada_check CHECK (((rol_brigada)::text = ANY (ARRAY[('PILOTO'::character varying)::text, ('COPILOTO'::character varying)::text, ('ACOMPA??ANTE'::character varying)::text])))
 );
@@ -9262,14 +9137,14 @@ CREATE VIEW public.v_alertas_activas AS
     s.nombre AS sede_nombre,
     u.codigo AS unidad_codigo,
     u.tipo_unidad,
-    b.nombre AS brigada_nombre,
-    b.codigo AS brigada_chapa,
+    b.nombre_completo AS brigada_nombre,
+    b.chapa AS brigada_chapa,
     aten.nombre_completo AS atendida_por_nombre,
     (EXTRACT(epoch FROM (CURRENT_TIMESTAMP - (a.created_at)::timestamp with time zone)) / (60)::numeric) AS minutos_activa
    FROM ((((public.alerta a
      LEFT JOIN public.sede s ON ((a.sede_id = s.id)))
      LEFT JOIN public.unidad u ON ((a.unidad_id = u.id)))
-     LEFT JOIN public.brigada b ON ((a.brigada_id = b.id)))
+     LEFT JOIN public.usuario b ON ((a.brigada_id = b.id)))
      LEFT JOIN public.usuario aten ON ((a.atendida_por = aten.id)))
   WHERE ((a.estado = 'ACTIVA'::public.estado_alerta) AND ((a.fecha_expiracion IS NULL) OR (a.fecha_expiracion > CURRENT_TIMESTAMP)))
   ORDER BY
@@ -9485,34 +9360,36 @@ CREATE VIEW public.v_bitacora_historica_detalle AS
 --
 
 CREATE VIEW public.v_brigada AS
- SELECT b.id,
-    b.usuario_id,
-    COALESCE(u.nombre_completo, b.nombre) AS nombre,
-    COALESCE(u.chapa, b.codigo) AS codigo,
-    COALESCE(u.telefono, b.telefono) AS telefono,
-    COALESCE(u.email, b.email) AS email,
-    COALESCE(u.sede_id, b.sede_id) AS sede_id,
-    COALESCE(u.activo, b.activa) AS activo,
-    u.id AS usuario_id_real,
+ SELECT u.id,
+    u.id AS usuario_id,
+    u.nombre_completo AS nombre,
+    u.chapa AS codigo,
+    u.telefono,
+    u.email,
+    u.sede_id,
+    u.activo,
     u.username,
     u.rol_id,
     u.grupo,
     u.rol_brigada,
     u.genero,
-    (b.usuario_id IS NOT NULL) AS tiene_usuario_vinculado,
-        CASE
-            WHEN ((b.usuario_id IS NOT NULL) AND (b.nombre IS NOT NULL) AND (u.nombre_completo IS NOT NULL) AND ((b.nombre)::text <> (u.nombre_completo)::text)) THEN true
-            ELSE false
-        END AS tiene_inconsistencia
-   FROM (public.brigada b
-     LEFT JOIN public.usuario u ON ((b.usuario_id = u.id)));
+    u.fecha_nacimiento,
+    u.licencia_tipo,
+    u.licencia_numero,
+    u.licencia_vencimiento,
+    u.direccion,
+    u.contacto_emergencia,
+    u.telefono_emergencia
+   FROM (public.usuario u
+     JOIN public.rol r ON ((u.rol_id = r.id)))
+  WHERE ((r.nombre)::text = 'BRIGADA'::text);
 
 
 --
 -- Name: VIEW v_brigada; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON VIEW public.v_brigada IS 'Vista de compatibilidad brigadaâ†’usuario. Usar esta en lugar de tabla brigada directa.';
+COMMENT ON VIEW public.v_brigada IS 'Vista de brigadas (usuarios con rol BRIGADA). Reemplaza la tabla brigada eliminada.';
 
 
 --
@@ -10037,11 +9914,11 @@ CREATE VIEW public.v_mis_alertas_no_leidas AS
     a.updated_at,
     s.nombre AS sede_nombre,
     u.codigo AS unidad_codigo,
-    b.nombre AS brigada_nombre
+    b.nombre_completo AS brigada_nombre
    FROM (((public.alerta a
      LEFT JOIN public.sede s ON ((a.sede_id = s.id)))
      LEFT JOIN public.unidad u ON ((a.unidad_id = u.id)))
-     LEFT JOIN public.brigada b ON ((a.brigada_id = b.id)))
+     LEFT JOIN public.usuario b ON ((a.brigada_id = b.id)))
   WHERE ((a.estado = 'ACTIVA'::public.estado_alerta) AND ((a.fecha_expiracion IS NULL) OR (a.fecha_expiracion > CURRENT_TIMESTAMP)));
 
 
@@ -10687,13 +10564,6 @@ ALTER TABLE ONLY public.bitacora_historica ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
--- Name: brigada id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.brigada ALTER COLUMN id SET DEFAULT nextval('public.brigada_id_seq'::regclass);
-
-
---
 -- Name: bus id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -11055,6 +10925,13 @@ ALTER TABLE ONLY public.rol ALTER COLUMN id SET DEFAULT nextval('public.rol_id_s
 --
 
 ALTER TABLE ONLY public.ruta ALTER COLUMN id SET DEFAULT nextval('public.ruta_id_seq'::regclass);
+
+
+--
+-- Name: salida_evento id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.salida_evento ALTER COLUMN id SET DEFAULT nextval('public.salida_evento_id_seq'::regclass);
 
 
 --
@@ -11452,30 +11329,6 @@ ALTER TABLE ONLY public.bitacora_historica_2026
 
 ALTER TABLE ONLY public.boleta_secuencia
     ADD CONSTRAINT boleta_secuencia_pkey PRIMARY KEY (sede_id, anio);
-
-
---
--- Name: brigada brigada_codigo_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.brigada
-    ADD CONSTRAINT brigada_codigo_key UNIQUE (codigo);
-
-
---
--- Name: brigada brigada_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.brigada
-    ADD CONSTRAINT brigada_pkey PRIMARY KEY (id);
-
-
---
--- Name: brigada brigada_usuario_id_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.brigada
-    ADD CONSTRAINT brigada_usuario_id_key UNIQUE (usuario_id);
 
 
 --
@@ -12116,6 +11969,14 @@ ALTER TABLE ONLY public.ruta
 
 ALTER TABLE ONLY public.ruta
     ADD CONSTRAINT ruta_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: salida_evento salida_evento_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.salida_evento
+    ADD CONSTRAINT salida_evento_pkey PRIMARY KEY (id);
 
 
 --
@@ -12875,27 +12736,6 @@ CREATE INDEX idx_autoridad_tipo ON public.autoridad USING btree (tipo);
 --
 
 CREATE INDEX idx_aviso_asignacion ON public.aviso_asignacion USING btree (asignacion_id);
-
-
---
--- Name: idx_brigada_activa; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_brigada_activa ON public.brigada USING btree (activa);
-
-
---
--- Name: idx_brigada_codigo; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_brigada_codigo ON public.brigada USING btree (codigo);
-
-
---
--- Name: idx_brigada_sede; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_brigada_sede ON public.brigada USING btree (sede_id);
 
 
 --
@@ -13694,6 +13534,20 @@ CREATE UNIQUE INDEX idx_salida_activa_por_unidad ON public.salida_unidad USING b
 --
 
 COMMENT ON INDEX public.idx_salida_activa_por_unidad IS 'Garantiza que una unidad solo tenga una salida activa a la vez';
+
+
+--
+-- Name: idx_salida_evento_salida; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_salida_evento_salida ON public.salida_evento USING btree (salida_id);
+
+
+--
+-- Name: idx_salida_evento_ts; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_salida_evento_ts ON public.salida_evento USING btree (created_at);
 
 
 --
@@ -14975,7 +14829,7 @@ ALTER TABLE ONLY public.alerta
 --
 
 ALTER TABLE ONLY public.alerta
-    ADD CONSTRAINT alerta_brigada_id_fkey FOREIGN KEY (brigada_id) REFERENCES public.brigada(id);
+    ADD CONSTRAINT alerta_brigada_id_fkey FOREIGN KEY (brigada_id) REFERENCES public.usuario(id);
 
 
 --
@@ -15176,22 +15030,6 @@ ALTER TABLE public.bitacora_historica
 
 ALTER TABLE ONLY public.boleta_secuencia
     ADD CONSTRAINT boleta_secuencia_sede_id_fkey FOREIGN KEY (sede_id) REFERENCES public.sede(id) ON DELETE RESTRICT;
-
-
---
--- Name: brigada brigada_sede_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.brigada
-    ADD CONSTRAINT brigada_sede_id_fkey FOREIGN KEY (sede_id) REFERENCES public.sede(id) ON DELETE RESTRICT;
-
-
---
--- Name: brigada brigada_usuario_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.brigada
-    ADD CONSTRAINT brigada_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuario(id) ON DELETE SET NULL;
 
 
 --
@@ -15867,6 +15705,22 @@ ALTER TABLE ONLY public.rol_permiso
 
 
 --
+-- Name: salida_evento salida_evento_realizado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.salida_evento
+    ADD CONSTRAINT salida_evento_realizado_por_fkey FOREIGN KEY (realizado_por) REFERENCES public.usuario(id);
+
+
+--
+-- Name: salida_evento salida_evento_salida_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.salida_evento
+    ADD CONSTRAINT salida_evento_salida_id_fkey FOREIGN KEY (salida_id) REFERENCES public.salida_unidad(id) ON DELETE CASCADE;
+
+
+--
 -- Name: salida_unidad salida_unidad_finalizada_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16502,5 +16356,5 @@ ALTER TABLE ONLY public.vehiculo
 -- PostgreSQL database dump complete
 --
 
-\unrestrict qhoa7PiQaufsOvauiT8SwwsiG5VGqDGFRuBFwDGMBTZoLTVQUzYqYmxkMJ6PrsB
+\unrestrict dPRQfgClumlSgqgfpATmWEcqAia3lrqjnMiiwh8q1ncdDX4gHumaTaNjk3wPIPj
 

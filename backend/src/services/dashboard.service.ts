@@ -18,9 +18,9 @@ export const DashboardService = {
 
     const result = await db.one(
       `SELECT
-         (SELECT COUNT(*) FROM brigada b
-          WHERE b.activa = TRUE
-          ${sedeId ? 'AND b.sede_id = $1' : ''}) AS brigadas_activas,
+         (SELECT COUNT(*) FROM usuario u JOIN rol r ON u.rol_id = r.id
+          WHERE r.nombre = 'BRIGADA' AND u.activo = TRUE
+          ${sedeId ? 'AND u.sede_id = $1' : ''}) AS brigadas_activas,
          (SELECT COUNT(*) FROM unidad u
           WHERE u.activa = TRUE
           ${sedeId ? 'AND u.sede_id = $1' : ''}) AS unidades_activas,
@@ -134,29 +134,31 @@ export const DashboardService = {
     km_recorridos: number;
     horas_servicio: number;
   }[]> {
-    const sedeCondition = sedeId ? 'WHERE b.sede_id = $3' : '';
+    const sedeCondition = sedeId ? 'AND b.sede_id = $3' : '';
     const params = sedeId ? [dias, limit, sedeId] : [dias, limit];
 
     const result = await db.any(
       `SELECT
          b.id AS brigada_id,
-         b.nombre AS nombre,
-         b.codigo AS chapa,
+         b.nombre_completo AS nombre,
+         b.chapa AS chapa,
          COUNT(DISTINCT sit.id) AS situaciones_atendidas,
          COALESCE(SUM(su.km_final - su.km_inicial), 0)::INTEGER AS km_recorridos,
          COALESCE(
            EXTRACT(EPOCH FROM SUM(su.fecha_hora_regreso - su.fecha_hora_salida)) / 3600,
            0
          )::INTEGER AS horas_servicio
-       FROM brigada b
+       FROM usuario b
+       JOIN rol r ON b.rol_id = r.id
        LEFT JOIN tripulacion_turno tt ON b.id = tt.usuario_id
        LEFT JOIN asignacion_unidad au ON tt.asignacion_id = au.id
        LEFT JOIN salida_unidad su ON au.unidad_id = su.unidad_id
          AND su.fecha_hora_salida >= CURRENT_DATE - INTERVAL '$1 days'
        LEFT JOIN situacion sit ON au.unidad_id = sit.unidad_id
          AND sit.created_at >= CURRENT_DATE - INTERVAL '$1 days'
+       WHERE r.nombre = 'BRIGADA' AND b.activo = TRUE
        ${sedeCondition}
-       GROUP BY b.id, b.nombre, b.codigo
+       GROUP BY b.id, b.nombre_completo, b.chapa
        ORDER BY situaciones_atendidas DESC
        LIMIT $2`,
       params

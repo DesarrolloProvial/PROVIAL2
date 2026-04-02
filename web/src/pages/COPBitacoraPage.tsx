@@ -120,7 +120,7 @@ export default function COPBitacoraPage() {
   const { data: unidades = [], isLoading: loadingUnidades } = useQuery<Unidad[]>({
     queryKey: ['cop-bitacora-unidades'],
     queryFn: async () => {
-      const res = await api.get('/unidades');
+      const res = await api.get('/unidades/activas');
       return res.data?.unidades ?? res.data ?? [];
     },
   });

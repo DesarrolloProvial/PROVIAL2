@@ -13,6 +13,8 @@ import {
   getUnidadesEnSalida,
   getHistorialSalidas,
   getBitacoraUnidad,
+  getBitacoraDia,
+  getBitacoraTimeline,
   editarDatosSalida,
   // Relevos
   registrarRelevo,
@@ -64,6 +66,12 @@ router.get('/historial/:unidadId', authenticate, getHistorialSalidas);
 
 // Bitácora completa por unidad (salidas + situaciones + actividades + tripulación)
 router.get('/bitacora/:unidadId', authenticate, authorize('COP', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN'), getBitacoraUnidad);
+
+// Bitácora diaria — todas las unidades que salieron en una fecha (?fecha=YYYY-MM-DD&sede_id=X)
+router.get('/bitacora-dia', authenticate, authorize('COP', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN', 'ENCARGADO_NOMINAS'), getBitacoraDia);
+
+// Timeline completo de una salida específica
+router.get('/bitacora-timeline/:salidaId', authenticate, authorize('COP', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN', 'ENCARGADO_NOMINAS'), getBitacoraTimeline);
 
 // ========================================
 // RELEVOS
