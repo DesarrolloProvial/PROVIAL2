@@ -51,15 +51,15 @@ export default function RecursosSection({
       {showGruas && (
         <div>
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-sm font-semibold text-amber-700">Gruas ({gruas.length})</h3>
+            <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-400">Gruas ({gruas.length})</h3>
             <button type="button" onClick={() => onGruasChange([...gruas, emptyGrua()])}
               className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1">
               <Plus className="w-3 h-3" /> Agregar
             </button>
           </div>
           {gruas.length === 0 ? (
-            <div className="text-center py-4 bg-amber-50 rounded-lg border border-dashed border-amber-300">
-              <p className="text-amber-600 text-xs">Sin gruas</p>
+            <div className="text-center py-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-dashed border-amber-300 dark:border-amber-700">
+              <p className="text-amber-600 dark:text-amber-400 text-xs">Sin gruas</p>
             </div>
           ) : gruas.map((grua, i) => (
             <GruaFormWeb key={i} index={i} grua={grua}
@@ -73,15 +73,15 @@ export default function RecursosSection({
       {showAjustadores && (
         <div>
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-sm font-semibold text-green-700">Ajustadores ({ajustadores.length})</h3>
+            <h3 className="text-sm font-semibold text-green-700 dark:text-green-400">Ajustadores ({ajustadores.length})</h3>
             <button type="button" onClick={() => onAjustadoresChange([...ajustadores, emptyAjustador()])}
               className="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1">
               <Plus className="w-3 h-3" /> Agregar
             </button>
           </div>
           {ajustadores.length === 0 ? (
-            <div className="text-center py-4 bg-green-50 rounded-lg border border-dashed border-green-300">
-              <p className="text-green-600 text-xs">Sin ajustadores</p>
+            <div className="text-center py-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-dashed border-green-300 dark:border-green-700">
+              <p className="text-green-600 dark:text-green-400 text-xs">Sin ajustadores</p>
             </div>
           ) : ajustadores.map((aj, i) => (
             <AjustadorFormWeb key={i} index={i} ajustador={aj}
@@ -93,7 +93,7 @@ export default function RecursosSection({
 
       {/* Autoridades y Socorro */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Autoridades y Socorro</h3>
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Autoridades y Socorro</h3>
         <AutoridadSocorroWeb tipo="autoridad"
           seleccionados={autoridadesSeleccionadas} detalles={detallesAutoridades}
           onSelectionChange={onAutoridadesChange} onDetallesChange={onDetallesAutoridadesChange} />
