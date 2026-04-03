@@ -282,13 +282,11 @@ export async function iniciarSalidaCOP(req: Request, res: Response) {
       observaciones_salida,
     });
 
-    // Guardar tripulación y marcar origen según el tipo de inicio COP
-    const esEmergencia = Array.isArray(tripulacion) && tripulacion.length > 0;
-    const origenValor = esEmergencia ? 'COP_EMERGENCIA' : 'COP';
-
+    // Guardar tripulación y marcar origen COP_EMERGENCIA
+    const tieneTripulacion = Array.isArray(tripulacion) && tripulacion.length > 0;
     await db.none(
-      `UPDATE salida_unidad SET origen = $1, tripulacion = $2 WHERE id = $3`,
-      [origenValor, esEmergencia ? JSON.stringify(tripulacion) : null, salidaId]
+      `UPDATE salida_unidad SET origen = 'COP_EMERGENCIA', tripulacion = $1 WHERE id = $2`,
+      [tieneTripulacion ? JSON.stringify(tripulacion) : null, salidaId]
     );
 
     const salida = await SalidaModel.getSalidaById(salidaId);
@@ -311,9 +309,9 @@ export async function iniciarSalidaCOP(req: Request, res: Response) {
       `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_new, realizado_por)
        VALUES ($1, 'INICIO_COP', $2, $3, $4)`,
       [salidaId,
-       esEmergencia
-         ? `Salida de emergencia iniciada desde COP con ${tripulacion.length} integrante(s)`
-         : 'Salida iniciada desde COP (sin dispositivo de brigada)',
+       tieneTripulacion
+         ? `Salida iniciada desde COP con ${tripulacion.length} integrante(s)`
+         : 'Salida iniciada desde COP',
        JSON.stringify({ unidad_id, ruta_inicial_id: ruta_inicial_id || null, tripulacion: tripulacion || null }),
        req.user.userId]
     );
