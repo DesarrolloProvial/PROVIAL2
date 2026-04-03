@@ -1,7 +1,44 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
-import { X, Save, AlertTriangle, UserPlus, Trash2 } from 'lucide-react';
+import { X, Save, AlertTriangle, UserPlus, Trash2, Search } from 'lucide-react';
+
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreated: () => void;
+}
+
+interface Brigada {
+  id: number;
+  nombre: string;
+  chapa: string;
+  sede_id: number;
+  sede_nombre: string;
+}
+
+interface Unidad {
+  id: number;
+  codigo: string;
+  tipo_unidad: string;
+  sede_id: number;
+  sede_nombre: string;
+  disponible_transportes: boolean;
+  instrucciones_transportes?: string;
+}
+
+interface Ruta {
+  id: number;
+  codigo: string;
+  nombre: string;
+}
+
+interface MiembroSeleccionado {
+  usuario_id: number;
+  nombre: string;
+  chapa: string;
+  rol_en_salida: 'PILOTO' | 'COPILOTO' | 'ACOMPAÑANTE';
+}
 
 const NIVELES_COMBUSTIBLE = [
   { value: 'RESERVA', label: '0',     sub: 'Reserva' },
@@ -37,42 +74,95 @@ function FuelLevelPicker({ value, onChange }: { value: string; onChange: (v: str
   );
 }
 
-interface Props {
-  isOpen: boolean;
-  onClose: () => void;
-  onCreated: () => void;
-}
+// Dropdown con búsqueda reutilizable
+function SearchSelect({
+  placeholder,
+  value,
+  onChange,
+  options,
+  renderOption,
+  renderSelected,
+  disabled,
+}: {
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { id: number; searchText: string; label: React.ReactNode; badge?: React.ReactNode }[];
+  renderOption?: (o: any) => React.ReactNode;
+  renderSelected?: (id: string) => React.ReactNode;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
 
-interface Brigada {
-  id: number;
-  nombre: string;
-  chapa: string;
-  sede_id: number;
-  sede_nombre: string;
-  rol_brigada?: string;
-}
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
-interface Unidad {
-  id: number;
-  codigo: string;
-  tipo_unidad: string;
-  sede_id: number;
-  sede_nombre: string;
-  disponible_transportes: boolean;
-  instrucciones_transportes?: string;
-}
+  const filtered = q
+    ? options.filter(o => o.searchText.toLowerCase().includes(q.toLowerCase()))
+    : options;
 
-interface Ruta {
-  id: number;
-  codigo: string;
-  nombre: string;
-}
+  const selected = value ? options.find(o => String(o.id) === value) : null;
 
-interface MiembroSeleccionado {
-  usuario_id: number;
-  nombre: string;
-  chapa: string;
-  rol_en_salida: 'PILOTO' | 'COPILOTO' | 'AUXILIAR';
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => { setOpen(o => !o); setQ(''); }}
+        className="w-full flex items-center justify-between border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-left disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-500"
+      >
+        <span className={selected ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}>
+          {selected ? (renderSelected ? renderSelected(value) : selected.searchText) : placeholder}
+        </span>
+        {value && (
+          <X className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 flex-shrink-0"
+            onClick={e => { e.stopPropagation(); onChange(''); setOpen(false); }}
+          />
+        )}
+      </button>
+      {open && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-56 flex flex-col">
+          <div className="p-2 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
+            <Search className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+            <input
+              autoFocus
+              type="text"
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              placeholder="Buscar..."
+              className="flex-1 text-sm bg-transparent outline-none text-gray-800 dark:text-gray-200 placeholder-gray-400"
+            />
+          </div>
+          <div className="overflow-y-auto">
+            {filtered.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-3">Sin resultados</p>
+            ) : (
+              filtered.map(o => (
+                <button
+                  key={o.id}
+                  type="button"
+                  onClick={() => { onChange(String(o.id)); setOpen(false); setQ(''); }}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center justify-between gap-2 ${
+                    String(o.id) === value ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'text-gray-800 dark:text-gray-200'
+                  }`}
+                >
+                  <span>{renderOption ? renderOption(o) : o.searchText}</span>
+                  {o.badge}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 const SEDES: { id: number; nombre: string }[] = [
@@ -98,31 +188,24 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
   const [combustibleInicial, setCombustibleInicial] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [tripulacion, setTripulacion] = useState<MiembroSeleccionado[]>([]);
-  const [addingMiembro, setAddingMiembro] = useState<{ userId: string; rol: 'PILOTO' | 'COPILOTO' | 'AUXILIAR' }>({
+  const [addingMiembro, setAddingMiembro] = useState<{ userId: string; rol: 'PILOTO' | 'COPILOTO' | 'ACOMPAÑANTE' }>({
     userId: '',
-    rol: 'AUXILIAR',
+    rol: 'ACOMPAÑANTE',
   });
 
-  // Reset cuando se abre
   useEffect(() => {
     if (isOpen) {
-      setSedeId('');
-      setUnidadId('');
-      setRutaId('');
-      setKmInicial('');
-      setCombustibleInicial('');
-      setObservaciones('');
-      setTripulacion([]);
-      setAddingMiembro({ userId: '', rol: 'AUXILIAR' });
+      setSedeId(''); setUnidadId(''); setRutaId(''); setKmInicial('');
+      setCombustibleInicial(''); setObservaciones('');
+      setTripulacion([]); setAddingMiembro({ userId: '', rol: 'ACOMPAÑANTE' });
       setError('');
     }
   }, [isOpen]);
 
-  // Limpiar unidad y tripulación al cambiar sede
   useEffect(() => {
     setUnidadId('');
     setTripulacion([]);
-    setAddingMiembro({ userId: '', rol: 'AUXILIAR' });
+    setAddingMiembro({ userId: '', rol: 'ACOMPAÑANTE' });
   }, [sedeId]);
 
   const { data: todasUnidades = [] } = useQuery<Unidad[]>({
@@ -155,43 +238,50 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
     staleTime: 5 * 60_000,
   });
 
-  const unidades = sedeId
-    ? todasUnidades.filter(u => u.sede_id === Number(sedeId))
-    : todasUnidades;
+  const unidades = sedeId ? todasUnidades.filter(u => u.sede_id === Number(sedeId)) : todasUnidades;
+  const brigadas = sedeId ? todasBrigadas.filter(b => b.sede_id === Number(sedeId)) : todasBrigadas;
+  const brigadasDisponibles = brigadas.filter(b => !tripulacion.some(t => t.usuario_id === b.id));
 
-  const brigadas = sedeId
-    ? todasBrigadas.filter(b => b.sede_id === Number(sedeId))
-    : todasBrigadas;
+  const unidadSeleccionada = unidades.find(u => u.id === Number(unidadId));
 
-  const brigadasDisponibles = brigadas.filter(
-    b => !tripulacion.some(t => t.usuario_id === b.id)
-  );
+  const unidadOptions = unidades.map(u => ({
+    id: u.id,
+    searchText: `${u.codigo} ${u.tipo_unidad} ${u.sede_nombre}`,
+    label: null,
+    badge: u.disponible_transportes === false
+      ? <span className="text-xs text-orange-500 flex-shrink-0">No disponible</span>
+      : undefined,
+  }));
+
+  const rutaOptions = rutas.map(r => ({
+    id: r.id,
+    searchText: `${r.codigo}${r.nombre ? ' ' + r.nombre : ''}`,
+    label: null,
+  }));
+
+  const brigadaOptions = brigadasDisponibles.map(b => ({
+    id: b.id,
+    searchText: `${b.chapa} ${b.nombre}`,
+    label: null,
+  }));
 
   const agregarMiembro = () => {
     if (!addingMiembro.userId) return;
     const brigada = todasBrigadas.find(b => b.id === Number(addingMiembro.userId));
     if (!brigada) return;
-    setTripulacion(prev => [
-      ...prev,
-      {
-        usuario_id: brigada.id,
-        nombre: brigada.nombre,
-        chapa: brigada.chapa,
-        rol_en_salida: addingMiembro.rol,
-      },
-    ]);
-    setAddingMiembro({ userId: '', rol: 'AUXILIAR' });
-  };
-
-  const quitarMiembro = (userId: number) => {
-    setTripulacion(prev => prev.filter(t => t.usuario_id !== userId));
+    setTripulacion(prev => [...prev, {
+      usuario_id: brigada.id,
+      nombre: brigada.nombre,
+      chapa: brigada.chapa,
+      rol_en_salida: addingMiembro.rol,
+    }]);
+    setAddingMiembro({ userId: '', rol: 'ACOMPAÑANTE' });
   };
 
   const handleSubmit = async () => {
     setError('');
     if (!unidadId) { setError('Selecciona una unidad'); return; }
     if (tripulacion.length === 0) { setError('Agrega al menos un integrante a la tripulación'); return; }
-
     setSaving(true);
     try {
       await api.post('/salidas/cop/iniciar-unidad', {
@@ -205,8 +295,7 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
       onCreated();
       onClose();
     } catch (err: any) {
-      const msg = err.response?.data?.error || 'Error al iniciar la salida';
-      setError(msg);
+      setError(err.response?.data?.error || 'Error al iniciar la salida');
     } finally {
       setSaving(false);
     }
@@ -231,18 +320,14 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {/* Sede */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Sede
-            </label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sede</label>
             <select
               value={sedeId}
               onChange={e => setSedeId(e.target.value)}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent focus:outline-none"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:outline-none"
             >
               <option value="">Todas las sedes</option>
-              {SEDES.map(s => (
-                <option key={s.id} value={s.id}>{s.nombre}</option>
-              ))}
+              {SEDES.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
             </select>
           </div>
 
@@ -251,31 +336,34 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Unidad <span className="text-red-500">*</span>
             </label>
-            <select
+            <SearchSelect
+              placeholder="Buscar unidad..."
               value={unidadId}
-              onChange={e => setUnidadId(e.target.value)}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent focus:outline-none"
-            >
-              <option value="">Seleccionar unidad...</option>
-              {unidades.map(u => (
-                <option key={u.id} value={u.id}>
-                  {u.disponible_transportes === false ? '⚠ ' : ''}{u.codigo} — {u.tipo_unidad}{!sedeId ? ` (${u.sede_nombre})` : ''}
-                </option>
-              ))}
-            </select>
-            {(() => {
-              const u = unidades.find(u => u.id === Number(unidadId));
-              if (!u || u.disponible_transportes !== false) return null;
-              return (
-                <div className="mt-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg px-3 py-2.5 text-sm text-orange-800 dark:text-orange-300">
-                  <p className="font-semibold">⚠ Unidad marcada como no disponible por Transportes</p>
-                  {u.instrucciones_transportes && (
-                    <p className="mt-0.5 text-orange-700 dark:text-orange-400">{u.instrucciones_transportes}</p>
-                  )}
-                  <p className="mt-1 text-xs text-orange-600 dark:text-orange-500">La salida quedará registrada con esta observación.</p>
-                </div>
-              );
-            })()}
+              onChange={setUnidadId}
+              options={unidadOptions}
+              renderOption={o => {
+                const u = unidades.find(u => u.id === o.id);
+                return (
+                  <span className="flex items-center gap-2">
+                    <span className="font-mono font-semibold">{u?.codigo}</span>
+                    <span className="text-gray-500 dark:text-gray-400">{u?.tipo_unidad}{!sedeId && u ? ` · ${u.sede_nombre}` : ''}</span>
+                  </span>
+                );
+              }}
+              renderSelected={() => {
+                const u = unidades.find(u => u.id === Number(unidadId));
+                return u ? `${u.codigo} — ${u.tipo_unidad}` : '';
+              }}
+            />
+            {unidadSeleccionada?.disponible_transportes === false && (
+              <div className="mt-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg px-3 py-2.5 text-sm text-orange-800 dark:text-orange-300">
+                <p className="font-semibold">⚠ Unidad marcada como no disponible por Transportes</p>
+                {unidadSeleccionada.instrucciones_transportes && (
+                  <p className="mt-0.5">{unidadSeleccionada.instrucciones_transportes}</p>
+                )}
+                <p className="mt-1 text-xs opacity-75">La salida quedará registrada con esta observación.</p>
+              </div>
+            )}
           </div>
 
           {/* Ruta */}
@@ -283,32 +371,36 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Ruta inicial <span className="text-xs text-gray-400">(opcional)</span>
             </label>
-            <select
+            <SearchSelect
+              placeholder="Buscar ruta..."
               value={rutaId}
-              onChange={e => setRutaId(e.target.value)}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent focus:outline-none"
-            >
-              <option value="">Sin ruta asignada</option>
-              {rutas.map(r => (
-                <option key={r.id} value={r.id}>
-                  {r.codigo}{r.nombre ? ` — ${r.nombre}` : ''}
-                </option>
-              ))}
-            </select>
+              onChange={setRutaId}
+              options={rutaOptions}
+              renderOption={o => {
+                const r = rutas.find(r => r.id === o.id);
+                return (
+                  <span className="flex items-center gap-2">
+                    <span className="font-mono font-semibold">{r?.codigo}</span>
+                    {r?.nombre && <span className="text-gray-500 dark:text-gray-400">{r.nombre}</span>}
+                  </span>
+                );
+              }}
+              renderSelected={() => {
+                const r = rutas.find(r => r.id === Number(rutaId));
+                return r ? `${r.codigo}${r.nombre ? ' — ' + r.nombre : ''}` : '';
+              }}
+            />
           </div>
 
           {/* Km inicial */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Km inicial
-            </label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Km inicial</label>
             <input
-              type="number"
-              min="0"
+              type="number" min="0"
               value={kmInicial}
               onChange={e => setKmInicial(e.target.value)}
               placeholder="0"
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent focus:outline-none"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:outline-none"
             />
           </div>
 
@@ -322,15 +414,13 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
 
           {/* Observaciones */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Observaciones
-            </label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observaciones</label>
             <input
               type="text"
               value={observaciones}
               onChange={e => setObservaciones(e.target.value)}
               placeholder="Motivo de la salida..."
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent focus:outline-none"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:outline-none"
             />
           </div>
 
@@ -340,27 +430,19 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
               Tripulación <span className="text-red-500">*</span>
             </label>
 
-            {/* Miembros agregados */}
             {tripulacion.length > 0 && (
               <div className="mb-3 space-y-1.5">
                 {tripulacion.map(m => (
-                  <div
-                    key={m.usuario_id}
-                    className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2"
-                  >
+                  <div key={m.usuario_id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                     <span className="text-xs font-mono text-gray-400 w-16 flex-shrink-0">{m.chapa}</span>
                     <span className="flex-1 text-sm text-gray-800 dark:text-gray-200 truncate">{m.nombre}</span>
                     <span className={`text-xs px-2 py-0.5 rounded font-medium flex-shrink-0 ${
                       m.rol_en_salida === 'PILOTO' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' :
                       m.rol_en_salida === 'COPILOTO' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' :
                       'bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-300'
-                    }`}>
-                      {m.rol_en_salida}
-                    </span>
-                    <button
-                      onClick={() => quitarMiembro(m.usuario_id)}
-                      className="p-1 text-gray-400 hover:text-red-500 transition flex-shrink-0"
-                    >
+                    }`}>{m.rol_en_salida}</span>
+                    <button onClick={() => setTripulacion(p => p.filter(t => t.usuario_id !== m.usuario_id))}
+                      className="p-1 text-gray-400 hover:text-red-500 transition flex-shrink-0">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -368,28 +450,36 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
               </div>
             )}
 
-            {/* Agregar de brigada */}
             <div className="flex gap-2">
-              <select
-                value={addingMiembro.userId}
-                onChange={e => setAddingMiembro(p => ({ ...p, userId: e.target.value }))}
-                className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent focus:outline-none"
-              >
-                <option value="">Seleccionar brigada...</option>
-                {brigadasDisponibles.map(b => (
-                  <option key={b.id} value={b.id}>
-                    {b.chapa} — {b.nombre}
-                  </option>
-                ))}
-              </select>
+              <div className="flex-1">
+                <SearchSelect
+                  placeholder="Seleccionar brigada..."
+                  value={addingMiembro.userId}
+                  onChange={v => setAddingMiembro(p => ({ ...p, userId: v }))}
+                  options={brigadaOptions}
+                  renderOption={o => {
+                    const b = todasBrigadas.find(b => b.id === o.id);
+                    return (
+                      <span className="flex items-center gap-2">
+                        <span className="font-mono text-xs text-gray-400 w-14 flex-shrink-0">{b?.chapa}</span>
+                        <span>{b?.nombre}</span>
+                      </span>
+                    );
+                  }}
+                  renderSelected={() => {
+                    const b = todasBrigadas.find(b => b.id === Number(addingMiembro.userId));
+                    return b ? `${b.chapa} — ${b.nombre}` : '';
+                  }}
+                />
+              </div>
               <select
                 value={addingMiembro.rol}
                 onChange={e => setAddingMiembro(p => ({ ...p, rol: e.target.value as any }))}
-                className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent focus:outline-none"
+                className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:outline-none"
               >
                 <option value="PILOTO">Piloto</option>
                 <option value="COPILOTO">Copiloto</option>
-                <option value="AUXILIAR">Auxiliar</option>
+                <option value="ACOMPAÑANTE">Acompañante</option>
               </select>
               <button
                 onClick={agregarMiembro}
@@ -399,10 +489,8 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
                 <UserPlus className="w-4 h-4" />
               </button>
             </div>
-            {brigadasDisponibles.length === 0 && brigadas.length === 0 && sedeId && (
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
-                No hay brigadas activas en esta sede
-              </p>
+            {brigadasDisponibles.length === 0 && sedeId && (
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">No hay brigadas activas en esta sede</p>
             )}
           </div>
 
@@ -415,10 +503,7 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition"
-          >
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition">
             Cancelar
           </button>
           <button
@@ -426,11 +511,7 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
             disabled={saving || !unidadId || tripulacion.length === 0}
             className="flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition"
           >
-            {saving ? (
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
+            {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? 'Iniciando...' : 'Iniciar salida'}
           </button>
         </div>

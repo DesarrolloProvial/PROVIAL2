@@ -43,7 +43,7 @@ BEGIN
     VALUES (p_unidad_id, p_ruta_inicial_id, p_km_inicial, p_combustible_inicial, p_observaciones, v_tripulacion)
     RETURNING id INTO v_salida_id;
 
-    UPDATE unidad SET ultima_salida = NOW() WHERE id = p_unidad_id;
+    UPDATE unidad SET updated_at = NOW() WHERE id = p_unidad_id;
 
     RETURN v_salida_id;
 END;
