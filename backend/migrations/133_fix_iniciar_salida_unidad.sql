@@ -45,6 +45,26 @@ BEGIN
 
     UPDATE unidad SET updated_at = NOW() WHERE id = p_unidad_id;
 
+    -- Limpiar situacion_actual al iniciar nueva salida (borra estado de salidas anteriores)
+    UPDATE situacion_actual
+    SET situacion_id = NULL,
+        tipo_situacion = NULL,
+        estado = NULL,
+        latitud = NULL,
+        longitud = NULL,
+        km = NULL,
+        sentido = NULL,
+        ruta_id = NULL,
+        ruta_codigo = NULL,
+        situacion_created_at = NULL,
+        actividad_id = NULL,
+        actividad_tipo_nombre = NULL,
+        actividad_estado = NULL,
+        actividad_created_at = NULL,
+        icono = NULL,
+        updated_at = NOW()
+    WHERE unidad_id = p_unidad_id;
+
     RETURN v_salida_id;
 END;
 $$ LANGUAGE plpgsql;
