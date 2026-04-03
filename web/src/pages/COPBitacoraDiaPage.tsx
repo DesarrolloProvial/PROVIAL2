@@ -259,7 +259,7 @@ function LogSituacion({ item }: { item: TimelineItem }) {
         <>
           <L label="obstrucción" value="" />
           {obstruccionEntries.map(([k, v]) => (
-            <L key={k} label={`  ${k.replace(/_/g, ' ')}`} value={String(v)} />
+            <L key={k} label={`  ${k.replace(/_/g, ' ')}`} value={typeof v === 'boolean' ? (v ? 'Sí' : 'No') : String(v)} />
           ))}
         </>
       )}
