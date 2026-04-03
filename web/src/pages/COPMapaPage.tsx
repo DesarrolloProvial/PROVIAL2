@@ -811,10 +811,10 @@ export default function COPMapaPage() {
                       </div>
                     )}
 
-                    <div className="mt-3 pt-2 border-t border-gray-100">
+                    <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-600">
                       <button
                         onClick={() => navigate(`/bitacora/${unidad.unidad_id}`)}
-                        className="w-full flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold py-1.5 px-3 rounded text-sm transition"
+                        className="w-full flex items-center justify-center gap-2 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 font-semibold py-1.5 px-3 rounded text-sm transition"
                       >
                         📄 Ver Bitácora
                       </button>
