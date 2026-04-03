@@ -4,8 +4,9 @@ import { api, situacionesAPI, catalogosAPI } from '../../services/api';
 import {
   X, Save, RefreshCw, Plus,
   MapPin, Car, AlertTriangle, FileText,
-  Users, ChevronRight, Shield,
+  Users, ChevronRight, Shield, Camera,
 } from 'lucide-react';
+import SituacionMultimediaUploader from '../SituacionMultimediaUploader';
 import {
   TIPOS_HECHO_TRANSITO,
   TIPOS_ASISTENCIA,
@@ -22,6 +23,8 @@ import CausasSelectorWeb from './CausasSelectorWeb';
 // ============================================
 // CONSTANTES
 // ============================================
+const TIPOS_PESADOS = ['HECHO_TRANSITO', 'INCIDENTE', 'ASISTENCIA_VEHICULAR', 'EMERGENCIA'];
+
 const TIPOS_SITUACION_CREAR = [
   { value: 'HECHO_TRANSITO', label: 'Hecho de Transito', color: 'bg-red-500', icon: AlertTriangle },
   { value: 'ASISTENCIA_VEHICULAR', label: 'Asistencia Vehicular', color: 'bg-teal-500', icon: Car },
@@ -71,6 +74,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
   const [saving, setSaving] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(false);
   const [error, setError] = useState('');
+  const [situacionActivaHeavy, setSituacionActivaHeavy] = useState<any>(null);
 
   // Form state
   const [form, setForm] = useState({
@@ -152,6 +156,21 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
       setForm(prev => ({ ...prev, unidad_id: preselectedUnidadId }));
     }
   }, [isOpen, preselectedUnidadId]);
+
+  // Verificar si la unidad tiene una situación pesada activa (solo en modo crear)
+  useEffect(() => {
+    if (!isOpen || isEditMode || !form.unidad_id) {
+      setSituacionActivaHeavy(null);
+      return;
+    }
+    api.get(`/situaciones/activas?unidad_id=${form.unidad_id}`)
+      .then(res => {
+        const activas: any[] = res.data.situaciones || [];
+        const heavy = activas.find(s => TIPOS_PESADOS.includes(s.tipo_situacion));
+        setSituacionActivaHeavy(heavy || null);
+      })
+      .catch(() => setSituacionActivaHeavy(null));
+  }, [form.unidad_id, isOpen, isEditMode]);
 
   // Auto-fill ruta from selected unidad
   useEffect(() => {
@@ -367,6 +386,9 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
     if (tipoSituacion === 'EMERGENCIA') {
       tabs.push({ id: 'recursos', label: 'Recursos', icon: Shield });
     }
+    if (isEditMode) {
+      tabs.push({ id: 'multimedia', label: 'Fotos/Video', icon: Camera });
+    }
     return tabs;
   };
 
@@ -574,6 +596,23 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
           {error && (
             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">
               {error}
+            </div>
+          )}
+
+          {/* Aviso: situación pesada activa en esta unidad */}
+          {!isEditMode && situacionActivaHeavy && (
+            <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-lg flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                  Situación activa sin cerrar
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                  Esta unidad tiene un <strong>{situacionActivaHeavy.tipo_situacion.replace(/_/g, ' ')}</strong> activo (#{situacionActivaHeavy.id}).
+                  Al crear esta situación, se cerrará automáticamente sin registrar los datos pendientes.
+                  Considera cerrarlo primero si tiene información importante.
+                </p>
+              </div>
             </div>
           )}
 
@@ -813,6 +852,11 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
             />
           )}
 
+          {/* TAB: Multimedia (solo edit mode) */}
+          {activeTab === 'multimedia' && isEditMode && editSituacionId && (
+            <SituacionMultimediaUploader situacionId={editSituacionId} />
+          )}
+
           </>)}
         </div>
 
@@ -824,23 +868,25 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
           >
             Cancelar
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={saving}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-          >
-            {saving ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                {isEditMode ? 'Guardando...' : 'Creando...'}
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                {isEditMode ? 'Guardar Cambios' : 'Crear Situacion'}
-              </>
-            )}
-          </button>
+          {activeTab !== 'multimedia' && (
+            <button
+              onClick={handleSubmit}
+              disabled={saving}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+            >
+              {saving ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  {isEditMode ? 'Guardando...' : 'Creando...'}
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  {isEditMode ? 'Guardar Cambios' : 'Crear Situacion'}
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>

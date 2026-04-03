@@ -723,16 +723,23 @@ export async function getHeatmapData(req: Request, res: Response) {
 // FUNCIONES ADICIONALES
 // ========================================
 
-export async function listSituacionesActivas(_req: Request, res: Response) {
+export async function listSituacionesActivas(req: Request, res: Response) {
   try {
-    const activas = await db.manyOrNone(`
+    const { unidad_id } = req.query;
+    let query = `
       SELECT s.*, u.codigo as unidad_codigo, r.codigo as ruta_codigo
       FROM situacion s
       LEFT JOIN unidad u ON s.unidad_id = u.id
       LEFT JOIN ruta r ON s.ruta_id = r.id
       WHERE s.estado = 'ACTIVA'
-      ORDER BY s.created_at DESC
-    `);
+    `;
+    const params: any[] = [];
+    if (unidad_id) {
+      query += ` AND s.unidad_id = $1`;
+      params.push(parseInt(unidad_id as string));
+    }
+    query += ` ORDER BY s.created_at DESC`;
+    const activas = await db.manyOrNone(query, params);
     return res.json({ situaciones: activas });
   } catch (error: any) {
     console.error('Error listSituacionesActivas:', error);

@@ -23,7 +23,7 @@ router.use(authenticate);
  */
 router.post(
   '/upload',
-  authorize('BRIGADA', 'ADMIN'),
+  authorize('BRIGADA', 'COP', 'ADMIN'),
   multimediaController.upload.single('foto'),
   multimediaController.subirFotoGenerica
 );
@@ -31,11 +31,10 @@ router.post(
 /**
  * POST /api/multimedia/situacion/:situacionId/foto
  * Subir una foto a una situación
- * Solo brigadas pueden subir
  */
 router.post(
   '/situacion/:situacionId/foto',
-  authorize('BRIGADA', 'ADMIN'),
+  authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN'),
   multimediaController.upload.single('foto'),
   multimediaController.subirFoto
 );
@@ -43,11 +42,10 @@ router.post(
 /**
  * POST /api/multimedia/situacion/:situacionId/video
  * Subir video a una situación
- * Solo brigadas pueden subir
  */
 router.post(
   '/situacion/:situacionId/video',
-  authorize('BRIGADA', 'ADMIN'),
+  authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN'),
   multimediaController.upload.single('video'),
   multimediaController.subirVideo
 );
@@ -55,11 +53,10 @@ router.post(
 /**
  * POST /api/multimedia/situacion/:situacionId/batch
  * Guardar referencias de archivos subidos a Cloudinary (offline-first sync)
- * Solo brigadas pueden subir
  */
 router.post(
   '/situacion/:situacionId/batch',
-  authorize('BRIGADA', 'ADMIN'),
+  authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN'),
   multimediaController.guardarReferenciasCloudinary
 );
 
@@ -116,7 +113,7 @@ router.get(
  */
 router.delete(
   '/:id',
-  authorize('BRIGADA', 'ADMIN'),
+  authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN'),
   multimediaController.eliminarMultimedia
 );
 
