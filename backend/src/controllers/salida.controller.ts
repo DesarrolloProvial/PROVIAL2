@@ -259,7 +259,7 @@ export async function iniciarSalidaCOP(req: Request, res: Response) {
   try {
     if (!req.user) return res.status(401).json({ error: 'No autorizado' });
 
-    const { unidad_id, ruta_inicial_id, km_inicial, combustible_inicial, observaciones_salida } = req.body;
+    const { unidad_id, ruta_inicial_id, km_inicial, combustible_inicial, observaciones_salida, tripulacion } = req.body;
 
     if (!unidad_id) return res.status(400).json({ error: 'unidad_id es requerido' });
 
@@ -282,6 +282,15 @@ export async function iniciarSalidaCOP(req: Request, res: Response) {
       observaciones_salida,
     });
 
+    // Guardar tripulación y marcar origen según el tipo de inicio COP
+    const esEmergencia = Array.isArray(tripulacion) && tripulacion.length > 0;
+    const origenValor = esEmergencia ? 'COP_EMERGENCIA' : 'COP';
+
+    await db.none(
+      `UPDATE salida_unidad SET origen = $1, tripulacion = $2 WHERE id = $3`,
+      [origenValor, esEmergencia ? JSON.stringify(tripulacion) : null, salidaId]
+    );
+
     const salida = await SalidaModel.getSalidaById(salidaId);
 
     if (salida) {
@@ -297,13 +306,15 @@ export async function iniciarSalidaCOP(req: Request, res: Response) {
       emitUnidadCambioEstado(evento);
     }
 
-    // Registrar que fue iniciada por COP
+    // Registrar evento de inicio COP
     await db.none(
       `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_new, realizado_por)
        VALUES ($1, 'INICIO_COP', $2, $3, $4)`,
       [salidaId,
-       'Salida iniciada desde COP (sin dispositivo de brigada)',
-       JSON.stringify({ unidad_id, ruta_inicial_id: ruta_inicial_id || null }),
+       esEmergencia
+         ? `Salida de emergencia iniciada desde COP con ${tripulacion.length} integrante(s)`
+         : 'Salida iniciada desde COP (sin dispositivo de brigada)',
+       JSON.stringify({ unidad_id, ruta_inicial_id: ruta_inicial_id || null, tripulacion: tripulacion || null }),
        req.user.userId]
     );
 

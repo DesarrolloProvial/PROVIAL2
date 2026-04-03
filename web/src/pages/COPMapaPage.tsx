@@ -14,6 +14,7 @@ import CrearSituacionModal from '../components/forms/CrearSituacionModal';
 import CrearActividadModal from '../components/forms/CrearActividadModal';
 import CrearPuntoMapaModal from '../components/forms/CrearPuntoMapaModal';
 import CambiarPasswordModal from '../components/CambiarPasswordModal';
+import COPSalidaEmergenciaModal from '../components/forms/COPSalidaEmergenciaModal';
 import { useAuthStore } from '../store/authStore';
 import ThemeToggle from '../components/ThemeToggle';
 
@@ -210,6 +211,7 @@ export default function COPMapaPage() {
   const [showCrearCapaInline, setShowCrearCapaInline] = useState(false);
   const [nuevaCapa, setNuevaCapa] = useState({ nombre: '', color: '#3B82F6' });
   const [creandoCapa, setCreandoCapa] = useState(false);
+  const [showSalidaEmergenciaModal, setShowSalidaEmergenciaModal] = useState(false);
 
   const { isConnected: socketConnected, lastUpdate } = useDashboardSocket(queryClient);
   const defaultCenter: LatLngExpression = [14.6407, -90.5133];
@@ -481,6 +483,13 @@ export default function COPMapaPage() {
               <span>Bitácora</span>
             </button>
           </div>
+          {/* Botón sacar unidad */}
+          <button
+            onClick={() => setShowSalidaEmergenciaModal(true)}
+            className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition"
+          >
+            🚨 Sacar unidad
+          </button>
           {/* Botón toggle sidebar - integrado en el panel */}
           <button
             onClick={() => setShowSidebar(s => !s)}
@@ -1211,6 +1220,13 @@ export default function COPMapaPage() {
       <CambiarPasswordModal
         isOpen={showCambiarPassword}
         onClose={() => setShowCambiarPassword(false)}
+      />
+
+      {/* Modal sacar unidad de emergencia */}
+      <COPSalidaEmergenciaModal
+        isOpen={showSalidaEmergenciaModal}
+        onClose={() => setShowSalidaEmergenciaModal(false)}
+        onCreated={() => { refetchResumen(); }}
       />
     </div>
   );
