@@ -38,6 +38,14 @@ interface Tripulante {
     rol_tripulacion?: string;
 }
 
+// observaciones puede ser string (legacy) o JSONB array [{hora,mensaje,usuario}]
+const extractObservaciones = (obs: any): string | null => {
+    if (!obs) return null;
+    if (typeof obs === 'string') return obs;
+    if (Array.isArray(obs) && obs.length > 0) return obs[obs.length - 1]?.mensaje ?? null;
+    return null;
+};
+
 export default function BitacoraPage() {
     const { unidadId } = useParams<{ unidadId: string }>();
     const navigate = useNavigate();
@@ -401,11 +409,11 @@ export default function BitacoraPage() {
                                                     ) : null;
                                                 })()}
                                                 <p className="font-medium text-gray-900 dark:text-gray-100">
-                                                    {item.descripcion || item.observaciones || (isSalida ? 'Salida de unidad' : 'Sin descripción')}
+                                                    {item.descripcion || extractObservaciones(item.observaciones) || (isSalida ? 'Salida de unidad' : 'Sin descripción')}
                                                 </p>
                                                 {item.descripcion && item.observaciones && (
                                                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 italic">
-                                                        &quot;{item.observaciones}&quot;
+                                                        &quot;{extractObservaciones(item.observaciones)}&quot;
                                                     </p>
                                                 )}
                                                 {/* Datos JSONB para actividades */}
