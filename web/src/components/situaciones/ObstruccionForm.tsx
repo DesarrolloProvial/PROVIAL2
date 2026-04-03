@@ -109,11 +109,11 @@ function CarrilesEditor({ sentido, onChange, label, readonly, sentidoNombre }: C
   };
 
   return (
-    <div className="space-y-3 p-3 bg-white rounded-lg border border-gray-200">
+    <div className="space-y-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-700">{label}</span>
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">Carriles:</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">Carriles:</span>
           <div className="flex gap-1">
             {[1, 2, 3, 4, 5].map(num => (
               <button
@@ -124,7 +124,7 @@ function CarrilesEditor({ sentido, onChange, label, readonly, sentidoNombre }: C
                 className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
                   sentido.cantidad_carriles === num
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
                 {num}
@@ -137,7 +137,7 @@ function CarrilesEditor({ sentido, onChange, label, readonly, sentidoNombre }: C
       <div className="space-y-2">
         {sentido.carriles.map((carril, index) => (
           <div key={index} className="flex items-center gap-3">
-            <span className="text-xs text-gray-600 w-40 truncate" title={carril.nombre}>
+            <span className="text-xs text-gray-600 dark:text-gray-400 w-40 truncate" title={carril.nombre}>
               {carril.nombre}
             </span>
             <input
@@ -163,14 +163,14 @@ function CarrilesEditor({ sentido, onChange, label, readonly, sentidoNombre }: C
 
       {/* Botones rapidos */}
       {!readonly && (
-        <div className="flex gap-2 pt-2 border-t border-gray-100">
+        <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-600">
           <button
             type="button"
             onClick={() => {
               const nuevosCarriles = sentido.carriles.map(c => ({ ...c, porcentaje: 0 }));
               onChange({ ...sentido, carriles: nuevosCarriles });
             }}
-            className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
+            className="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50"
           >
             Todos 0%
           </button>
@@ -180,7 +180,7 @@ function CarrilesEditor({ sentido, onChange, label, readonly, sentidoNombre }: C
               const nuevosCarriles = sentido.carriles.map(c => ({ ...c, porcentaje: 50 }));
               onChange({ ...sentido, carriles: nuevosCarriles });
             }}
-            className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200"
+            className="px-2 py-1 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
           >
             Todos 50%
           </button>
@@ -190,7 +190,7 @@ function CarrilesEditor({ sentido, onChange, label, readonly, sentidoNombre }: C
               const nuevosCarriles = sentido.carriles.map(c => ({ ...c, porcentaje: 100 }));
               onChange({ ...sentido, carriles: nuevosCarriles });
             }}
-            className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+            className="px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50"
           >
             Todos 100%
           </button>
@@ -327,7 +327,7 @@ export default function ObstruccionForm({
   return (
     <div className="space-y-4">
       {/* Checkbox: Vehiculo fuera de via */}
-      <label className="flex items-center gap-3 cursor-pointer p-3 bg-yellow-50 rounded-lg border border-yellow-200 hover:bg-yellow-100 transition-colors">
+      <label className="flex items-center gap-3 cursor-pointer p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors">
         <input
           type="checkbox"
           checked={value.hay_vehiculo_fuera_via}
@@ -336,8 +336,8 @@ export default function ObstruccionForm({
           className="w-5 h-5 rounded border-yellow-400 text-yellow-600 focus:ring-yellow-500"
         />
         <div>
-          <span className="text-sm font-medium text-yellow-800">Vehiculo fuera de la via</span>
-          <p className="text-xs text-yellow-600">
+          <span className="text-sm font-medium text-yellow-800 dark:text-yellow-300">Vehiculo fuera de la via</span>
+          <p className="text-xs text-yellow-600 dark:text-yellow-400">
             Puede combinarse con obstruccion parcial
           </p>
         </div>
@@ -345,7 +345,7 @@ export default function ObstruccionForm({
 
       {/* Tipo de obstruccion */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Tipo de Obstruccion de Via
         </label>
         <div className="grid grid-cols-2 gap-2">
@@ -362,24 +362,24 @@ export default function ObstruccionForm({
               disabled={readonly}
               className={`p-3 rounded-lg border-2 text-left transition-all ${
                 value.tipo_obstruccion === opt.value
-                  ? opt.color === 'green' ? 'border-green-500 bg-green-50' :
-                    opt.color === 'orange' ? 'border-orange-500 bg-orange-50' :
-                    opt.color === 'red' ? 'border-red-500 bg-red-50' :
-                    'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 bg-white hover:border-gray-300'
+                  ? opt.color === 'green' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' :
+                    opt.color === 'orange' ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' :
+                    opt.color === 'red' ? 'border-red-500 bg-red-50 dark:bg-red-900/20' :
+                    'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500'
               }`}
             >
               <span className={`text-sm font-medium ${
                 value.tipo_obstruccion === opt.value
-                  ? opt.color === 'green' ? 'text-green-700' :
-                    opt.color === 'orange' ? 'text-orange-700' :
-                    opt.color === 'red' ? 'text-red-700' :
-                    'text-blue-700'
+                  ? opt.color === 'green' ? 'text-green-700 dark:text-green-400' :
+                    opt.color === 'orange' ? 'text-orange-700 dark:text-orange-400' :
+                    opt.color === 'red' ? 'text-red-700 dark:text-red-400' :
+                    'text-blue-700 dark:text-blue-400'
                   : 'text-gray-700'
               }`}>
                 {opt.label}
               </span>
-              <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{opt.desc}</p>
             </button>
           ))}
         </div>
@@ -387,7 +387,7 @@ export default function ObstruccionForm({
 
       {/* Editor de carriles (solo para obstruccion parcial) */}
       {value.tipo_obstruccion === 'parcial' && value.sentido_principal && (
-        <div className="space-y-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div className="space-y-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
           <CarrilesEditor
             sentido={value.sentido_principal}
             onChange={handleSentidoPrincipalChange}
@@ -426,7 +426,7 @@ export default function ObstruccionForm({
 
       {/* Seccion de descripcion (solo si hay obstruccion activa) */}
       {tieneObstruccionActiva && (
-        <div className="space-y-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="space-y-2 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
           {/* Boton generar descripcion */}
           {!readonly && (
             <button
@@ -440,7 +440,7 @@ export default function ObstruccionForm({
 
           {/* Descripcion manual */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Descripcion (puede editarse)
             </label>
             <textarea
@@ -449,7 +449,7 @@ export default function ObstruccionForm({
               placeholder="Descripcion de la obstruccion..."
               rows={3}
               disabled={readonly}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 resize-none"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500 resize-none"
             />
           </div>
         </div>
@@ -457,31 +457,31 @@ export default function ObstruccionForm({
 
       {/* Resumen visual */}
       {tieneObstruccionActiva && (
-        <div className="p-3 bg-gray-100 rounded-lg">
-          <p className="text-xs font-medium text-gray-500 uppercase mb-1">Resumen</p>
+        <div className="p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Resumen</p>
           <div className="flex flex-wrap gap-2">
             {value.hay_vehiculo_fuera_via && (
-              <span className="px-2 py-1 bg-yellow-200 text-yellow-800 rounded text-xs font-medium">
+              <span className="px-2 py-1 bg-yellow-200 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300 rounded text-xs font-medium">
                 Vehiculo fuera de via
               </span>
             )}
             {value.tipo_obstruccion === 'total_sentido' && (
-              <span className="px-2 py-1 bg-orange-200 text-orange-800 rounded text-xs font-medium">
+              <span className="px-2 py-1 bg-orange-200 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300 rounded text-xs font-medium">
                 Obstruccion total (1 sentido)
               </span>
             )}
             {value.tipo_obstruccion === 'total_ambos' && (
-              <span className="px-2 py-1 bg-red-200 text-red-800 rounded text-xs font-medium">
+              <span className="px-2 py-1 bg-red-200 dark:bg-red-900/40 text-red-800 dark:text-red-300 rounded text-xs font-medium">
                 Via cerrada (ambos sentidos)
               </span>
             )}
             {value.tipo_obstruccion === 'parcial' && value.sentido_principal && (
-              <span className="px-2 py-1 bg-blue-200 text-blue-800 rounded text-xs font-medium">
+              <span className="px-2 py-1 bg-blue-200 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 rounded text-xs font-medium">
                 Parcial: {value.sentido_principal.carriles.filter(c => c.porcentaje > 0).length} de {value.sentido_principal.cantidad_carriles} carriles
               </span>
             )}
             {value.tipo_obstruccion === 'ninguna' && !value.hay_vehiculo_fuera_via && (
-              <span className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs font-medium">
+              <span className="px-2 py-1 bg-green-200 dark:bg-green-900/40 text-green-800 dark:text-green-300 rounded text-xs font-medium">
                 Sin obstruccion
               </span>
             )}

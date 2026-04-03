@@ -21,24 +21,34 @@ export default function CausasSelectorWeb({ causas, selected, onChange }: Props)
         Causas del Hecho ({selected.length} seleccionadas)
       </h4>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-        {causas.map(causa => (
-          <label
-            key={causa.id}
-            className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer text-sm ${
-              selected.includes(causa.id)
-                ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700'
-                : 'bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={selected.includes(causa.id)}
-              onChange={() => toggle(causa.id)}
-              className="h-4 w-4 text-blue-600 rounded"
-            />
-            <span className="text-gray-700 dark:text-gray-300">{causa.nombre}</span>
-          </label>
-        ))}
+        {causas.map(causa => {
+          const isSelected = selected.includes(causa.id);
+          return (
+            <button
+              key={causa.id}
+              type="button"
+              onClick={() => toggle(causa.id)}
+              className={`flex items-center gap-2 p-2 rounded-lg text-sm text-left w-full transition-colors ${
+                isSelected
+                  ? 'bg-blue-100 dark:bg-blue-900/40 border border-blue-400 dark:border-blue-600 text-blue-800 dark:text-blue-200'
+                  : 'bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <span className={`flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center ${
+                isSelected
+                  ? 'bg-blue-600 border-blue-600'
+                  : 'border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-700'
+              }`}>
+                {isSelected && (
+                  <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 10">
+                    <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M1.5 5L4 7.5L8.5 2.5" />
+                  </svg>
+                )}
+              </span>
+              <span>{causa.nombre}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

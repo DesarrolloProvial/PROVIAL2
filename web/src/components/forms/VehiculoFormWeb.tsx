@@ -812,11 +812,11 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
       <SectionHeader section="documentos" title="Documentos Consignados" color="emerald" />
       {expandedSections.documentos && (
         <div className="mb-4 px-1">
-          <p className="text-sm text-gray-500 italic mb-3">
+          <p className="text-sm text-gray-500 dark:text-gray-400 italic mb-3">
             Marque los documentos que fueron consignados a la autoridad
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-            <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
+            <label className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 p-2 rounded-lg">
               <input
                 type="checkbox"
                 checked={vehiculo.doc_consignado_licencia || false}
@@ -825,7 +825,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">Licencia de conducir</span>
             </label>
-            <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
+            <label className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 p-2 rounded-lg">
               <input
                 type="checkbox"
                 checked={vehiculo.doc_consignado_tarjeta_circulacion || false}
@@ -834,7 +834,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">Tarjeta de circulación</span>
             </label>
-            <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
+            <label className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 p-2 rounded-lg">
               <input
                 type="checkbox"
                 checked={vehiculo.doc_consignado_tarjeta || false}
@@ -843,7 +843,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">Tarjeta de propiedad</span>
             </label>
-            <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
+            <label className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 p-2 rounded-lg">
               <input
                 type="checkbox"
                 checked={vehiculo.doc_consignado_licencia_transporte || false}
@@ -852,7 +852,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">Licencia de transporte</span>
             </label>
-            <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
+            <label className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 p-2 rounded-lg">
               <input
                 type="checkbox"
                 checked={vehiculo.doc_consignado_tarjeta_operaciones || false}
@@ -861,7 +861,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">Tarjeta de operaciones</span>
             </label>
-            <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
+            <label className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 p-2 rounded-lg">
               <input
                 type="checkbox"
                 checked={vehiculo.doc_consignado_poliza || false}
@@ -872,7 +872,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
             </label>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Consignado por (autoridad)
             </label>
             <div className="flex gap-2">
@@ -913,17 +913,17 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
           </div>
 
           {(vehiculo.personas || []).length === 0 && (
-            <p className="text-sm text-gray-400 text-center py-4">No hay personas registradas</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">No hay personas registradas</p>
           )}
 
           {(vehiculo.personas || []).map((persona: Persona, pIdx: number) => (
-            <div key={pIdx} className="border border-gray-200 rounded-lg mb-2 overflow-hidden">
+            <div key={pIdx} className="border border-gray-200 dark:border-gray-600 rounded-lg mb-2 overflow-hidden">
               <button
                 type="button"
                 onClick={() => setExpandedPersonas(prev => ({ ...prev, [pIdx]: !prev[pIdx] }))}
-                className="w-full flex justify-between items-center bg-gray-50 px-3 py-2 text-left"
+                className="w-full flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 px-3 py-2 text-left"
               >
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Persona {pIdx + 1}{persona.nombre ? ` - ${persona.nombre}` : ''}
                   {persona.estado ? ` (${persona.estado})` : ''}
                 </span>
@@ -947,7 +947,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 <div className="p-3 space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Nombre</label>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Nombre</label>
                       <input
                         type="text"
                         value={persona.nombre}
@@ -956,11 +956,11 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                           personas[pIdx] = { ...personas[pIdx], nombre: e.target.value };
                           handleChange('personas', personas);
                         }}
-                        className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                        className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">DPI</label>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">DPI</label>
                       <input
                         type="text"
                         value={persona.dpi}
@@ -969,11 +969,11 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                           personas[pIdx] = { ...personas[pIdx], dpi: e.target.value };
                           handleChange('personas', personas);
                         }}
-                        className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                        className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Edad</label>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Edad</label>
                       <input
                         type="number"
                         min="0"
@@ -983,13 +983,13 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                           personas[pIdx] = { ...personas[pIdx], edad: parseInt(e.target.value) || '' };
                           handleChange('personas', personas);
                         }}
-                        className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                        className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Género</label>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Género</label>
                       <div className="flex gap-2">
                         {SEXOS.map(s => (
                           <button
@@ -1010,7 +1010,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Tipo de persona</label>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Tipo de persona</label>
                       <select
                         value={persona.tipo_persona}
                         onChange={(e) => {
@@ -1018,7 +1018,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                           personas[pIdx] = { ...personas[pIdx], tipo_persona: e.target.value };
                           handleChange('personas', personas);
                         }}
-                        className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                        className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       >
                         <option value="">Seleccionar...</option>
                         {TIPOS_PERSONA.map(t => (
@@ -1027,7 +1027,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Estado</label>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Estado</label>
                       <select
                         value={persona.estado}
                         onChange={(e) => {
@@ -1035,7 +1035,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                           personas[pIdx] = { ...personas[pIdx], estado: e.target.value };
                           handleChange('personas', personas);
                         }}
-                        className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                        className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       >
                         {ESTADOS_PILOTO.map(ep => (
                           <option key={ep.value} value={ep.value}>{ep.label}</option>
@@ -1046,9 +1046,9 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                   </div>
 
                   {(persona.estado === 'HERIDO' || persona.estado === 'TRASLADADO') && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-2 bg-yellow-50 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Hospital de traslado</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hospital de traslado</label>
                         <input
                           type="text"
                           value={persona.hospital_traslado}
@@ -1057,11 +1057,11 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                             personas[pIdx] = { ...personas[pIdx], hospital_traslado: e.target.value };
                             handleChange('personas', personas);
                           }}
-                          className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Descripción de lesiones</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Descripción de lesiones</label>
                         <input
                           type="text"
                           value={persona.descripcion_lesiones}
@@ -1070,16 +1070,16 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                             personas[pIdx] = { ...personas[pIdx], descripcion_lesiones: e.target.value };
                             handleChange('personas', personas);
                           }}
-                          className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                         />
                       </div>
                     </div>
                   )}
 
                   {persona.estado === 'FALLECIDO' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-2 bg-red-50 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Causa de fallecimiento</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Causa de fallecimiento</label>
                         <input
                           type="text"
                           value={persona.causa_fallecimiento}
@@ -1088,11 +1088,11 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                             personas[pIdx] = { ...personas[pIdx], causa_fallecimiento: e.target.value };
                             handleChange('personas', personas);
                           }}
-                          className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Lugar de fallecimiento</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Lugar de fallecimiento</label>
                         <select
                           value={persona.lugar_fallecimiento}
                           onChange={(e) => {
@@ -1100,7 +1100,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                             personas[pIdx] = { ...personas[pIdx], lugar_fallecimiento: e.target.value };
                             handleChange('personas', personas);
                           }}
-                          className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                         >
                           <option value="">Seleccionar...</option>
                           {LUGARES_FALLECIMIENTO.map(l => (
@@ -1126,7 +1126,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
               {dispositivosCatalogo.map((disp) => {
                 const current = (vehiculo.dispositivos || []).find((d: any) => d.id === disp.id);
                 return (
-                  <div key={disp.id} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                  <div key={disp.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
                     <span className="text-sm text-gray-700 dark:text-gray-300">{disp.nombre}</span>
                     <div className="flex gap-1">
                       {ESTADOS_DISPOSITIVO.map(ed => (
@@ -1151,7 +1151,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                               ? ed.value === 'FUNCIONANDO' ? 'bg-green-600 text-white'
                                 : ed.value === 'DANADO' ? 'bg-red-600 text-white'
                                 : 'bg-gray-600 text-white'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                           }`}
                         >
                           {ed.label}
@@ -1163,7 +1163,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
               })}
             </div>
           ) : (
-            <p className="text-sm text-gray-400 text-center py-4">
+            <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
               No hay dispositivos de seguridad en el catálogo
             </p>
           )}
@@ -1195,7 +1195,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
           </div>
 
           {vehiculo.custodia_estado && vehiculo.custodia_estado !== 'LIBRE' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 bg-rose-50 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 bg-rose-50 dark:bg-rose-900/20 rounded-lg">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Autoridad</label>
                 <input

@@ -62,20 +62,20 @@ export default function MapPickerModal({ isOpen, onClose, onConfirm, initialLat,
 
   return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style={{ height: '75vh' }}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style={{ height: '75vh' }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <MapPin className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-gray-800">Seleccionar ubicación en mapa</h3>
+            <h3 className="font-semibold text-gray-800 dark:text-gray-100">Seleccionar ubicación en mapa</h3>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg">
-            <X className="w-5 h-5 text-gray-500" />
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
         {/* Hint */}
-        <div className="px-4 py-2 bg-blue-50 text-blue-700 text-sm border-b">
+        <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm border-b border-blue-100 dark:border-blue-800">
           Haz clic en el mapa para seleccionar las coordenadas del incidente.
         </div>
 
@@ -98,22 +98,22 @@ export default function MapPickerModal({ isOpen, onClose, onConfirm, initialLat,
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t bg-gray-50 rounded-b-xl">
-          <div className="text-sm text-gray-600">
+        <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-xl">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             {picked ? (
               <span>
-                <span className="font-medium text-gray-800">{picked[0].toFixed(6)}</span>
+                <span className="font-medium text-gray-800 dark:text-gray-200">{picked[0].toFixed(6)}</span>
                 {', '}
-                <span className="font-medium text-gray-800">{picked[1].toFixed(6)}</span>
+                <span className="font-medium text-gray-800 dark:text-gray-200">{picked[1].toFixed(6)}</span>
               </span>
             ) : (
-              <span className="text-gray-400">Haz clic en el mapa...</span>
+              <span className="text-gray-400 dark:text-gray-500">Haz clic en el mapa...</span>
             )}
           </div>
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+              className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 text-sm"
             >
               Cancelar
             </button>
