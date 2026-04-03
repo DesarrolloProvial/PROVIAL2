@@ -167,7 +167,6 @@ export default function COPMapaPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
   const [modoVista, setModoVista] = useState<'mapa' | 'tabla'>('mapa');
-  const [selectedUnidad, setSelectedUnidad] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -198,7 +197,7 @@ export default function COPMapaPage() {
   const defaultCenter: LatLngExpression = [14.6407, -90.5133];
 
   // Query principal: Resumen de unidades (última situación por unidad activa en patrullaje)
-  const { data: resumenUnidades = [], refetch: refetchResumen, isLoading: loadingResumen, isError: errorResumen } = useQuery({
+  const { data: resumenUnidades = [], refetch: refetchResumen } = useQuery({
     queryKey: ['resumen-unidades'],
     queryFn: async () => {
       const data = await situacionesAPI.getResumenUnidades() as any;
@@ -324,8 +323,6 @@ export default function COPMapaPage() {
     }
   };
 
-  const isLoading = loadingResumen;
-  const hasError = errorResumen;
 
   const formatLastUpdate = () => {
     return lastUpdate.toLocaleTimeString('es-GT', {
@@ -1148,12 +1145,8 @@ export default function COPMapaPage() {
               return (
                 <ResumenUnidadesTable
                   resumen={resumenUnidades}
-                  onSelectUnidad={(unidadId) => {
+                  onSelectUnidad={() => {
                     setModoVista('mapa');
-                    const unidad = resumenUnidades.find((u: any) => u.unidad_id === unidadId);
-                    if (unidad) {
-                      setSelectedUnidad(unidad);
-                    }
                   }}
                   onCreateSituacion={(unidadId) => {
                     setPreselectedUnidadId(unidadId);
