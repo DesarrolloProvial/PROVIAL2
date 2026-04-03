@@ -200,7 +200,15 @@ export async function createSituacion(req: Request, res: Response) {
       const asig = await db.oneOrNone('SELECT ruta_id FROM asignacion_unidad WHERE id=$1', [asignacionFinal]);
       if (asig) rutaFinal = asig.ruta_id;
     }
-    if (!rutaFinal) return res.status(400).json({ error: 'ruta_id requerido' });
+    // Fallback: tomar ruta de la salida activa de la unidad (para COP y creaciones sin turno)
+    if (!rutaFinal) {
+      const salidaActiva = await db.oneOrNone(
+        `SELECT ruta_inicial_id FROM salida_unidad WHERE unidad_id = $1 AND estado = 'EN_SALIDA' ORDER BY created_at DESC LIMIT 1`,
+        [unidadFinal]
+      );
+      if (salidaActiva?.ruta_inicial_id) rutaFinal = salidaActiva.ruta_inicial_id;
+    }
+    if (!rutaFinal) return res.status(400).json({ error: 'ruta_id requerido (unidad sin ruta asignada ni salida activa con ruta)' });
 
     // Cerrar anterior activa
     const anterior = await db.oneOrNone("SELECT id FROM situacion WHERE unidad_id=$1 AND estado='ACTIVA' ORDER BY created_at DESC LIMIT 1", [unidadFinal]);

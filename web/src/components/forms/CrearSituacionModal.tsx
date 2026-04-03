@@ -648,28 +648,14 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
                   </select>
                   {form.ruta_id ? (
                     <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
-                      Ruta auto-asignada: {rutas.find((r: any) => r.id === Number(form.ruta_id))?.codigo || form.ruta_id}
+                      Ruta: {rutas.find((r: any) => r.id === Number(form.ruta_id))?.codigo || form.ruta_id}
                     </p>
-                  ) : null}
-                  {/* Selector manual de ruta (siempre visible para permitir cambio/asignación) */}
-                  {form.unidad_id && (
-                    <div className="mt-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Ruta *
-                      </label>
-                      <select
-                        value={form.ruta_id}
-                        onChange={(e) => handleChange('ruta_id', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                      >
-                        <option value="">Seleccionar ruta...</option>
-                        {rutas
-                          .sort((a: any, b: any) => (a.codigo || '').localeCompare(b.codigo || ''))
-                          .map((r: any) => (
-                            <option key={r.id} value={r.id}>{r.codigo} - {r.nombre || ''}</option>
-                          ))}
-                      </select>
-                    </div>
+                  ) : (
+                    form.unidad_id && (
+                      <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                        Sin ruta asignada — se tomará de la salida activa de la unidad
+                      </p>
+                    )
                   )}
                 </div>
               </div>

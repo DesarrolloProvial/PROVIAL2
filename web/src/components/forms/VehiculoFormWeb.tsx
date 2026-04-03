@@ -483,10 +483,11 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
         </div>
       )}
 
-      {/* Sección 3: Licencia de Conducir */}
-      <SectionHeader section="licencia" title="Licencia de Conducir" color="purple" />
+      {/* Sección 3: Piloto / Documento */}
+      <SectionHeader section="licencia" title="Piloto y Documento" color="purple" />
       {expandedSections.licencia && (
         <div className="mb-4 px-1 space-y-3">
+          {/* Nombre del piloto */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Nombre Completo del Piloto
@@ -498,57 +499,130 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
               className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Tipo de Licencia
-              </label>
-              <div className="flex gap-2">
-                {TIPOS_LICENCIA.map((tipo) => (
-                  <button
-                    key={tipo}
-                    type="button"
-                    onClick={() => handleChange('licencia_tipo', tipo)}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium ${vehiculo.licencia_tipo === tipo
+
+          {/* Selector de tipo de documento — excluyente */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Documento
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {/* Tipos de licencia */}
+              {TIPOS_LICENCIA.map((tipo) => (
+                <button
+                  key={tipo}
+                  type="button"
+                  onClick={() => {
+                    handleChange('licencia_tipo', tipo);
+                    handleChange('piloto_dpi', '');
+                  }}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                    vehiculo.licencia_tipo === tipo && !vehiculo.piloto_dpi
                       ? 'bg-purple-600 text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                      }`}
-                  >
-                    {tipo}
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                A: Motos | B: Livianos | C: Pesados | M: Maquinaria | E: Especial
-              </p>
+                  }`}
+                >
+                  Lic. {tipo}
+                </button>
+              ))}
+              {/* Solo DPI */}
+              <button
+                type="button"
+                onClick={() => {
+                  handleChange('licencia_tipo', '');
+                  handleChange('licencia_numero', '');
+                  handleChange('licencia_vencimiento', '');
+                  handleChange('licencia_antiguedad', '');
+                  // mantener piloto_dpi (el usuario lo llenará)
+                  if (!vehiculo.piloto_dpi) handleChange('piloto_dpi', ' '); // trigger modo DPI
+                }}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                  !vehiculo.licencia_tipo && vehiculo.piloto_dpi?.trim()
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                Solo DPI
+              </button>
+              {/* No porta documento */}
+              <button
+                type="button"
+                onClick={() => {
+                  handleChange('licencia_tipo', '');
+                  handleChange('licencia_numero', '');
+                  handleChange('licencia_vencimiento', '');
+                  handleChange('licencia_antiguedad', '');
+                  handleChange('piloto_dpi', '');
+                }}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                  !vehiculo.licencia_tipo && !vehiculo.piloto_dpi?.trim()
+                    ? 'bg-red-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                Sin documento
+              </button>
             </div>
-            <div>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              A: Motos · B: Livianos · C: Pesados · M: Maquinaria · E: Especial
+            </p>
+          </div>
+
+          {/* Campos condicionales según tipo de documento */}
+          {vehiculo.licencia_tipo && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  No. Licencia
+                </label>
+                <input
+                  type="text"
+                  value={vehiculo.licencia_numero || ''}
+                  onChange={(e) => handleChange('licencia_numero', e.target.value)}
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Vencimiento
+                </label>
+                <input
+                  type="date"
+                  value={vehiculo.licencia_vencimiento || ''}
+                  onChange={(e) => handleChange('licencia_vencimiento', e.target.value)}
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Antigüedad (años)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={vehiculo.licencia_antiguedad != null ? vehiculo.licencia_antiguedad : ''}
+                  onChange={(e) => handleChange('licencia_antiguedad', e.target.value === '' ? '' : parseInt(e.target.value))}
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+            </div>
+          )}
+
+          {!vehiculo.licencia_tipo && vehiculo.piloto_dpi?.trim() !== '' && vehiculo.piloto_dpi !== undefined && (
+            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                No. Licencia / DPI
+                No. DPI
               </label>
               <input
                 type="text"
-                value={vehiculo.licencia_numero || vehiculo.piloto_dpi || ''}
-                onChange={(e) => {
-                  handleChange('licencia_numero', e.target.value);
-                  handleChange('piloto_dpi', e.target.value);
-                }}
-                placeholder="Si no porta licencia, ingresar DPI"
+                value={vehiculo.piloto_dpi || ''}
+                onChange={(e) => handleChange('piloto_dpi', e.target.value)}
+                placeholder="0000 00000 0000"
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Vencimiento Licencia
-              </label>
-              <input
-                type="date"
-                value={vehiculo.licencia_vencimiento || ''}
-                onChange={(e) => handleChange('licencia_vencimiento', e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-          </div>
+          )}
+
+          {/* Teléfono, fecha nacimiento, etnia */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -569,20 +643,6 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 type="date"
                 value={vehiculo.fecha_nacimiento_piloto || ''}
                 onChange={(e) => handleChange('fecha_nacimiento_piloto', e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Antigüedad licencia (años)
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={vehiculo.licencia_antiguedad != null ? vehiculo.licencia_antiguedad : ''}
-                onChange={(e) => handleChange('licencia_antiguedad', e.target.value === '' ? '' : parseInt(e.target.value))}
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>
