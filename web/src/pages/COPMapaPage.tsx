@@ -145,12 +145,18 @@ function formatObstruccion(data: any): string {
   }
   if (typeof data !== 'object') return String(data);
   const parts: string[] = [];
-  if (data.tipo) parts.push(data.tipo);
-  if (data.descripcion) parts.push(data.descripcion);
+  // campos del formulario de obstrucción
+  const tipo = data.tipo_obstruccion ?? data.tipo;
+  if (tipo && tipo !== 'ninguna') parts.push(tipo);
+  const desc = data.descripcion_manual ?? data.descripcion;
+  if (desc) parts.push(desc);
+  if (data.sentido_principal) parts.push(`sentido principal: ${data.sentido_principal}`);
+  if (data.sentido_contrario) parts.push(`sentido contrario: ${data.sentido_contrario}`);
+  if (data.hay_vehiculo_fuera_via) parts.push('vehículo fuera de vía');
   if (data.largo_metros) parts.push(`${data.largo_metros}m`);
   if (data.ancho_metros) parts.push(`${data.ancho_metros}m ancho`);
   if (data.nivel) parts.push(`Nivel: ${data.nivel}`);
-  return parts.length > 0 ? parts.join(' · ') : JSON.stringify(data);
+  return parts.length > 0 ? parts.join(' · ') : 'sin detalles';
 }
 
 export default function COPMapaPage() {
