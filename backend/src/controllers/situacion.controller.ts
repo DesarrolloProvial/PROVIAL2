@@ -226,6 +226,14 @@ export async function createSituacion(req: Request, res: Response) {
       const sal = await SalidaModel.getMiSalidaActiva(userId);
       if (sal) salidaFinal = sal.salida_id;
     }
+    // Fallback: si COP u otro rol sin salida propia, tomar la salida activa de la unidad
+    if (!salidaFinal && unidadFinal) {
+      const salUnidad = await db.oneOrNone(
+        `SELECT id FROM salida_unidad WHERE unidad_id = $1 AND estado = 'EN_SALIDA' ORDER BY created_at DESC LIMIT 1`,
+        [unidadFinal]
+      );
+      if (salUnidad) salidaFinal = salUnidad.id;
+    }
 
     // Validar que departamento_id y municipio_id existan en DB antes de usarlos
     let deptoIdFinal = normalizeId(departamento_id);
