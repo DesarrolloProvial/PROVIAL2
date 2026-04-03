@@ -100,7 +100,7 @@ function L({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="flex min-w-0">
       <span className="text-gray-400 dark:text-gray-500 flex-shrink-0 w-36">{label}:</span>
-      <span className="text-gray-800 dark:text-gray-200 break-words">{value ?? '—'}</span>
+      <span className="text-gray-800 dark:text-gray-200 flex-1 min-w-0" style={{ overflowWrap: 'anywhere' }}>{value ?? '—'}</span>
     </div>
   );
 }
@@ -248,7 +248,11 @@ function LogSituacion({ item }: { item: TimelineItem }) {
         </div>
       </div>
       {d.obstruccion_data && Object.keys(d.obstruccion_data).length > 0 && (
-        <L label="datos obstrucción" value={JSON.stringify(d.obstruccion_data)} />
+        Object.entries(d.obstruccion_data as Record<string, any>)
+          .filter(([, v]) => v !== null && v !== '')
+          .map(([k, v]) => (
+            <L key={k} label={`  ${k.replace(/_/g, ' ')}`} value={String(v)} />
+          ))
       )}
 
       <Sep />
@@ -508,7 +512,7 @@ function SalidaCard({ salida }: { salida: SalidaDia }) {
             <p className="text-red-500 text-sm p-5">Error al cargar la bitácora.</p>
           )}
           {timelineData && (
-            <div className="px-5 py-4 font-mono text-xs leading-5 text-gray-700 dark:text-gray-300">
+            <div className="px-5 py-4 font-mono text-xs leading-5 text-gray-700 dark:text-gray-300 overflow-hidden">
 
               {/* ── INICIO DE SALIDA ── */}
               <div className="mb-5">
