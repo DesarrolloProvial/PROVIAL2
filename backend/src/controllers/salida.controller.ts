@@ -272,6 +272,13 @@ export async function iniciarSalidaCOP(req: Request, res: Response) {
       return res.status(409).json({ error: 'La unidad ya tiene una salida activa', salida_id: salidaActiva.id });
     }
 
+    // Verificar si transportes marcó la unidad como no disponible (solo para registrarlo)
+    const estadoUnidad = await db.oneOrNone(
+      `SELECT disponible_transportes, instrucciones_transportes FROM unidad WHERE id = $1`,
+      [unidad_id]
+    );
+    const forzadaNoDisponible = estadoUnidad && estadoUnidad.disponible_transportes === false;
+
     const combustibleDecimal = convertirCombustibleADecimal(combustible_inicial);
 
     const salidaId = await SalidaModel.iniciarSalida({
@@ -305,14 +312,21 @@ export async function iniciarSalidaCOP(req: Request, res: Response) {
     }
 
     // Registrar evento de inicio COP
+    const descEvento = [
+      tieneTripulacion
+        ? `Salida iniciada desde COP con ${tripulacion.length} integrante(s)`
+        : 'Salida iniciada desde COP',
+      forzadaNoDisponible
+        ? `[FORZADA: unidad estaba marcada como no disponible por Transportes — "${estadoUnidad.instrucciones_transportes || 'sin motivo'}"]`
+        : null,
+    ].filter(Boolean).join(' ');
+
     await db.none(
       `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_new, realizado_por)
        VALUES ($1, 'INICIO_COP', $2, $3, $4)`,
       [salidaId,
-       tieneTripulacion
-         ? `Salida iniciada desde COP con ${tripulacion.length} integrante(s)`
-         : 'Salida iniciada desde COP',
-       JSON.stringify({ unidad_id, ruta_inicial_id: ruta_inicial_id || null, tripulacion: tripulacion || null }),
+       descEvento,
+       JSON.stringify({ unidad_id, ruta_inicial_id: ruta_inicial_id || null, tripulacion: tripulacion || null, forzada_no_disponible: forzadaNoDisponible }),
        req.user.userId]
     );
 

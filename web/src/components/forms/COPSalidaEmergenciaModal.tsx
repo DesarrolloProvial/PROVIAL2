@@ -24,6 +24,8 @@ interface Unidad {
   tipo_unidad: string;
   sede_id: number;
   sede_nombre: string;
+  disponible_transportes: boolean;
+  instrucciones_transportes?: string;
 }
 
 interface Ruta {
@@ -223,10 +225,23 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
               <option value="">Seleccionar unidad...</option>
               {unidades.map(u => (
                 <option key={u.id} value={u.id}>
-                  {u.codigo} — {u.tipo_unidad}{!sedeId ? ` (${u.sede_nombre})` : ''}
+                  {u.disponible_transportes === false ? '⚠ ' : ''}{u.codigo} — {u.tipo_unidad}{!sedeId ? ` (${u.sede_nombre})` : ''}
                 </option>
               ))}
             </select>
+            {(() => {
+              const u = unidades.find(u => u.id === Number(unidadId));
+              if (!u || u.disponible_transportes !== false) return null;
+              return (
+                <div className="mt-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg px-3 py-2.5 text-sm text-orange-800 dark:text-orange-300">
+                  <p className="font-semibold">⚠ Unidad marcada como no disponible por Transportes</p>
+                  {u.instrucciones_transportes && (
+                    <p className="mt-0.5 text-orange-700 dark:text-orange-400">{u.instrucciones_transportes}</p>
+                  )}
+                  <p className="mt-1 text-xs text-orange-600 dark:text-orange-500">La salida quedará registrada con esta observación.</p>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Ruta */}
