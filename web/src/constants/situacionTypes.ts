@@ -388,6 +388,7 @@ export const GEOMETRIAS_VIA = [
 
 // Condiciones climáticas
 export const CONDICIONES_CLIMATICAS = [
+  { value: 'SOLEADO', label: 'Soleado' },
   { value: 'DESPEJADO', label: 'Despejado' },
   { value: 'NUBLADO', label: 'Nublado' },
   { value: 'LLUVIA_LEVE', label: 'Lluvia Leve' },

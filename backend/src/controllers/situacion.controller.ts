@@ -1064,7 +1064,7 @@ export async function getCatalogosAuxiliares(_req: Request, res: Response) {
     let dispositivos_seguridad: any[] = [];
     let causas_hecho: any[] = [];
     try {
-      dispositivos_seguridad = await db.manyOrNone("SELECT id, nombre FROM dispositivo_seguridad WHERE activo = true ORDER BY nombre");
+      dispositivos_seguridad = await db.manyOrNone("SELECT id, nombre FROM dispositivo_seguridad ORDER BY nombre");
     } catch (e) {
       console.warn('dispositivo_seguridad table not found, skipping');
     }

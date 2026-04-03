@@ -648,10 +648,28 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
                   </select>
                   {form.ruta_id ? (
                     <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
-                      Ruta asignada: {rutas.find((r: any) => r.id === Number(form.ruta_id))?.codigo || form.ruta_id}
+                      Ruta auto-asignada: {rutas.find((r: any) => r.id === Number(form.ruta_id))?.codigo || form.ruta_id}
                     </p>
-                  ) : (
-                    form.unidad_id && <p className="mt-1 text-xs text-gray-400">Sin ruta asignada</p>
+                  ) : null}
+                  {/* Selector manual de ruta (siempre visible para permitir cambio/asignación) */}
+                  {form.unidad_id && (
+                    <div className="mt-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Ruta *
+                      </label>
+                      <select
+                        value={form.ruta_id}
+                        onChange={(e) => handleChange('ruta_id', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      >
+                        <option value="">Seleccionar ruta...</option>
+                        {rutas
+                          .sort((a: any, b: any) => (a.codigo || '').localeCompare(b.codigo || ''))
+                          .map((r: any) => (
+                            <option key={r.id} value={r.id}>{r.codigo} - {r.nombre || ''}</option>
+                          ))}
+                      </select>
+                    </div>
                   )}
                 </div>
               </div>
@@ -684,14 +702,6 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
                 departamentoId={form.departamento_id}
                 municipioId={form.municipio_id}
                 departamentos={departamentos}
-                onChange={handleChange}
-              />
-
-              {/* Condiciones (shared component) */}
-              <CondicionesViaFields
-                clima={form.clima}
-                area={form.area}
-                materialVia={form.material_via}
                 onChange={handleChange}
               />
 
@@ -812,15 +822,23 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
 
               {/* Grupo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Grupo (número)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={form.grupo}
-                  onChange={(e) => handleChange('grupo', e.target.value ? parseInt(e.target.value) : '')}
-                  className="w-full max-w-xs px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  placeholder="Número de grupo"
-                />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Grupo de brigada</label>
+                <div className="flex gap-2">
+                  {[{ value: '', label: 'Sin grupo' }, { value: 0, label: 'Grupo 0' }, { value: 1, label: 'Grupo 1' }, { value: 2, label: 'Grupo 2' }].map(g => (
+                    <button
+                      key={String(g.value)}
+                      type="button"
+                      onClick={() => handleChange('grupo', g.value)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                        String(form.grupo) === String(g.value)
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {g.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Causas del Hecho */}

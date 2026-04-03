@@ -524,12 +524,16 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                No. Licencia
+                No. Licencia / DPI
               </label>
               <input
                 type="text"
-                value={vehiculo.licencia_numero || ''}
-                onChange={(e) => handleChange('licencia_numero', e.target.value)}
+                value={vehiculo.licencia_numero || vehiculo.piloto_dpi || ''}
+                onChange={(e) => {
+                  handleChange('licencia_numero', e.target.value);
+                  handleChange('piloto_dpi', e.target.value);
+                }}
+                placeholder="Si no porta licencia, ingresar DPI"
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>
@@ -546,17 +550,6 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                DPI
-              </label>
-              <input
-                type="text"
-                value={vehiculo.piloto_dpi || ''}
-                onChange={(e) => handleChange('piloto_dpi', e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              />
-            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Teléfono
@@ -588,8 +581,8 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
               <input
                 type="number"
                 min="0"
-                value={vehiculo.licencia_antiguedad || ''}
-                onChange={(e) => handleChange('licencia_antiguedad', parseInt(e.target.value) || 0)}
+                value={vehiculo.licencia_antiguedad != null ? vehiculo.licencia_antiguedad : ''}
+                onChange={(e) => handleChange('licencia_antiguedad', e.target.value === '' ? '' : parseInt(e.target.value))}
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>
