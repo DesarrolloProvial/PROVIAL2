@@ -12,9 +12,9 @@ import DynamicActivityFields from './DynamicActivityFields';
 // CONSTANTES
 // ============================================
 const CATEGORIA_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
-  OPERATIVO: { label: 'Operativo', color: 'text-blue-700', bgColor: 'bg-blue-50 border-blue-200', icon: Activity },
-  APOYO: { label: 'Apoyo', color: 'text-green-700', bgColor: 'bg-green-50 border-green-200', icon: Shield },
-  ADMINISTRATIVO: { label: 'Administrativo', color: 'text-purple-700', bgColor: 'bg-purple-50 border-purple-200', icon: Briefcase },
+  OPERATIVO: { label: 'Operativo', color: 'text-blue-700 dark:text-blue-300', bgColor: 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800', icon: Activity },
+  APOYO: { label: 'Apoyo', color: 'text-green-700 dark:text-green-300', bgColor: 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800', icon: Shield },
+  ADMINISTRATIVO: { label: 'Administrativo', color: 'text-purple-700 dark:text-purple-300', bgColor: 'bg-purple-50 dark:bg-purple-900/30 border-purple-200 dark:border-purple-800', icon: Briefcase },
 };
 
 // ============================================
