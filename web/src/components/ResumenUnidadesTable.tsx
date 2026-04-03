@@ -61,23 +61,23 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
   const getEstadoBadgeClass = (estado: string | null) => {
     switch (estado) {
       case 'ACTIVA':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300';
       case 'CERRADA':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
       default:
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300';
     }
   };
 
   const getTipoSituacionBadgeClass = (tipo: string | null) => {
-    if (!tipo) return 'bg-gray-100 text-gray-600';
+    if (!tipo) return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300';
 
     const tipoLower = tipo.toLowerCase();
-    if (tipoLower.includes('incidente')) return 'bg-red-100 text-red-800';
-    if (tipoLower.includes('patrullaje')) return 'bg-blue-100 text-blue-800';
-    if (tipoLower.includes('parada')) return 'bg-yellow-100 text-yellow-800';
-    if (tipoLower.includes('comida')) return 'bg-orange-100 text-orange-800';
-    return 'bg-purple-100 text-purple-800';
+    if (tipoLower.includes('incidente')) return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300';
+    if (tipoLower.includes('patrullaje')) return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300';
+    if (tipoLower.includes('parada')) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300';
+    if (tipoLower.includes('comida')) return 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300';
+    return 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300';
   };
 
   const filteredResumen = resumen.filter((u) => {

@@ -164,9 +164,9 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
   );
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 shadow-sm">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 shadow-sm">
       <div className="flex justify-between items-center mb-4">
-        <h4 className="font-semibold text-gray-800">Vehículo #{index + 1}</h4>
+        <h4 className="font-semibold text-gray-800 dark:text-gray-200">Vehículo #{index + 1}</h4>
         <button
           type="button"
           onClick={() => onRemove(index)}
@@ -183,13 +183,13 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
         <div className="mb-4 px-1">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Tipo de Vehículo *
               </label>
               <select
                 value={vehiculo.tipo_vehiculo || ''}
                 onChange={(e) => handleChange('tipo_vehiculo', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Seleccionar...</option>
                 {TIPOS_VEHICULO.map((tipo) => (
@@ -199,13 +199,13 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Marca
               </label>
               <select
                 value={vehiculo.marca || ''}
                 onChange={(e) => handleChange('marca', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Seleccionar...</option>
                 {MARCAS_VEHICULO.map((marca) => (
@@ -215,13 +215,13 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Color
               </label>
               <select
                 value={vehiculo.color || ''}
                 onChange={(e) => handleChange('color', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Seleccionar...</option>
                 {COLORES_VEHICULO.map((color) => (
@@ -233,7 +233,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Placa
               </label>
               <input
@@ -241,7 +241,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 value={vehiculo.placa || ''}
                 onChange={(e) => handleChange('placa', e.target.value.toUpperCase())}
                 placeholder="P123ABC"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 uppercase"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500 uppercase"
               />
             </div>
 
@@ -253,19 +253,19 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 onChange={(e) => handleChange('placa_extranjera', e.target.checked)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
-              <label htmlFor={`placa_extranjera_${index}`} className="ml-2 text-sm text-gray-700">
+              <label htmlFor={`placa_extranjera_${index}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                 Placa Extranjera
               </label>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Estado del Piloto *
               </label>
               <select
                 value={vehiculo.estado_piloto || 'ILESO'}
                 onChange={(e) => handleChange('estado_piloto', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
               >
                 {ESTADOS_PILOTO.map((estado) => (
                   <option key={estado.value} value={estado.value}>{estado.label}</option>
@@ -284,12 +284,12 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 onChange={(e) => handleChange('ebriedad', e.target.checked)}
                 className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
               />
-              <label htmlFor={`ebriedad_${index}`} className="ml-2 text-sm text-gray-700">
+              <label htmlFor={`ebriedad_${index}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                 Ebriedad / bajo efectos
               </label>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sexo Piloto</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sexo Piloto</label>
               <div className="flex gap-2">
                 {SEXOS.map(s => (
                   <button
@@ -299,7 +299,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                     className={`px-4 py-1.5 rounded-md text-sm font-medium ${
                       vehiculo.sexo_piloto === s.value
                         ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                   >
                     {s.label}
@@ -311,46 +311,46 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
 
           {/* Campos condicionales del piloto */}
           {(vehiculo.estado_piloto === 'HERIDO' || vehiculo.estado_piloto === 'TRASLADADO') && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hospital de traslado</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hospital de traslado</label>
                 <input
                   type="text"
                   value={vehiculo.hospital_traslado_piloto || ''}
                   onChange={(e) => handleChange('hospital_traslado_piloto', e.target.value)}
                   placeholder="Nombre del hospital"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción de lesiones</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción de lesiones</label>
                 <input
                   type="text"
                   value={vehiculo.descripcion_lesiones_piloto || ''}
                   onChange={(e) => handleChange('descripcion_lesiones_piloto', e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
           )}
 
           {vehiculo.estado_piloto === 'FALLECIDO' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Causa de fallecimiento</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Causa de fallecimiento</label>
                 <input
                   type="text"
                   value={vehiculo.causa_fallecimiento || ''}
                   onChange={(e) => handleChange('causa_fallecimiento', e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Lugar de fallecimiento</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lugar de fallecimiento</label>
                 <select
                   value={vehiculo.lugar_fallecimiento || ''}
                   onChange={(e) => handleChange('lugar_fallecimiento', e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Seleccionar...</option>
                   {LUGARES_FALLECIMIENTO.map(l => (
@@ -359,12 +359,12 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hospital</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hospital</label>
                 <input
                   type="text"
                   value={vehiculo.hospital_traslado_piloto || ''}
                   onChange={(e) => handleChange('hospital_traslado_piloto', e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -372,7 +372,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Personas Asistidas
               </label>
               <input
@@ -380,17 +380,17 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 min="0"
                 value={vehiculo.personas_asistidas || 0}
                 onChange={(e) => handleChange('personas_asistidas', parseInt(e.target.value) || 0)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Nivel de Daño
               </label>
               <select
                 value={vehiculo.dano || ''}
                 onChange={(e) => handleChange('dano', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Seleccionar...</option>
                 {NIVELES_DANO.map((nivel) => (
@@ -408,52 +408,52 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
         <div className="mb-4 px-1 space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 No. Tarjeta Circulación
               </label>
               <input
                 type="text"
                 value={vehiculo.tarjeta_circulacion || ''}
                 onChange={(e) => handleChange('tarjeta_circulacion', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 NIT Propietario
               </label>
               <input
                 type="text"
                 value={vehiculo.nit || ''}
                 onChange={(e) => handleChange('nit', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Nombre Propietario
             </label>
             <input
               type="text"
               value={vehiculo.nombre_propietario || ''}
               onChange={(e) => handleChange('nombre_propietario', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Dirección Propietario
             </label>
             <textarea
               value={vehiculo.direccion_propietario || ''}
               onChange={(e) => handleChange('direccion_propietario', e.target.value)}
               rows={2}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
           <div className="w-32">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Modelo (Año)
             </label>
             <input
@@ -461,7 +461,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
               value={vehiculo.modelo || ''}
               onChange={(e) => handleChange('modelo', e.target.value)}
               placeholder="2020"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
         </div>
@@ -472,19 +472,19 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
       {expandedSections.licencia && (
         <div className="mb-4 px-1 space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Nombre Completo del Piloto
             </label>
             <input
               type="text"
               value={vehiculo.piloto_nombre || ''}
               onChange={(e) => handleChange('piloto_nombre', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Tipo de Licencia
               </label>
               <div className="flex gap-2">
@@ -495,78 +495,78 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                     onClick={() => handleChange('licencia_tipo', tipo)}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium ${vehiculo.licencia_tipo === tipo
                       ? 'bg-purple-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                   >
                     {tipo}
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 A: Motos | B: Livianos | C: Pesados | M: Maquinaria | E: Especial
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 No. Licencia
               </label>
               <input
                 type="text"
                 value={vehiculo.licencia_numero || ''}
                 onChange={(e) => handleChange('licencia_numero', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Vencimiento Licencia
               </label>
               <input
                 type="date"
                 value={vehiculo.licencia_vencimiento || ''}
                 onChange={(e) => handleChange('licencia_vencimiento', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 DPI
               </label>
               <input
                 type="text"
                 value={vehiculo.piloto_dpi || ''}
                 onChange={(e) => handleChange('piloto_dpi', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Teléfono
               </label>
               <input
                 type="tel"
                 value={vehiculo.piloto_telefono || ''}
                 onChange={(e) => handleChange('piloto_telefono', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Fecha Nacimiento
               </label>
               <input
                 type="date"
                 value={vehiculo.fecha_nacimiento_piloto || ''}
                 onChange={(e) => handleChange('fecha_nacimiento_piloto', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Antigüedad licencia (años)
               </label>
               <input
@@ -574,17 +574,17 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 min="0"
                 value={vehiculo.licencia_antiguedad || ''}
                 onChange={(e) => handleChange('licencia_antiguedad', parseInt(e.target.value) || 0)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Etnia del Piloto
               </label>
               <select
                 value={vehiculo.etnia_piloto || ''}
                 onChange={(e) => handleChange('etnia_piloto', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               >
                 <option value="">Seleccionar...</option>
                 {(auxiliares?.etnias || []).map((e: any) => (
@@ -606,41 +606,41 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
 
       {/* Switches para secciones condicionales */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 px-1">
-        <label className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg">
+        <label className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
           <input
             type="checkbox"
             checked={vehiculo.cargado || false}
             onChange={(e) => handleChange('cargado', e.target.checked)}
             className="h-4 w-4 text-blue-600 rounded"
           />
-          <span className="text-sm text-gray-700">Cargado</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">Cargado</span>
         </label>
-        <label className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg">
+        <label className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
           <input
             type="checkbox"
             checked={vehiculo.tiene_contenedor || false}
             onChange={(e) => handleChange('tiene_contenedor', e.target.checked)}
             className="h-4 w-4 text-blue-600 rounded"
           />
-          <span className="text-sm text-gray-700">Contenedor</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">Contenedor</span>
         </label>
-        <label className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg">
+        <label className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
           <input
             type="checkbox"
             checked={vehiculo.es_bus || false}
             onChange={(e) => handleChange('es_bus', e.target.checked)}
             className="h-4 w-4 text-blue-600 rounded"
           />
-          <span className="text-sm text-gray-700">Es Bus</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">Es Bus</span>
         </label>
-        <label className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg">
+        <label className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
           <input
             type="checkbox"
             checked={vehiculo.tiene_sancion || false}
             onChange={(e) => handleChange('tiene_sancion', e.target.checked)}
             className="h-4 w-4 text-blue-600 rounded"
           />
-          <span className="text-sm text-gray-700">Sanción</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">Sanción</span>
         </label>
       </div>
 
@@ -651,7 +651,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
           {expandedSections.carga && (
             <div className="mb-4 px-1 space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Tipo de Carga
                 </label>
                 <input
@@ -659,18 +659,18 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                   value={vehiculo.carga_tipo || ''}
                   onChange={(e) => handleChange('carga_tipo', e.target.value)}
                   placeholder="Ej: Granos, Materiales, Mercadería"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Descripción de Carga
                 </label>
                 <textarea
                   value={vehiculo.carga_descripcion || ''}
                   onChange={(e) => handleChange('carga_descripcion', e.target.value)}
                   rows={2}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -685,18 +685,18 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
           {expandedSections.contenedor && (
             <div className="mb-4 px-1 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   No. Contenedor/Remolque
                 </label>
                 <input
                   type="text"
                   value={vehiculo.contenedor_numero || ''}
                   onChange={(e) => handleChange('contenedor_numero', e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Empresa Contenedor
                 </label>
                 <input
@@ -704,7 +704,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                   value={vehiculo.contenedor_empresa || ''}
                   onChange={(e) => handleChange('contenedor_empresa', e.target.value)}
                   placeholder="Ej: MAERSK, EVERGREEN"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -719,18 +719,18 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
           {expandedSections.bus && (
             <div className="mb-4 px-1 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Empresa de Transporte
                 </label>
                 <input
                   type="text"
                   value={vehiculo.bus_empresa || ''}
                   onChange={(e) => handleChange('bus_empresa', e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Ruta del Bus
                 </label>
                 <input
@@ -738,11 +738,11 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                   value={vehiculo.bus_ruta || ''}
                   onChange={(e) => handleChange('bus_ruta', e.target.value)}
                   placeholder="Guatemala - Quetzaltenango"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Cantidad de Pasajeros
                 </label>
                 <input
@@ -750,7 +750,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                   min="0"
                   value={vehiculo.pasajeros_bus || 0}
                   onChange={(e) => handleChange('pasajeros_bus', parseInt(e.target.value) || 0)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -766,7 +766,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
             <div className="mb-4 px-1 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Artículo
                   </label>
                   <input
@@ -774,11 +774,11 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                     value={vehiculo.sancion_articulo || ''}
                     onChange={(e) => handleChange('sancion_articulo', e.target.value)}
                     placeholder="Ej: Art. 145, Art. 146"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Monto (Q)
                   </label>
                   <input
@@ -787,12 +787,12 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                     step="0.01"
                     value={vehiculo.sancion_monto || ''}
                     onChange={(e) => handleChange('sancion_monto', parseFloat(e.target.value) || 0)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Descripción de Sanción
                 </label>
                 <textarea
@@ -800,7 +800,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                   onChange={(e) => handleChange('sancion_descripcion', e.target.value)}
                   rows={2}
                   placeholder="Ej: Conducir sin licencia, Exceso de velocidad"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -823,7 +823,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 onChange={(e) => handleChange('doc_consignado_licencia', e.target.checked)}
                 className="h-4 w-4 text-emerald-600 rounded"
               />
-              <span className="text-sm text-gray-700">Licencia de conducir</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Licencia de conducir</span>
             </label>
             <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
               <input
@@ -832,7 +832,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 onChange={(e) => handleChange('doc_consignado_tarjeta_circulacion', e.target.checked)}
                 className="h-4 w-4 text-emerald-600 rounded"
               />
-              <span className="text-sm text-gray-700">Tarjeta de circulación</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Tarjeta de circulación</span>
             </label>
             <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
               <input
@@ -841,7 +841,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 onChange={(e) => handleChange('doc_consignado_tarjeta', e.target.checked)}
                 className="h-4 w-4 text-emerald-600 rounded"
               />
-              <span className="text-sm text-gray-700">Tarjeta de propiedad</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Tarjeta de propiedad</span>
             </label>
             <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
               <input
@@ -850,7 +850,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 onChange={(e) => handleChange('doc_consignado_licencia_transporte', e.target.checked)}
                 className="h-4 w-4 text-emerald-600 rounded"
               />
-              <span className="text-sm text-gray-700">Licencia de transporte</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Licencia de transporte</span>
             </label>
             <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
               <input
@@ -859,7 +859,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 onChange={(e) => handleChange('doc_consignado_tarjeta_operaciones', e.target.checked)}
                 className="h-4 w-4 text-emerald-600 rounded"
               />
-              <span className="text-sm text-gray-700">Tarjeta de operaciones</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Tarjeta de operaciones</span>
             </label>
             <label className="flex items-center gap-2 bg-emerald-50 p-2 rounded-lg">
               <input
@@ -868,7 +868,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 onChange={(e) => handleChange('doc_consignado_poliza', e.target.checked)}
                 className="h-4 w-4 text-emerald-600 rounded"
               />
-              <span className="text-sm text-gray-700">Póliza de seguro</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Póliza de seguro</span>
             </label>
           </div>
           <div>
@@ -883,7 +883,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                   onClick={() => handleChange('doc_consignado_por', autoridad)}
                   className={`px-4 py-2 rounded-md text-sm font-medium ${vehiculo.doc_consignado_por === autoridad
                       ? 'bg-emerald-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                 >
                   {autoridad}
@@ -1001,7 +1001,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                               handleChange('personas', personas);
                             }}
                             className={`px-3 py-1 rounded-md text-sm ${
-                              persona.genero === s.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              persona.genero === s.value ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                           >
                             {s.label}
@@ -1127,7 +1127,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 const current = (vehiculo.dispositivos || []).find((d: any) => d.id === disp.id);
                 return (
                   <div key={disp.id} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
-                    <span className="text-sm text-gray-700">{disp.nombre}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{disp.nombre}</span>
                     <div className="flex gap-1">
                       {ESTADOS_DISPOSITIVO.map(ed => (
                         <button
@@ -1175,7 +1175,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
       {expandedSections.custodia && (
         <div className="mb-4 px-1 space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Estado de Custodia</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estado de Custodia</label>
             <div className="flex gap-2 flex-wrap">
               {CUSTODIAS.map(c => (
                 <button
@@ -1185,7 +1185,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                   className={`px-3 py-1.5 rounded-md text-sm font-medium ${
                     vehiculo.custodia_estado === c.value
                       ? 'bg-rose-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
                   {c.label}
@@ -1197,31 +1197,31 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
           {vehiculo.custodia_estado && vehiculo.custodia_estado !== 'LIBRE' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 bg-rose-50 rounded-lg">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Autoridad</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Autoridad</label>
                 <input
                   type="text"
                   value={vehiculo.custodia_autoridad || ''}
                   onChange={(e) => handleChange('custodia_autoridad', e.target.value)}
                   placeholder="Ej: PNC, PMT"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Motivo</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Motivo</label>
                 <input
                   type="text"
                   value={vehiculo.custodia_motivo || ''}
                   onChange={(e) => handleChange('custodia_motivo', e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Destino</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Destino</label>
                 <input
                   type="text"
                   value={vehiculo.custodia_destino || ''}
                   onChange={(e) => handleChange('custodia_destino', e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -1231,14 +1231,14 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
 
       {/* Observaciones */}
       <div className="px-1">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Observaciones del Vehículo
         </label>
         <textarea
           value={vehiculo.observaciones || ''}
           onChange={(e) => handleChange('observaciones', e.target.value)}
           rows={2}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
         />
       </div>
     </div>

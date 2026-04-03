@@ -33,9 +33,9 @@ export default function GruaFormWeb({ index, grua, onChange, onRemove }: GruaFor
   };
 
   return (
-    <div className="bg-white border border-amber-200 rounded-lg p-4 mb-4 shadow-sm">
+    <div className="bg-white dark:bg-gray-800 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4 shadow-sm">
       <div className="flex justify-between items-center mb-4">
-        <h4 className="font-semibold text-amber-800">Grua #{index + 1}</h4>
+        <h4 className="font-semibold text-amber-800 dark:text-amber-300">Grua #{index + 1}</h4>
         <button
           type="button"
           onClick={() => onRemove(index)}
@@ -51,9 +51,9 @@ export default function GruaFormWeb({ index, grua, onChange, onRemove }: GruaFor
         <button
           type="button"
           onClick={() => toggleSection('datosGrua')}
-          className="w-full flex justify-between items-center bg-amber-50 px-3 py-2 rounded-lg text-left"
+          className="w-full flex justify-between items-center bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg text-left"
         >
-          <span className="font-medium text-amber-700">Datos de Grúa</span>
+          <span className="font-medium text-amber-700 dark:text-amber-400">Datos de Grúa</span>
           {expandedSections.datosGrua ? (
             <ChevronUp className="w-5 h-5 text-amber-600" />
           ) : (
@@ -65,7 +65,7 @@ export default function GruaFormWeb({ index, grua, onChange, onRemove }: GruaFor
           <div className="mt-3 space-y-3 px-1">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Empresa
                 </label>
                 <input
@@ -73,11 +73,11 @@ export default function GruaFormWeb({ index, grua, onChange, onRemove }: GruaFor
                   value={grua.empresa || ''}
                   onChange={(e) => handleChange('empresa', e.target.value)}
                   placeholder="Nombre de la empresa de grúas"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-amber-500 focus:border-amber-500"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-amber-500 focus:border-amber-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Placa Grúa
                 </label>
                 <input
@@ -85,20 +85,20 @@ export default function GruaFormWeb({ index, grua, onChange, onRemove }: GruaFor
                   value={grua.placa || ''}
                   onChange={(e) => handleChange('placa', e.target.value.toUpperCase())}
                   placeholder="P123ABC"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-amber-500 focus:border-amber-500 uppercase"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-amber-500 focus:border-amber-500 uppercase"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Tipo de Grúa
                 </label>
                 <select
                   value={grua.tipo || ''}
                   onChange={(e) => handleChange('tipo', e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-amber-500 focus:border-amber-500"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-amber-500 focus:border-amber-500"
                 >
                   <option value="">Seleccionar...</option>
                   <option value="PLATAFORMA">Plataforma</option>
@@ -109,7 +109,7 @@ export default function GruaFormWeb({ index, grua, onChange, onRemove }: GruaFor
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Nombre del Operador
                 </label>
                 <input
@@ -117,7 +117,7 @@ export default function GruaFormWeb({ index, grua, onChange, onRemove }: GruaFor
                   value={grua.piloto || ''}
                   onChange={(e) => handleChange('piloto', e.target.value)}
                   placeholder="Nombre completo"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-amber-500 focus:border-amber-500"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-amber-500 focus:border-amber-500"
                 />
               </div>
             </div>
@@ -126,8 +126,8 @@ export default function GruaFormWeb({ index, grua, onChange, onRemove }: GruaFor
       </div>
 
       {/* Switch: Realizó traslado */}
-      <div className="flex items-center justify-between bg-gray-50 px-3 py-3 rounded-lg mb-3">
-        <span className="text-sm font-medium text-gray-700">¿Realizó traslado?</span>
+      <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 px-3 py-3 rounded-lg mb-3">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">¿Realizó traslado?</span>
         <label className="relative inline-flex items-center cursor-pointer">
           <input
             type="checkbox"
@@ -145,9 +145,9 @@ export default function GruaFormWeb({ index, grua, onChange, onRemove }: GruaFor
           <button
             type="button"
             onClick={() => toggleSection('traslado')}
-            className="w-full flex justify-between items-center bg-amber-50 px-3 py-2 rounded-lg text-left"
+            className="w-full flex justify-between items-center bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg text-left"
           >
-            <span className="font-medium text-amber-700">Datos de Traslado</span>
+            <span className="font-medium text-amber-700 dark:text-amber-400">Datos de Traslado</span>
             {expandedSections.traslado ? (
               <ChevronUp className="w-5 h-5 text-amber-600" />
             ) : (
@@ -158,7 +158,7 @@ export default function GruaFormWeb({ index, grua, onChange, onRemove }: GruaFor
           {expandedSections.traslado && (
             <div className="mt-3 space-y-3 px-1">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Lugar de Traslado
                 </label>
                 <textarea
@@ -166,11 +166,11 @@ export default function GruaFormWeb({ index, grua, onChange, onRemove }: GruaFor
                   onChange={(e) => handleChange('traslado_a', e.target.value)}
                   placeholder="Ej: Parqueo municipal, Taller XYZ, etc."
                   rows={2}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-amber-500 focus:border-amber-500"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-amber-500 focus:border-amber-500"
                 />
               </div>
               <div className="w-48">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Costo de Traslado (Q)
                 </label>
                 <input
@@ -180,7 +180,7 @@ export default function GruaFormWeb({ index, grua, onChange, onRemove }: GruaFor
                   value={grua.costo_traslado || ''}
                   onChange={(e) => handleChange('costo_traslado', parseFloat(e.target.value) || null)}
                   placeholder="0.00"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-amber-500 focus:border-amber-500"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-amber-500 focus:border-amber-500"
                 />
               </div>
             </div>
