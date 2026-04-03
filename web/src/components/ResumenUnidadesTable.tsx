@@ -52,6 +52,14 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
 
+  // observaciones puede ser string (legacy) o JSONB array [{hora,mensaje,usuario}]
+  const extractObservaciones = (obs: any): string | null => {
+    if (!obs) return null;
+    if (typeof obs === 'string') return obs;
+    if (Array.isArray(obs) && obs.length > 0) return obs[obs.length - 1]?.mensaje ?? null;
+    return null;
+  };
+
   const formatHora = (fecha: string | null) => {
     if (!fecha) return '-';
     const date = new Date(fecha);
@@ -195,9 +203,9 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
                           </span>
                         )}
                       </div>
-                      {unidad.observaciones && (
-                        <div className="text-[11px] text-gray-500 dark:text-gray-400 truncate max-w-[180px]" title={unidad.observaciones}>
-                          {unidad.observaciones}
+                      {extractObservaciones(unidad.observaciones) && (
+                        <div className="text-[11px] text-gray-500 dark:text-gray-400 truncate max-w-[180px]" title={extractObservaciones(unidad.observaciones)!}>
+                          {extractObservaciones(unidad.observaciones)}
                         </div>
                       )}
                     </div>

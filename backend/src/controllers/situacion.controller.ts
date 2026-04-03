@@ -880,21 +880,13 @@ export async function getResumenUnidades(_req: Request, res: Response) {
         sa.updated_at as sa_updated_at,
 
         -- Datos extra de la situación (si es situacion)
-        CASE
-          WHEN jsonb_typeof(s_ref.observaciones) = 'array' AND jsonb_array_length(s_ref.observaciones) > 0
-          THEN s_ref.observaciones->-1->>'mensaje'
-          ELSE NULL
-        END as situacion_observaciones,
+        s_ref.observaciones as situacion_observaciones,
         s_ref.clima,
         s_ref.carga_vehicular,
         s_ref.obstruccion_data,
 
         -- Datos extra de la actividad (si es actividad)
-        CASE
-          WHEN jsonb_typeof(a_ref.observaciones) = 'array' AND jsonb_array_length(a_ref.observaciones) > 0
-          THEN a_ref.observaciones->-1->>'mensaje'
-          ELSE NULL
-        END as actividad_observaciones,
+        a_ref.observaciones as actividad_observaciones,
         a_ref.datos as actividad_datos,
 
         -- Catálogo situación
