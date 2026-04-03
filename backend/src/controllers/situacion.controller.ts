@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { SituacionModel } from '../models/situacion.model';
 import { SituacionDetalleModel } from '../models/situacionDetalle.model';
 import { MultimediaModel } from '../models/multimedia.model';
@@ -109,6 +110,8 @@ export async function createSituacion(req: Request, res: Response) {
     const fallecidosFinal = fallecidos ?? (hay_fallecidos ? (cantidad_fallecidos || 1) : 0);
 
     const userId = req.user!.userId;
+    // Auto-generar codigo_situacion si no viene (creación desde web/COP)
+    const codigoFinal = codigo_situacion || `WEB-${uuidv4()}`;
 
     // Validación duplicados
     if (codigo_situacion) {
@@ -255,7 +258,7 @@ export async function createSituacion(req: Request, res: Response) {
       longitud,
       observaciones,
       creado_por: userId,
-      codigo_situacion,
+      codigo_situacion: codigoFinal,
 
       tipo_situacion_id: tipo_situacion_id_final,
       clima,
