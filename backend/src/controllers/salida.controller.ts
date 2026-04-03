@@ -373,6 +373,21 @@ export async function finalizarSalida(req: Request, res: Response) {
 
     const salida = await SalidaModel.getSalidaById(parseInt(id));
 
+    // Limpiar situacion_actual de la unidad al finalizar salida
+    if (salida) {
+      const unidadId = (salida as any).unidad_id;
+      await db.none(
+        `UPDATE situacion_actual
+         SET situacion_id = NULL, tipo_situacion = NULL, estado = NULL,
+             latitud = NULL, longitud = NULL, km = NULL, sentido = NULL,
+             ruta_id = NULL, ruta_codigo = NULL, situacion_created_at = NULL,
+             actividad_id = NULL, actividad_tipo_nombre = NULL, actividad_estado = NULL,
+             actividad_created_at = NULL, icono = NULL, updated_at = NOW()
+         WHERE unidad_id = $1`,
+        [unidadId]
+      );
+    }
+
     // Emitir evento WebSocket de cambio de estado
     if (salida) {
       const s = salida as any;
@@ -440,6 +455,18 @@ export async function finalizarMiSalida(req: Request, res: Response) {
     }
 
     const salida = await SalidaModel.getSalidaById(miSalida.salida_id);
+
+    // Limpiar situacion_actual de la unidad al finalizar jornada
+    await db.none(
+      `UPDATE situacion_actual
+       SET situacion_id = NULL, tipo_situacion = NULL, estado = NULL,
+           latitud = NULL, longitud = NULL, km = NULL, sentido = NULL,
+           ruta_id = NULL, ruta_codigo = NULL, situacion_created_at = NULL,
+           actividad_id = NULL, actividad_tipo_nombre = NULL, actividad_estado = NULL,
+           actividad_created_at = NULL, icono = NULL, updated_at = NOW()
+       WHERE unidad_id = $1`,
+      [miSalida.unidad_id]
+    );
 
     // Emitir evento WebSocket de cambio de estado
     if (salida) {
@@ -517,6 +544,18 @@ export async function finalizarJornadaCompleta(req: Request, res: Response) {
       observaciones: ingresoActivo.observaciones_ingreso || 'Jornada finalizada',
       finalizada_por: req.user.userId
     });
+
+    // Limpiar situacion_actual de la unidad al finalizar jornada completa
+    await db.none(
+      `UPDATE situacion_actual
+       SET situacion_id = NULL, tipo_situacion = NULL, estado = NULL,
+           latitud = NULL, longitud = NULL, km = NULL, sentido = NULL,
+           ruta_id = NULL, ruta_codigo = NULL, situacion_created_at = NULL,
+           actividad_id = NULL, actividad_tipo_nombre = NULL, actividad_estado = NULL,
+           actividad_created_at = NULL, icono = NULL, updated_at = NOW()
+       WHERE unidad_id = $1`,
+      [miSalida.unidad_id]
+    );
 
     // Cambiar estado del turno a CERRADO al finalizar la jornada
     if (miSalida.tipo_asignacion === 'TURNO') {
