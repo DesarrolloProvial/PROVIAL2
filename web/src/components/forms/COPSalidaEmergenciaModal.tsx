@@ -3,6 +3,40 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { X, Save, AlertTriangle, UserPlus, Trash2 } from 'lucide-react';
 
+const NIVELES_COMBUSTIBLE = [
+  { value: 'RESERVA', label: '0',     sub: 'Reserva' },
+  { value: '1/8',     label: '⅛',     sub: '' },
+  { value: '1/4',     label: '¼',     sub: '' },
+  { value: '3/8',     label: '⅜',     sub: '' },
+  { value: '1/2',     label: '½',     sub: '' },
+  { value: '5/8',     label: '⅝',     sub: '' },
+  { value: '3/4',     label: '¾',     sub: '' },
+  { value: '7/8',     label: '⅞',     sub: '' },
+  { value: 'LLENO',   label: 'Lleno', sub: '' },
+];
+
+function FuelLevelPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="grid grid-cols-3 gap-1.5">
+      {NIVELES_COMBUSTIBLE.map(n => (
+        <button
+          key={n.value}
+          type="button"
+          onClick={() => onChange(value === n.value ? '' : n.value)}
+          className={`flex flex-col items-center justify-center py-2 rounded-lg border-2 transition-all ${
+            value === n.value
+              ? 'border-orange-500 bg-orange-500 text-white'
+              : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:border-orange-300'
+          }`}
+        >
+          <span className="text-sm font-bold leading-none">{n.label}</span>
+          {n.sub && <span className="text-xs opacity-75">{n.sub}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -263,37 +297,27 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
             </select>
           </div>
 
-          {/* Km y Combustible */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Km inicial
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={kmInicial}
-                onChange={e => setKmInicial(e.target.value)}
-                placeholder="0"
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Combustible inicial
-              </label>
-              <select
-                value={combustibleInicial}
-                onChange={e => setCombustibleInicial(e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent focus:outline-none"
-              >
-                <option value="">—</option>
-                <option value="100%">100%</option>
-                <option value="75%">75%</option>
-                <option value="50%">50%</option>
-                <option value="25%">25%</option>
-              </select>
-            </div>
+          {/* Km inicial */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Km inicial
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={kmInicial}
+              onChange={e => setKmInicial(e.target.value)}
+              placeholder="0"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent focus:outline-none"
+            />
+          </div>
+
+          {/* Combustible inicial */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Combustible inicial <span className="text-xs text-gray-400">(opcional)</span>
+            </label>
+            <FuelLevelPicker value={combustibleInicial} onChange={setCombustibleInicial} />
           </div>
 
           {/* Observaciones */}
