@@ -140,6 +140,19 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
+  const SECTION_COLORS: Record<string, { bg: string; text: string; icon: string }> = {
+    blue:    { bg: 'bg-blue-50 dark:bg-blue-900/20',       text: 'text-blue-700 dark:text-blue-300',    icon: 'text-blue-600 dark:text-blue-400'    },
+    gray:    { bg: 'bg-gray-100 dark:bg-gray-700',          text: 'text-gray-700 dark:text-gray-200',    icon: 'text-gray-600 dark:text-gray-300'    },
+    purple:  { bg: 'bg-purple-50 dark:bg-purple-900/20',    text: 'text-purple-700 dark:text-purple-300',icon: 'text-purple-600 dark:text-purple-400' },
+    orange:  { bg: 'bg-orange-50 dark:bg-orange-900/20',    text: 'text-orange-700 dark:text-orange-300',icon: 'text-orange-600 dark:text-orange-400' },
+    teal:    { bg: 'bg-teal-50 dark:bg-teal-900/20',        text: 'text-teal-700 dark:text-teal-300',    icon: 'text-teal-600 dark:text-teal-400'    },
+    indigo:  { bg: 'bg-indigo-50 dark:bg-indigo-900/20',    text: 'text-indigo-700 dark:text-indigo-300',icon: 'text-indigo-600 dark:text-indigo-400' },
+    red:     { bg: 'bg-red-50 dark:bg-red-900/20',          text: 'text-red-700 dark:text-red-300',      icon: 'text-red-600 dark:text-red-400'      },
+    emerald: { bg: 'bg-emerald-50 dark:bg-emerald-900/20',  text: 'text-emerald-700 dark:text-emerald-300',icon: 'text-emerald-600 dark:text-emerald-400' },
+    cyan:    { bg: 'bg-cyan-50 dark:bg-cyan-900/20',        text: 'text-cyan-700 dark:text-cyan-300',    icon: 'text-cyan-600 dark:text-cyan-400'    },
+    amber:   { bg: 'bg-amber-50 dark:bg-amber-900/20',      text: 'text-amber-700 dark:text-amber-300',  icon: 'text-amber-600 dark:text-amber-400'  },
+    rose:    { bg: 'bg-rose-50 dark:bg-rose-900/20',        text: 'text-rose-700 dark:text-rose-300',    icon: 'text-rose-600 dark:text-rose-400'    },
+  };
   const SectionHeader = ({
     section,
     title,
@@ -148,20 +161,23 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
     section: keyof typeof expandedSections;
     title: string;
     color?: string;
-  }) => (
-    <button
-      type="button"
-      onClick={() => toggleSection(section)}
-      className={`w-full flex justify-between items-center bg-${color}-50 px-3 py-2 rounded-lg text-left mb-2`}
-    >
-      <span className={`font-medium text-${color}-700`}>{title}</span>
-      {expandedSections[section] ? (
-        <ChevronUp className={`w-5 h-5 text-${color}-600`} />
-      ) : (
-        <ChevronDown className={`w-5 h-5 text-${color}-600`} />
-      )}
-    </button>
-  );
+  }) => {
+    const c = SECTION_COLORS[color] ?? SECTION_COLORS['blue'];
+    return (
+      <button
+        type="button"
+        onClick={() => toggleSection(section)}
+        className={`w-full flex justify-between items-center ${c.bg} px-3 py-2 rounded-lg text-left mb-2 transition-colors`}
+      >
+        <span className={`font-medium ${c.text}`}>{title}</span>
+        {expandedSections[section] ? (
+          <ChevronUp className={`w-5 h-5 ${c.icon}`} />
+        ) : (
+          <ChevronDown className={`w-5 h-5 ${c.icon}`} />
+        )}
+      </button>
+    );
+  };
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 shadow-sm">
@@ -378,8 +394,8 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
               <input
                 type="number"
                 min="0"
-                value={vehiculo.personas_asistidas || 0}
-                onChange={(e) => handleChange('personas_asistidas', parseInt(e.target.value) || 0)}
+                value={vehiculo.personas_asistidas ?? ""}
+                onChange={(e) => handleChange('personas_asistidas', e.target.value === '' ? '' : parseInt(e.target.value))}
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -748,8 +764,8 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                 <input
                   type="number"
                   min="0"
-                  value={vehiculo.pasajeros_bus || 0}
-                  onChange={(e) => handleChange('pasajeros_bus', parseInt(e.target.value) || 0)}
+                  value={vehiculo.pasajeros_bus ?? ""}
+                  onChange={(e) => handleChange('pasajeros_bus', e.target.value === '' ? '' : parseInt(e.target.value))}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
@@ -980,7 +996,7 @@ export default function VehiculoFormWeb({ index, vehiculo, onChange, onRemove, a
                         value={persona.edad}
                         onChange={(e) => {
                           const personas = [...(vehiculo.personas || [])];
-                          personas[pIdx] = { ...personas[pIdx], edad: parseInt(e.target.value) || '' };
+                          personas[pIdx] = { ...personas[pIdx], edad: e.target.value === '' ? '' : parseInt(e.target.value) };
                           handleChange('personas', personas);
                         }}
                         className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
