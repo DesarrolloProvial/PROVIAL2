@@ -95,12 +95,12 @@ interface TimelineData {
 
 // ── Log helpers ───────────────────────────────────────────────────────────────
 
-/** Línea de campo: etiqueta en gris + valor en blanco */
+/** Línea de campo: etiqueta en gris + valor. Grid de 2 columnas para que nunca se rompa el layout. */
 function L({ label, value }: { label: string; value?: string | null }) {
   return (
-    <div className="flex min-w-0">
-      <span className="text-gray-400 dark:text-gray-500 flex-shrink-0 w-36">{label}:</span>
-      <span className="text-gray-800 dark:text-gray-200 flex-1 min-w-0" style={{ overflowWrap: 'anywhere' }}>{value ?? '—'}</span>
+    <div style={{ display: 'grid', gridTemplateColumns: '9rem 1fr', columnGap: '0.25rem' }}>
+      <span className="text-gray-400 dark:text-gray-500 truncate">{label}:</span>
+      <span className="text-gray-800 dark:text-gray-200" style={{ overflowWrap: 'anywhere' }}>{value ?? '—'}</span>
     </div>
   );
 }
@@ -127,6 +127,12 @@ function Sep() {
 
 // ── Renderizado de cada tipo de evento en el timeline ─────────────────────────
 
+function parseJsonSafe(v: any): Record<string, any> {
+  if (!v) return {};
+  if (typeof v === 'object') return v as Record<string, any>;
+  try { return JSON.parse(v); } catch { return {}; }
+}
+
 function LogSituacion({ item }: { item: TimelineItem }) {
   const d = item.datos;
   const hora = fmtTime(item.ts);
@@ -136,6 +142,8 @@ function LogSituacion({ item }: { item: TimelineItem }) {
   const fotos: any[] = (d.fotos ?? []).filter((f: any) => f.tipo === 'FOTO');
   const videos: any[] = (d.fotos ?? []).filter((f: any) => f.tipo === 'VIDEO');
   const cerrada = d.estado === 'CERRADA';
+  const obstruccion = parseJsonSafe(d.obstruccion_data);
+  const obstruccionEntries = Object.entries(obstruccion).filter(([, v]) => v !== null && v !== '' && v !== false);
 
   return (
     <div className="mb-5">
@@ -247,12 +255,13 @@ function LogSituacion({ item }: { item: TimelineItem }) {
           )}
         </div>
       </div>
-      {d.obstruccion_data && Object.keys(d.obstruccion_data).length > 0 && (
-        Object.entries(d.obstruccion_data as Record<string, any>)
-          .filter(([, v]) => v !== null && v !== '')
-          .map(([k, v]) => (
+      {obstruccionEntries.length > 0 && (
+        <>
+          <L label="obstrucción" value="" />
+          {obstruccionEntries.map(([k, v]) => (
             <L key={k} label={`  ${k.replace(/_/g, ' ')}`} value={String(v)} />
-          ))
+          ))}
+        </>
       )}
 
       <Sep />
