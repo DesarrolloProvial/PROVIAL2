@@ -138,6 +138,24 @@ function MapResizer({ trigger }: { trigger: boolean }) {
   return null;
 }
 
+function ZoomControls() {
+  const map = useMap();
+  return (
+    <div className="absolute bottom-8 right-4 z-[1000] flex flex-col rounded-lg shadow-lg overflow-hidden">
+      <button
+        onClick={() => map.zoomIn()}
+        className="w-9 h-9 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition flex items-center justify-center text-gray-700 dark:text-gray-300 font-bold text-lg leading-none border-b border-gray-200 dark:border-gray-700"
+        title="Acercar"
+      >+</button>
+      <button
+        onClick={() => map.zoomOut()}
+        className="w-9 h-9 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition flex items-center justify-center text-gray-700 dark:text-gray-300 font-bold text-lg leading-none"
+        title="Alejar"
+      >−</button>
+    </div>
+  );
+}
+
 function formatObstruccion(data: any): string {
   if (!data) return '';
   if (typeof data === 'string') {
@@ -540,6 +558,7 @@ export default function COPMapaPage() {
             <MapContainer
               center={defaultCenter}
               zoom={11}
+              zoomControl={false}
               style={{ height: '100%', width: '100%' }}
             >
               <TileLayer
@@ -548,6 +567,7 @@ export default function COPMapaPage() {
               />
               <MapResizer trigger={showSidebar} />
               <CoordClickListener onCoord={handleCoord} />
+              <ZoomControls />
               {showHeatmap && heatmapData.length > 0 && (
                 <HeatmapLayer points={heatmapData} />
               )}
