@@ -633,12 +633,24 @@ export const SituacionModel = {
   },
 
   async cerrar(id: number, actualizado_por: number, obs?: string): Promise<Situacion> {
-    return this.update(id, {
+    const result = await this.update(id, {
       estado: 'CERRADA',
       actualizado_por,
-      observaciones: obs,
       fecha_hora_finalizacion: new Date()
     } as any);
+    // Append obs to JSONB observaciones timeline (plain string is not valid JSONB)
+    if (obs) {
+      const entry = JSON.stringify([{
+        hora: new Intl.DateTimeFormat('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', timeZone: 'America/Guatemala' }).format(new Date()),
+        usuario: 'Sistema',
+        mensaje: obs
+      }]);
+      await db.none(
+        `UPDATE situacion SET observaciones = COALESCE(observaciones, '[]'::jsonb) || $2::jsonb WHERE id = $1`,
+        [id, entry]
+      );
+    }
+    return result;
   }
 };
 
