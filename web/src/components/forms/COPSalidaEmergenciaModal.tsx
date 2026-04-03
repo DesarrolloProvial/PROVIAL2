@@ -13,6 +13,7 @@ interface Brigada {
   id: number;
   nombre: string;
   chapa: string;
+  sede_id: number;
   sede_nombre: string;
   rol_brigada?: string;
 }
@@ -21,6 +22,7 @@ interface Unidad {
   id: number;
   codigo: string;
   tipo_unidad: string;
+  sede_id: number;
   sede_nombre: string;
 }
 
@@ -37,10 +39,23 @@ interface MiembroSeleccionado {
   rol_en_salida: 'PILOTO' | 'COPILOTO' | 'AUXILIAR';
 }
 
+const SEDES: { id: number; nombre: string }[] = [
+  { id: 1, nombre: 'Central' },
+  { id: 2, nombre: 'Mazatenango' },
+  { id: 3, nombre: 'Poptún' },
+  { id: 4, nombre: 'San Cristóbal' },
+  { id: 5, nombre: 'Quetzaltenango' },
+  { id: 6, nombre: 'Coatepeque' },
+  { id: 7, nombre: 'Palín' },
+  { id: 8, nombre: 'Morales' },
+  { id: 9, nombre: 'Río Dulce' },
+];
+
 export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  const [sedeId, setSedeId] = useState('');
   const [unidadId, setUnidadId] = useState('');
   const [rutaId, setRutaId] = useState('');
   const [kmInicial, setKmInicial] = useState('');
@@ -55,6 +70,7 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
   // Reset cuando se abre
   useEffect(() => {
     if (isOpen) {
+      setSedeId('');
       setUnidadId('');
       setRutaId('');
       setKmInicial('');
@@ -66,7 +82,14 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
     }
   }, [isOpen]);
 
-  const { data: unidades = [] } = useQuery<Unidad[]>({
+  // Limpiar unidad y tripulación al cambiar sede
+  useEffect(() => {
+    setUnidadId('');
+    setTripulacion([]);
+    setAddingMiembro({ userId: '', rol: 'AUXILIAR' });
+  }, [sedeId]);
+
+  const { data: todasUnidades = [] } = useQuery<Unidad[]>({
     queryKey: ['unidades-activas-cop'],
     queryFn: async () => {
       const { data } = await api.get('/unidades/activas');
@@ -76,7 +99,7 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
     staleTime: 60_000,
   });
 
-  const { data: brigadas = [] } = useQuery<Brigada[]>({
+  const { data: todasBrigadas = [] } = useQuery<Brigada[]>({
     queryKey: ['brigadas-activas-cop'],
     queryFn: async () => {
       const { data } = await api.get('/brigadas?activa=true');
@@ -96,13 +119,21 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
     staleTime: 5 * 60_000,
   });
 
+  const unidades = sedeId
+    ? todasUnidades.filter(u => u.sede_id === Number(sedeId))
+    : todasUnidades;
+
+  const brigadas = sedeId
+    ? todasBrigadas.filter(b => b.sede_id === Number(sedeId))
+    : todasBrigadas;
+
   const brigadasDisponibles = brigadas.filter(
     b => !tripulacion.some(t => t.usuario_id === b.id)
   );
 
   const agregarMiembro = () => {
     if (!addingMiembro.userId) return;
-    const brigada = brigadas.find(b => b.id === Number(addingMiembro.userId));
+    const brigada = todasBrigadas.find(b => b.id === Number(addingMiembro.userId));
     if (!brigada) return;
     setTripulacion(prev => [
       ...prev,
@@ -156,15 +187,29 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
             <AlertTriangle className="w-5 h-5 text-white" />
             <h2 className="text-lg font-bold text-white">Sacar Unidad — COP</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-white/20 rounded-lg transition"
-          >
+          <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-lg transition">
             <X className="w-5 h-5 text-white" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {/* Sede */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Sede
+            </label>
+            <select
+              value={sedeId}
+              onChange={e => setSedeId(e.target.value)}
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent focus:outline-none"
+            >
+              <option value="">Todas las sedes</option>
+              {SEDES.map(s => (
+                <option key={s.id} value={s.id}>{s.nombre}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Unidad */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -178,7 +223,7 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
               <option value="">Seleccionar unidad...</option>
               {unidades.map(u => (
                 <option key={u.id} value={u.id}>
-                  {u.codigo} — {u.tipo_unidad} ({u.sede_nombre})
+                  {u.codigo} — {u.tipo_unidad}{!sedeId ? ` (${u.sede_nombre})` : ''}
                 </option>
               ))}
             </select>
@@ -284,14 +329,14 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
               </div>
             )}
 
-            {/* Agregar miembro */}
+            {/* Agregar de brigada */}
             <div className="flex gap-2">
               <select
                 value={addingMiembro.userId}
                 onChange={e => setAddingMiembro(p => ({ ...p, userId: e.target.value }))}
                 className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent focus:outline-none"
               >
-                <option value="">Seleccionar brigadista...</option>
+                <option value="">Seleccionar brigada...</option>
                 {brigadasDisponibles.map(b => (
                   <option key={b.id} value={b.id}>
                     {b.chapa} — {b.nombre}
@@ -315,6 +360,11 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
                 <UserPlus className="w-4 h-4" />
               </button>
             </div>
+            {brigadasDisponibles.length === 0 && brigadas.length === 0 && sedeId && (
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                No hay brigadas activas en esta sede
+              </p>
+            )}
           </div>
 
           {error && (

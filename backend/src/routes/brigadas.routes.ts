@@ -37,9 +37,9 @@ router.get('/usuarios-sistema', authenticate, authorize('ADMIN', 'ENCARGADO_NOMI
 // CRUD BRIGADAS
 // =====================================================
 
-// Listar brigadas (Operaciones, Admin, Encargado Nóminas)
+// Listar brigadas (Operaciones, Admin, Encargado Nóminas, COP)
 // ENCARGADO_NOMINAS: Si puede_ver_todas_sedes=true ve todas, sino solo su sede
-router.get('/', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), listarBrigadas);
+router.get('/', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS', 'COP'), listarBrigadas);
 
 // Obtener brigada específica
 router.get('/:id', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), obtenerBrigada);
