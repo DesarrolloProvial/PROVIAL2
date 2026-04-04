@@ -197,6 +197,13 @@ export const VehiculoModel = {
       `INSERT INTO tarjeta_circulacion (
         vehiculo_id, numero, nit, direccion_propietario, nombre_propietario, modelo
       ) VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (vehiculo_id) DO UPDATE SET
+        numero = EXCLUDED.numero,
+        nit = COALESCE(EXCLUDED.nit, tarjeta_circulacion.nit),
+        direccion_propietario = COALESCE(EXCLUDED.direccion_propietario, tarjeta_circulacion.direccion_propietario),
+        nombre_propietario = COALESCE(EXCLUDED.nombre_propietario, tarjeta_circulacion.nombre_propietario),
+        modelo = COALESCE(EXCLUDED.modelo, tarjeta_circulacion.modelo),
+        fecha_registro = NOW()
       RETURNING *`,
       [data.vehiculo_id, data.numero, data.nit, data.direccion_propietario, data.nombre_propietario, data.modelo]
     );
