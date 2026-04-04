@@ -595,7 +595,7 @@ export async function cambiarRuta(req: Request, res: Response) {
       return res.status(401).json({ error: 'No autorizado' });
     }
 
-    const { nueva_ruta_id } = req.body;
+    const { nueva_ruta_id, unidadId } = req.body;
 
     if (!nueva_ruta_id) {
       return res.status(400).json({
@@ -603,12 +603,19 @@ export async function cambiarRuta(req: Request, res: Response) {
       });
     }
 
-    // Obtener mi salida activa
-    const miSalida = await SalidaModel.getMiSalidaActiva(req.user.userId);
+    // Obtener salida activa
+    let miSalida: any = null;
+    if (req.user.rol === 'COP' || req.user.rol === 'OPERACIONES' || req.user.rol === 'ADMIN') {
+      if (!unidadId) return res.status(400).json({ error: 'El campo unidadId es requerido para tu rol' });
+      const salidaActiva = await db.oneOrNone('SELECT id as salida_id FROM salida_unidad WHERE unidad_id = $1 AND estado = $2', [unidadId, 'EN_SALIDA']);
+      if (salidaActiva) miSalida = salidaActiva;
+    } else {
+      miSalida = await SalidaModel.getMiSalidaActiva(req.user.userId);
+    }
 
     if (!miSalida) {
       return res.status(404).json({
-        error: 'No tienes salida activa'
+        error: 'No se encontró salida activa para esta unidad o usuario'
       });
     }
 
@@ -641,8 +648,8 @@ export async function cambiarRuta(req: Request, res: Response) {
        req.user.userId]
     );
 
-    // Obtener salida actualizada
-    const salidaActualizada = await SalidaModel.getMiSalidaActiva(req.user.userId);
+    // Obtener salida actualizada (reutilizando consulta para que soporte COP)
+    const salidaActualizada = await db.oneOrNone('SELECT * FROM salida_unidad WHERE id = $1', [miSalida.salida_id]);
 
     return res.json({
       message: 'Ruta cambiada exitosamente',
