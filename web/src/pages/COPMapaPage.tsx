@@ -503,15 +503,21 @@ export default function COPMapaPage() {
 
         {/* Stats de flota */}
         <div className="px-4 pt-3 pb-0">
-          <div className="grid grid-cols-3 gap-2 text-center mb-3">
+          <div className="grid grid-cols-4 gap-2 text-center mb-3">
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg py-2">
               <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">Unidades</p>
               <p className="text-lg font-bold text-blue-700 dark:text-blue-300">{filteredUnidades.length}</p>
             </div>
             <div className="bg-red-50 dark:bg-red-900/20 rounded-lg py-2">
-              <p className="text-[10px] text-red-600 dark:text-red-400 font-medium">Con Situación</p>
+              <p className="text-[10px] text-red-600 dark:text-red-400 font-medium">Situaciones</p>
               <p className="text-lg font-bold text-red-700 dark:text-red-300">
-                {filteredUnidades.filter((u: any) => u.estado_situacion === 'ACTIVA').length}
+                {filteredUnidades.filter((u: any) => u.estado_situacion === 'ACTIVA' && u.tipo_registro === 'SITUACION').length}
+              </p>
+            </div>
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg py-2">
+              <p className="text-[10px] text-yellow-600 dark:text-yellow-400 font-medium">Actividades</p>
+              <p className="text-lg font-bold text-yellow-700 dark:text-yellow-300">
+                {filteredUnidades.filter((u: any) => u.estado_situacion === 'ACTIVA' && u.tipo_registro === 'ACTIVIDAD').length}
               </p>
             </div>
             <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg py-2">
