@@ -648,6 +648,15 @@ export async function cambiarRuta(req: Request, res: Response) {
        req.user.userId]
     );
 
+    // Actualizar situacion_actual con la nueva ruta
+    await db.none(
+      `UPDATE situacion_actual sa
+       SET ruta_id = $1, ruta_codigo = $2, updated_at = NOW()
+       FROM salida_unidad su
+       WHERE su.id = $3 AND sa.unidad_id = su.unidad_id`,
+      [nueva_ruta_id, nuevaRuta?.codigo ?? null, miSalida.salida_id]
+    );
+
     // Obtener salida actualizada (reutilizando consulta para que soporte COP)
     const salidaActualizada = await db.oneOrNone('SELECT * FROM salida_unidad WHERE id = $1', [miSalida.salida_id]);
 
