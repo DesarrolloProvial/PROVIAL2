@@ -109,6 +109,7 @@ export async function login(req: Request, res: Response) {
         id: usuario.id,
         username: usuario.username,
         nombre: usuario.nombre_completo,
+        chapa: usuario.chapa || null,
         rol: usuario.rol_nombre,
         sede_id: usuario.sede_id,
         sede_nombre: usuario.sede_nombre,

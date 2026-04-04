@@ -192,7 +192,7 @@ function extractObservaciones(obs: any): string | null {
 export default function COPMapaPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
@@ -431,11 +431,11 @@ export default function COPMapaPage() {
       {/* Sidebar */}
       <div className={`transition-all duration-300 ${showSidebar ? 'w-96' : 'w-0'} bg-white dark:bg-gray-800 shadow-lg flex flex-col overflow-hidden flex-shrink-0`}>
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-blue-700">
-          <div className="flex items-center justify-between mb-1">
-            <h1 className="text-2xl font-bold text-white">PROVIAL COP</h1>
-            <div className="flex items-center gap-2">
-              {/* Indicador de WebSocket */}
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-700 to-blue-800">
+          {/* Fila superior: título + acciones */}
+          <div className="flex items-center justify-between px-4 pt-4 pb-2">
+            <h1 className="text-xl font-bold text-white tracking-wide">PROVIAL COP</h1>
+            <div className="flex items-center gap-1">
               <div
                 className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${
                   socketConnected
@@ -446,29 +446,39 @@ export default function COPMapaPage() {
                 {socketConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
                 <span>{socketConnected ? 'En vivo' : 'Polling'}</span>
               </div>
-              {/* ThemeToggle */}
               <ThemeToggle />
-              {/* Botón Cambiar Contraseña */}
               <button
                 onClick={() => setShowCambiarPassword(true)}
-                className="p-2 hover:bg-white/10 rounded-lg transition"
+                className="p-1.5 hover:bg-white/10 rounded-lg transition"
                 title="Cambiar contraseña"
               >
-                <Lock className="w-5 h-5 text-white" />
+                <Lock className="w-4 h-4 text-white" />
               </button>
-              {/* Botón de Logout */}
               <button
                 onClick={handleLogout}
-                className="p-2 hover:bg-white/10 rounded-lg transition"
+                className="p-1.5 hover:bg-white/10 rounded-lg transition"
                 title="Cerrar sesión"
               >
-                <LogOut className="w-5 h-5 text-white" />
+                <LogOut className="w-4 h-4 text-white" />
               </button>
             </div>
           </div>
-          <p className="text-sm text-blue-100">
-            Actualizado: {formatLastUpdate()}
-          </p>
+          {/* Fila inferior: saludo + última actualización */}
+          <div className="px-4 pb-3 flex items-end justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs text-blue-200 uppercase tracking-wider font-medium">Bienvenido</p>
+              <p className="text-sm font-semibold text-white truncate leading-tight">
+                {user?.chapa ? <span className="text-blue-200 font-normal">{user.chapa} — </span> : null}
+                {user?.nombre || user?.username}
+              </p>
+              {user?.subRolCop && (
+                <p className="text-xs text-blue-300 truncate">{user.subRolCop.nombre}</p>
+              )}
+            </div>
+            <p className="text-xs text-blue-300 whitespace-nowrap flex-shrink-0">
+              {formatLastUpdate()}
+            </p>
+          </div>
         </div>
 
         {/* Toggle Mapa/Tabla */}

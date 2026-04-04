@@ -18,6 +18,7 @@ export interface Usuario {
   id: number;
   username: string;
   nombre: string;
+  chapa?: string | null;
   rol: string;
   sede_id: number | null;
   sede_nombre: string | null;
