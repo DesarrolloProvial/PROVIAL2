@@ -272,7 +272,7 @@ export default function COPMapaPage() {
     queryKey: ['rutas-list'],
     queryFn: async () => {
       const { data } = await api.get('/geografia/rutas');
-      return data || [];
+      return data.rutas || [];
     },
     staleTime: 10 * 60 * 1000,
     enabled: showCambiarRutaModal,
