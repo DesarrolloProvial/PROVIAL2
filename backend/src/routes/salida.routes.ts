@@ -40,8 +40,8 @@ router.post('/iniciar', authenticate, authorize('BRIGADA'), iniciarSalida);
 // Iniciar salida desde COP sin inspección 360 (COP, Operaciones, Admin)
 router.post('/cop/iniciar-unidad', authenticate, authorize('COP', 'OPERACIONES', 'ADMIN'), iniciarSalidaCOP);
 
-// Cambiar ruta de mi salida activa (Brigada)
-router.post('/cambiar-ruta', authenticate, authorize('BRIGADA'), cambiarRuta);
+// Cambiar ruta de mi salida activa (Brigada) o de una unidad específica (COP)
+router.post('/cambiar-ruta', authenticate, authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN'), cambiarRuta);
 
 // Editar datos de salida (km y combustible iniciales) (Brigada)
 router.patch('/editar-datos-salida', authenticate, authorize('BRIGADA'), editarDatosSalida);
