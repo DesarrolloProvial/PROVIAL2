@@ -128,6 +128,7 @@ export default function BitacoraPage() {
         unidad_id: Number(unidadId),
         unidad_codigo: unidadInfo.codigo || unidadId,
         sede_nombre: unidadInfo.sede_nombre || '',
+        ruta_activa_codigo: salidaActual?.salida_ruta_codigo || salidaActual?.ruta_codigo || null,
     }] : [];
 
 
