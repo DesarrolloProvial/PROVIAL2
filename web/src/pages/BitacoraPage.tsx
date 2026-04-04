@@ -123,13 +123,7 @@ export default function BitacoraPage() {
         }
     };
 
-    // Unidades for modals (minimal array with just this unit)
-    const unidadesForModal = unidadInfo ? [{
-        unidad_id: Number(unidadId),
-        unidad_codigo: unidadInfo.codigo || unidadId,
-        sede_nombre: unidadInfo.sede_nombre || '',
-        ruta_activa_codigo: salidaActual?.salida_ruta_codigo || salidaActual?.ruta_codigo || null,
-    }] : [];
+    // unidadesForModal defined below, after salidaActual
 
 
 
@@ -166,6 +160,15 @@ export default function BitacoraPage() {
         salidaActivaData ||
         bitacora.find((item: any) => item.tipo_registro === 'SALIDA' && item.estado === 'EN_SALIDA') ||
         null;
+
+    // Unidades for modals — defined here so salidaActual is available
+    // salidaActual.ruta_codigo viene del JOIN en historial; salida_ruta_codigo viene de la bitácora
+    const unidadesForModal = unidadInfo ? [{
+        unidad_id: Number(unidadId),
+        unidad_codigo: unidadInfo.codigo || unidadId,
+        sede_nombre: unidadInfo.sede_nombre || '',
+        ruta_activa_codigo: salidaActual?.ruta_codigo || salidaActual?.salida_ruta_codigo || null,
+    }] : [];
 
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6">

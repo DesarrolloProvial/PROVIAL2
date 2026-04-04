@@ -262,9 +262,11 @@ export const SalidaModel = {
    */
   async getHistorialSalidas(unidadId: number, limit: number = 20): Promise<SalidaUnidad[]> {
     return db.any(
-      `SELECT * FROM salida_unidad
-       WHERE unidad_id = $1
-       ORDER BY fecha_hora_salida DESC
+      `SELECT su.*, r.codigo AS ruta_codigo
+       FROM salida_unidad su
+       LEFT JOIN ruta r ON su.ruta_inicial_id = r.id
+       WHERE su.unidad_id = $1
+       ORDER BY su.fecha_hora_salida DESC
        LIMIT $2`,
       [unidadId, limit]
     );
