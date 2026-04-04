@@ -375,7 +375,7 @@ export default function ObstruccionForm({
                     opt.color === 'orange' ? 'text-orange-700 dark:text-orange-400' :
                     opt.color === 'red' ? 'text-red-700 dark:text-red-400' :
                     'text-blue-700 dark:text-blue-400'
-                  : 'text-gray-700'
+                  : 'text-gray-700 dark:text-gray-300'
               }`}>
                 {opt.label}
               </span>

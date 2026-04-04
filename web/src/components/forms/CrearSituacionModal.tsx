@@ -75,6 +75,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
   const [loadingEdit, setLoadingEdit] = useState(false);
   const [error, setError] = useState('');
   const [situacionActivaHeavy, setSituacionActivaHeavy] = useState<any>(null);
+  const [observacionesAnteriores, setObservacionesAnteriores] = useState<any[]>([]);
 
   // Form state
   const [form, setForm] = useState({
@@ -205,6 +206,17 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
         setTipoSituacion(tipo);
         setStep(2); // Skip type selector
 
+        // Manejo de observaciones JSONB vs string legacy
+        let obsAnteriores: any[] = [];
+        if (sit.observaciones) {
+          if (Array.isArray(sit.observaciones)) {
+            obsAnteriores = sit.observaciones;
+          } else if (typeof sit.observaciones === 'string') {
+            obsAnteriores = [{ hora: sit.created_at || new Date().toISOString(), mensaje: sit.observaciones, usuario: 'Sistema legacy' }];
+          }
+        }
+        setObservacionesAnteriores(obsAnteriores);
+
         setForm({
           unidad_id: sit.unidad_id || '',
           ruta_id: sit.ruta_id || '',
@@ -221,7 +233,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
           obstruccion: (sit.obstruccion_data && sit.obstruccion_data.tipo_obstruccion)
             ? sit.obstruccion_data
             : getDefaultObstruccion(),
-          observaciones: sit.observaciones || '',
+          observaciones: '',
           descripcion: sit.descripcion || '',
           subtipo_situacion: sit.subtipo_situacion || '',
           heridos: sit.heridos || 0,
@@ -302,6 +314,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
       setStep(1);
       setTipoSituacion('');
       setActiveTab('general');
+      setObservacionesAnteriores([]);
       setForm({
         unidad_id: '', ruta_id: '', km: '', km_fin: '', sentido: '', latitud: '', longitud: '',
         departamento_id: null, municipio_id: null, clima: '', area: '', material_via: '',
@@ -712,15 +725,37 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
                 </div>
               )}
 
-              {/* Observaciones */}
+              {/* Observaciones (Timeline) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observaciones</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {isEditMode ? 'Observaciones Anteriores' : 'Observaciones'}
+                </label>
+                
+                {/* Visualizador de observaciones anteriores */}
+                {observacionesAnteriores.length > 0 && (
+                  <div className="mb-3 max-h-48 overflow-y-auto space-y-2 pr-1">
+                    {observacionesAnteriores.map((obs, idx) => (
+                      <div key={idx} className="bg-gray-50 dark:bg-gray-800 p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            {obs.usuario || 'Usuario anónimo'}
+                          </span>
+                          <span className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">
+                            {obs.hora ? new Date(obs.hora).toLocaleString() : ''}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{obs.mensaje}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <textarea
                   value={form.observaciones}
                   onChange={(e) => handleChange('observaciones', e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  placeholder="Observaciones adicionales..."
+                  rows={isEditMode ? 2 : 3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 transition"
+                  placeholder={isEditMode ? "Añadir un nuevo comentario, actualización o seguimiento..." : "Observaciones adicionales iniciales..."}
                 />
               </div>
             </div>
