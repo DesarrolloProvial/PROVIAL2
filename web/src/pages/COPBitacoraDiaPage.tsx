@@ -385,6 +385,35 @@ function LogActividad({ item }: { item: TimelineItem }) {
           ))}
         </>
       )}
+
+      {/* Fotos / infografías */}
+      {Array.isArray(d.fotos) && d.fotos.length > 0 && (
+        <>
+          <Sep />
+          <div>
+            <L label="fotos" value={`${d.fotos.length} foto(s)`} />
+            <div className="ml-4 mt-1.5 flex flex-wrap gap-2">
+              {d.fotos.map((f: any) => (
+                <a key={f.id} href={f.url} target="_blank" rel="noopener noreferrer"
+                  className="relative w-20 h-20 rounded overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0 group border border-gray-300 dark:border-gray-600">
+                  <img
+                    src={f.thumbnail ?? f.url}
+                    alt={f.titulo ?? 'foto'}
+                    className="w-full h-full object-cover group-hover:opacity-90"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                  {f.titulo && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-1 truncate">
+                      {f.titulo}
+                    </div>
+                  )}
+                  <Camera className="absolute top-1 right-1 w-3 h-3 text-white/70" />
+                </a>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

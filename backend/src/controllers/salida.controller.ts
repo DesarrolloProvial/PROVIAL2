@@ -1270,7 +1270,18 @@ export async function getBitacoraTimeline(req: Request, res: Response) {
            'estado',          act.estado,
            'datos',           act.datos,
            'closed_at',       act.closed_at,
-           'creado_por_nombre', u2.nombre_completo
+           'creado_por_nombre', u2.nombre_completo,
+           'fotos', COALESCE(
+             (SELECT json_agg(json_build_object(
+                 'id',        sm.id,
+                 'tipo',      sm.tipo,
+                 'url',       sm.url_original,
+                 'thumbnail', sm.url_thumbnail,
+                 'titulo',    sm.infografia_titulo
+               ) ORDER BY sm.infografia_numero, sm.orden, sm.created_at)
+              FROM situacion_multimedia sm
+              WHERE sm.actividad_id = act.id
+             ), '[]'::json)
          ) AS datos
        FROM actividad act
        LEFT JOIN catalogo_tipo_situacion cts2 ON act.tipo_actividad_id = cts2.id
