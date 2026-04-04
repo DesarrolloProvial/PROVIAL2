@@ -165,13 +165,17 @@ function formatObstruccion(data: any): string {
   if (typeof data !== 'object') return String(data);
   const parts: string[] = [];
   // campos del formulario de obstrucción
-  const tipo = data.tipo_obstruccion ?? data.tipo;
-  if (tipo && tipo !== 'ninguna') parts.push(tipo);
   const desc = data.descripcion_manual ?? data.descripcion;
-  if (desc) parts.push(desc);
-  if (data.sentido_principal) parts.push(`sentido principal: ${data.sentido_principal}`);
-  if (data.sentido_contrario) parts.push(`sentido contrario: ${data.sentido_contrario}`);
-  if (data.hay_vehiculo_fuera_via) parts.push('vehículo fuera de vía');
+  if (desc) {
+    parts.push(desc);
+  } else {
+    const tipo = data.tipo_obstruccion ?? data.tipo;
+    if (tipo && tipo !== 'ninguna') parts.push(tipo);
+    if (data.sentido_principal && typeof data.sentido_principal === 'string') parts.push(`sentido principal: ${data.sentido_principal}`);
+    if (data.sentido_contrario && typeof data.sentido_contrario === 'string') parts.push(`sentido contrario: ${data.sentido_contrario}`);
+  }
+
+  if (data.hay_vehiculo_fuera_via && !desc?.includes('fuera de la via')) parts.push('vehículo fuera de vía');
   if (data.largo_metros) parts.push(`${data.largo_metros}m`);
   if (data.ancho_metros) parts.push(`${data.ancho_metros}m ancho`);
   if (data.nivel) parts.push(`Nivel: ${data.nivel}`);

@@ -408,11 +408,11 @@ export default function BitacoraPage() {
                                                         </div>
                                                     ) : null;
                                                 })()}
-                                                <p className="font-medium text-gray-900 dark:text-gray-100">
+                                                <p className="font-medium text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                                                     {item.descripcion || extractObservaciones(item.observaciones) || (isSalida ? 'Salida de unidad' : 'Sin descripción')}
                                                 </p>
-                                                {item.descripcion && item.observaciones && (
-                                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 italic">
+                                                {item.descripcion && item.observaciones && (item.descripcion.trim() !== String(extractObservaciones(item.observaciones) || '').trim()) && (
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 italic whitespace-pre-wrap">
                                                         &quot;{extractObservaciones(item.observaciones)}&quot;
                                                     </p>
                                                 )}
