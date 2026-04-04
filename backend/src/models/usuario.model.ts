@@ -28,6 +28,7 @@ export interface Usuario {
   ultimo_acceso: Date | null;
   created_at: Date;
   updated_at: Date;
+  chapa?: string | null;
   puede_ver_todas_sedes?: boolean; // Para ENCARGADO_NOMINAS que puede ver todas las sedes
   // Sub-rol COP (solo para usuarios COP)
   sub_rol_cop_id?: number | null;
