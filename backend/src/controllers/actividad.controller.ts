@@ -152,6 +152,42 @@ export async function cerrarActividad(req: Request, res: Response) {
 // OBTENER ACTIVIDAD POR ID
 // ========================================
 
+export async function updateActividad(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { km, sentido, ruta_id, latitud, longitud, observaciones, datos } = req.body;
+
+    const actividad = await ActividadModel.getById(parseInt(id));
+    if (!actividad) return res.status(404).json({ error: 'Actividad no encontrada' });
+
+    const sets: string[] = [];
+    const vals: any[] = [];
+    let i = 1;
+
+    if (km !== undefined)          { sets.push(`km = $${i++}`);          vals.push(km); }
+    if (sentido !== undefined)     { sets.push(`sentido = $${i++}`);     vals.push(sentido); }
+    if (ruta_id !== undefined)     { sets.push(`ruta_id = $${i++}`);     vals.push(ruta_id); }
+    if (latitud !== undefined)     { sets.push(`latitud = $${i++}`);     vals.push(latitud); }
+    if (longitud !== undefined)    { sets.push(`longitud = $${i++}`);    vals.push(longitud); }
+    if (observaciones !== undefined) { sets.push(`observaciones = $${i++}`); vals.push(typeof observaciones === 'string' ? observaciones : JSON.stringify(observaciones)); }
+    if (datos !== undefined)       { sets.push(`datos = $${i++}`);       vals.push(JSON.stringify(datos)); }
+
+    if (sets.length === 0) return res.json({ actividad });
+
+    vals.push(parseInt(id));
+    const updated = await db.oneOrNone(
+      `UPDATE actividad SET ${sets.join(', ')} WHERE id = $${i} RETURNING *`,
+      vals
+    );
+
+    const actividadCompleta = await ActividadModel.getById(parseInt(id));
+    return res.json({ actividad: actividadCompleta || updated });
+  } catch (error: any) {
+    console.error('Error updateActividad:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
 export async function getActividad(req: Request, res: Response) {
   try {
     const { id } = req.params;

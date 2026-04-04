@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   listActividades,
   createActividad,
+  updateActividad,
   cerrarActividad,
   getActividad,
   getMiUnidadHoy,
@@ -19,6 +20,9 @@ router.get('/', authenticate, authorize('COP', 'OPERACIONES', 'MANDOS', 'ADMIN')
 
 // Crear actividad
 router.post('/', authenticate, createActividad);
+
+// Actualizar actividad
+router.patch('/:id', authenticate, updateActividad);
 
 // Cerrar actividad
 router.patch('/:id/cerrar', authenticate, cerrarActividad);
