@@ -318,6 +318,8 @@ export const SituacionDetalleModel = {
         sv.sancion,
         sv.sancion_detalle,
         sv.documentos_consignados,
+        sv.custodia_estado,
+        sv.custodia_datos,
         sv.created_at,
 
         -- Vehiculo master

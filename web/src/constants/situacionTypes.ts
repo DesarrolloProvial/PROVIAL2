@@ -183,6 +183,7 @@ export const MARCAS_VEHICULO = [
   'Audi',
   'JAC',
   'Hino',
+  'Isuzu',
   'Otro',
 ].sort();
 

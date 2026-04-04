@@ -263,20 +263,41 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
             marca: v.marca_nombre || v.marca || v.vehiculo?.marca || '',
             color: v.color || v.vehiculo?.color || '',
             placa: v.placa || v.vehiculo?.placa || '',
-            placa_extranjera: v.placa_extranjera || v.vehiculo?.es_extranjero || false,
+            placa_extranjera: v.es_extranjero || v.placa_extranjera || v.vehiculo?.es_extranjero || false,
+            cargado: v.cargado || false,
+            carga_tipo: v.tipo_carga || v.carga_tipo || '',
+            // Piloto
             piloto_nombre: v.nombre_piloto || v.piloto?.nombre || '',
-            piloto_dpi: v.piloto_dpi || v.piloto?.dpi || '',
+            piloto_dpi: v.piloto_dpi || '',
             piloto_telefono: v.piloto_telefono || '',
             estado_piloto: v.estado_piloto || 'ILESO',
-            personas_asistidas: v.personas_asistidas || 0,
+            sexo_piloto: v.sexo_piloto || '',
+            fecha_nacimiento_piloto: v.piloto_nacimiento || v.fecha_nacimiento_piloto || '',
+            etnia_piloto: v.piloto_etnia || v.etnia_piloto || '',
+            // Licencia
+            licencia_tipo: v.licencia_tipo || '',
+            licencia_numero: v.licencia_numero ? String(v.licencia_numero) : '',
+            licencia_vencimiento: v.licencia_vencimiento || '',
+            licencia_antiguedad: v.licencia_antiguedad || '',
+            // Tarjeta de circulación
+            tarjeta_circulacion: v.tarjeta_circulacion ? String(v.tarjeta_circulacion) : '',
+            nit: v.nit ? String(v.nit) : '',
+            nombre_propietario: v.nombre_propietario || '',
+            direccion_propietario: v.direccion_propietario || '',
+            modelo: v.modelo || '',
+            // Daños / sanción
             dano: v.dano || v.danos_estimados || '',
+            tiene_sancion: v.sancion || false,
+            sancion_descripcion: v.sancion_detalle || '',
             observaciones: v.observaciones || '',
-            personas: v.datos_piloto?.personas || [],
-            dispositivos: v.dispositivos || [],
+            // Custodia
             custodia_estado: v.custodia_estado || '',
             custodia_autoridad: v.custodia_datos?.autoridad || '',
             custodia_motivo: v.custodia_datos?.motivo || '',
             custodia_destino: v.custodia_datos?.destino || '',
+            // Personas y dispositivos
+            personas: v.datos_piloto?.personas || v.personas || [],
+            dispositivos: v.dispositivos || [],
           })));
         }
 
