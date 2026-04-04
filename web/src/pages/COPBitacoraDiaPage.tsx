@@ -32,7 +32,7 @@ function fmtCombustible(val: number | null | undefined): string {
   return 'Vacío';
 }
 function hoy() {
-  return new Date().toISOString().split('T')[0];
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Guatemala' });
 }
 function str(v: any): string {
   if (v === null || v === undefined || v === '') return '—';
@@ -356,7 +356,26 @@ function LogActividad({ item }: { item: TimelineItem }) {
       <L label="estado" value={str(d.estado)} />
       <L label="km" value={d.km != null ? String(d.km) : undefined} />
       <L label="sentido" value={str(d.sentido)} />
-      <L label="observaciones" value={str(d.observaciones)} />
+
+      {/* Observaciones como conversación */}
+      <div className="text-sm mt-1">
+        <span className="font-medium text-gray-500 uppercase tracking-widest text-[10px] mr-2">observaciones</span>
+        <div className="mt-2 space-y-2">
+          {Array.isArray(d.observaciones) && d.observaciones.length > 0 ? (
+            d.observaciones.map((obs: any, idx: number) => (
+              <div key={idx} className="bg-gray-50 dark:bg-gray-800 p-2 border-l-2 border-blue-500 rounded">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{obs.usuario}</span>
+                  <span className="text-xs text-gray-500 font-mono">{obs.hora}</span>
+                </div>
+                <p className="text-xs text-gray-800 dark:text-gray-200">{obs.mensaje}</p>
+              </div>
+            ))
+          ) : (
+            <span className="text-gray-400 italic">ninguna</span>
+          )}
+        </div>
+      </div>
 
       {datosJSONB.length > 0 && (
         <>
@@ -429,7 +448,7 @@ function SalidaCard({ salida }: { salida: SalidaDia }) {
       return res.data;
     },
     enabled: expanded,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 
   const tripulacion: TripulanteSalida[] = salida.tripulacion ?? [];
