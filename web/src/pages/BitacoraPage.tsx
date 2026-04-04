@@ -505,7 +505,7 @@ export default function BitacoraPage() {
                 mode={salidaMode}
                 unidadId={Number(unidadId)}
                 unidadCodigo={unidadInfo?.codigo}
-                salidaId={salidaActual?.salida_id}
+                salidaId={salidaActual?.salida_id ?? salidaActual?.id}
             />
         </div>
     );
