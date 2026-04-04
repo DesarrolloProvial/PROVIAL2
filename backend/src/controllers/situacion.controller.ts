@@ -891,8 +891,9 @@ export async function getResumenUnidades(_req: Request, res: Response) {
         sa.estado as estado_situacion,
         sa.latitud,
         sa.longitud,
-        sa.km,
-        sa.sentido,
+        -- Para actividades, usar datos directamente del registro actividad (no del cache sa)
+        COALESCE(CASE WHEN sa.situacion_id IS NULL AND sa.actividad_id IS NOT NULL THEN a_ref.km ELSE NULL END, sa.km) as km,
+        COALESCE(CASE WHEN sa.situacion_id IS NULL AND sa.actividad_id IS NOT NULL THEN a_ref.sentido ELSE NULL END, sa.sentido) as sentido,
         sa.ruta_id as sa_ruta_id,
         sa.ruta_codigo,
         sa.situacion_created_at,
