@@ -4,18 +4,23 @@ import { api } from '../services/api';
 import { Camera, Video, Plus, Trash2, Loader2 } from 'lucide-react';
 
 interface Props {
-  situacionId: number;
+  situacionId?: number;
+  actividadId?: number;
 }
 
-export default function SituacionMultimediaUploader({ situacionId }: Props) {
+export default function SituacionMultimediaUploader({ situacionId, actividadId }: Props) {
   const [infografiaActiva, setInfografiaActiva] = useState(1);
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState('');
 
+  const entityId = situacionId || actividadId;
+  const entityType = situacionId ? 'situacion' : 'actividad';
+  const queryKey = situacionId ? ['multimedia-situacion', situacionId] : ['multimedia-actividad', actividadId];
+
   const { data, refetch, isLoading } = useQuery({
-    queryKey: ['multimedia-situacion', situacionId],
-    queryFn: () => api.get(`/multimedia/situacion/${situacionId}`).then(r => r.data),
-    enabled: !!situacionId,
+    queryKey,
+    queryFn: () => api.get(`/multimedia/${entityType}/${entityId}`).then(r => r.data),
+    enabled: !!entityId,
   });
 
   // Agrupar por infografia_numero
@@ -52,7 +57,7 @@ export default function SituacionMultimediaUploader({ situacionId }: Props) {
       const formData = new FormData();
       formData.append('foto', file);
       formData.append('infografia_numero', String(infografiaActiva));
-      await api.post(`/multimedia/situacion/${situacionId}/foto`, formData, {
+      await api.post(`/multimedia/${entityType}/${entityId}/foto`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       await refetch();
@@ -70,7 +75,7 @@ export default function SituacionMultimediaUploader({ situacionId }: Props) {
       const formData = new FormData();
       formData.append('video', file);
       formData.append('infografia_numero', String(infografiaActiva));
-      await api.post(`/multimedia/situacion/${situacionId}/video`, formData, {
+      await api.post(`/multimedia/${entityType}/${entityId}/video`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       await refetch();

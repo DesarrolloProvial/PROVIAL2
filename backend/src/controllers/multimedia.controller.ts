@@ -628,6 +628,97 @@ export async function subirFotoGenerica(req: Request, res: Response) {
   }
 }
 
+export async function subirFotoActividad(req: Request, res: Response) {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+    const { actividadId } = req.params;
+    const { infografia_numero, infografia_titulo } = req.body;
+    const infografiaNumero = infografia_numero ? parseInt(infografia_numero, 10) : 1;
+    if (!req.file) return res.status(400).json({ error: 'No se recibió ningún archivo' });
+
+    const actividad = await db.oneOrNone('SELECT id FROM actividad WHERE id = $1', [actividadId]);
+    if (!actividad) return res.status(404).json({ error: 'Actividad no encontrada' });
+
+    const ordenSiguiente = await MultimediaModel.getSiguienteOrdenFotoActividad(parseInt(actividadId), infografiaNumero);
+    if (ordenSiguiente > 3) return res.status(400).json({ error: `Límite de fotos alcanzado para infografía ${infografiaNumero}` });
+
+    if (!isCloudinaryConfiguredUnsigned()) return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
+
+    const result = await uploadPhotoBuffer(req.file.buffer, parseInt(actividadId), ordenSiguiente, `ACT-${actividadId}`, infografiaNumero);
+    if (!result.success) return res.status(500).json({ error: result.error });
+
+    const multimediaId = await MultimediaModel.create({
+      actividad_id: parseInt(actividadId),
+      infografia_numero: infografiaNumero,
+      infografia_titulo: infografia_titulo || null,
+      tipo: 'FOTO',
+      orden: ordenSiguiente,
+      url_original: result.url!,
+      url_thumbnail: result.thumbnailUrl,
+      nombre_archivo: result.publicId || `foto_${ordenSiguiente}`,
+      mime_type: req.file.mimetype,
+      tamanio_bytes: result.size || req.file.size,
+      ancho: result.width,
+      alto: result.height,
+      subido_por: req.user.userId
+    });
+
+    return res.status(201).json({ message: `Foto ${ordenSiguiente} de 3 subida`, multimedia: { id: multimediaId, infografia_numero: infografiaNumero, orden: ordenSiguiente, url: result.url, thumbnailUrl: result.thumbnailUrl } });
+  } catch (error: any) {
+    console.error('Error al subir foto actividad:', error);
+    return res.status(500).json({ error: 'Error al subir la foto' });
+  }
+}
+
+export async function subirVideoActividad(req: Request, res: Response) {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+    const { actividadId } = req.params;
+    const { infografia_numero, infografia_titulo } = req.body;
+    const infografiaNumero = infografia_numero ? parseInt(infografia_numero, 10) : 1;
+    if (!req.file) return res.status(400).json({ error: 'No se recibió ningún archivo' });
+
+    const actividad = await db.oneOrNone('SELECT id FROM actividad WHERE id = $1', [actividadId]);
+    if (!actividad) return res.status(404).json({ error: 'Actividad no encontrada' });
+
+    if (!isCloudinaryConfiguredUnsigned()) return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
+
+    const result = await uploadVideoBuffer(req.file.buffer, parseInt(actividadId), `ACT-${actividadId}`, infografiaNumero);
+    if (!result.success) return res.status(500).json({ error: result.error });
+
+    const multimediaId = await MultimediaModel.create({
+      actividad_id: parseInt(actividadId),
+      infografia_numero: infografiaNumero,
+      infografia_titulo: infografia_titulo || null,
+      tipo: 'VIDEO',
+      url_original: result.url!,
+      nombre_archivo: result.publicId || `video_act_${actividadId}`,
+      mime_type: req.file.mimetype,
+      tamanio_bytes: result.size || req.file.size,
+      duracion_segundos: req.body.duracion_segundos ? parseInt(req.body.duracion_segundos) : null,
+      subido_por: req.user.userId
+    });
+
+    return res.status(201).json({ message: 'Video subido', multimedia: { id: multimediaId, infografia_numero: infografiaNumero, url: result.url } });
+  } catch (error: any) {
+    console.error('Error al subir video actividad:', error);
+    return res.status(500).json({ error: 'Error al subir el video' });
+  }
+}
+
+export async function getMultimediaActividad(req: Request, res: Response) {
+  try {
+    const { actividadId } = req.params;
+    const multimedia = await MultimediaModel.getByActividadId(parseInt(actividadId));
+    const fotos = multimedia.filter(m => m.tipo === 'FOTO');
+    const videos = multimedia.filter(m => m.tipo === 'VIDEO');
+    return res.json({ actividad_id: parseInt(actividadId), fotos, videos });
+  } catch (error: any) {
+    console.error('Error al obtener multimedia actividad:', error);
+    return res.status(500).json({ error: 'Error al obtener multimedia' });
+  }
+}
+
 export default {
   upload,
   subirFoto,
@@ -638,5 +729,8 @@ export default {
   eliminarMultimedia,
   getGaleria,
   getStats,
-  guardarReferenciasCloudinary
+  guardarReferenciasCloudinary,
+  subirFotoActividad,
+  subirVideoActividad,
+  getMultimediaActividad
 };

@@ -3,10 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { api, actividadesAPI, catalogosAPI } from '../../services/api';
 import {
   X, Save, RefreshCw, ChevronRight, ChevronLeft,
-  Activity, Shield, Briefcase,
+  Activity, Shield, Briefcase, Check, Camera,
 } from 'lucide-react';
 import UbicacionFields from './UbicacionFields';
 import DynamicActivityFields from './DynamicActivityFields';
+import SituacionMultimediaUploader from '../SituacionMultimediaUploader';
 
 // ============================================
 // CONSTANTES
@@ -56,6 +57,8 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
   const [saving, setSaving] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(false);
   const [error, setError] = useState('');
+  const [justCreatedId, setJustCreatedId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'datos' | 'infografia'>('datos');
 
   // Form state
   const [form, setForm] = useState({
@@ -68,6 +71,7 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
     departamento_id: null as number | null,
     municipio_id: null as number | null,
     observaciones: '',
+    requiere_infografia: false,
   });
   const [datos, setDatos] = useState<Record<string, any>>({});
 
@@ -136,6 +140,7 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
           departamento_id: act.departamento_id || null,
           municipio_id: act.municipio_id || null,
           observaciones: act.observaciones || '',
+          requiere_infografia: act.requiere_infografia || false,
         });
         if (act.datos) {
           const d = typeof act.datos === 'string' ? JSON.parse(act.datos) : act.datos;
@@ -172,10 +177,12 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
       setExpandedCat(null);
       setForm({
         unidad_id: '', ruta_id: '', km: '', sentido: '', latitud: '', longitud: '',
-        departamento_id: null, municipio_id: null, observaciones: '',
+        departamento_id: null, municipio_id: null, observaciones: '', requiere_infografia: false,
       });
       setDatos({});
       setError('');
+      setJustCreatedId(null);
+      setActiveTab('datos');
     }
   }, [isOpen]);
 
@@ -216,11 +223,17 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
 
       if (isEditMode) {
         await actividadesAPI.update(editActividadId!, payload);
+        onCreated();
+        onClose();
       } else {
-        await actividadesAPI.create(payload);
+        const created = await actividadesAPI.create(payload);
+        onCreated();
+        if (selectedTipo?.formulario_tipo !== 'NOVEDAD') {
+          setJustCreatedId(created.id);
+        } else {
+          onClose();
+        }
       }
-      onCreated();
-      onClose();
     } catch (err: any) {
       console.error('Error guardando actividad:', err);
       setError(err.response?.data?.error || err.message || 'Error al guardar la actividad');
@@ -301,6 +314,45 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
   // PASO 2: Formulario
   // ============================================
   const catConfig = CATEGORIA_CONFIG[selectedCategoria] || CATEGORIA_CONFIG.OPERATIVO;
+  const showMultimedia = isEditMode && selectedTipo?.formulario_tipo !== 'NOVEDAD';
+
+  // ============================================
+  // VISTA: Infografía post-creación
+  // ============================================
+  if (justCreatedId) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 rounded-t-xl">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
+                <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Actividad creada</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Agrega infografía (fotos y videos)</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg">
+              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6">
+            <SituacionMultimediaUploader actividadId={justCreatedId} />
+          </div>
+          <div className="flex justify-end p-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={onClose}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center gap-2"
+            >
+              <Check className="w-4 h-4" />
+              Listo
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -325,8 +377,43 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
           </button>
         </div>
 
+        {/* Tabs (edit mode only, non-NOVEDAD) */}
+        {showMultimedia && (
+          <div className="flex border-b border-gray-200 dark:border-gray-700 px-4">
+            <button
+              onClick={() => setActiveTab('datos')}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition ${
+                activeTab === 'datos'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              Datos
+            </button>
+            <button
+              onClick={() => setActiveTab('infografia')}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition flex items-center gap-1.5 ${
+                activeTab === 'infografia'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              <Camera className="w-3.5 h-3.5" />
+              Infografía
+            </button>
+          </div>
+        )}
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Infografía tab (edit mode) */}
+          {showMultimedia && activeTab === 'infografia' && editActividadId && (
+            <SituacionMultimediaUploader actividadId={editActividadId} />
+          )}
+
+          {/* Datos tab (or non-edit mode) */}
+          {(!showMultimedia || activeTab === 'datos') && (
+            <>
           {loadingEdit && (
             <div className="text-center py-8 text-gray-400">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
@@ -406,10 +493,30 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
               placeholder="Observaciones adicionales..."
             />
           </div>
+
+          {/* Requiere Infografía */}
+          {selectedTipo?.nombre !== 'Parada de Comida' && selectedTipo?.nombre !== 'Baño' && (
+            <label className="flex items-center gap-3 cursor-pointer p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors w-max">
+              <input
+                type="checkbox"
+                checked={form.requiere_infografia}
+                onChange={(e) => handleChange('requiere_infografia', e.target.checked)}
+                className="w-5 h-5 rounded border-indigo-400 text-indigo-600 focus:ring-indigo-500"
+              />
+              <div>
+                <span className="text-sm font-medium text-indigo-800 dark:text-indigo-300">Requiere Infografía</span>
+                <p className="text-xs text-indigo-600 dark:text-indigo-400">Marcar si esta actividad necesita infografía gráfica</p>
+              </div>
+            </label>
+          )}
+
           </> }
+            </>
+          )}
         </div>
 
         {/* Footer */}
+        {(!showMultimedia || activeTab === 'datos') && (
         <div className="flex justify-between items-center gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 rounded-b-xl">
           <button
             onClick={onClose}
@@ -435,6 +542,7 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
             )}
           </button>
         </div>
+        )}
       </div>
     </div>
   );

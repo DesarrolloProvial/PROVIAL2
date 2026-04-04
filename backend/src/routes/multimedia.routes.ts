@@ -104,6 +104,29 @@ router.get(
 );
 
 // ========================================
+// ACTIVIDAD MULTIMEDIA
+// ========================================
+
+router.post(
+  '/actividad/:actividadId/foto',
+  authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN', 'TRANSPORTES'),
+  multimediaController.upload.single('foto'),
+  multimediaController.subirFotoActividad
+);
+
+router.post(
+  '/actividad/:actividadId/video',
+  authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN', 'TRANSPORTES'),
+  multimediaController.upload.single('video'),
+  multimediaController.subirVideoActividad
+);
+
+router.get(
+  '/actividad/:actividadId',
+  multimediaController.getMultimediaActividad
+);
+
+// ========================================
 // ELIMINACIÓN
 // ========================================
 
