@@ -259,8 +259,8 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
         // Load vehiculos
         if (sit.vehiculos_involucrados?.length > 0) {
           setVehiculos(sit.vehiculos_involucrados.map((v: any) => ({
-            tipo_vehiculo: v.tipo_vehiculo || v.vehiculo?.tipo_vehiculo || '',
-            marca: v.marca || v.vehiculo?.marca || '',
+            tipo_vehiculo: v.tipo_vehiculo_nombre || v.tipo_vehiculo || v.vehiculo?.tipo_vehiculo || '',
+            marca: v.marca_nombre || v.marca || v.vehiculo?.marca || '',
             color: v.color || v.vehiculo?.color || '',
             placa: v.placa || v.vehiculo?.placa || '',
             placa_extranjera: v.placa_extranjera || v.vehiculo?.es_extranjero || false,
