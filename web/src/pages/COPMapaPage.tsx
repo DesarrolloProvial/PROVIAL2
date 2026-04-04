@@ -178,6 +178,13 @@ function formatObstruccion(data: any): string {
   return parts.length > 0 ? parts.join(' · ') : 'sin detalles';
 }
 
+function extractObservaciones(obs: any): string | null {
+  if (!obs) return null;
+  if (typeof obs === 'string') return obs;
+  if (Array.isArray(obs) && obs.length > 0) return obs[obs.length - 1]?.mensaje ?? null;
+  return null;
+}
+
 export default function COPMapaPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -657,8 +664,8 @@ export default function COPMapaPage() {
                     {unidad.obstruccion_data && (
                       <p>🚧 Obstrucción: {formatObstruccion(unidad.obstruccion_data)}</p>
                     )}
-                    {unidad.observaciones && (
-                      <p className="mt-1 text-gray-700 italic">💬 {unidad.observaciones}</p>
+                    {extractObservaciones(unidad.observaciones) && (
+                      <p className="mt-1 text-gray-700 italic">💬 {extractObservaciones(unidad.observaciones)}</p>
                     )}
                     {unidad.created_at && (
                       <p className="text-gray-400 text-xs">
