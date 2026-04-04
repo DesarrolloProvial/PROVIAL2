@@ -223,6 +223,11 @@ export default function COPMapaPage() {
   const [nuevaCapa, setNuevaCapa] = useState({ nombre: '', color: '#3B82F6' });
   const [creandoCapa, setCreandoCapa] = useState(false);
   const [showSalidaEmergenciaModal, setShowSalidaEmergenciaModal] = useState(false);
+  const [showCambiarRutaModal, setShowCambiarRutaModal] = useState(false);
+  const [cambiarRutaUnidadId, setCambiarRutaUnidadId] = useState<number | null>(null);
+  const [cambiarRutaSeleccionada, setCambiarRutaSeleccionada] = useState('');
+  const [cambiarRutaSaving, setCambiarRutaSaving] = useState(false);
+  const [cambiarRutaError, setCambiarRutaError] = useState('');
 
   const { isConnected: socketConnected, lastUpdate } = useDashboardSocket(queryClient);
   const defaultCenter: LatLngExpression = [14.6407, -90.5133];
@@ -263,6 +268,16 @@ export default function COPMapaPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: rutasList = [] } = useQuery({
+    queryKey: ['rutas-list'],
+    queryFn: async () => {
+      const { data } = await api.get('/geografia/rutas');
+      return data || [];
+    },
+    staleTime: 10 * 60 * 1000,
+    enabled: showCambiarRutaModal,
+  });
+
   const { data: capas = [], refetch: refetchCapas } = useQuery({
     queryKey: ['capas-mapa'],
     queryFn: async () => {
@@ -281,6 +296,23 @@ export default function COPMapaPage() {
     enabled: capassVisibles.size > 0,
     staleTime: 60 * 1000,
   });
+
+  const handleCambiarRuta = async () => {
+    if (!cambiarRutaUnidadId || !cambiarRutaSeleccionada) return;
+    setCambiarRutaSaving(true);
+    setCambiarRutaError('');
+    try {
+      await api.post('/salidas/cambiar-ruta', { unidadId: cambiarRutaUnidadId, nueva_ruta_id: Number(cambiarRutaSeleccionada) });
+      setShowCambiarRutaModal(false);
+      setCambiarRutaSeleccionada('');
+      setCambiarRutaUnidadId(null);
+      refetchResumen();
+    } catch (e: any) {
+      setCambiarRutaError(e.response?.data?.error || 'Error al cambiar ruta');
+    } finally {
+      setCambiarRutaSaving(false);
+    }
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -712,12 +744,23 @@ export default function COPMapaPage() {
                       </div>
                     )}
 
-                    <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-600">
+                    <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-600 space-y-1.5">
                       <button
                         onClick={() => navigate(`/bitacora/${unidad.unidad_id}`)}
                         className="w-full flex items-center justify-center gap-2 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 font-semibold py-1.5 px-3 rounded text-sm transition"
                       >
                         📄 Ver Bitácora
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCambiarRutaUnidadId(unidad.unidad_id);
+                          setCambiarRutaSeleccionada('');
+                          setCambiarRutaError('');
+                          setShowCambiarRutaModal(true);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 font-semibold py-1.5 px-3 rounded text-sm transition"
+                      >
+                        🛣️ Cambiar Ruta
                       </button>
                     </div>
                   </div>
@@ -1202,6 +1245,12 @@ export default function COPMapaPage() {
                     setPreselectedUnidadId(unidadId);
                     setShowCrearActividadModal(true);
                   }}
+                  onCambiarRuta={(unidadId) => {
+                    setCambiarRutaUnidadId(unidadId);
+                    setCambiarRutaSeleccionada('');
+                    setCambiarRutaError('');
+                    setShowCambiarRutaModal(true);
+                  }}
                 />
               );
             })()}
@@ -1245,6 +1294,62 @@ export default function COPMapaPage() {
         onClose={() => setShowSalidaEmergenciaModal(false)}
         onCreated={() => { refetchResumen(); }}
       />
+
+      {/* Modal cambiar ruta */}
+      {showCambiarRutaModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Cambiar Ruta</h2>
+              <button onClick={() => { setShowCambiarRutaModal(false); setCambiarRutaError(''); }} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg">
+                <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              {cambiarRutaError && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">
+                  {cambiarRutaError}
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Unidad</label>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {resumenUnidades.find((u: any) => u.unidad_id === cambiarRutaUnidadId)?.unidad_codigo || `#${cambiarRutaUnidadId}`}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nueva Ruta</label>
+                <select
+                  value={cambiarRutaSeleccionada}
+                  onChange={(e) => setCambiarRutaSeleccionada(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                >
+                  <option value="">Seleccionar ruta...</option>
+                  {rutasList.map((r: any) => (
+                    <option key={r.id} value={r.id}>{r.codigo} — {r.nombre}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => { setShowCambiarRutaModal(false); setCambiarRutaError(''); }}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCambiarRuta}
+                disabled={cambiarRutaSaving || !cambiarRutaSeleccionada}
+                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:opacity-50 text-sm font-medium flex items-center gap-2"
+              >
+                {cambiarRutaSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : null}
+                Confirmar Cambio
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

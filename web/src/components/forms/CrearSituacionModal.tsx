@@ -115,6 +115,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
     // Grupo y causas
     grupo: '' as string | number,
     causas: [] as number[],
+    requiere_infografia: false,
   });
 
   // Related data
@@ -252,6 +253,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
           via_condicion: sit.via_condicion || '',
           grupo: sit.grupo || '',
           causas: sit.causas?.map((c: any) => c.id || c) || [],
+          requiere_infografia: sit.requiere_infografia || false,
         });
 
         // Load vehiculos
@@ -322,7 +324,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
         heridos: 0, fallecidos: 0, ilesos: 0, heridos_leves: 0, heridos_graves: 0,
         trasladados: 0, fugados: 0, acuerdo_involucrados: false, acuerdo_detalle: '',
         via_estado: '', via_topografia: '', via_geometria: '',
-        via_peralte: '', via_condicion: '', grupo: '', causas: [],
+        via_peralte: '', via_condicion: '', grupo: '', causas: [], requiere_infografia: false,
       });
       setVehiculos([]);
       setGruas([]);
@@ -758,6 +760,22 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
                   placeholder={isEditMode ? "Añadir un nuevo comentario, actualización o seguimiento..." : "Observaciones adicionales iniciales..."}
                 />
               </div>
+
+              {/* Requiere Infografía */}
+              {tipoSituacion !== 'CAMBIO_RUTA' && tipoSituacion !== 'PARADA_COMIDA' && (
+                <label className="flex items-center gap-3 cursor-pointer p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors w-max">
+                  <input
+                    type="checkbox"
+                    checked={form.requiere_infografia}
+                    onChange={(e) => handleChange('requiere_infografia', e.target.checked)}
+                    className="w-5 h-5 rounded border-indigo-400 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-indigo-800 dark:text-indigo-300">Requiere Infografía</span>
+                    <p className="text-xs text-indigo-600 dark:text-indigo-400">Marcar si esta situación necesita una infografía gráfica</p>
+                  </div>
+                </label>
+              )}
             </div>
           )}
 
@@ -893,7 +911,18 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
 
           {/* TAB: Multimedia (solo edit mode) */}
           {activeTab === 'multimedia' && isEditMode && editSituacionId && (
-            <SituacionMultimediaUploader situacionId={editSituacionId} />
+            <>
+              <SituacionMultimediaUploader situacionId={editSituacionId} />
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+                <button
+                  onClick={onClose}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm font-medium"
+                >
+                  <Save className="w-4 h-4" />
+                  Listo
+                </button>
+              </div>
+            </>
           )}
 
           </>)}
@@ -907,25 +936,23 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
           >
             Cancelar
           </button>
-          {activeTab !== 'multimedia' && (
-            <button
-              onClick={handleSubmit}
-              disabled={saving}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-            >
-              {saving ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  {isEditMode ? 'Guardando...' : 'Creando...'}
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  {isEditMode ? 'Guardar Cambios' : 'Crear Situacion'}
-                </>
-              )}
-            </button>
-          )}
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+          >
+            {saving ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                {isEditMode ? 'Guardando...' : 'Creando...'}
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                {isEditMode ? 'Guardar Cambios' : 'Crear Situacion'}
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>

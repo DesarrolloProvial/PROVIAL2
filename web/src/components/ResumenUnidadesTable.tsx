@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Plus, Activity } from 'lucide-react';
+import { Eye, Plus, Activity, Route } from 'lucide-react';
 import SituacionIcon from './SituacionIcon';
 
 
@@ -46,9 +46,10 @@ interface Props {
   onSelectUnidad?: (unidadId: number) => void;
   onCreateSituacion?: (unidadId: number) => void;
   onCreateActividad?: (unidadId: number) => void;
+  onCambiarRuta?: (unidadId: number) => void;
 }
 
-export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreateSituacion, onCreateActividad }: Props) {
+export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreateSituacion, onCreateActividad, onCambiarRuta }: Props) {
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
 
@@ -303,6 +304,17 @@ export default function ResumenUnidadesTable({ resumen, onSelectUnidad, onCreate
                     >
                       <Activity className="w-3.5 h-3.5" />
                       Actividad
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCambiarRuta?.(unidad.unidad_id);
+                      }}
+                      className="flex items-center gap-1 px-2 py-1.5 text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 rounded-lg transition text-xs font-medium"
+                      title="Cambiar ruta de esta unidad"
+                    >
+                      <Route className="w-3.5 h-3.5" />
+                      Ruta
                     </button>
                     <button
                       onClick={(e) => {
