@@ -267,7 +267,7 @@ export default function DynamicActivityFields({ activityTypeName, datos, onDatos
   }
 
   // ── Hospital / Compañero enfermo ──
-  if (name === 'Hospital' || name === 'Compañero enfermo') {
+  if (name === 'Hospital' || name === 'Compañero enfermo' || name === 'Compañero Enfermo') {
     return (
       <div className="space-y-3">
         <TextInput label="Nombre Hospital / Centro" value={datos.hospital} onChange={v => set('hospital', v)} />

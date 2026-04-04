@@ -169,7 +169,17 @@ export async function updateActividad(req: Request, res: Response) {
     if (ruta_id !== undefined)     { sets.push(`ruta_id = $${i++}`);     vals.push(ruta_id); }
     if (latitud !== undefined)     { sets.push(`latitud = $${i++}`);     vals.push(latitud); }
     if (longitud !== undefined)    { sets.push(`longitud = $${i++}`);    vals.push(longitud); }
-    if (observaciones !== undefined) { sets.push(`observaciones = $${i++}`); vals.push(typeof observaciones === 'string' ? observaciones : JSON.stringify(observaciones)); }
+    if (observaciones !== undefined) {
+      // Keep as JSONB array format; if a plain string is received, wrap it
+      if (typeof observaciones === 'string' && observaciones.trim()) {
+        const hora = new Intl.DateTimeFormat('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', timeZone: 'America/Guatemala' }).format(new Date());
+        sets.push(`observaciones = $${i++}`);
+        vals.push(JSON.stringify([{ hora, usuario: 'Edición', mensaje: observaciones }]));
+      } else if (Array.isArray(observaciones)) {
+        sets.push(`observaciones = $${i++}`);
+        vals.push(JSON.stringify(observaciones));
+      }
+    }
     if (datos !== undefined)       { sets.push(`datos = $${i++}`);       vals.push(JSON.stringify(datos)); }
 
     if (sets.length === 0) return res.json({ actividad });

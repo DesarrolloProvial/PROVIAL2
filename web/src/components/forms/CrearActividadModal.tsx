@@ -10,6 +10,16 @@ import DynamicActivityFields from './DynamicActivityFields';
 import SituacionMultimediaUploader from '../SituacionMultimediaUploader';
 
 // ============================================
+// HELPERS
+// ============================================
+const extractObservaciones = (obs: any): string | null => {
+  if (!obs) return null;
+  if (typeof obs === 'string') return obs;
+  if (Array.isArray(obs) && obs.length > 0) return obs[obs.length - 1]?.mensaje ?? null;
+  return null;
+};
+
+// ============================================
 // CONSTANTES
 // ============================================
 const CATEGORIA_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
@@ -130,6 +140,9 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
       try {
         const act = await actividadesAPI.getById(editActividadId);
         if (cancelled) return;
+        const datosObj = act.datos
+          ? (typeof act.datos === 'string' ? JSON.parse(act.datos) : act.datos)
+          : {};
         setForm({
           unidad_id: act.unidad_id || '',
           ruta_id: act.ruta_id || '',
@@ -137,14 +150,13 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
           sentido: act.sentido || '',
           latitud: act.latitud != null ? String(act.latitud) : '',
           longitud: act.longitud != null ? String(act.longitud) : '',
-          departamento_id: act.departamento_id || null,
-          municipio_id: act.municipio_id || null,
-          observaciones: act.observaciones || '',
+          departamento_id: datosObj.departamento_id || null,
+          municipio_id: datosObj.municipio_id || null,
+          observaciones: extractObservaciones(act.observaciones) || '',
           requiere_infografia: act.requiere_infografia || false,
         });
-        if (act.datos) {
-          const d = typeof act.datos === 'string' ? JSON.parse(act.datos) : act.datos;
-          setDatos(d);
+        if (Object.keys(datosObj).length > 0) {
+          setDatos(datosObj);
         }
         // Find the tipo in catalog to set selectedTipo
         if (act.tipo_actividad_id && categorias.length > 0) {
@@ -208,6 +220,10 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
       const cleanDatos = { ...datos };
       delete cleanDatos._tempTipo;
       delete cleanDatos._tempVel;
+
+      // Save departamento/municipio into datos JSONB (no dedicated columns in actividad)
+      if (form.departamento_id) cleanDatos.departamento_id = form.departamento_id;
+      if (form.municipio_id) cleanDatos.municipio_id = form.municipio_id;
 
       const payload: any = {
         tipo_actividad_id: selectedTipo!.id,

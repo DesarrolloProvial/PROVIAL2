@@ -141,6 +141,17 @@ export function useSocket(callbacks: SocketCallbacks = {}): UseSocketReturn {
       callbacksRef.current.onResumenUpdate?.(data);
     });
 
+    // Actividades (invalidar resumen cuando se crean/actualizan/cierran)
+    socket.on('actividad:nueva', () => {
+      callbacksRef.current.onSituacionNueva?.({} as SituacionEvent);
+    });
+    socket.on('actividad:actualizada', () => {
+      callbacksRef.current.onSituacionActualizada?.({} as SituacionEvent);
+    });
+    socket.on('actividad:cerrada', () => {
+      callbacksRef.current.onSituacionCerrada?.({} as SituacionEvent);
+    });
+
     // Pong para verificar conexión
     socket.on('pong', () => {
       // Conexión activa
@@ -157,6 +168,9 @@ export function useSocket(callbacks: SocketCallbacks = {}): UseSocketReturn {
       socket.off('situacion:cerrada');
       socket.off('unidad:cambio_estado');
       socket.off('resumen:update');
+      socket.off('actividad:nueva');
+      socket.off('actividad:actualizada');
+      socket.off('actividad:cerrada');
       socket.off('pong');
       socket.disconnect();
       socketRef.current = null;

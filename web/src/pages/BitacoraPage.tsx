@@ -444,6 +444,28 @@ export default function BitacoraPage() {
                                                         Registrado por: {item.creado_por_nombre}
                                                     </div>
                                                 )}
+                                                {/* Infografía: fotos de situacion o actividad */}
+                                                {item.fotos && item.fotos.length > 0 && (
+                                                    <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">📷 {item.fotos.length} foto(s)</p>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {item.fotos.map((foto: any) => (
+                                                                <a
+                                                                    key={foto.id}
+                                                                    href={foto.url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                >
+                                                                    <img
+                                                                        src={foto.thumbnail || foto.url}
+                                                                        alt={`Foto ${foto.orden}`}
+                                                                        className="w-20 h-14 object-cover rounded border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition"
+                                                                    />
+                                                                </a>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
