@@ -43,6 +43,7 @@ export interface SituacionIdParams {
   ruta_id: number;
   km: number;
   num_situacion_salida: number; // Numero de esta SALIDA, no del dia
+  salida_id: number;            // ID real de la salida (server-side)
 }
 
 /**
@@ -56,9 +57,10 @@ export interface SituacionIdParams {
  *   tipo_situacion_id: 70,
  *   ruta_id: 86,
  *   km: 50,
- *   num_situacion_salida: 4
+ *   num_situacion_salida: 4,
+ *   salida_id: 15
  * });
- * // Resultado: "20260121-1-030-70-86-50-4"
+ * // Resultado: "20260121-1-030-70-86-50-4-15"
  */
 export function generateSituacionId(params: SituacionIdParams): string {
   const fecha = formatDateToYYYYMMDD(params.fecha);
@@ -68,8 +70,9 @@ export function generateSituacionId(params: SituacionIdParams): string {
   const ruta = String(params.ruta_id);              // Sin padding
   const km = String(Math.floor(params.km));         // Sin padding, parte entera
   const num = String(params.num_situacion_salida);  // Sin padding
+  const salida = String(params.salida_id);          // ID real de la salida (server-side)
 
-  return `${fecha}-${sede}-${unidad}-${tipo}-${ruta}-${km}-${num}`;
+  return `${fecha}-${sede}-${unidad}-${tipo}-${ruta}-${km}-${num}-${salida}`;
 }
 
 /**
@@ -83,9 +86,10 @@ export function generateSituacionId(params: SituacionIdParams): string {
 export function parseSituacionId(id: string): SituacionIdParams | null {
   try {
     const parts = id.split('-');
-    if (parts.length !== 7) return null;
+    // Soporta formato legacy (7 partes) y nuevo (8 partes con salida_id)
+    if (parts.length !== 7 && parts.length !== 8) return null;
 
-    const [fechaStr, sedeStr, unidadCodigo, tipoStr, rutaStr, kmStr, numStr] = parts;
+    const [fechaStr, sedeStr, unidadCodigo, tipoStr, rutaStr, kmStr, numStr, salidaStr] = parts;
 
     // Parsear fecha YYYYMMDD
     const year = parseInt(fechaStr.substring(0, 4));
@@ -99,7 +103,8 @@ export function parseSituacionId(id: string): SituacionIdParams | null {
       tipo_situacion_id: parseInt(tipoStr),
       ruta_id: parseInt(rutaStr),
       km: parseInt(kmStr),
-      num_situacion_salida: parseInt(numStr)
+      num_situacion_salida: parseInt(numStr),
+      salida_id: salidaStr ? parseInt(salidaStr) : 0
     };
   } catch (error) {
     console.error('[SITUACION_ID] Error parseando ID:', error);
@@ -130,7 +135,7 @@ export function isValidSituacionId(id: string): boolean {
   if (!id || typeof id !== 'string') return false;
 
   const parts = id.split('-');
-  if (parts.length !== 7) return false;
+  if (parts.length !== 7 && parts.length !== 8) return false;
 
   const [fecha, sede, unidad, tipo, ruta, km, num] = parts;
 

@@ -239,7 +239,8 @@ export function useDraftSituacion() {
       tipo_situacion_id: params.tipo_situacion_id,
       ruta_id: params.ruta_id,
       km: params.km,
-      num_situacion_salida: reserva.num_situacion_salida
+      num_situacion_salida: reserva.num_situacion_salida,
+      salida_id: reserva.salida_id
     });
 
     const now = new Date().toISOString();
