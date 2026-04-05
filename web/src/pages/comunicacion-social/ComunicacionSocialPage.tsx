@@ -234,8 +234,8 @@ function TabEstadisticas() {
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie data={data.por_vehiculo} dataKey="total" nameKey="tipo_vehiculo"
-                    cx="50%" cy="50%" outerRadius={100} label={({ tipo_vehiculo, percent }) =>
-                      `${tipo_vehiculo} ${(percent * 100).toFixed(0)}%`}>
+                    cx="50%" cy="50%" outerRadius={100} label={(props: any) =>
+                      `${props.tipo_vehiculo} ${((props.percent ?? 0) * 100).toFixed(0)}%`}>
                     {data.por_vehiculo.map((_, i) => (
                       <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                     ))}
