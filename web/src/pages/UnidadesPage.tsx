@@ -333,7 +333,6 @@ export default function UnidadesPage() {
                 {isColumnVisible('tipo_unidad') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Tipo</th>}
                 {isColumnVisible('marca') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Marca</th>}
                 {isColumnVisible('modelo') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Modelo</th>}
-                {isColumnVisible('anio') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Ano</th>}
                 {isColumnVisible('placa') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Placa</th>}
                 {isColumnVisible('sede') && <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Sede</th>}
                 {isColumnVisible('estado') && <th className="px-4 py-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-300">Estado</th>}
@@ -366,7 +365,6 @@ export default function UnidadesPage() {
                     )}
                     {isColumnVisible('marca') && <td className="px-4 py-3 text-sm dark:text-gray-300">{unidad.marca || '-'}</td>}
                     {isColumnVisible('modelo') && <td className="px-4 py-3 text-sm dark:text-gray-300">{unidad.modelo || '-'}</td>}
-                    {isColumnVisible('anio') && <td className="px-4 py-3 text-sm dark:text-gray-300">{unidad.anio || '-'}</td>}
                     {isColumnVisible('placa') && <td className="px-4 py-3 text-sm font-mono dark:text-gray-300">{unidad.placa || '-'}</td>}
                     {isColumnVisible('sede') && <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{unidad.sede_nombre}</td>}
                     {isColumnVisible('estado') && (
@@ -481,29 +479,15 @@ export default function UnidadesPage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Ano</label>
-                  <input
-                    type="number"
-                    value={formData.anio}
-                    onChange={(e) => setFormData({ ...formData, anio: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
-                    placeholder="Ej: 2020"
-                    min="1990"
-                    max="2030"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Placa</label>
-                  <input
-                    type="text"
-                    value={formData.placa}
-                    onChange={(e) => setFormData({ ...formData, placa: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
-                    placeholder="Ej: P-123ABC"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Placa</label>
+                <input
+                  type="text"
+                  value={formData.placa}
+                  onChange={(e) => setFormData({ ...formData, placa: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+                  placeholder="Ej: P-123ABC"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1 dark:text-gray-300">Sede *</label>
@@ -598,27 +582,14 @@ export default function UnidadesPage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Ano</label>
-                  <input
-                    type="number"
-                    value={formData.anio}
-                    onChange={(e) => setFormData({ ...formData, anio: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
-                    min="1990"
-                    max="2030"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1 dark:text-gray-300">Placa</label>
-                  <input
-                    type="text"
-                    value={formData.placa}
-                    onChange={(e) => setFormData({ ...formData, placa: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Placa</label>
+                <input
+                  type="text"
+                  value={formData.placa}
+                  onChange={(e) => setFormData({ ...formData, placa: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1 dark:text-gray-300">Sede</label>
