@@ -303,7 +303,6 @@ export default function GestionUnidadesPage() {
                       <span>
                         {unidad.tipo_unidad}
                         {(unidad.marca || unidad.modelo) && ` - ${unidad.marca || ''} ${unidad.modelo || ''}`.trim()}
-                        {unidad.anio && unidad.anio > 0 && ` (${unidad.anio})`}
                       </span>
                     </div>
                     {/* Custom Fields in Card */}
@@ -402,7 +401,7 @@ export default function GestionUnidadesPage() {
                   )}
                 </select>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Marca</label>
                   <input
@@ -422,17 +421,6 @@ export default function GestionUnidadesPage() {
                     onChange={(e) => editingUnidad
                       ? setEditingUnidad({ ...editingUnidad, modelo: e.target.value })
                       : setFormData({ ...formData, modelo: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Año</label>
-                  <input
-                    type="number"
-                    value={editingUnidad?.anio || formData.anio}
-                    onChange={(e) => editingUnidad
-                      ? setEditingUnidad({ ...editingUnidad, anio: parseInt(e.target.value) })
-                      : setFormData({ ...formData, anio: parseInt(e.target.value) })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                   />
                 </div>
