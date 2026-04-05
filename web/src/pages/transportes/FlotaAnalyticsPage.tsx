@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import {
   ArrowLeft, BarChart2, Fuel, Truck, Wrench, CheckCircle, AlertTriangle,
-  X, Loader2,
+  X, Loader2, Droplets,
 } from 'lucide-react';
 import api from '../../services/api';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -20,12 +20,24 @@ interface EstadisticaUnidad {
   tipo_unidad: string;
   sede_nombre: string;
   activa: boolean;
+  en_reparacion: boolean;
+  reparacion_motivo: string | null;
   combustible_actual: number | null;
   nivel_combustible: string | null;
   odometro_actual: number;
   turnos_ultimo_mes: number;
   turnos_ultimo_trimestre: number;
   km_ultimo_mes: number | null;
+}
+
+interface AbastecimientoStats {
+  totales: {
+    total_litros: number;
+    num_abastecimientos: number;
+    num_unidades: number;
+  };
+  por_unidad: { unidad_codigo: string; total_litros: number; num_abastecimientos: number }[];
+  tendencia: { fecha: string; litros: number; num_abastecimientos: number }[];
 }
 
 interface TendenciaCombustible {
@@ -92,6 +104,15 @@ export default function FlotaAnalyticsPage() {
     },
   });
 
+  // Estadísticas de abastecimiento
+  const { data: abasStats, isLoading: loadingAbas } = useQuery({
+    queryKey: ['abastecimiento-stats'],
+    queryFn: async () => {
+      const res = await api.get('/operaciones/combustible/abastecimiento/stats');
+      return res.data.data as AbastecimientoStats;
+    },
+  });
+
   // Completar reparación
   const completarMutation = useMutation({
     mutationFn: (id: number) => api.put(`/reparaciones/${id}/completar`),
@@ -105,7 +126,7 @@ export default function FlotaAnalyticsPage() {
   // KPIs — pg-promise devuelve numeric como string, usar Number() para coercionar
   const unidades = statsData ?? [];
   const totalActivas = unidades.filter((u) => u.activa).length;
-  const enReparacion = reparaciones?.length ?? 0;
+  const enReparacion = unidades.filter((u) => u.en_reparacion).length;
   const promCombustible =
     unidades.filter(u => u.combustible_actual !== null).length > 0
       ? unidades.filter(u => u.combustible_actual !== null)
@@ -136,10 +157,22 @@ export default function FlotaAnalyticsPage() {
   const totalSalidas = unidades.reduce((acc, u) => acc + Number(u.turnos_ultimo_mes ?? 0), 0);
   const kmPromPorSalida = totalSalidas > 0 ? Math.round(kmMes / totalSalidas) : 0;
 
-  // Tendencia formateada
+  // Tendencia combustible formateada
   const tendencia = (tendenciaData ?? []).map((t) => ({
     fecha: fmtFecha(t.fecha),
     promedio: Math.round(t.promedio_combustible * 100),
+  }));
+
+  // Abastecimiento stats
+  const totalLitros = Number(abasStats?.totales?.total_litros ?? 0);
+  const topAbasUnidades = (abasStats?.por_unidad ?? []).map((u) => ({
+    nombre: u.unidad_codigo,
+    litros: Math.round(Number(u.total_litros)),
+    cargas: u.num_abastecimientos,
+  }));
+  const tendenciaLitros = (abasStats?.tendencia ?? []).map((t) => ({
+    fecha: fmtFecha(t.fecha),
+    litros: Math.round(Number(t.litros)),
   }));
 
   return (
@@ -169,7 +202,7 @@ export default function FlotaAnalyticsPage() {
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-16">
 
         {/* KPI cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <KpiCard
             label="Unidades activas"
             value={loadingStats ? '…' : String(totalActivas)}
@@ -197,6 +230,13 @@ export default function FlotaAnalyticsPage() {
             sub={kmPromPorSalida > 0 ? `~${kmPromPorSalida} km/salida` : 'km recorridos'}
             icon={<BarChart2 className="w-5 h-5" />}
             color="teal"
+          />
+          <KpiCard
+            label="Litros cargados"
+            value={loadingAbas ? '…' : Math.round(totalLitros).toLocaleString('es-GT')}
+            sub={`${abasStats?.totales?.num_abastecimientos ?? 0} abastecimientos`}
+            icon={<Droplets className="w-5 h-5" />}
+            color="blue"
           />
         </div>
 
@@ -297,9 +337,30 @@ export default function FlotaAnalyticsPage() {
             {loadingStats ? <LoadingChart /> : (
               <div className="overflow-y-auto max-h-[200px] space-y-1.5 pr-1">
                 {unidades
-                  .filter(u => u.activa && u.combustible_actual !== null)
-                  .sort((a, b) => Number(a.combustible_actual) - Number(b.combustible_actual))
+                  .filter(u => u.activa)
+                  .sort((a, b) => {
+                    // En taller al final, luego por nivel ascendente
+                    if (a.en_reparacion && !b.en_reparacion) return 1;
+                    if (!a.en_reparacion && b.en_reparacion) return -1;
+                    if (a.combustible_actual === null) return 1;
+                    if (b.combustible_actual === null) return -1;
+                    return Number(a.combustible_actual) - Number(b.combustible_actual);
+                  })
                   .map(u => {
+                    if (u.en_reparacion) {
+                      return (
+                        <div key={u.unidad_id} className="flex items-center gap-2 text-xs">
+                          <span className="w-14 font-mono text-orange-600 dark:text-orange-400 shrink-0">{u.unidad_codigo}</span>
+                          <div className="flex-1 bg-orange-100 dark:bg-orange-900/30 rounded-full h-3 overflow-hidden flex items-center justify-center">
+                            <span className="text-orange-600 dark:text-orange-400 text-[10px] leading-none">En taller</span>
+                          </div>
+                          <span className="w-9 text-right shrink-0">
+                            <Wrench className="w-3 h-3 text-orange-500 ml-auto" />
+                          </span>
+                        </div>
+                      );
+                    }
+                    if (u.combustible_actual === null) return null;
                     const pct = Math.round(Number(u.combustible_actual) * 100);
                     const barColor = pct < 25 ? 'bg-red-500' : pct < 50 ? 'bg-amber-400' : pct < 75 ? 'bg-blue-400' : 'bg-green-500';
                     return (
@@ -312,10 +373,80 @@ export default function FlotaAnalyticsPage() {
                       </div>
                     );
                   })}
-                {unidades.filter(u => u.activa && u.combustible_actual !== null).length === 0 && (
+                {unidades.filter(u => u.activa).length === 0 && (
                   <p className="text-center text-gray-400 text-sm py-8">Sin datos de nivel</p>
                 )}
               </div>
+            )}
+          </div>
+        </div>
+
+        {/* Abastecimiento — charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top unidades por litros */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+              <Droplets className="w-4 h-4 text-blue-500" />
+              Litros cargados por unidad — último mes
+            </h2>
+            {loadingAbas ? (
+              <LoadingChart />
+            ) : topAbasUnidades.length === 0 ? (
+              <EmptyChart msg="Sin abastecimientos registrados" />
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={topAbasUnidades} margin={{ top: 4, right: 8, bottom: 4, left: -16 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="nombre" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} unit="L" />
+                  <Tooltip
+                    formatter={(v, name) => [
+                      name === 'litros' ? `${v} L` : v,
+                      name === 'litros' ? 'Litros' : 'Cargas',
+                    ]}
+                    contentStyle={{ fontSize: 12 }}
+                  />
+                  <Bar dataKey="litros" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* Tendencia diaria de litros */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+              <Droplets className="w-4 h-4 text-blue-500" />
+              Litros abastecidos por día — últimos 30 días
+            </h2>
+            {loadingAbas ? (
+              <LoadingChart />
+            ) : tendenciaLitros.length === 0 ? (
+              <EmptyChart msg="Sin abastecimientos registrados" />
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <AreaChart data={tendenciaLitros} margin={{ top: 4, right: 8, bottom: 4, left: -16 }}>
+                  <defs>
+                    <linearGradient id="litrosGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="fecha" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 11 }} unit="L" />
+                  <Tooltip
+                    formatter={(v) => [`${v} L`, 'Litros']}
+                    contentStyle={{ fontSize: 12 }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="litros"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    fill="url(#litrosGrad)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             )}
           </div>
         </div>

@@ -14,6 +14,7 @@ import {
   getCombustibleTendencia,
   registrarAbastecimiento,
   getAbastecimientosPorUnidad,
+  getAbastecimientoStats,
 } from '../controllers/operaciones.controller';
 import { authenticate, authorize } from '../middlewares/auth';
 
@@ -127,6 +128,14 @@ router.get(
   authenticate,
   authorize('TRANSPORTES', 'ADMIN', 'SUPER_ADMIN'),
   getCombustibleTendencia
+);
+
+// Estadísticas de abastecimiento para analytics (MUST be before /:unidadId)
+router.get(
+  '/combustible/abastecimiento/stats',
+  authenticate,
+  authorize('TRANSPORTES', 'ADMIN', 'SUPER_ADMIN'),
+  getAbastecimientoStats
 );
 
 // Registrar abastecimiento (carga de combustible)

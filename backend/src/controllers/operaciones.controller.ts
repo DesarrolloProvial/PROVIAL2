@@ -548,3 +548,74 @@ export async function getAbastecimientosPorUnidad(req: Request, res: Response) {
     });
   }
 }
+
+// ========================================
+// ESTADÍSTICAS DE ABASTECIMIENTO (analytics)
+// ========================================
+
+export async function getAbastecimientoStats(req: Request, res: Response) {
+  try {
+    const userSedeId = req.user!.sede;
+    const puedeVerTodas = req.user!.puede_ver_todas_sedes;
+    const sedeFilter = puedeVerTodas ? null : userSedeId;
+
+    const sedeWhere = sedeFilter ? 'AND u.sede_id = $/sedeId/' : '';
+    const params = sedeFilter ? { sedeId: sedeFilter } : {};
+
+    const totales = await db.one(
+      `SELECT
+         COALESCE(SUM(cr.litros_cargados), 0)  AS total_litros,
+         COUNT(*)::int                           AS num_abastecimientos,
+         COUNT(DISTINCT cr.unidad_id)::int       AS num_unidades
+       FROM combustible_registro cr
+       JOIN unidad u ON cr.unidad_id = u.id
+       WHERE cr.tipo = 'ABASTECIMIENTO'
+         AND cr.created_at >= NOW() - INTERVAL '30 days'
+         ${sedeWhere}`,
+      params
+    );
+
+    const porUnidad = await db.any(
+      `SELECT
+         u.codigo                               AS unidad_codigo,
+         COALESCE(SUM(cr.litros_cargados), 0)  AS total_litros,
+         COUNT(*)::int                           AS num_abastecimientos
+       FROM combustible_registro cr
+       JOIN unidad u ON cr.unidad_id = u.id
+       WHERE cr.tipo = 'ABASTECIMIENTO'
+         AND cr.created_at >= NOW() - INTERVAL '30 days'
+         ${sedeWhere}
+       GROUP BY u.id, u.codigo
+       ORDER BY total_litros DESC
+       LIMIT 10`,
+      params
+    );
+
+    const tendencia = await db.any(
+      `SELECT
+         DATE(cr.created_at AT TIME ZONE 'America/Guatemala') AS fecha,
+         COALESCE(SUM(cr.litros_cargados), 0)                 AS litros,
+         COUNT(*)::int                                         AS num_abastecimientos
+       FROM combustible_registro cr
+       JOIN unidad u ON cr.unidad_id = u.id
+       WHERE cr.tipo = 'ABASTECIMIENTO'
+         AND cr.created_at >= NOW() - INTERVAL '30 days'
+         ${sedeWhere}
+       GROUP BY DATE(cr.created_at AT TIME ZONE 'America/Guatemala')
+       ORDER BY fecha ASC`,
+      params
+    );
+
+    return res.json({
+      success: true,
+      data: { totales, por_unidad: porUnidad, tendencia },
+    });
+  } catch (error) {
+    console.error('Error en getAbastecimientoStats:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error obteniendo estadísticas de abastecimiento',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+}
