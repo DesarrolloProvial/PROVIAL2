@@ -138,12 +138,6 @@ export async function crearReparacion(req: Request, res: Response) {
       ]
     );
 
-    // Marcar unidad como no disponible (en taller)
-    await db.none(
-      'UPDATE unidad SET activa = false, updated_at = NOW() WHERE id = $1',
-      [unidad_id]
-    );
-
     return res.status(201).json({
       success: true,
       message: 'Reparación registrada exitosamente',
@@ -189,12 +183,6 @@ export async function completarReparacion(req: Request, res: Response) {
        WHERE id = $1
        RETURNING *`,
       [reparacionId, fecha_fin ?? new Date().toISOString().split('T')[0]]
-    );
-
-    // Restaurar disponibilidad de la unidad
-    await db.none(
-      'UPDATE unidad SET activa = true, updated_at = NOW() WHERE id = $1',
-      [actualizada.unidad_id]
     );
 
     return res.json({
