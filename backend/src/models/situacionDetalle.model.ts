@@ -104,15 +104,16 @@ export const SituacionDetalleModel = {
 
     // 2. Upsert piloto en tabla maestra (por licencia_numero/DPI)
     let piloto_id: number | null = null;
-    if (data.licencia_numero && data.nombre_piloto) {
+    const nombrePiloto = data.piloto_nombre || data.nombre_piloto;
+    if (data.licencia_numero && nombrePiloto) {
       const piloto = await PilotoModel.upsert({
         licencia_numero: BigInt(data.licencia_numero),
         licencia_tipo: data.licencia_tipo as 'M' | 'A' | 'B' | 'C' | 'E' | undefined,
         licencia_vencimiento: data.licencia_vencimiento,
-        nombre: data.nombre_piloto,
-        fecha_nacimiento: data.piloto_nacimiento,
+        nombre: nombrePiloto,
+        fecha_nacimiento: data.piloto_nacimiento || data.fecha_nacimiento_piloto,
         licencia_antiguedad: data.licencia_antiguedad,
-        etnia: data.piloto_etnia,
+        etnia: data.piloto_etnia || data.etnia_piloto,
         sexo: data.sexo_piloto,
       });
       piloto_id = piloto.id;
