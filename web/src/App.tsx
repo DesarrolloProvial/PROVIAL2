@@ -38,6 +38,7 @@ import DisponibilidadPage from './pages/transportes/DisponibilidadPage';
 import FlotaAnalyticsPage from './pages/transportes/FlotaAnalyticsPage';
 import COPBitacoraPage from './pages/COPBitacoraPage';
 import COPBitacoraDiaPage from './pages/COPBitacoraDiaPage';
+import ComunicacionSocialPage from './pages/comunicacion-social/ComunicacionSocialPage';
 
 // Crear QueryClient
 const queryClient = new QueryClient({
@@ -155,9 +156,14 @@ function RoleBasedRedirect() {
     return <Navigate to="/dashboard-ejecutivo" replace />;
   }
 
-  // Accidentología y Comunicación Social van al dashboard ejecutivo por ahora
-  if (user?.rol === 'ACCIDENTOLOGIA' || user?.rol === 'COMUNICACION_SOCIAL') {
+  // Accidentología va al dashboard ejecutivo
+  if (user?.rol === 'ACCIDENTOLOGIA') {
     return <Navigate to="/dashboard-ejecutivo" replace />;
+  }
+
+  // Comunicación Social va a su módulo
+  if (user?.rol === 'COMUNICACION_SOCIAL') {
+    return <Navigate to="/comunicacion-social" replace />;
   }
 
   // Transportes va a su hub
@@ -472,6 +478,15 @@ function App() {
               <TransportesRoute>
                 <FlotaAnalyticsPage />
               </TransportesRoute>
+            }
+          />
+          {/* ── Comunicación Social ──────────────────────────────────── */}
+          <Route
+            path="/comunicacion-social"
+            element={
+              <ProtectedRoute>
+                <ComunicacionSocialPage />
+              </ProtectedRoute>
             }
           />
           {/* Redirigir ruta antigua de unidades a Transportes */}
