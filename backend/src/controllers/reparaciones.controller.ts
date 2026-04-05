@@ -138,6 +138,12 @@ export async function crearReparacion(req: Request, res: Response) {
       ]
     );
 
+    // Marcar como no disponible mientras está en reparación
+    await db.none(
+      'UPDATE unidad SET disponible_transportes = false, updated_at = NOW() WHERE id = $1',
+      [unidad_id]
+    );
+
     return res.status(201).json({
       success: true,
       message: 'Reparación registrada exitosamente',

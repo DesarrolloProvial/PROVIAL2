@@ -20,6 +20,8 @@ interface UnidadDisponibilidad {
   activa: boolean;
   disponible_transportes: boolean;
   instrucciones_transportes: string | null;
+  en_reparacion: boolean;
+  reparacion_motivo: string | null;
 }
 
 interface EstadoLocal {
@@ -278,19 +280,25 @@ export default function DisponibilidadPage() {
 
                         {/* Toggle disponible */}
                         <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => setDisponible(unidad.id, !estado.disponible, unidad)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-                              estado.disponible
-                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
-                                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
-                            }`}
-                          >
-                            {estado.disponible
-                              ? <><CheckSquare className="w-3.5 h-3.5" /> Si</>
-                              : <><XSquare className="w-3.5 h-3.5" /> No</>
-                            }
-                          </button>
+                          {unidad.en_reparacion ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 cursor-not-allowed" title="En reparación — finaliza la reparación primero">
+                              <XSquare className="w-3.5 h-3.5" /> En taller
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => setDisponible(unidad.id, !estado.disponible, unidad)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                                estado.disponible
+                                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                                  : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
+                              }`}
+                            >
+                              {estado.disponible
+                                ? <><CheckSquare className="w-3.5 h-3.5" /> Si</>
+                                : <><XSquare className="w-3.5 h-3.5" /> No</>
+                              }
+                            </button>
+                          )}
                         </td>
 
                         {/* Instrucciones */}

@@ -9,9 +9,14 @@ export async function listarUnidades(req: Request, res: Response) {
     const user = req.user!;
 
     let query = `
-      SELECT u.*, s.nombre as sede_nombre
+      SELECT u.*, s.nombre as sede_nombre,
+             (rep.id IS NOT NULL)  AS en_reparacion,
+             rep.id                AS reparacion_id,
+             rep.motivo            AS reparacion_motivo
       FROM unidad u
       JOIN sede s ON u.sede_id = s.id
+      LEFT JOIN unidad_reparacion rep
+             ON rep.unidad_id = u.id AND rep.estado = 'EN_REPARACION'
       WHERE 1=1
     `;
     const params: any[] = [];

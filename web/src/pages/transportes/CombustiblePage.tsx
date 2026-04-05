@@ -35,6 +35,9 @@ interface Unidad {
   nivel_combustible: string | null;
   combustible_actual: number | null;
   activa: boolean;
+  en_reparacion: boolean;
+  reparacion_id: number | null;
+  reparacion_motivo: string | null;
 }
 
 interface Sede {
@@ -43,13 +46,6 @@ interface Sede {
   nombre: string;
 }
 
-interface ReparacionActiva {
-  id: number;
-  unidad_id: number;
-  motivo: string;
-  fecha_inicio: string;
-  dias_en_taller: number;
-}
 
 
 interface RepForm {
@@ -220,13 +216,6 @@ export default function CombustiblePage() {
     enabled: !!historialUnidad,
   });
 
-  const { data: reparacionesActivas = [] } = useQuery<ReparacionActiva[]>({
-    queryKey: ['reparaciones-activas-combustible'],
-    queryFn: async () => {
-      const res = await api.get('/reparaciones/activas');
-      return res.data?.data ?? [];
-    },
-  });
 
   const {
     data: historialAbast = [],
@@ -289,12 +278,11 @@ export default function CombustiblePage() {
       });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['combustible-unidades'] });
       queryClient.invalidateQueries({ queryKey: ['reparaciones-activas-combustible'] });
       queryClient.invalidateQueries({ queryKey: ['reparaciones-activas'] });
       setRepSuccess(true);
-      setTimeout(() => {
-        cerrarReparacionModal();
-      }, 1800);
+      setTimeout(() => cerrarReparacionModal(), 1800);
     },
     onError: (err: any) => {
       setRepError(
@@ -306,6 +294,7 @@ export default function CombustiblePage() {
   const completarReparacionMutation = useMutation({
     mutationFn: (id: number) => api.put(`/reparaciones/${id}/completar`),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['combustible-unidades'] });
       queryClient.invalidateQueries({ queryKey: ['reparaciones-activas-combustible'] });
       queryClient.invalidateQueries({ queryKey: ['reparaciones-activas'] });
       cerrarReparacionModal();
@@ -550,8 +539,7 @@ export default function CombustiblePage() {
                   )}
 
                   {!loadingUnidades && unidades.map((unidad) => {
-                    const enTaller = reparacionesActivas.some(r => r.unidad_id === unidad.id);
-                    const rowClass = enTaller
+                    const rowClass = unidad.en_reparacion
                       ? 'bg-orange-50 dark:bg-orange-900/10 hover:bg-orange-100 dark:hover:bg-orange-900/20 transition'
                       : !unidad.activa
                       ? 'opacity-50 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition'
@@ -592,7 +580,7 @@ export default function CombustiblePage() {
 
                       {/* Estado */}
                       <td className="px-4 py-3">
-                        {reparacionesActivas.some(r => r.unidad_id === unidad.id) ? (
+                        {unidad.en_reparacion ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300">
                             <Wrench className="w-3 h-3" />En taller
                           </span>
@@ -610,46 +598,53 @@ export default function CombustiblePage() {
                       {/* Acciones */}
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-2 flex-wrap">
+                          {/* Ver historial — siempre visible */}
                           <button
                             onClick={() => abrirHistorial(unidad)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition"
                           >
                             Ver Historial<ChevronRight className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            onClick={() => abrirAbastecimiento(unidad)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-200 dark:border-green-800 rounded-lg transition"
-                          >
-                            <Fuel className="w-3.5 h-3.5" />Abastecer
-                          </button>
-                          <button
-                            onClick={() => abrirAjuste(unidad)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 rounded-lg transition"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />Ajustar
-                          </button>
-                          {(() => {
-                            const rep = reparacionesActivas.find(r => r.unidad_id === unidad.id);
-                            return rep ? (
-                              <button
-                                onClick={() => completarReparacionMutation.mutate(rep.id)}
-                                disabled={completarReparacionMutation.isPending}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-300 dark:border-green-700 rounded-lg transition disabled:opacity-50"
-                              >
-                                {completarReparacionMutation.isPending
-                                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  : <CheckCircle className="w-3.5 h-3.5" />}
-                                Finalizar taller
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => abrirReparacion(unidad)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 border border-orange-200 dark:border-orange-800 rounded-lg transition"
-                              >
-                                <Wrench className="w-3.5 h-3.5" />Reparación
-                              </button>
-                            );
-                          })()}
+
+                          {/* Botones solo para unidades activas */}
+                          {unidad.activa && (
+                            <>
+                              {!unidad.en_reparacion && (
+                                <>
+                                  <button
+                                    onClick={() => abrirAbastecimiento(unidad)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-200 dark:border-green-800 rounded-lg transition"
+                                  >
+                                    <Fuel className="w-3.5 h-3.5" />Abastecer
+                                  </button>
+                                  <button
+                                    onClick={() => abrirAjuste(unidad)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 rounded-lg transition"
+                                  >
+                                    <RefreshCw className="w-3.5 h-3.5" />Ajustar
+                                  </button>
+                                  <button
+                                    onClick={() => abrirReparacion(unidad)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 border border-orange-200 dark:border-orange-800 rounded-lg transition"
+                                  >
+                                    <Wrench className="w-3.5 h-3.5" />Reparación
+                                  </button>
+                                </>
+                              )}
+                              {unidad.en_reparacion && (
+                                <button
+                                  onClick={() => completarReparacionMutation.mutate(unidad.reparacion_id!)}
+                                  disabled={completarReparacionMutation.isPending}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-300 dark:border-green-700 rounded-lg transition disabled:opacity-50"
+                                >
+                                  {completarReparacionMutation.isPending
+                                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    : <CheckCircle className="w-3.5 h-3.5" />}
+                                  Finalizar reparación
+                                </button>
+                              )}
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -973,7 +968,9 @@ export default function CombustiblePage() {
 
       {/* ── Modal: Reparaciones ──────────────────────────────────────────────── */}
       {reparacionUnidad && (() => {
-        const repActiva = reparacionesActivas.find(r => r.unidad_id === reparacionUnidad.id);
+        const repActiva = reparacionUnidad.en_reparacion
+          ? { id: reparacionUnidad.reparacion_id!, motivo: reparacionUnidad.reparacion_motivo ?? '', dias_en_taller: 0, fecha_inicio: '' }
+          : null;
         return (
           <div
             className="fixed inset-0 bg-black/60 dark:bg-black/70 flex items-center justify-center z-50 p-4"
@@ -1019,11 +1016,6 @@ export default function CombustiblePage() {
                     </div>
                     <div>
                       <p className="text-sm text-gray-900 dark:text-gray-100 font-medium">{repActiva.motivo}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        Desde {formatFecha(repActiva.fecha_inicio + 'T00:00:00')}
-                        {' · '}
-                        <span className="font-semibold text-orange-600 dark:text-orange-400">{repActiva.dias_en_taller} días en taller</span>
-                      </p>
                     </div>
                     <button
                       onClick={() => completarReparacionMutation.mutate(repActiva.id)}
