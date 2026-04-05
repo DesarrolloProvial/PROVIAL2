@@ -128,7 +128,7 @@ export async function getEstadisticasBrigada(req: Request, res: Response) {
 
 export async function getEstadisticasUnidades(req: Request, res: Response) {
   try {
-    const userSedeId = req.user!.sede;
+    const userSedeId = req.user!.puede_ver_todas_sedes ? undefined : req.user!.sede;
     const unidades = await OperacionesModel.getEstadisticasUnidades(userSedeId);
 
     return res.json({
@@ -414,8 +414,8 @@ export async function getCombustibleTendencia(req: Request, res: Response) {
     const userSedeId = req.user!.sede;
     const diasNum = Math.min(parseInt(dias as string, 10) || 30, 90);
 
-    // Use the user's sede unless ADMIN/SUPER_ADMIN provides override
-    const sedeFilter = sede_id ? parseInt(sede_id as string, 10) : userSedeId;
+    const puedeVerTodas = req.user!.puede_ver_todas_sedes;
+    const sedeFilter = puedeVerTodas ? null : (sede_id ? parseInt(sede_id as string, 10) : userSedeId);
 
     const tendencia = await db.any(
       `SELECT
@@ -425,11 +425,11 @@ export async function getCombustibleTendencia(req: Request, res: Response) {
        FROM combustible_registro cr
        JOIN unidad u ON cr.unidad_id = u.id
        WHERE cr.created_at >= NOW() - ($1 || ' days')::INTERVAL
-         AND u.sede_id = $2
+         ${sedeFilter ? 'AND u.sede_id = $2' : ''}
          AND cr.combustible_nuevo IS NOT NULL
        GROUP BY DATE(cr.created_at)
        ORDER BY fecha ASC`,
-      [diasNum, sedeFilter]
+      sedeFilter ? [diasNum, sedeFilter] : [diasNum]
     );
 
     return res.json({

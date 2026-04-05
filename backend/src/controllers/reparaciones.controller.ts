@@ -53,7 +53,7 @@ export async function getReparacionesActivas(req: Request, res: Response) {
   try {
     const userSedeId = req.user!.sede;
     const userRol = req.user!.rol;
-    const verTodas = !userSedeId || userRol === 'SUPER_ADMIN' || userRol === 'ADMIN';
+    const verTodas = !userSedeId || userRol === 'SUPER_ADMIN' || userRol === 'ADMIN' || req.user!.puede_ver_todas_sedes;
 
     const reparaciones = await db.any(
       `SELECT
