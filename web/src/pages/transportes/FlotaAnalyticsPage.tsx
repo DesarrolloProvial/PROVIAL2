@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   BarChart, Bar, AreaChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import {
   ArrowLeft, BarChart2, Fuel, Truck, Wrench, CheckCircle, AlertTriangle,
@@ -102,24 +102,39 @@ export default function FlotaAnalyticsPage() {
     },
   });
 
-  // KPIs
+  // KPIs — pg-promise devuelve numeric como string, usar Number() para coercionar
   const unidades = statsData ?? [];
   const totalActivas = unidades.filter((u) => u.activa).length;
   const enReparacion = reparaciones?.length ?? 0;
   const promCombustible =
-    unidades.length > 0
-      ? unidades.reduce((acc, u) => acc + (u.combustible_actual ?? 0), 0) / unidades.length
+    unidades.filter(u => u.combustible_actual !== null).length > 0
+      ? unidades.filter(u => u.combustible_actual !== null)
+          .reduce((acc, u) => acc + Number(u.combustible_actual), 0) /
+        unidades.filter(u => u.combustible_actual !== null).length
       : 0;
   const bajoCombustible = unidades.filter(
-    (u) => u.combustible_actual !== null && u.combustible_actual < 0.25
+    (u) => u.combustible_actual !== null && Number(u.combustible_actual) < 0.25
   ).length;
-  const kmMes = unidades.reduce((acc, u) => acc + (u.km_ultimo_mes ?? 0), 0);
+  const kmMes = unidades.reduce((acc, u) => acc + Number(u.km_ultimo_mes ?? 0), 0);
 
   // Top 10 unidades por salidas
   const topSalidas = [...unidades]
-    .sort((a, b) => b.turnos_ultimo_mes - a.turnos_ultimo_mes)
+    .sort((a, b) => Number(b.turnos_ultimo_mes) - Number(a.turnos_ultimo_mes))
     .slice(0, 10)
-    .map((u) => ({ nombre: u.unidad_codigo, salidas: u.turnos_ultimo_mes }));
+    .map((u) => ({ nombre: u.unidad_codigo, salidas: Number(u.turnos_ultimo_mes) }));
+
+  // Distribución de niveles de combustible
+  const conNivel = unidades.filter(u => u.combustible_actual !== null);
+  const fuelDist = [
+    { rango: 'Vacío (<25%)',  count: conNivel.filter(u => Number(u.combustible_actual) < 0.25).length,  color: '#ef4444' },
+    { rango: '25–49%',        count: conNivel.filter(u => Number(u.combustible_actual) >= 0.25 && Number(u.combustible_actual) < 0.5).length,  color: '#f59e0b' },
+    { rango: '50–74%',        count: conNivel.filter(u => Number(u.combustible_actual) >= 0.5  && Number(u.combustible_actual) < 0.75).length,  color: '#3b82f6' },
+    { rango: 'Lleno (≥75%)',  count: conNivel.filter(u => Number(u.combustible_actual) >= 0.75).length, color: '#22c55e' },
+  ];
+
+  // Promedio km por salida
+  const totalSalidas = unidades.reduce((acc, u) => acc + Number(u.turnos_ultimo_mes ?? 0), 0);
+  const kmPromPorSalida = totalSalidas > 0 ? Math.round(kmMes / totalSalidas) : 0;
 
   // Tendencia formateada
   const tendencia = (tendenciaData ?? []).map((t) => ({
@@ -178,8 +193,8 @@ export default function FlotaAnalyticsPage() {
           />
           <KpiCard
             label="Km este mes"
-            value={loadingStats ? '…' : kmMes.toLocaleString('es-GT')}
-            sub="km recorridos"
+            value={loadingStats ? '…' : Math.round(kmMes).toLocaleString('es-GT')}
+            sub={kmPromPorSalida > 0 ? `~${kmPromPorSalida} km/salida` : 'km recorridos'}
             icon={<BarChart2 className="w-5 h-5" />}
             color="teal"
           />
@@ -246,6 +261,61 @@ export default function FlotaAnalyticsPage() {
                   />
                 </AreaChart>
               </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        {/* Distribución de combustible + niveles por unidad */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Distribución */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+              Distribución de niveles de combustible
+            </h2>
+            {loadingStats ? <LoadingChart /> : (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={fuelDist} margin={{ top: 4, right: 8, bottom: 4, left: -16 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="rango" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                  <Tooltip formatter={(v) => [v, 'Unidades']} contentStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                    {fuelDist.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* Nivel por unidad — grid visual */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              Nivel actual por unidad
+            </h2>
+            {loadingStats ? <LoadingChart /> : (
+              <div className="overflow-y-auto max-h-[200px] space-y-1.5 pr-1">
+                {unidades
+                  .filter(u => u.activa && u.combustible_actual !== null)
+                  .sort((a, b) => Number(a.combustible_actual) - Number(b.combustible_actual))
+                  .map(u => {
+                    const pct = Math.round(Number(u.combustible_actual) * 100);
+                    const barColor = pct < 25 ? 'bg-red-500' : pct < 50 ? 'bg-amber-400' : pct < 75 ? 'bg-blue-400' : 'bg-green-500';
+                    return (
+                      <div key={u.unidad_id} className="flex items-center gap-2 text-xs">
+                        <span className="w-14 font-mono text-gray-700 dark:text-gray-300 shrink-0">{u.unidad_codigo}</span>
+                        <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                          <div className={`h-3 rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="w-9 text-right text-gray-600 dark:text-gray-400 shrink-0">{pct}%</span>
+                      </div>
+                    );
+                  })}
+                {unidades.filter(u => u.activa && u.combustible_actual !== null).length === 0 && (
+                  <p className="text-center text-gray-400 text-sm py-8">Sin datos de nivel</p>
+                )}
+              </div>
             )}
           </div>
         </div>

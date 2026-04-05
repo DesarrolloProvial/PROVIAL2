@@ -5,7 +5,7 @@ import {
   Fuel, Truck, RefreshCw, X, ChevronRight, AlertTriangle, ArrowLeft,
   Wrench, CheckCircle, Loader2, Plus, History, Search,
 } from 'lucide-react';
-import { transportesService, HistorialItem } from '../../services/transportes.service';
+import { transportesService, HistorialItem, Abastecimiento } from '../../services/transportes.service';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -165,6 +165,20 @@ export default function CombustiblePage() {
   });
   const [ajusteError, setAjusteError] = useState<string | null>(null);
 
+  // Abastecimiento modal
+  const [abastecimientoUnidad, setAbastecimientoUnidad] = useState<Unidad | null>(null);
+  const [abastTab, setAbastTab] = useState<'nuevo' | 'historial'>('nuevo');
+  const [abastForm, setAbastForm] = useState({
+    nivel_anterior: '' as string,
+    nivel_nuevo: '' as string,
+    combustible_anterior: 0,
+    combustible_nuevo: 0,
+    odometro_actual: '',
+    litros_cargados: '',
+    observaciones: '',
+  });
+  const [abastError, setAbastError] = useState<string | null>(null);
+
   // Reparaciones modal
   const [reparacionUnidad, setReparacionUnidad] = useState<Unidad | null>(null);
   const [repTab, setRepTab] = useState<'nueva' | 'historial'>('nueva');
@@ -229,6 +243,15 @@ export default function CombustiblePage() {
       return res.data?.data ?? [];
     },
     enabled: !!reparacionUnidad && repTab === 'historial',
+  });
+
+  const {
+    data: historialAbast = [],
+    isLoading: loadingHistorialAbast,
+  } = useQuery<Abastecimiento[]>({
+    queryKey: ['abastecimientos-unidad', abastecimientoUnidad?.id],
+    queryFn: () => transportesService.getAbastecimientos(abastecimientoUnidad!.id),
+    enabled: !!abastecimientoUnidad && abastTab === 'historial',
   });
 
   // ── Mutaciones ───────────────────────────────────────────────────────────────
@@ -301,6 +324,34 @@ export default function CombustiblePage() {
       queryClient.invalidateQueries({ queryKey: ['reparaciones-activas-combustible'] });
       queryClient.invalidateQueries({ queryKey: ['reparaciones-unidad', reparacionUnidad?.id] });
       queryClient.invalidateQueries({ queryKey: ['reparaciones-activas'] });
+      queryClient.invalidateQueries({ queryKey: ['combustible-unidades'] });
+    },
+  });
+
+  const abastecimientoMutation = useMutation({
+    mutationFn: () => {
+      const litros = parseFloat(abastForm.litros_cargados);
+      if (!abastForm.nivel_nuevo || isNaN(litros) || litros <= 0) {
+        throw new Error('Selecciona el nivel final y especifica los litros cargados.');
+      }
+      return transportesService.registrarAbastecimiento({
+        unidad_id: abastecimientoUnidad!.id,
+        nivel_anterior: abastForm.nivel_anterior || null,
+        nivel_nuevo: abastForm.nivel_nuevo,
+        combustible_anterior: abastForm.combustible_anterior,
+        combustible_nuevo: abastForm.combustible_nuevo,
+        odometro_actual: abastForm.odometro_actual ? parseFloat(abastForm.odometro_actual) : undefined,
+        litros_cargados: litros,
+        observaciones: abastForm.observaciones || undefined,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['combustible-unidades'] });
+      queryClient.invalidateQueries({ queryKey: ['abastecimientos-unidad', abastecimientoUnidad?.id] });
+      cerrarAbastModal();
+    },
+    onError: (err: any) => {
+      setAbastError(err?.response?.data?.message || err?.message || 'Error al registrar abastecimiento.');
     },
   });
 
@@ -346,6 +397,32 @@ export default function CombustiblePage() {
     e.preventDefault();
     setAjusteError(null);
     ajusteMutation.mutate();
+  }
+
+  function abrirAbastecimiento(unidad: Unidad) {
+    setAbastecimientoUnidad(unidad);
+    setAbastTab('nuevo');
+    setAbastForm({
+      nivel_anterior: unidad.nivel_combustible ?? '',
+      nivel_nuevo: '',
+      combustible_anterior: Number(unidad.combustible_actual ?? 0),
+      combustible_nuevo: 0,
+      odometro_actual: '',
+      litros_cargados: '',
+      observaciones: '',
+    });
+    setAbastError(null);
+  }
+
+  function cerrarAbastModal() {
+    setAbastecimientoUnidad(null);
+    setAbastError(null);
+  }
+
+  function handleAbastecimientoSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setAbastError(null);
+    abastecimientoMutation.mutate();
   }
 
   function abrirReparacion(unidad: Unidad) {
@@ -542,10 +619,16 @@ export default function CombustiblePage() {
                             Ver Historial<ChevronRight className="w-3.5 h-3.5" />
                           </button>
                           <button
+                            onClick={() => abrirAbastecimiento(unidad)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-200 dark:border-green-800 rounded-lg transition"
+                          >
+                            <Fuel className="w-3.5 h-3.5" />Abastecer
+                          </button>
+                          <button
                             onClick={() => abrirAjuste(unidad)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 rounded-lg transition"
                           >
-                            <Fuel className="w-3.5 h-3.5" />Ajustar Nivel
+                            <RefreshCw className="w-3.5 h-3.5" />Ajustar
                           </button>
                           <button
                             onClick={() => abrirReparacion(unidad)}
@@ -1064,6 +1147,195 @@ export default function CombustiblePage() {
                           </div>
                         );
                       })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Abastecimiento ─────────────────────────────────────────────── */}
+      {abastecimientoUnidad && (
+        <div
+          className="fixed inset-0 bg-black/60 dark:bg-black/70 flex items-center justify-center z-50 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) cerrarAbastModal(); }}
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <Fuel className="w-5 h-5 text-green-500" />
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Abastecimiento</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {abastecimientoUnidad.codigo} — {abastecimientoUnidad.tipo_unidad} · {abastecimientoUnidad.tipo_combustible}
+                  </p>
+                </div>
+              </div>
+              <button onClick={cerrarAbastModal} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+              {(['nuevo', 'historial'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setAbastTab(tab)}
+                  className={`flex-1 py-2.5 text-sm font-medium transition ${
+                    abastTab === tab
+                      ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  }`}
+                >
+                  {tab === 'nuevo' ? 'Nuevo abastecimiento' : 'Historial'}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              {/* Tab: Nuevo */}
+              {abastTab === 'nuevo' && (
+                <form onSubmit={handleAbastecimientoSubmit} className="px-5 py-4 space-y-4">
+                  {/* Odómetro */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Odómetro actual (km)
+                    </label>
+                    <input
+                      type="number"
+                      value={abastForm.odometro_actual}
+                      onChange={e => setAbastForm(prev => ({ ...prev, odometro_actual: e.target.value }))}
+                      placeholder="Ej: 125400"
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+
+                  {/* Nivel inicial */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Nivel antes del abastecimiento
+                    </label>
+                    <FuelSelectorWeb
+                      value={abastForm.nivel_anterior}
+                      onChange={(nivel, decimal) => setAbastForm(prev => ({ ...prev, nivel_anterior: nivel, combustible_anterior: decimal }))}
+                    />
+                  </div>
+
+                  {/* Nivel final */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Nivel después del abastecimiento <span className="text-red-500">*</span>
+                    </label>
+                    <FuelSelectorWeb
+                      value={abastForm.nivel_nuevo}
+                      onChange={(nivel, decimal) => setAbastForm(prev => ({ ...prev, nivel_nuevo: nivel, combustible_nuevo: decimal }))}
+                    />
+                  </div>
+
+                  {/* Litros */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Litros cargados <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      value={abastForm.litros_cargados}
+                      onChange={e => setAbastForm(prev => ({ ...prev, litros_cargados: e.target.value }))}
+                      placeholder="Ej: 45.5"
+                      required
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+
+                  {/* Observaciones */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Observaciones
+                    </label>
+                    <textarea
+                      value={abastForm.observaciones}
+                      onChange={e => setAbastForm(prev => ({ ...prev, observaciones: e.target.value }))}
+                      rows={2}
+                      placeholder="Gasolinera, número de factura, etc."
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                    />
+                  </div>
+
+                  {abastError && (
+                    <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                      <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                      {abastError}
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={cerrarAbastModal} className="flex-1 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={abastecimientoMutation.isPending || !abastForm.nivel_nuevo || !abastForm.litros_cargados}
+                      className="flex-1 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2 transition"
+                    >
+                      {abastecimientoMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Fuel className="w-4 h-4" />}
+                      Guardar abastecimiento
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Tab: Historial */}
+              {abastTab === 'historial' && (
+                <div className="px-5 py-4">
+                  {loadingHistorialAbast ? (
+                    <div className="space-y-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="animate-pulse bg-gray-100 dark:bg-gray-700/50 rounded-lg h-20" />
+                      ))}
+                    </div>
+                  ) : historialAbast.length === 0 ? (
+                    <div className="py-10 text-center text-gray-500 dark:text-gray-400 text-sm">
+                      <Fuel className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                      Sin registros de abastecimiento
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {historialAbast.map(a => (
+                        <div key={a.id} className="bg-gray-50 dark:bg-gray-700/40 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-green-700 dark:text-green-400 text-sm">
+                                  {Number(a.litros_cargados).toFixed(1)} L
+                                </span>
+                                {a.nivel_anterior && (
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    {a.nivel_anterior} → {a.nivel_nuevo}
+                                  </span>
+                                )}
+                              </div>
+                              {a.odometro_actual && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                  Odómetro: {Number(a.odometro_actual).toLocaleString('es-GT')} km
+                                </p>
+                              )}
+                              {a.observaciones && (
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 italic">{a.observaciones}</p>
+                              )}
+                              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                {formatFecha(a.created_at)}
+                                {a.registrado_por_nombre && ` · ${a.registrado_por_nombre}`}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

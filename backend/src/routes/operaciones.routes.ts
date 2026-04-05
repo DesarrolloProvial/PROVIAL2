@@ -12,6 +12,8 @@ import {
   registrarCombustible,
   getHistorialCombustible,
   getCombustibleTendencia,
+  registrarAbastecimiento,
+  getAbastecimientosPorUnidad,
 } from '../controllers/operaciones.controller';
 import { authenticate, authorize } from '../middlewares/auth';
 
@@ -125,6 +127,22 @@ router.get(
   authenticate,
   authorize('TRANSPORTES', 'ADMIN', 'SUPER_ADMIN'),
   getCombustibleTendencia
+);
+
+// Registrar abastecimiento (carga de combustible)
+router.post(
+  '/combustible/abastecimiento',
+  authenticate,
+  authorize('TRANSPORTES', 'ADMIN', 'SUPER_ADMIN'),
+  registrarAbastecimiento
+);
+
+// Historial de abastecimientos por unidad
+router.get(
+  '/combustible/abastecimiento/:unidadId',
+  authenticate,
+  authorize('TRANSPORTES', 'ADMIN', 'SUPER_ADMIN'),
+  getAbastecimientosPorUnidad
 );
 
 export default router;

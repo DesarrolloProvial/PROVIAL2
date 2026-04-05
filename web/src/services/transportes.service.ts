@@ -60,6 +60,33 @@ export interface RegistrarAjusteCombustibleDTO {
   observaciones?: string;
 }
 
+export interface Abastecimiento {
+  id: number;
+  unidad_id: number;
+  tipo: 'ABASTECIMIENTO';
+  nivel_anterior: string | null;
+  nivel_nuevo: string;
+  combustible_anterior: number | null;
+  combustible_nuevo: number;
+  odometro_actual: number | null;
+  litros_cargados: number;
+  observaciones: string | null;
+  registrado_por: number;
+  registrado_por_nombre?: string;
+  created_at: string;
+}
+
+export interface RegistrarAbastecimientoDTO {
+  unidad_id: number;
+  nivel_anterior: string | null;
+  nivel_nuevo: string;
+  combustible_anterior?: number;
+  combustible_nuevo: number;
+  odometro_actual?: number;
+  litros_cargados: number;
+  observaciones?: string;
+}
+
 export interface Inspeccion360 {
   id: number;
   unidad_id: number;
@@ -139,6 +166,16 @@ export const transportesService = {
   async registrarAjusteCombustible(data: RegistrarAjusteCombustibleDTO): Promise<CombustibleRegistro> {
     const res = await api.post('/operaciones/combustible', data);
     return res.data;
+  },
+
+  async registrarAbastecimiento(data: RegistrarAbastecimientoDTO): Promise<Abastecimiento> {
+    const res = await api.post('/operaciones/combustible/abastecimiento', data);
+    return res.data.data;
+  },
+
+  async getAbastecimientos(unidadId: number, limit = 30): Promise<Abastecimiento[]> {
+    const res = await api.get(`/operaciones/combustible/abastecimiento/${unidadId}?limit=${limit}`);
+    return res.data.data || [];
   },
 
   // ── Inspecciones 360 ───────────────────────────────────────────────────────

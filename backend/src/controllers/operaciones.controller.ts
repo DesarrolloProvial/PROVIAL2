@@ -448,3 +448,103 @@ export async function getCombustibleTendencia(req: Request, res: Response) {
     });
   }
 }
+
+// ========================================
+// ABASTECIMIENTO DE COMBUSTIBLE
+// ========================================
+
+export async function registrarAbastecimiento(req: Request, res: Response) {
+  try {
+    const {
+      unidad_id,
+      odometro_actual,
+      nivel_anterior,
+      combustible_anterior,
+      nivel_nuevo,
+      combustible_nuevo,
+      litros_cargados,
+      observaciones,
+    } = req.body;
+    const userId = req.user!.userId;
+
+    if (!unidad_id || combustible_nuevo === undefined || !litros_cargados || !nivel_nuevo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Campos requeridos: unidad_id, nivel_nuevo, combustible_nuevo, litros_cargados',
+      });
+    }
+
+    const registro = await db.one(
+      `INSERT INTO combustible_registro
+         (unidad_id, tipo, nivel_anterior, nivel_nuevo,
+          combustible_anterior, combustible_nuevo,
+          odometro_actual, litros_cargados, observaciones, registrado_por)
+       VALUES ($1,'ABASTECIMIENTO',$2,$3,$4,$5,$6,$7,$8,$9)
+       RETURNING *`,
+      [
+        unidad_id,
+        nivel_anterior ?? null,
+        nivel_nuevo,
+        combustible_anterior ?? null,
+        parseFloat(combustible_nuevo),
+        odometro_actual ? parseFloat(odometro_actual) : null,
+        parseFloat(litros_cargados),
+        observaciones ?? null,
+        userId,
+      ]
+    );
+
+    // Actualizar combustible y odómetro en la unidad
+    await db.none(
+      `UPDATE unidad
+       SET combustible_actual = $1,
+           nivel_combustible  = $2,
+           ${odometro_actual ? 'odometro_actual = $3,' : ''}
+           updated_at = NOW()
+       WHERE id = ${odometro_actual ? '$4' : '$3'}`,
+      odometro_actual
+        ? [parseFloat(combustible_nuevo), nivel_nuevo, parseFloat(odometro_actual), unidad_id]
+        : [parseFloat(combustible_nuevo), nivel_nuevo, unidad_id]
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'Abastecimiento registrado exitosamente',
+      data: registro,
+    });
+  } catch (error) {
+    console.error('Error en registrarAbastecimiento:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error registrando abastecimiento',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+}
+
+export async function getAbastecimientosPorUnidad(req: Request, res: Response) {
+  try {
+    const unidadId = parseInt(req.params.unidadId, 10);
+    const limit = Math.min(parseInt((req.query.limit as string) || '30', 10), 100);
+
+    const registros = await db.any(
+      `SELECT cr.*,
+              u.nombre AS registrado_por_nombre
+       FROM combustible_registro cr
+       LEFT JOIN usuario u ON cr.registrado_por = u.id
+       WHERE cr.unidad_id = $1 AND cr.tipo = 'ABASTECIMIENTO'
+       ORDER BY cr.created_at DESC
+       LIMIT $2`,
+      [unidadId, limit]
+    );
+
+    return res.json({ success: true, count: registros.length, data: registros });
+  } catch (error) {
+    console.error('Error en getAbastecimientosPorUnidad:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error obteniendo abastecimientos',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+}
