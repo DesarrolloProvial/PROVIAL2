@@ -18,6 +18,8 @@ export interface Actividad {
   estado: 'ACTIVA' | 'CERRADA';
   observaciones: any[] | null;
   datos: Record<string, any>;
+  clima: string | null;
+  carga_vehicular: string | null;
   created_at: Date;
   closed_at: Date | null;
   codigo_actividad: string | null;
@@ -47,11 +49,13 @@ export const ActividadModel = {
       INSERT INTO actividad (
         tipo_actividad_id, unidad_id, salida_unidad_id, creado_por,
         ruta_id, latitud, longitud, km, sentido,
-        observaciones, datos, codigo_actividad
+        observaciones, datos, codigo_actividad,
+        clima, carga_vehicular
       ) VALUES (
         $/tipo_actividad_id/, $/unidad_id/, $/salida_unidad_id/, $/creado_por/,
         $/ruta_id/, $/latitud/, $/longitud/, $/km/, $/sentido/,
-        $/observaciones/, $/datos/, $/codigo_actividad/
+        $/observaciones/, $/datos/, $/codigo_actividad/,
+        $/clima/, $/carga_vehicular/
       )
       RETURNING *
     `;
@@ -80,6 +84,8 @@ export const ActividadModel = {
         : JSON.stringify([]),
       datos: JSON.stringify(data.datos || {}),
       codigo_actividad: data.codigo_actividad || null,
+      clima: data.clima || null,
+      carga_vehicular: data.carga_vehicular || null,
     };
 
     return db.one(query, params);

@@ -31,6 +31,8 @@ export async function createActividad(req: Request, res: Response) {
       longitud,
       observaciones,
       datos,
+      clima,
+      carga_vehicular,
     } = req.body;
 
     const userId = req.user!.userId;
@@ -112,6 +114,8 @@ export async function createActividad(req: Request, res: Response) {
       observaciones: observaciones || null,
       datos: datos || {},
       codigo_actividad: codigo_actividad || null,
+      clima: clima || null,
+      carga_vehicular: carga_vehicular || null,
     });
 
     // Obtener actividad completa con joins

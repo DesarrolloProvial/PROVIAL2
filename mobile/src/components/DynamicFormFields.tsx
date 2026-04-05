@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import CrossPlatformPicker from './CrossPlatformPicker';
+import TomadorVelocidad from './TomadorVelocidad';
 import { COLORS } from '../constants/colors';
 import { catalogoStorage } from '../core/storage/catalogoStorage';
 
@@ -165,34 +166,12 @@ export default function DynamicFormFields({ situacionNombre, formularioTipo, det
 
     // 2. TOMA DE VELOCIDAD
     if (situacionNombre === 'Toma de velocidad') {
-        const registros = detalles.velocidades || [];
-        const tipoOptions = tiposVehiculo.map(t => ({ label: t, value: t }));
         return (
             <View style={styles.section}>
-                <Text style={styles.title}>Toma de Velocidad</Text>
-                <View style={styles.row}>
-                    <View style={{ flex: 1 }}>
-                        <CrossPlatformPicker
-                            selectedValue={tipoInput}
-                            onValueChange={setTipoInput}
-                            options={tipoOptions}
-                            placeholder="Tipo vehículo"
-                        />
-                    </View>
-                    <TextInput
-                        style={[styles.input, { width: 80, marginBottom: 0 }]}
-                        value={velocidadInput}
-                        onChangeText={setVelocidadInput}
-                        keyboardType="numeric"
-                        placeholder="Km/h"
-                    />
-                    <TouchableOpacity onPress={handleAddVelocidad} style={styles.btnAdd}><Text style={{ color: 'white' }}>+</Text></TouchableOpacity>
-                </View>
-                <View style={styles.list}>
-                    {registros.map((r: any, i: number) => (
-                        <Text key={i} style={styles.listItem}>{r.tipo}: {r.velocidad} km/h</Text>
-                    ))}
-                </View>
+                <TomadorVelocidad
+                    value={detalles.velocidades || []}
+                    onChange={(v) => handleChange('velocidades', v)}
+                />
             </View>
         );
     }

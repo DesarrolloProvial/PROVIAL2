@@ -137,7 +137,7 @@ export default function NuevaSituacionScreen() {
   useEffect(() => {
     fetchCatalogo();
     fetchCatalogosAuxiliares();
-    api.get('/unidades/activas').then(r => setUnidadesList(r.data)).catch(console.error);
+    api.get('/unidades/activas').then(r => setUnidadesList(r.data.unidades || [])).catch(console.error);
   }, []);
 
   // Reset al cambiar tipo
@@ -344,6 +344,8 @@ export default function NuevaSituacionScreen() {
           latitud: latitud ? parseFloat(latitud) : null,
           longitud: longitud ? parseFloat(longitud) : null,
           observaciones: observaciones || null,
+          clima: clima || null,
+          carga_vehicular: carga || null,
           datos: Object.keys(datosEspecificos).length > 0 ? datosEspecificos : {},
         };
 
