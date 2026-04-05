@@ -621,12 +621,28 @@ export default function CombustiblePage() {
                           >
                             <RefreshCw className="w-3.5 h-3.5" />Ajustar
                           </button>
-                          <button
-                            onClick={() => abrirReparacion(unidad)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 border border-orange-200 dark:border-orange-800 rounded-lg transition"
-                          >
-                            <Wrench className="w-3.5 h-3.5" />Reparación
-                          </button>
+                          {(() => {
+                            const rep = reparacionesActivas.find(r => r.unidad_id === unidad.id);
+                            return rep ? (
+                              <button
+                                onClick={() => completarReparacionMutation.mutate(rep.id)}
+                                disabled={completarReparacionMutation.isPending}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-300 dark:border-green-700 rounded-lg transition disabled:opacity-50"
+                              >
+                                {completarReparacionMutation.isPending
+                                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  : <CheckCircle className="w-3.5 h-3.5" />}
+                                Finalizar taller
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => abrirReparacion(unidad)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 border border-orange-200 dark:border-orange-800 rounded-lg transition"
+                              >
+                                <Wrench className="w-3.5 h-3.5" />Reparación
+                              </button>
+                            );
+                          })()}
                         </div>
                       </td>
                     </tr>
