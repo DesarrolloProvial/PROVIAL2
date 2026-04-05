@@ -174,7 +174,8 @@ export default function GestionUnidadesPage() {
   });
 
   const unidades: Unidad[] = unidadesData?.unidades || [];
-  const tipos: string[] = tiposData?.tipos || [];
+  const TIPOS_EXCLUIDOS = ['PATRULLA', 'AMBULANCIA', 'CAMION'];
+  const tipos: string[] = (tiposData?.tipos || []).filter((t: string) => !TIPOS_EXCLUIDOS.includes(t));
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

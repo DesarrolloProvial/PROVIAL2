@@ -77,10 +77,7 @@ const sedesAPI = {
 const TIPOS_UNIDAD = [
   'MOTORIZADA',
   'PICKUP',
-  'PATRULLA',
-  'AMBULANCIA',
   'GRUA',
-  'CAMION',
   'OTRO'
 ];
 
@@ -242,8 +239,6 @@ export default function UnidadesPage() {
     switch (tipo) {
       case 'MOTORIZADA': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400';
       case 'PICKUP': return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400';
-      case 'PATRULLA': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400';
-      case 'AMBULANCIA': return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400';
       case 'GRUA': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
     }

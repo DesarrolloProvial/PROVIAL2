@@ -235,7 +235,6 @@ const TIPOS_UNIDAD_PLANTILLA = [
   { value: 'DEFAULT',  label: 'DEFAULT (todas las unidades)' },
   { value: 'PICK-UP',  label: 'Pick-up' },
   { value: 'MOTO',     label: 'Motocicleta' },
-  { value: 'CAMION',   label: 'Camión' },
   { value: 'GRUA',     label: 'Grúa' },
   { value: 'BUS',      label: 'Bus' },
   { value: 'JEEP',     label: 'Jeep/SUV' },
