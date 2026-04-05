@@ -549,8 +549,15 @@ export default function CombustiblePage() {
                     </tr>
                   )}
 
-                  {!loadingUnidades && unidades.map((unidad) => (
-                    <tr key={unidad.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/40 transition ${!unidad.activa ? 'opacity-60' : ''}`}>
+                  {!loadingUnidades && unidades.map((unidad) => {
+                    const enTaller = reparacionesActivas.some(r => r.unidad_id === unidad.id);
+                    const rowClass = enTaller
+                      ? 'bg-orange-50 dark:bg-orange-900/10 hover:bg-orange-100 dark:hover:bg-orange-900/20 transition'
+                      : !unidad.activa
+                      ? 'opacity-50 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700/40 transition';
+                    return (
+                    <tr key={unidad.id} className={rowClass}>
 
                       <td className="px-4 py-3 font-semibold text-gray-900 dark:text-gray-100">
                         {unidad.codigo}
@@ -646,7 +653,8 @@ export default function CombustiblePage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
