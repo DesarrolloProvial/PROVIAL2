@@ -252,7 +252,7 @@ const TIPOS_UNIDAD_PLANTILLA = [
   { value: 'JEEP',     label: 'Jeep/SUV' },
 ];
 
-type EditItem = { id: string; descripcion: string; tipo: string; requerido: boolean; opciones: string[] };
+type EditItem = { id: string; descripcion: string; tipo: 'CHECK' | 'TEXTO' | 'NUMERO' | 'SELECTOR' | 'RADIO' | 'MULTIPLE'; requerido: boolean; opciones: string[] };
 type EditSeccion = { id: string; nombre: string; items: EditItem[] };
 
 function plantillaToEdits(p: Plantilla360) {
