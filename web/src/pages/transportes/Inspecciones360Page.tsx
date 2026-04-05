@@ -201,30 +201,42 @@ function SeccionTree({ seccion }: { seccion: SeccionPlantilla }) {
 }
 
 function ItemRow({ item }: { item: ItemPlantilla }) {
-  const tipoBadge: Record<ItemPlantilla['tipo'], string> = {
-    CHECK: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
-    TEXTO: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300',
-    NUMERO: 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300',
+  const tipoBadge: Record<string, string> = {
+    CHECK:    'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+    TEXTO:    'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300',
+    NUMERO:   'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300',
+    SELECTOR: 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300',
+    RADIO:    'bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300',
+    MULTIPLE: 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300',
+  };
+  const tipoLabel: Record<string, string> = {
+    CHECK: 'Sí/No', TEXTO: 'Texto', NUMERO: 'Número',
+    SELECTOR: 'Selector', RADIO: 'Única', MULTIPLE: 'Múltiple',
   };
 
   return (
-    <li className="flex items-center justify-between px-5 py-2.5 bg-white dark:bg-gray-800">
-      <div className="flex items-center gap-2.5 min-w-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 flex-shrink-0" />
-        <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
-          {item.descripcion}
+    <li className="px-5 py-2.5 bg-white dark:bg-gray-800 space-y-1">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 flex-shrink-0" />
+          <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{item.descripcion}</span>
+          {item.requerido && (
+            <span className="text-red-500 dark:text-red-400 text-xs flex-shrink-0" title="Requerido">*</span>
+          )}
+        </div>
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ml-3 ${tipoBadge[item.tipo] || tipoBadge.CHECK}`}>
+          {tipoLabel[item.tipo] || item.tipo}
         </span>
-        {item.requerido && (
-          <span className="text-red-500 dark:text-red-400 text-xs flex-shrink-0" title="Requerido">
-            *
-          </span>
-        )}
       </div>
-      <span
-        className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ml-3 ${tipoBadge[item.tipo]}`}
-      >
-        {item.tipo}
-      </span>
+      {item.opciones && item.opciones.length > 0 && (
+        <div className="ml-6 flex flex-wrap gap-1">
+          {item.opciones.map((op, i) => (
+            <span key={i} className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+              {op}
+            </span>
+          ))}
+        </div>
+      )}
     </li>
   );
 }
@@ -240,7 +252,7 @@ const TIPOS_UNIDAD_PLANTILLA = [
   { value: 'JEEP',     label: 'Jeep/SUV' },
 ];
 
-type EditItem = { id: string; descripcion: string; tipo: ItemPlantilla['tipo']; requerido: boolean };
+type EditItem = { id: string; descripcion: string; tipo: string; requerido: boolean; opciones: string[] };
 type EditSeccion = { id: string; nombre: string; items: EditItem[] };
 
 function plantillaToEdits(p: Plantilla360) {
@@ -255,6 +267,7 @@ function plantillaToEdits(p: Plantilla360) {
         descripcion: item.descripcion,
         tipo: item.tipo,
         requerido: item.requerido,
+        opciones: item.opciones || [],
       })),
     })),
   };
@@ -267,6 +280,10 @@ function SectionEditor({
   secciones: EditSeccion[];
   onChange: (secs: EditSeccion[]) => void;
 }) {
+  const [newOpcionInputs, setNewOpcionInputs] = useState<Record<string, string>>({});
+
+  const tieneOpciones = (tipo: string) => ['SELECTOR', 'RADIO', 'MULTIPLE'].includes(tipo);
+
   const addSeccion = () => {
     onChange([...secciones, { id: `new-${Date.now()}`, nombre: 'Nueva sección', items: [] }]);
   };
@@ -282,7 +299,7 @@ function SectionEditor({
     const secs = [...secciones];
     secs[secIdx] = {
       ...secs[secIdx],
-      items: [...secs[secIdx].items, { id: `new-${Date.now()}-${Math.random()}`, descripcion: '', tipo: 'CHECK', requerido: false }],
+      items: [...secs[secIdx].items, { id: `new-${Date.now()}-${Math.random()}`, descripcion: '', tipo: 'CHECK', requerido: false, opciones: [] }],
     };
     onChange(secs);
   };
@@ -294,7 +311,28 @@ function SectionEditor({
   const updateItem = (secIdx: number, itemIdx: number, field: string, value: any) => {
     const secs = [...secciones];
     const items = [...secs[secIdx].items];
-    items[itemIdx] = { ...items[itemIdx], [field]: value };
+    const updated = { ...items[itemIdx], [field]: value };
+    if (field === 'tipo' && !tieneOpciones(value)) updated.opciones = [];
+    items[itemIdx] = updated;
+    secs[secIdx] = { ...secs[secIdx], items };
+    onChange(secs);
+  };
+  const addOpcion = (secIdx: number, itemIdx: number, itemId: string) => {
+    const val = (newOpcionInputs[itemId] || '').trim();
+    if (!val) return;
+    const secs = [...secciones];
+    const items = [...secs[secIdx].items];
+    items[itemIdx] = { ...items[itemIdx], opciones: [...(items[itemIdx].opciones || []), val] };
+    secs[secIdx] = { ...secs[secIdx], items };
+    onChange(secs);
+    setNewOpcionInputs(prev => ({ ...prev, [itemId]: '' }));
+  };
+  const removeOpcion = (secIdx: number, itemIdx: number, opIdx: number) => {
+    const secs = [...secciones];
+    const items = [...secs[secIdx].items];
+    const opciones = [...(items[itemIdx].opciones || [])];
+    opciones.splice(opIdx, 1);
+    items[itemIdx] = { ...items[itemIdx], opciones };
     secs[secIdx] = { ...secs[secIdx], items };
     onChange(secs);
   };
@@ -303,7 +341,7 @@ function SectionEditor({
     <div className="space-y-3">
       {secciones.map((sec, secIdx) => (
         <div key={sec.id} className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
-          {/* Section header */}
+          {/* Encabezado de sección */}
           <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-700/60">
             <input
               type="text"
@@ -312,68 +350,86 @@ function SectionEditor({
               className="flex-1 text-sm font-medium bg-transparent border-b border-gray-300 dark:border-gray-500 focus:outline-none focus:border-blue-500 text-gray-800 dark:text-gray-200 placeholder-gray-400"
               placeholder="Nombre de sección"
             />
-            <button
-              type="button"
-              onClick={() => removeSeccion(secIdx)}
-              className="p-1 text-red-400 hover:text-red-600 dark:hover:text-red-400 flex-shrink-0"
-              title="Eliminar sección"
-            >
+            <button type="button" onClick={() => removeSeccion(secIdx)} className="p-1 text-red-400 hover:text-red-600 flex-shrink-0" title="Eliminar sección">
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
-          {/* Items */}
-          <div className="p-2 space-y-1.5 bg-white dark:bg-gray-800">
+          {/* Ítems */}
+          <div className="p-2 space-y-2 bg-white dark:bg-gray-800">
             {sec.items.map((item, itemIdx) => (
-              <div key={item.id} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={item.descripcion}
-                  onChange={e => updateItem(secIdx, itemIdx, 'descripcion', e.target.value)}
-                  placeholder="Descripción del ítem"
-                  className="flex-1 text-sm border border-gray-200 dark:border-gray-600 rounded px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400"
-                />
-                <select
-                  value={item.tipo}
-                  onChange={e => updateItem(secIdx, itemIdx, 'tipo', e.target.value)}
-                  className="text-xs border border-gray-200 dark:border-gray-600 rounded px-1.5 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                >
-                  <option value="CHECK">CHECK</option>
-                  <option value="TEXTO">TEXTO</option>
-                  <option value="NUMERO">NUMERO</option>
-                </select>
-                <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 cursor-pointer whitespace-nowrap">
+              <div key={item.id} className={`border rounded-lg p-2 space-y-1.5 ${
+                tieneOpciones(item.tipo)
+                  ? 'border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-900/10'
+                  : 'border-gray-200 dark:border-gray-700'
+              }`}>
+                {/* Fila principal */}
+                <div className="flex items-center gap-2">
                   <input
-                    type="checkbox"
-                    checked={item.requerido}
-                    onChange={e => updateItem(secIdx, itemIdx, 'requerido', e.target.checked)}
-                    className="w-3.5 h-3.5 cursor-pointer"
+                    type="text"
+                    value={item.descripcion}
+                    onChange={e => updateItem(secIdx, itemIdx, 'descripcion', e.target.value)}
+                    placeholder="Descripción de la pregunta"
+                    className="flex-1 text-sm border border-gray-200 dark:border-gray-600 rounded px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400"
                   />
-                  Req.
-                </label>
-                <button
-                  type="button"
-                  onClick={() => removeItem(secIdx, itemIdx)}
-                  className="p-1 text-red-400 hover:text-red-600 dark:hover:text-red-400 flex-shrink-0"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                  <select
+                    value={item.tipo}
+                    onChange={e => updateItem(secIdx, itemIdx, 'tipo', e.target.value)}
+                    className="text-xs border border-gray-200 dark:border-gray-600 rounded px-1.5 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  >
+                    <option value="CHECK">✓ Sí/No</option>
+                    <option value="TEXTO">Texto libre</option>
+                    <option value="NUMERO">Número</option>
+                    <option value="SELECTOR">▼ Selector</option>
+                    <option value="RADIO">◉ Opción única</option>
+                    <option value="MULTIPLE">☑ Opción múltiple</option>
+                  </select>
+                  <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 cursor-pointer whitespace-nowrap">
+                    <input type="checkbox" checked={item.requerido} onChange={e => updateItem(secIdx, itemIdx, 'requerido', e.target.checked)} className="w-3.5 h-3.5 cursor-pointer" />
+                    Req.
+                  </label>
+                  <button type="button" onClick={() => removeItem(secIdx, itemIdx)} className="p-1 text-red-400 hover:text-red-600 flex-shrink-0">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                {/* Editor de opciones (solo para SELECTOR / RADIO / MULTIPLE) */}
+                {tieneOpciones(item.tipo) && (
+                  <div className="ml-1 pl-2 border-l-2 border-blue-300 dark:border-blue-700">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+                      {item.tipo === 'MULTIPLE' ? 'Opciones (selección múltiple):' : 'Opciones (selección única):'}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      {(item.opciones || []).map((op, opIdx) => (
+                        <span key={opIdx} className="inline-flex items-center gap-1 px-2 py-0.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-xs text-gray-700 dark:text-gray-300">
+                          {op}
+                          <button type="button" onClick={() => removeOpcion(secIdx, itemIdx, opIdx)} className="text-red-400 hover:text-red-600 leading-none ml-0.5">×</button>
+                        </span>
+                      ))}
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="text"
+                          value={newOpcionInputs[item.id] || ''}
+                          onChange={e => setNewOpcionInputs(prev => ({ ...prev, [item.id]: e.target.value }))}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addOpcion(secIdx, itemIdx, item.id); } }}
+                          placeholder="Nueva opción..."
+                          className="text-xs border border-dashed border-blue-300 dark:border-blue-700 rounded px-2 py-0.5 w-28 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400"
+                        />
+                        <button type="button" onClick={() => addOpcion(secIdx, itemIdx, item.id)} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 px-1.5 py-0.5 border border-blue-300 dark:border-blue-700 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30">+</button>
+                      </div>
+                    </div>
+                    {(item.opciones || []).length < 2 && (
+                      <p className="text-xs text-amber-500 dark:text-amber-400 mt-1">⚠ Agrega al menos 2 opciones</p>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
-            <button
-              type="button"
-              onClick={() => addItem(secIdx)}
-              className="w-full flex items-center justify-center gap-1 py-1.5 text-xs text-blue-600 dark:text-blue-400 border border-dashed border-blue-300 dark:border-blue-700 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-            >
+            <button type="button" onClick={() => addItem(secIdx)} className="w-full flex items-center justify-center gap-1 py-1.5 text-xs text-blue-600 dark:text-blue-400 border border-dashed border-blue-300 dark:border-blue-700 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
               <Plus className="w-3 h-3" /> Agregar ítem
             </button>
           </div>
         </div>
       ))}
-      <button
-        type="button"
-        onClick={addSeccion}
-        className="w-full flex items-center justify-center gap-1.5 py-2 text-sm text-blue-600 dark:text-blue-400 border border-dashed border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-      >
+      <button type="button" onClick={addSeccion} className="w-full flex items-center justify-center gap-1.5 py-2 text-sm text-blue-600 dark:text-blue-400 border border-dashed border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
         <Plus className="w-4 h-4" /> Agregar sección
       </button>
     </div>
@@ -408,6 +464,7 @@ function PlantillaModal({ plantilla, onClose, onUpdated }: PlantillaModalProps) 
             tipo: item.tipo,
             requerido: item.requerido,
             orden: iIdx,
+            opciones: item.opciones || [],
           })),
         })),
       }),
@@ -617,6 +674,7 @@ function CrearPlantillaModal({ onClose, onCreated }: CrearPlantillaModalProps) {
             tipo: item.tipo,
             requerido: item.requerido,
             orden: iIdx,
+            opciones: item.opciones || [],
           })),
         })),
       }),

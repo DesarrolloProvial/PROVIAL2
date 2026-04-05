@@ -98,9 +98,10 @@ export interface SeccionPlantilla {
 export interface ItemPlantilla {
   id: string;
   descripcion: string;
-  tipo: 'CHECK' | 'TEXTO' | 'NUMERO';
+  tipo: 'CHECK' | 'TEXTO' | 'NUMERO' | 'SELECTOR' | 'RADIO' | 'MULTIPLE';
   requerido: boolean;
   orden: number;
+  opciones?: string[];
 }
 
 // ── Servicio ──────────────────────────────────────────────────────────────────
