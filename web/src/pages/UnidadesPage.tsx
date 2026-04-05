@@ -77,6 +77,8 @@ const sedesAPI = {
 const TIPOS_UNIDAD = [
   'MOTORIZADA',
   'PICKUP',
+  'SEDAN',
+  'MICROBUS',
   'GRUA',
   'OTRO'
 ];
@@ -470,7 +472,7 @@ export default function UnidadesPage() {
                     value={formData.modelo}
                     onChange={(e) => setFormData({ ...formData, modelo: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
-                    placeholder="Ej: Hilux, Land Cruiser, 2020..."
+                    placeholder="Ej: 2020"
                   />
                 </div>
               </div>
@@ -574,7 +576,7 @@ export default function UnidadesPage() {
                     value={formData.modelo}
                     onChange={(e) => setFormData({ ...formData, modelo: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
-                    placeholder="Ej: Hilux, Land Cruiser, 2020..."
+                    placeholder="Ej: 2020"
                   />
                 </div>
               </div>
