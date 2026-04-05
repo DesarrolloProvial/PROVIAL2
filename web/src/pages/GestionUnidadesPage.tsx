@@ -423,6 +423,7 @@ export default function GestionUnidadesPage() {
                       ? setEditingUnidad({ ...editingUnidad, modelo: e.target.value })
                       : setFormData({ ...formData, modelo: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                    placeholder="Ej: Hilux, Land Cruiser, 2020..."
                   />
                 </div>
               </div>

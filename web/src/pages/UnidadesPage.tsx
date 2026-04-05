@@ -87,13 +87,13 @@ export default function UnidadesPage() {
   const location = useLocation();
 
   const isAdmin = user?.rol === 'ADMIN' || user?.rol === 'SUPER_ADMIN';
+  const canTransfer = isAdmin || (user?.rol === 'TRANSPORTES' && user?.puede_ver_todas_sedes);
   const backTo = location.pathname.startsWith('/transportes') ? '/transportes' : '/operaciones';
 
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
-  // TRANSPORTES ve solo su sede; ADMIN/SUPER_ADMIN pueden ver todas
   const [filtroSede, setFiltroSede] = useState<number | undefined>(
-    isAdmin ? undefined : user?.sede_id ?? undefined
+    canTransfer ? undefined : user?.sede_id ?? undefined
   );
   const [filtroTipo, setFiltroTipo] = useState<string | undefined>();
   const [filtroActiva, setFiltroActiva] = useState<boolean | undefined>();
@@ -392,7 +392,7 @@ export default function UnidadesPage() {
                         >
                           <Power className="w-4 h-4" />
                         </button>
-                        {isAdmin && (
+                        {canTransfer && (
                           <button
                             onClick={() => setModalTransferir(unidad)}
                             className="p-1.5 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded"
@@ -470,7 +470,7 @@ export default function UnidadesPage() {
                     value={formData.modelo}
                     onChange={(e) => setFormData({ ...formData, modelo: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
-                    placeholder="Ej: Hilux"
+                    placeholder="Ej: Hilux, Land Cruiser, 2020..."
                   />
                 </div>
               </div>
@@ -574,6 +574,7 @@ export default function UnidadesPage() {
                     value={formData.modelo}
                     onChange={(e) => setFormData({ ...formData, modelo: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100"
+                    placeholder="Ej: Hilux, Land Cruiser, 2020..."
                   />
                 </div>
               </div>
