@@ -74,8 +74,8 @@ export async function canEditSituacion(req: Request, res: Response, next: NextFu
       return res.status(404).json({ error: 'Situación no encontrada' });
     }
 
-    // COP y ADMIN pueden editar cualquier situación
-    if (req.user.rol === 'COP' || req.user.rol === 'ADMIN') {
+    // COP, OPERACIONES y ADMIN pueden editar cualquier situación
+    if (['COP', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN'].includes(req.user.rol)) {
       return next();
     }
 
