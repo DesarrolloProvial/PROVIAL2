@@ -430,6 +430,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
 
   const handleSubmit = async () => {
     console.log('[SUBMIT] unidad_id:', form.unidad_id, 'km:', form.km, 'editId:', editSituacionId, 'vehiculos:', vehiculos.length);
+    if (vehiculos.length > 0) console.log('[SUBMIT] vehiculos[0]:', JSON.stringify(vehiculos[0]));
     if (!form.unidad_id) { setError('Selecciona una unidad'); return; }
     if (!form.km) { setError('Ingresa el kilometro'); return; }
     console.log('[SUBMIT] validaciones OK, enviando...');
