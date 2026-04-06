@@ -625,4 +625,108 @@ export async function getSnapshotActual(_req: Request, res: Response) {
   }
 }
 
+// ============================================================
+// ESTADO DE UNIDADES PARA BOLETÍN (por ruta, por unidad)
+// ============================================================
+
+export async function getEstadoUnidades(_req: Request, res: Response) {
+  try {
+    // Todas las unidades en salida activa con su estado actual
+    const unidades = await db.any(`
+      SELECT
+        u.id            AS unidad_id,
+        u.codigo        AS unidad_codigo,
+        u.tipo_unidad,
+        COALESCE(r.codigo, 'Sin ruta') AS ruta_codigo,
+        COALESCE(r.nombre, 'Sin ruta') AS ruta_nombre,
+        su.fecha_hora_salida,
+        -- Estado actual (situacion_actual cache)
+        sa.km,
+        sa.sentido,
+        sa.tipo_situacion,
+        sa.actividad_tipo_nombre,
+        sa.updated_at   AS ultima_actualizacion,
+        sa.situacion_id,
+        sa.actividad_id,
+        -- Detalle situacion activa
+        s.observaciones,
+        s.clima,
+        s.carga_vehicular,
+        s.obstruccion_data,
+        s.heridos_leves,
+        s.heridos_graves,
+        s.fallecidos,
+        s.trasladados,
+        cst.nombre      AS subtipo_nombre,
+        cst.categoria   AS subtipo_categoria,
+        -- Detalle actividad activa
+        a.observaciones AS act_observaciones,
+        a.clima         AS act_clima,
+        a.carga_vehicular AS act_carga,
+        a.km            AS act_km,
+        a.sentido       AS act_sentido
+      FROM salida_unidad su
+      JOIN  unidad u  ON su.unidad_id = u.id
+      LEFT JOIN ruta r  ON su.ruta_inicial_id = r.id
+      LEFT JOIN situacion_actual sa ON sa.unidad_id = u.id
+      LEFT JOIN situacion s
+             ON sa.situacion_id = s.id AND s.estado = 'ACTIVA'
+      LEFT JOIN catalogo_tipo_situacion cst ON s.tipo_situacion_id = cst.id
+      LEFT JOIN actividad a
+             ON sa.actividad_id = a.id AND a.estado = 'ACTIVA'
+      WHERE su.estado = 'EN_SALIDA'
+      ORDER BY r.codigo NULLS LAST, u.codigo
+    `);
+
+    // Fotos de situaciones activas (solo las que tienen situacion_id)
+    const situacionIds = [...new Set(unidades
+      .filter((u: any) => u.situacion_id)
+      .map((u: any) => u.situacion_id))];
+
+    let fotosMap: Record<number, any[]> = {};
+    if (situacionIds.length > 0) {
+      const fotos = await db.any(
+        `SELECT situacion_id, url_original, url_thumbnail, infografia_numero, orden
+         FROM situacion_multimedia
+         WHERE situacion_id = ANY($1::int[])
+           AND tipo = 'FOTO' AND estado = 'SUBIDO'
+         ORDER BY situacion_id, infografia_numero, orden`,
+        [situacionIds]
+      );
+      fotos.forEach((f: any) => {
+        if (!fotosMap[f.situacion_id]) fotosMap[f.situacion_id] = [];
+        fotosMap[f.situacion_id].push(f);
+      });
+    }
+
+    // Plantillas disponibles para compartir
+    const plantillas = await db.any(
+      `SELECT id, nombre, tipo, contenido_plantilla
+       FROM plantilla_comunicacion
+       WHERE activa = true
+       ORDER BY tipo, nombre`
+    );
+
+    // Agrupar unidades por ruta y adjuntar fotos
+    const porRuta: Record<string, any[]> = {};
+    unidades.forEach((u: any) => {
+      const r = u.ruta_codigo;
+      if (!porRuta[r]) porRuta[r] = [];
+      porRuta[r].push({
+        ...u,
+        fotos: u.situacion_id ? (fotosMap[u.situacion_id] || []) : [],
+      });
+    });
+
+    return res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      data: { por_ruta: porRuta, plantillas },
+    });
+  } catch (error) {
+    console.error('Error en getEstadoUnidades:', error);
+    return res.status(500).json({ error: 'Error obteniendo estado de unidades' });
+  }
+}
+
 export default ComunicacionSocialController;

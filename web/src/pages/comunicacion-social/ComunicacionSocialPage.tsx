@@ -6,7 +6,7 @@ import {
 import {
   Megaphone, LayoutTemplate, FileText, BarChart2, Globe,
   RefreshCw, Loader2, Plus, Pencil, Trash2, Copy, Check,
-  MapPin, Activity, ChevronDown, ChevronUp, LogOut,
+  MapPin, Activity, ChevronDown, ChevronUp, LogOut, Share2, X, Image,
 } from 'lucide-react';
 import api from '../../services/api';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -28,13 +28,35 @@ interface Plantilla {
   es_predefinida: boolean;
 }
 
-interface Publicacion {
-  id: number;
-  titulo: string;
-  contenido_generado: string;
-  tipo_publicacion: string;
-  estado: string;
-  created_at: string;
+interface UnidadEstado {
+  unidad_id: number;
+  unidad_codigo: string;
+  tipo_unidad: string;
+  ruta_codigo: string;
+  ruta_nombre: string;
+  km: string | null;
+  sentido: string | null;
+  tipo_situacion: string | null;
+  actividad_tipo_nombre: string | null;
+  subtipo_nombre: string | null;
+  subtipo_categoria: string | null;
+  ultima_actualizacion: string | null;
+  situacion_id: number | null;
+  actividad_id: number | null;
+  observaciones: any;
+  clima: string | null;
+  carga_vehicular: string | null;
+  obstruccion_data: any;
+  heridos_leves: number;
+  heridos_graves: number;
+  fallecidos: number;
+  trasladados: number;
+  act_observaciones: any;
+  act_clima: string | null;
+  act_carga: string | null;
+  act_km: string | null;
+  act_sentido: string | null;
+  fotos: Array<{ url_original: string; url_thumbnail: string; }>;
 }
 
 interface EstadisticasData {
@@ -103,7 +125,7 @@ export default function ComunicacionSocialPage() {
             { key: 'estadisticas', label: 'Estadísticas', icon: BarChart2 },
             { key: 'snapshot',     label: 'Estado Actual', icon: Globe },
             { key: 'plantillas',   label: 'Plantillas', icon: LayoutTemplate },
-            { key: 'publicaciones',label: 'Publicaciones', icon: FileText },
+            { key: 'publicaciones',label: 'Boletín', icon: FileText },
           ] as const).map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -724,155 +746,318 @@ function TabPlantillas() {
 }
 
 // =========================================================
-// TAB: PUBLICACIONES
+// HELPER: reemplazar variables de plantilla
+// =========================================================
+function resolverPlantilla(plantilla: string, u: UnidadEstado): string {
+  const now = new Date();
+  const fecha = now.toLocaleDateString('es-GT');
+  const hora  = now.toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' });
+  const kmVal    = u.km || u.act_km || '?';
+  const sentido  = u.sentido || u.act_sentido || '';
+  const tipo     = u.tipo_situacion || u.actividad_tipo_nombre || '';
+  const subtipo  = u.subtipo_nombre || '';
+  const heridos  = ((u.heridos_leves || 0) + (u.heridos_graves || 0)).toString();
+  const fallecidos = (u.fallecidos || 0).toString();
+  const ruta     = u.ruta_nombre;
+
+  return plantilla
+    .replace(/\{fecha\}/g, fecha)
+    .replace(/\{hora\}/g, hora)
+    .replace(/\{ubicacion\}/g, `km ${kmVal} ${sentido}`.trim())
+    .replace(/\{km\}/g, kmVal)
+    .replace(/\{sentido\}/g, sentido)
+    .replace(/\{tipo\}/g, tipo)
+    .replace(/\{descripcion\}/g, subtipo)
+    .replace(/\{tipo_accidente\}/g, subtipo)
+    .replace(/\{heridos\}/g, heridos)
+    .replace(/\{fallecidos\}/g, fallecidos)
+    .replace(/\{municipio\}/g, ruta)
+    .replace(/\{departamento\}/g, ruta)
+    .replace(/\{unidad\}/g, u.unidad_codigo);
+}
+
+// =========================================================
+// MODAL: COMPARTIR
+// =========================================================
+interface ShareModalProps {
+  unidad: UnidadEstado;
+  plantillas: Plantilla[];
+  onClose: () => void;
+}
+
+function ShareModal({ unidad, plantillas, onClose }: ShareModalProps) {
+  // Seleccionar plantilla inicial por tipo
+  const plantillaInicial = plantillas.find(p =>
+    p.tipo === unidad.tipo_situacion ||
+    p.tipo === unidad.subtipo_categoria ||
+    (unidad.actividad_id && p.tipo === 'OPERATIVO')
+  ) || plantillas.find(p => p.tipo === 'GENERAL') || plantillas[0] || null;
+
+  const [plantillaId, setPlantillaId] = useState<number | null>(plantillaInicial?.id ?? null);
+  const [texto, setTexto] = useState(() => {
+    if (!plantillaInicial) return '';
+    return resolverPlantilla(plantillaInicial.contenido_plantilla, unidad);
+  });
+  const [copied, setCopied] = useState(false);
+
+  const cambiarPlantilla = (id: number) => {
+    const p = plantillas.find(pl => pl.id === id);
+    if (p) {
+      setPlantillaId(id);
+      setTexto(resolverPlantilla(p.contenido_plantilla, unidad));
+    }
+  };
+
+  const copiar = () => {
+    navigator.clipboard.writeText(texto);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const enc = encodeURIComponent(texto);
+
+  const canales = [
+    { label: 'WhatsApp',  color: 'bg-green-500 hover:bg-green-600',  url: `https://wa.me/?text=${enc}` },
+    { label: '𝕏 Twitter', color: 'bg-black hover:bg-gray-800',       url: `https://twitter.com/intent/tweet?text=${enc}` },
+    { label: 'Facebook',  color: 'bg-blue-600 hover:bg-blue-700',    url: `https://www.facebook.com/sharer/sharer.php?quote=${enc}&u=https://provial.gt` },
+    { label: 'Telegram',  color: 'bg-sky-500 hover:bg-sky-600',      url: `https://t.me/share/url?url=https://provial.gt&text=${enc}` },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-white">Compartir — {unidad.unidad_codigo}</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{unidad.ruta_codigo} · km {unidad.km || '?'} {unidad.sentido || ''}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"><X className="w-5 h-5" /></button>
+        </div>
+
+        <div className="p-5 space-y-4 overflow-y-auto flex-1">
+          {/* Selector de plantilla */}
+          {plantillas.length > 0 && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Plantilla</label>
+              <select value={plantillaId ?? ''} onChange={e => cambiarPlantilla(parseInt(e.target.value))}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white">
+                <option value="" disabled>— Seleccionar plantilla —</option>
+                {plantillas.map(p => <option key={p.id} value={p.id}>{p.nombre} ({p.tipo})</option>)}
+              </select>
+            </div>
+          )}
+
+          {/* Texto editable */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+              Mensaje <span className={texto.length > 280 ? 'text-red-500' : 'text-gray-400'}>({texto.length} car.)</span>
+            </label>
+            <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={6}
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white font-mono" />
+          </div>
+
+          {/* Fotos */}
+          {unidad.fotos.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1">
+                <Image className="w-3 h-3" /> Infografías disponibles ({unidad.fotos.length})
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                {unidad.fotos.slice(0, 6).map((f, i) => (
+                  <a key={i} href={f.url_original} target="_blank" rel="noreferrer"
+                    className="w-14 h-14 rounded border border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0">
+                    <img src={f.url_thumbnail || f.url_original} alt="" className="w-full h-full object-cover" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Botones de canal */}
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">Compartir en</label>
+            <div className="grid grid-cols-2 gap-2">
+              {canales.map(c => (
+                <a key={c.label} href={c.url} target="_blank" rel="noreferrer"
+                  className={`${c.color} text-white text-sm font-medium py-2 px-4 rounded-lg text-center transition-colors`}>
+                  {c.label}
+                </a>
+              ))}
+            </div>
+            <button onClick={copiar}
+              className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+              {copied ? <><Check className="w-4 h-4 text-green-500" /> Copiado</> : <><Copy className="w-4 h-4" /> Copiar texto</>}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =========================================================
+// TAB: BOLETÍN — unidades por ruta
 // =========================================================
 function TabPublicaciones() {
-  const [publicaciones, setPublicaciones] = useState<Publicacion[]>([]);
-  const [plantillas, setPlantillas] = useState<Plantilla[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    titulo: '',
-    contenido_generado: '',
-    tipo_publicacion: 'TWITTER',
-    plantilla_id: '',
-  });
+  const [porRuta, setPorRuta] = useState<Record<string, UnidadEstado[]>>({});
+  const [plantillas, setPlantillas] = useState<Plantilla[]>([]);
+  const [timestamp, setTimestamp] = useState('');
+  const [shareTarget, setShareTarget] = useState<UnidadEstado | null>(null);
 
-  const fetchPublicaciones = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/comunicacion-social/publicaciones');
-      setPublicaciones(data.publicaciones || data || []);
+      const { data } = await api.get('/comunicacion-social/estado-unidades');
+      setPorRuta(data.data.por_ruta || {});
+      setPlantillas(data.data.plantillas || []);
+      setTimestamp(data.timestamp);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
 
-  const fetchPlantillas = async () => {
-    try {
-      const { data } = await api.get('/comunicacion-social/plantillas');
-      setPlantillas(data.plantillas || data || []);
-    } catch (e) { console.error(e); }
+  useEffect(() => { fetchData(); }, []);
+
+  const rutas = Object.keys(porRuta).sort();
+
+  // Extraer texto de observaciones JSONB
+  const obsTexto = (obs: any): string => {
+    if (!obs) return '';
+    if (typeof obs === 'string') return obs;
+    if (Array.isArray(obs)) return obs.map((o: any) => o.mensaje || '').filter(Boolean).join(' · ');
+    return '';
   };
 
-  useEffect(() => { fetchPublicaciones(); fetchPlantillas(); }, []);
-
-  const usarPlantilla = (id: string) => {
-    const p = plantillas.find(pl => pl.id === parseInt(id));
-    if (p) setForm(f => ({ ...f, plantilla_id: id, contenido_generado: p.contenido_plantilla, titulo: p.nombre }));
-  };
-
-  const guardar = async () => {
-    if (!form.contenido_generado) return;
-    setSaving(true);
-    try {
-      await api.post('/comunicacion-social/publicaciones', {
-        titulo: form.titulo || 'Sin título',
-        contenido_generado: form.contenido_generado,
-        tipo_publicacion: form.tipo_publicacion,
-        plantilla_id: form.plantilla_id ? parseInt(form.plantilla_id) : null,
-      });
-      setShowForm(false);
-      setForm({ titulo: '', contenido_generado: '', tipo_publicacion: 'TWITTER', plantilla_id: '' });
-      fetchPublicaciones();
-    } catch (e) { console.error(e); }
-    finally { setSaving(false); }
-  };
-
-  const TIPO_ICONS: Record<string, string> = {
-    TWITTER: '𝕏', FACEBOOK: 'f', INSTAGRAM: '📷', WHATSAPP: '💬', PRENSA: '📰',
+  const fmtHora = (ts: string | null) => {
+    if (!ts) return '—';
+    return new Date(ts).toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Publicaciones</h2>
-        <button onClick={() => setShowForm(s => !s)}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Boletín operacional</h2>
+          {timestamp && <p className="text-xs text-gray-400">Actualizado: {fmt(timestamp)}</p>}
+        </div>
+        <button onClick={fetchData}
           className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium">
-          <Plus className="w-4 h-4" /> Nueva publicación
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Actualizar
         </button>
       </div>
 
-      {/* Form */}
-      {showForm && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-4">
-          <h3 className="font-medium text-gray-900 dark:text-white">Nueva publicación</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Usar plantilla (opcional)</label>
-              <select value={form.plantilla_id} onChange={e => usarPlantilla(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white">
-                <option value="">— Sin plantilla —</option>
-                {plantillas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Canal</label>
-              <select value={form.tipo_publicacion} onChange={e => setForm(f => ({ ...f, tipo_publicacion: e.target.value }))}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white">
-                <option value="TWITTER">𝕏 Twitter/X</option>
-                <option value="FACEBOOK">Facebook</option>
-                <option value="INSTAGRAM">Instagram</option>
-                <option value="WHATSAPP">WhatsApp</option>
-                <option value="PRENSA">Comunicado prensa</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Título</label>
-              <input value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))}
-                placeholder="Título de la publicación"
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Contenido</label>
-            <textarea value={form.contenido_generado} onChange={e => setForm(f => ({ ...f, contenido_generado: e.target.value }))}
-              rows={6} placeholder="Escriba o edite el mensaje..."
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white" />
-            {form.tipo_publicacion === 'TWITTER' && (
-              <p className={`text-xs mt-1 ${form.contenido_generado.length > 280 ? 'text-red-500' : 'text-gray-400'}`}>
-                {form.contenido_generado.length}/280 caracteres
-              </p>
-            )}
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowForm(false)}
-              className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300">
-              Cancelar
-            </button>
-            <button onClick={guardar} disabled={saving}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-              Guardar
-            </button>
-          </div>
-        </div>
+      {loading && <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-purple-600" /></div>}
+
+      {!loading && rutas.length === 0 && (
+        <div className="text-center py-12 text-gray-400">No hay unidades en servicio</div>
       )}
 
-      {/* Lista */}
-      {loading ? (
-        <div className="flex justify-center py-10"><Loader2 className="w-7 h-7 animate-spin text-purple-600" /></div>
-      ) : publicaciones.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">No hay publicaciones registradas.</div>
-      ) : (
-        <div className="grid gap-4">
-          {publicaciones.map(p => (
-            <div key={p.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{TIPO_ICONS[p.tipo_publicacion] || '📢'}</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{p.titulo || 'Sin título'}</span>
-                  <span className={`px-2 py-0.5 rounded text-xs ${
-                    p.estado === 'PUBLICADO' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-                    'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                  }`}>{p.estado}</span>
-                </div>
-                <span className="text-xs text-gray-400">{fmt(p.created_at)}</span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{p.contenido_generado}</p>
+      {!loading && rutas.map(ruta => {
+        const unidades = porRuta[ruta];
+        return (
+          <div key={ruta} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            {/* Cabecera de ruta */}
+            <div className="px-5 py-3 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-purple-500" />
+              <span className="font-semibold text-gray-900 dark:text-white">{ruta}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{unidades[0]?.ruta_nombre}</span>
+              <span className="ml-auto text-xs text-gray-400">{unidades.length} unidad(es)</span>
             </div>
-          ))}
-        </div>
+
+            {/* Tabla */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                    <th className="px-4 py-2 text-left font-medium">Unidad</th>
+                    <th className="px-3 py-2 text-left font-medium">Sentido</th>
+                    <th className="px-3 py-2 text-left font-medium">Situación / Actividad</th>
+                    <th className="px-3 py-2 text-left font-medium">KM</th>
+                    <th className="px-3 py-2 text-left font-medium">Hora</th>
+                    <th className="px-3 py-2 text-left font-medium">Obstr.</th>
+                    <th className="px-3 py-2 text-left font-medium">Observaciones</th>
+                    <th className="px-3 py-2 text-left font-medium">Clima</th>
+                    <th className="px-3 py-2 text-left font-medium">Afluencia</th>
+                    <th className="px-3 py-2 text-left font-medium">Fotos</th>
+                    <th className="px-3 py-2 text-left font-medium">Compartir</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {unidades.map(u => {
+                    const tieneObstruccion = u.obstruccion_data && Object.keys(u.obstruccion_data).length > 0;
+                    const obs = obsTexto(u.observaciones || u.act_observaciones);
+                    const clima = u.clima || u.act_clima;
+                    const carga = u.carga_vehicular || u.act_carga;
+                    const kmVal = u.km || u.act_km;
+                    const situacionLabel = u.tipo_situacion
+                      ? `${u.tipo_situacion}${u.subtipo_nombre ? ` — ${u.subtipo_nombre}` : ''}`
+                      : (u.actividad_tipo_nombre || '—');
+
+                    return (
+                      <tr key={u.unidad_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                        <td className="px-4 py-3 font-semibold text-gray-900 dark:text-white whitespace-nowrap">
+                          {u.unidad_codigo}
+                          <span className="ml-1 text-xs text-gray-400 font-normal">{u.tipo_unidad}</span>
+                        </td>
+                        <td className="px-3 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{u.sentido || u.act_sentido || '—'}</td>
+                        <td className="px-3 py-3 max-w-[180px]">
+                          {u.tipo_situacion ? (
+                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${badge(u.tipo_situacion)}`}>
+                              {situacionLabel}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">{situacionLabel}</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{kmVal || '—'}</td>
+                        <td className="px-3 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{fmtHora(u.ultima_actualizacion)}</td>
+                        <td className="px-3 py-3 text-center">
+                          {tieneObstruccion
+                            ? <span className="text-red-600 font-semibold text-xs">Sí</span>
+                            : <span className="text-gray-300 dark:text-gray-600 text-xs">No</span>}
+                        </td>
+                        <td className="px-3 py-3 text-gray-600 dark:text-gray-300 text-xs max-w-[160px] truncate" title={obs}>{obs || '—'}</td>
+                        <td className="px-3 py-3 text-gray-600 dark:text-gray-300 text-xs whitespace-nowrap">{clima || '—'}</td>
+                        <td className="px-3 py-3 text-gray-600 dark:text-gray-300 text-xs whitespace-nowrap">{carga || '—'}</td>
+                        <td className="px-3 py-3">
+                          {u.fotos.length > 0 ? (
+                            <div className="flex gap-1">
+                              {u.fotos.slice(0, 2).map((f, i) => (
+                                <a key={i} href={f.url_original} target="_blank" rel="noreferrer"
+                                  className="w-8 h-8 rounded overflow-hidden border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                  <img src={f.url_thumbnail || f.url_original} alt="" className="w-full h-full object-cover" />
+                                </a>
+                              ))}
+                              {u.fotos.length > 2 && <span className="text-xs text-gray-400 self-center">+{u.fotos.length - 2}</span>}
+                            </div>
+                          ) : <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>}
+                        </td>
+                        <td className="px-3 py-3">
+                          <button onClick={() => setShareTarget(u)}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-medium">
+                            <Share2 className="w-3 h-3" /> Compartir
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Modal compartir */}
+      {shareTarget && (
+        <ShareModal
+          unidad={shareTarget}
+          plantillas={plantillas}
+          onClose={() => setShareTarget(null)}
+        />
       )}
     </div>
   );

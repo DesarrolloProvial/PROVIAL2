@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { ComunicacionSocialController, getEstadisticasComunicacion, getSnapshotActual } from '../controllers/comunicacionSocial.controller';
+import { ComunicacionSocialController, getEstadisticasComunicacion, getSnapshotActual, getEstadoUnidades } from '../controllers/comunicacionSocial.controller';
 import { authenticate } from '../middlewares/auth';
 
 const router = Router();
@@ -56,5 +56,6 @@ router.get('/fotos/situacion/:situacionId', ComunicacionSocialController.obtener
 
 router.get('/estadisticas', getEstadisticasComunicacion);
 router.get('/snapshot', getSnapshotActual);
+router.get('/estado-unidades', getEstadoUnidades);
 
 export default router;
