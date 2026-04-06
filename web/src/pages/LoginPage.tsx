@@ -28,7 +28,9 @@ export default function LoginPage() {
         navigate('/operaciones');
       } else if (response.user.rol === 'TRANSPORTES') {
         navigate('/transportes');
-      } else if (['MANDOS', 'ACCIDENTOLOGIA', 'COMUNICACION_SOCIAL'].includes(response.user.rol)) {
+      } else if (response.user.rol === 'COMUNICACION_SOCIAL') {
+        navigate('/comunicacion-social');
+      } else if (['MANDOS', 'ACCIDENTOLOGIA'].includes(response.user.rol)) {
         navigate('/dashboard-ejecutivo');
       } else {
         navigate('/dashboard');
