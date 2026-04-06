@@ -6,7 +6,7 @@ import {
 import {
   Megaphone, LayoutTemplate, FileText, BarChart2, Globe,
   RefreshCw, Loader2, Plus, Pencil, Trash2, Copy, Check,
-  MapPin, Users, Truck, AlertTriangle, Activity, ChevronDown, ChevronUp,
+  MapPin, Activity, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import api from '../../services/api';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -120,8 +120,110 @@ export default function ComunicacionSocialPage() {
 }
 
 // =========================================================
-// TAB: ESTADÍSTICAS
+// TAB: ESTADÍSTICAS — 3 paneles separados
 // =========================================================
+function PanelEstadisticas({
+  tipo, color, titulo, kpi, subtipos, rutas, vehiculos,
+}: {
+  tipo: string;
+  color: { border: string; bg: string; text: string; bar: string; };
+  titulo: string;
+  kpi: EstadisticasData['kpis'][0] | undefined;
+  subtipos: EstadisticasData['por_subtipo'];
+  rutas: EstadisticasData['por_ruta'];
+  vehiculos?: EstadisticasData['por_vehiculo'];
+}) {
+  const total = kpi?.total || 0;
+  const rutasData = rutas
+    .filter(r => r.tipo_situacion === tipo)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 12);
+  const subtData = subtipos
+    .filter(s => s.tipo_situacion === tipo)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 10);
+
+  return (
+    <div className={`rounded-xl border-2 ${color.border} bg-white dark:bg-gray-800 overflow-hidden`}>
+      {/* Encabezado */}
+      <div className={`${color.bg} px-5 py-3 flex items-center justify-between`}>
+        <h2 className={`text-base font-bold ${color.text}`}>{titulo}</h2>
+        <span className={`text-3xl font-extrabold ${color.text}`}>{total}</span>
+      </div>
+
+      <div className="p-5 space-y-5">
+        {/* Personas (solo si hay datos) */}
+        {kpi && (kpi.heridos > 0 || kpi.fallecidos > 0 || kpi.trasladados > 0 || kpi.ilesos > 0) && (
+          <div className="flex flex-wrap gap-4 text-sm">
+            {kpi.heridos_leves  > 0 && <span className="text-orange-600 font-medium">Heridos leves: {kpi.heridos_leves}</span>}
+            {kpi.heridos_graves > 0 && <span className="text-red-600 font-medium">Heridos graves: {kpi.heridos_graves}</span>}
+            {kpi.fallecidos     > 0 && <span className="text-gray-700 dark:text-gray-300 font-semibold">Fallecidos: {kpi.fallecidos}</span>}
+            {kpi.trasladados    > 0 && <span className="text-blue-600 font-medium">Trasladados: {kpi.trasladados}</span>}
+            {kpi.ilesos         > 0 && <span className="text-green-600 font-medium">Ilesos: {kpi.ilesos}</span>}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Por ruta */}
+          {rutasData.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Por ruta</h4>
+              <ResponsiveContainer width="100%" height={Math.max(160, rutasData.length * 24)}>
+                <BarChart data={rutasData} layout="vertical" margin={{ left: 4, right: 16, top: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis type="number" tick={{ fontSize: 10 }} />
+                  <YAxis dataKey="ruta" type="category" width={52} tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Bar dataKey="total" fill={color.bar} radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Por subtipo */}
+          {subtData.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Por tipo</h4>
+              <ResponsiveContainer width="100%" height={Math.max(160, subtData.length * 24)}>
+                <BarChart data={subtData} layout="vertical" margin={{ left: 4, right: 16, top: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis type="number" tick={{ fontSize: 10 }} />
+                  <YAxis dataKey="subtipo" type="category" width={110} tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Bar dataKey="total" fill={color.bar} radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        {/* Vehículos (solo INCIDENTE) */}
+        {vehiculos && vehiculos.length > 0 && (
+          <div>
+            <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Por tipo de vehículo</h4>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={vehiculos} dataKey="total" nameKey="tipo_vehiculo"
+                  cx="50%" cy="50%" outerRadius={75}
+                  label={(props: any) => `${props.tipo_vehiculo} ${((props.percent ?? 0) * 100).toFixed(0)}%`}>
+                  {vehiculos.map((_, i) => (
+                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {total === 0 && (
+          <p className="text-sm text-gray-400 text-center py-4">Sin registros en el período seleccionado</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function TabEstadisticas() {
   const hoy = new Date().toISOString().split('T')[0];
   const hace30 = new Date(Date.now() - 30 * 24 * 3600_000).toISOString().split('T')[0];
@@ -140,27 +242,6 @@ function TabEstadisticas() {
   }, [desde, hasta]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
-
-  // Construir datos para gráfica de barras apiladas por ruta
-  const rutasData = (() => {
-    if (!data) return [];
-    const map: Record<string, any> = {};
-    data.por_ruta.forEach(r => {
-      if (!map[r.ruta]) map[r.ruta] = { ruta: r.ruta };
-      map[r.ruta][r.tipo_situacion] = r.total;
-    });
-    return Object.values(map).slice(0, 15);
-  })();
-
-  // Totales KPI
-  const totales = {
-    incidentes:  data?.kpis.find(k => k.tipo_situacion === 'INCIDENTE')?.total  || 0,
-    asistencias: data?.kpis.find(k => k.tipo_situacion === 'ASISTENCIA')?.total || 0,
-    emergencias: data?.kpis.find(k => k.tipo_situacion === 'EMERGENCIA')?.total || 0,
-    heridos:     data?.kpis.reduce((s, k) => s + (k.heridos || 0), 0) || 0,
-    fallecidos:  data?.kpis.reduce((s, k) => s + (k.fallecidos || 0), 0) || 0,
-    trasladados: data?.kpis.reduce((s, k) => s + (k.trasladados || 0), 0) || 0,
-  };
 
   return (
     <div className="space-y-6">
@@ -190,93 +271,33 @@ function TabEstadisticas() {
       )}
 
       {!loading && data && (
-        <>
-          {/* KPIs */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[
-              { label: 'Incidentes',  value: totales.incidentes,  color: 'text-red-600',    icon: AlertTriangle },
-              { label: 'Asistencias', value: totales.asistencias, color: 'text-blue-600',   icon: Truck },
-              { label: 'Emergencias', value: totales.emergencias, color: 'text-amber-600',  icon: Activity },
-              { label: 'Heridos',     value: totales.heridos,     color: 'text-orange-600', icon: Users },
-              { label: 'Fallecidos',  value: totales.fallecidos,  color: 'text-gray-600',   icon: Users },
-              { label: 'Trasladados', value: totales.trasladados, color: 'text-green-600',  icon: Users },
-            ].map(({ label, value, color, icon: Icon }) => (
-              <div key={label} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-center">
-                <Icon className={`w-5 h-5 ${color} mx-auto mb-1`} />
-                <div className={`text-2xl font-bold ${color}`}>{value}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Gráficas */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Por ruta (barras apiladas) */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Situaciones por ruta</h3>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={rutasData} layout="vertical" margin={{ left: 10, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
-                  <XAxis type="number" tick={{ fontSize: 11 }} />
-                  <YAxis dataKey="ruta" type="category" width={55} tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="INCIDENTE"  name="Incidente"  stackId="a" fill={TIPO_COLORS.INCIDENTE}  radius={[0,4,4,0]} />
-                  <Bar dataKey="ASISTENCIA" name="Asistencia" stackId="a" fill={TIPO_COLORS.ASISTENCIA} />
-                  <Bar dataKey="EMERGENCIA" name="Emergencia" stackId="a" fill={TIPO_COLORS.EMERGENCIA} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Por tipo de vehículo */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Vehículos en incidentes</h3>
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie data={data.por_vehiculo} dataKey="total" nameKey="tipo_vehiculo"
-                    cx="50%" cy="50%" outerRadius={100} label={(props: any) =>
-                      `${props.tipo_vehiculo} ${((props.percent ?? 0) * 100).toFixed(0)}%`}>
-                    {data.por_vehiculo.map((_, i) => (
-                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Por subtipo INCIDENTE */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Subtipos de incidente</h3>
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={data.por_subtipo.filter(s => s.tipo_situacion === 'INCIDENTE').slice(0, 10)}
-                  layout="vertical" margin={{ left: 10, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis type="number" tick={{ fontSize: 11 }} />
-                  <YAxis dataKey="subtipo" type="category" width={120} tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Bar dataKey="total" fill={TIPO_COLORS.INCIDENTE} radius={[0,4,4,0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Por subtipo EMERGENCIA + ASISTENCIA */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Subtipos emergencia / asistencia</h3>
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart
-                  data={data.por_subtipo.filter(s => s.tipo_situacion !== 'INCIDENTE').slice(0, 10)}
-                  layout="vertical" margin={{ left: 10, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis type="number" tick={{ fontSize: 11 }} />
-                  <YAxis dataKey="subtipo" type="category" width={130} tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Bar dataKey="total" fill={TIPO_COLORS.EMERGENCIA} radius={[0,4,4,0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </>
+        <div className="space-y-8">
+          <PanelEstadisticas
+            tipo="INCIDENTE"
+            titulo="Accidentes / Incidentes"
+            color={{ border: 'border-red-300 dark:border-red-700', bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-300', bar: '#ef4444' }}
+            kpi={data.kpis.find(k => k.tipo_situacion === 'INCIDENTE')}
+            subtipos={data.por_subtipo}
+            rutas={data.por_ruta}
+            vehiculos={data.por_vehiculo}
+          />
+          <PanelEstadisticas
+            tipo="EMERGENCIA"
+            titulo="Emergencias"
+            color={{ border: 'border-amber-300 dark:border-amber-700', bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-300', bar: '#f59e0b' }}
+            kpi={data.kpis.find(k => k.tipo_situacion === 'EMERGENCIA')}
+            subtipos={data.por_subtipo}
+            rutas={data.por_ruta}
+          />
+          <PanelEstadisticas
+            tipo="ASISTENCIA"
+            titulo="Asistencias"
+            color={{ border: 'border-blue-300 dark:border-blue-700', bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-300', bar: '#3b82f6' }}
+            kpi={data.kpis.find(k => k.tipo_situacion === 'ASISTENCIA')}
+            subtipos={data.por_subtipo}
+            rutas={data.por_ruta}
+          />
+        </div>
       )}
     </div>
   );
