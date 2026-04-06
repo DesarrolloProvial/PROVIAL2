@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import {
   Megaphone, LayoutTemplate, FileText, BarChart2, Globe,
@@ -12,11 +12,6 @@ import api from '../../services/api';
 import ThemeToggle from '../../components/ThemeToggle';
 
 // ─── Colores ───────────────────────────────────────────────
-const TIPO_COLORS: Record<string, string> = {
-  INCIDENTE:  '#ef4444',
-  ASISTENCIA: '#3b82f6',
-  EMERGENCIA: '#f59e0b',
-};
 const CHART_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6','#f97316','#6366f1','#84cc16'];
 
 type Tab = 'estadisticas' | 'snapshot' | 'plantillas' | 'publicaciones';
@@ -40,7 +35,7 @@ interface Publicacion {
 }
 
 interface EstadisticasData {
-  kpis: Array<{ tipo_situacion: string; total: number; heridos: number; fallecidos: number; trasladados: number; ilesos: number; }>;
+  kpis: Array<{ tipo_situacion: string; total: number; heridos: number; heridos_leves: number; heridos_graves: number; fallecidos: number; trasladados: number; ilesos: number; }>;
   por_ruta: Array<{ ruta: string; ruta_nombre: string; tipo_situacion: string; total: number; }>;
   por_subtipo: Array<{ tipo_situacion: string; subtipo: string; total: number; }>;
   por_vehiculo: Array<{ tipo_vehiculo: string; total: number; }>;
