@@ -6,10 +6,12 @@ import {
 import {
   Megaphone, LayoutTemplate, FileText, BarChart2, Globe,
   RefreshCw, Loader2, Plus, Pencil, Trash2, Copy, Check,
-  MapPin, Activity, ChevronDown, ChevronUp,
+  MapPin, Activity, ChevronDown, ChevronUp, LogOut,
 } from 'lucide-react';
 import api from '../../services/api';
 import ThemeToggle from '../../components/ThemeToggle';
+import { useAuthStore } from '../../store/authStore';
+import { useNavigate } from 'react-router-dom';
 
 // ─── Colores ───────────────────────────────────────────────
 const CHART_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6','#f97316','#6366f1','#84cc16'];
@@ -23,6 +25,7 @@ interface Plantilla {
   tipo: string;
   contenido_plantilla: string;
   activa: boolean;
+  es_predefinida: boolean;
 }
 
 interface Publicacion {
@@ -66,6 +69,13 @@ function fmt(d: string) {
 // =========================================================
 export default function ComunicacionSocialPage() {
   const [tab, setTab] = useState<Tab>('estadisticas');
+  const { logout, user } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -75,7 +85,15 @@ export default function ComunicacionSocialPage() {
           <Megaphone className="w-6 h-6 text-purple-600 dark:text-purple-400" />
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">Comunicación Social / Vocería</h1>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{user?.nombre_completo}</span>
+          <ThemeToggle />
+          <button onClick={handleLogout}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Cerrar sesión</span>
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -552,6 +570,7 @@ function TabPlantillas() {
   const [form, setForm] = useState({ nombre: '', tipo: 'GENERAL', contenido_plantilla: '' });
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
 
   const fetchPlantillas = async () => {
     setLoading(true);
@@ -567,18 +586,21 @@ function TabPlantillas() {
   const openNueva = () => {
     setEditando(null);
     setForm({ nombre: '', tipo: 'GENERAL', contenido_plantilla: '' });
+    setFormError('');
     setShowForm(true);
   };
 
   const openEditar = (p: Plantilla) => {
     setEditando(p);
     setForm({ nombre: p.nombre, tipo: p.tipo || 'GENERAL', contenido_plantilla: p.contenido_plantilla });
+    setFormError('');
     setShowForm(true);
   };
 
   const guardar = async () => {
     if (!form.nombre || !form.contenido_plantilla) return;
     setSaving(true);
+    setFormError('');
     try {
       if (editando) {
         await api.put(`/comunicacion-social/plantillas/${editando.id}`, form);
@@ -587,8 +609,9 @@ function TabPlantillas() {
       }
       setShowForm(false);
       fetchPlantillas();
-    } catch (e) { console.error(e); }
-    finally { setSaving(false); }
+    } catch (e: any) {
+      setFormError(e.response?.data?.error || 'Error al guardar');
+    } finally { setSaving(false); }
   };
 
   const eliminar = async (id: number) => {
@@ -596,7 +619,9 @@ function TabPlantillas() {
     try {
       await api.delete(`/comunicacion-social/plantillas/${id}`);
       fetchPlantillas();
-    } catch (e) { console.error(e); }
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'No se pudo eliminar');
+    }
   };
 
   return (
@@ -641,6 +666,9 @@ function TabPlantillas() {
               rows={6} placeholder="Escriba el texto de la plantilla..."
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white font-mono" />
           </div>
+          {formError && (
+            <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{formError}</p>
+          )}
           <div className="flex gap-2 justify-end">
             <button onClick={() => setShowForm(false)}
               className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -665,21 +693,24 @@ function TabPlantillas() {
           {plantillas.map(p => (
             <div key={p.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
               <div className="flex items-start justify-between mb-2">
-                <div>
+                <div className="flex flex-wrap items-center gap-1.5">
                   <span className="font-medium text-gray-900 dark:text-white">{p.nombre}</span>
-                  <span className="ml-2 px-2 py-0.5 rounded text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">{p.tipo}</span>
-                  {!p.activa && <span className="ml-2 px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-700 text-gray-500">Inactiva</span>}
+                  <span className="px-2 py-0.5 rounded text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">{p.tipo}</span>
+                  {p.es_predefinida && <span className="px-2 py-0.5 rounded text-xs bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300">Sistema</span>}
+                  {!p.activa && <span className="px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-700 text-gray-500">Inactiva</span>}
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => openEditar(p)}
-                    className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400">
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => eliminar(p.id)}
-                    className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                {!p.es_predefinida && (
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button onClick={() => openEditar(p)}
+                      className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400">
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => eliminar(p.id)}
+                      className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
               <pre className="text-xs text-gray-500 dark:text-gray-400 whitespace-pre-wrap font-mono bg-gray-50 dark:bg-gray-900/40 rounded p-3 max-h-40 overflow-y-auto">
                 {p.contenido_plantilla}

@@ -487,14 +487,15 @@ export async function getEstadisticasComunicacion(req: Request, res: Response) {
     // Por tipo de vehículo (solo INCIDENTE)
     const porVehiculo = await db.any(
       `SELECT
-         COALESCE(v.tipo, 'No especificado') AS tipo_vehiculo,
-         COUNT(*)::int                        AS total
+         COALESCE(tv.nombre, 'No especificado') AS tipo_vehiculo,
+         COUNT(*)::int                           AS total
        FROM situacion s
        JOIN situacion_vehiculo sv ON s.id = sv.situacion_id
-       JOIN vehiculo v ON sv.vehiculo_id = v.id
+       JOIN vehiculo v             ON sv.vehiculo_id = v.id
+       LEFT JOIN tipo_vehiculo tv  ON v.tipo_vehiculo_id = tv.id
        WHERE s.tipo_situacion = 'INCIDENTE'
          AND s.fecha_hora_aviso::date BETWEEN $1::date AND $2::date
-       GROUP BY v.tipo
+       GROUP BY tv.nombre
        ORDER BY total DESC
        LIMIT 15`,
       [desde, hasta]
