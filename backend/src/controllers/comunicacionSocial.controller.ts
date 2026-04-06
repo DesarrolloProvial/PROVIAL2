@@ -435,6 +435,8 @@ export async function getEstadisticasComunicacion(req: Request, res: Response) {
     const hasta = (req.query.hasta as string) || hoy;
 
     // Totales por categoría + personas
+    // COALESCE(fecha_hora_aviso, created_at): registros APP usan fecha_hora_aviso,
+    // registros EXCEL_2025 tienen fecha_hora_aviso NULL y usan created_at como fecha del evento
     const kpis = await db.any(
       `SELECT
          tipo_situacion,
@@ -447,7 +449,7 @@ export async function getEstadisticasComunicacion(req: Request, res: Response) {
          SUM(COALESCE(trasladados, 0))::int                              AS trasladados
        FROM situacion
        WHERE tipo_situacion IN ('INCIDENTE','ASISTENCIA','EMERGENCIA')
-         AND fecha_hora_aviso::date BETWEEN $1::date AND $2::date
+         AND COALESCE(fecha_hora_aviso, created_at)::date BETWEEN $1::date AND $2::date
        GROUP BY tipo_situacion`,
       [desde, hasta]
     );
@@ -462,7 +464,7 @@ export async function getEstadisticasComunicacion(req: Request, res: Response) {
        FROM situacion s
        LEFT JOIN ruta r ON s.ruta_id = r.id
        WHERE s.tipo_situacion IN ('INCIDENTE','ASISTENCIA','EMERGENCIA')
-         AND s.fecha_hora_aviso::date BETWEEN $1::date AND $2::date
+         AND COALESCE(s.fecha_hora_aviso, s.created_at)::date BETWEEN $1::date AND $2::date
        GROUP BY r.codigo, r.nombre, s.tipo_situacion
        ORDER BY total DESC
        LIMIT 40`,
@@ -478,7 +480,7 @@ export async function getEstadisticasComunicacion(req: Request, res: Response) {
        FROM situacion s
        LEFT JOIN catalogo_tipo_situacion cst ON s.tipo_situacion_id = cst.id
        WHERE s.tipo_situacion IN ('INCIDENTE','ASISTENCIA','EMERGENCIA')
-         AND s.fecha_hora_aviso::date BETWEEN $1::date AND $2::date
+         AND COALESCE(s.fecha_hora_aviso, s.created_at)::date BETWEEN $1::date AND $2::date
        GROUP BY s.tipo_situacion, cst.nombre
        ORDER BY total DESC`,
       [desde, hasta]
@@ -494,7 +496,7 @@ export async function getEstadisticasComunicacion(req: Request, res: Response) {
        JOIN vehiculo v             ON sv.vehiculo_id = v.id
        LEFT JOIN tipo_vehiculo tv  ON v.tipo_vehiculo_id = tv.id
        WHERE s.tipo_situacion = 'INCIDENTE'
-         AND s.fecha_hora_aviso::date BETWEEN $1::date AND $2::date
+         AND COALESCE(s.fecha_hora_aviso, s.created_at)::date BETWEEN $1::date AND $2::date
        GROUP BY tv.nombre
        ORDER BY total DESC
        LIMIT 15`,
