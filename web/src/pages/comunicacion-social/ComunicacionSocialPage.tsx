@@ -108,7 +108,7 @@ export default function ComunicacionSocialPage() {
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">Comunicación Social / Vocería</h1>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{user?.nombre_completo}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{user?.nombre}</span>
           <ThemeToggle />
           <button onClick={handleLogout}
             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
