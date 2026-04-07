@@ -349,16 +349,18 @@ function PanelEstadisticas({
         {showVehiculos && panel.por_vehiculo.length > 0 && (
           <div>
             <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Por tipo de vehículo</h4>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={220}>
               <PieChart>
                 <Pie data={panel.por_vehiculo} dataKey="cantidad" nameKey="tipo"
-                  cx="50%" cy="50%" outerRadius={75}
-                  label={(props: any) => `${props.tipo} ${((props.percent ?? 0) * 100).toFixed(0)}%`}>
+                  cx="50%" cy="45%" outerRadius={70}
+                  label={({ percent }) => percent != null && percent > 0.04 ? `${(percent * 100).toFixed(0)}%` : ''}
+                  labelLine={false}>
                   {panel.por_vehiculo.map((_, i) => (
                     <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip formatter={(value: any, name: any) => [value, name]} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
