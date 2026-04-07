@@ -371,7 +371,13 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
   };
 
   // Subtipo options based on tipo
-  const getSubtipoOptions = () => {
+  const getSubtipoOptions = (): string[] => {
+    // Prefer DB names (from auxiliares) over hardcoded to ensure resolveSubtipoId matches
+    if (auxiliares) {
+      if (tipoSituacion === 'HECHO_TRANSITO') return (auxiliares.tipos_hecho || []).map((t: any) => t.nombre).sort();
+      if (tipoSituacion === 'ASISTENCIA_VEHICULAR') return (auxiliares.tipos_asistencia || []).map((t: any) => t.nombre).sort();
+      if (tipoSituacion === 'EMERGENCIA') return (auxiliares.tipos_emergencia || []).map((t: any) => t.nombre).sort();
+    }
     if (tipoSituacion === 'HECHO_TRANSITO') return TIPOS_HECHO_TRANSITO;
     if (tipoSituacion === 'ASISTENCIA_VEHICULAR') return TIPOS_ASISTENCIA;
     if (tipoSituacion === 'EMERGENCIA') return TIPOS_EMERGENCIA;

@@ -47,7 +47,7 @@ type Tab = 'estadisticas' | 'snapshot' | 'plantillas' | 'publicaciones';
 interface Plantilla {
   id: number;
   nombre: string;
-  tipo: string;
+  tipo_situacion: string;
   contenido_plantilla: string;
   activa: boolean;
   es_predefinida: boolean;
@@ -509,12 +509,21 @@ function TabSnapshot() {
         if (s.heridos_graves > 0) personas.push(`${s.heridos_graves} herido(s) grave(s)`);
         if (s.fallecidos > 0)     personas.push(`${s.fallecidos} fallecido(s)`);
         const personasTxt = personas.length > 0 ? `, ${personas.join(', ')}` : '';
-        lines.push(`• [${s.tipo_situacion}] ${s.subtipo_nombre || ''} km ${s.km || '?'} ${s.sentido || ''}${personasTxt}`);
+        const extras: string[] = [];
+        if (s.clima) extras.push(`clima: ${s.clima}`);
+        if (s.carga_vehicular) extras.push(`tráfico: ${s.carga_vehicular}`);
+        if (s.obstruccion_data?.tipo_obstruccion) extras.push(`obstrucción: ${s.obstruccion_data.descripcion_manual || s.obstruccion_data.tipo_obstruccion}`);
+        const extrasTxt = extras.length > 0 ? ` [${extras.join(' | ')}]` : '';
+        lines.push(`• [${s.tipo_situacion}] ${s.subtipo_nombre || ''} km ${s.km || '?'} ${s.sentido || ''}${personasTxt}${extrasTxt}`);
       });
     }
     if (info.actividades.length > 0) {
       info.actividades.forEach(a => {
-        lines.push(`• [ACTIVIDAD] ${a.tipo_nombre || ''} km ${a.km || '?'} ${a.sentido || ''} — ${a.unidad_codigo}`);
+        const extras: string[] = [];
+        if (a.clima) extras.push(`clima: ${a.clima}`);
+        if (a.carga_vehicular) extras.push(`tráfico: ${a.carga_vehicular}`);
+        const extrasTxt = extras.length > 0 ? ` [${extras.join(' | ')}]` : '';
+        lines.push(`• [ACTIVIDAD] ${a.tipo_nombre || ''} km ${a.km || '?'} ${a.sentido || ''} — ${a.unidad_codigo}${extrasTxt}`);
       });
     }
     lines.push(`Unidades: ${info.unidades.map((u: any) => u.codigo).join(', ') || 'ninguna'}`);
@@ -625,8 +634,13 @@ function TabSnapshot() {
                             {s.heridos_graves > 0 && <span className="text-red-600">Heridos graves: {s.heridos_graves}</span>}
                             {s.fallecidos     > 0 && <span className="text-gray-700 dark:text-gray-300 font-medium">Fallecidos: {s.fallecidos}</span>}
                             {s.trasladados    > 0 && <span className="text-blue-600">Trasladados: {s.trasladados}</span>}
-                            {s.clima && <span>Clima: {s.clima}</span>}
-                            {s.carga_vehicular && <span>Tráfico: {s.carga_vehicular}</span>}
+                            {s.clima && <span>☁ {s.clima}</span>}
+                            {s.carga_vehicular && <span>🚗 {s.carga_vehicular}</span>}
+                            {s.obstruccion_data?.tipo_obstruccion && (
+                              <span className="text-red-600 font-medium">
+                                ⛔ {s.obstruccion_data.descripcion_manual || s.obstruccion_data.tipo_obstruccion}
+                              </span>
+                            )}
                           </div>
                           {/* Fotos */}
                           {s.fotos && s.fotos.length > 0 && (
@@ -710,7 +724,7 @@ function TabPlantillas() {
   const [plantillas, setPlantillas] = useState<Plantilla[]>([]);
   const [loading, setLoading] = useState(false);
   const [editando, setEditando] = useState<Plantilla | null>(null);
-  const [form, setForm] = useState({ nombre: '', tipo: 'GENERAL', contenido_plantilla: '' });
+  const [form, setForm] = useState({ nombre: '', tipo_situacion: '', contenido_plantilla: '' });
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
@@ -728,14 +742,14 @@ function TabPlantillas() {
 
   const openNueva = () => {
     setEditando(null);
-    setForm({ nombre: '', tipo: 'GENERAL', contenido_plantilla: '' });
+    setForm({ nombre: '', tipo_situacion: '', contenido_plantilla: '' });
     setFormError('');
     setShowForm(true);
   };
 
   const openEditar = (p: Plantilla) => {
     setEditando(p);
-    setForm({ nombre: p.nombre, tipo: p.tipo || 'GENERAL', contenido_plantilla: p.contenido_plantilla });
+    setForm({ nombre: p.nombre, tipo_situacion: p.tipo_situacion || '', contenido_plantilla: p.contenido_plantilla });
     setFormError('');
     setShowForm(true);
   };
@@ -789,14 +803,14 @@ function TabPlantillas() {
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tipo</label>
-              <select value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo: e.target.value }))}
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tipo de situación</label>
+              <select value={form.tipo_situacion} onChange={e => setForm(f => ({ ...f, tipo_situacion: e.target.value }))}
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white">
-                <option value="GENERAL">General</option>
-                <option value="INCIDENTE">Incidente</option>
-                <option value="ASISTENCIA">Asistencia</option>
-                <option value="EMERGENCIA">Emergencia</option>
-                <option value="OPERATIVO">Operativo</option>
+                <option value="">General (cualquier tipo)</option>
+                <option value="INCIDENTE">Hecho de Tránsito</option>
+                <option value="ASISTENCIA">Asistencia Vial</option>
+                <option value="EMERGENCIA">Emergencia Vial</option>
+                <option value="OPERATIVO">Actividad Operativa</option>
               </select>
             </div>
           </div>
@@ -838,7 +852,7 @@ function TabPlantillas() {
               <div className="flex items-start justify-between mb-2">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="font-medium text-gray-900 dark:text-white">{p.nombre}</span>
-                  <span className="px-2 py-0.5 rounded text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">{p.tipo}</span>
+                  {p.tipo_situacion && <span className="px-2 py-0.5 rounded text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">{p.tipo_situacion}</span>}
                   {p.es_predefinida && <span className="px-2 py-0.5 rounded text-xs bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300">Sistema</span>}
                   {!p.activa && <span className="px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-700 text-gray-500">Inactiva</span>}
                 </div>
@@ -909,10 +923,9 @@ interface ShareModalProps {
 function ShareModal({ unidad, plantillas, onClose }: ShareModalProps) {
   // Seleccionar plantilla inicial por tipo
   const plantillaInicial = plantillas.find(p =>
-    p.tipo === unidad.tipo_situacion ||
-    p.tipo === unidad.subtipo_categoria ||
-    (unidad.actividad_id && p.tipo === 'OPERATIVO')
-  ) || plantillas.find(p => p.tipo === 'GENERAL') || plantillas[0] || null;
+    p.tipo_situacion === unidad.tipo_situacion ||
+    (unidad.actividad_id && p.tipo_situacion === 'OPERATIVO')
+  ) || plantillas.find(p => !p.tipo_situacion) || plantillas[0] || null;
 
   const [plantillaId, setPlantillaId] = useState<number | null>(plantillaInicial?.id ?? null);
   const [texto, setTexto] = useState(() => {
@@ -964,7 +977,7 @@ function ShareModal({ unidad, plantillas, onClose }: ShareModalProps) {
               <select value={plantillaId ?? ''} onChange={e => cambiarPlantilla(parseInt(e.target.value))}
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white">
                 <option value="" disabled>— Seleccionar plantilla —</option>
-                {plantillas.map(p => <option key={p.id} value={p.id}>{p.nombre} ({p.tipo})</option>)}
+                {plantillas.map(p => <option key={p.id} value={p.id}>{p.nombre}{p.tipo_situacion ? ` (${p.tipo_situacion})` : ''}</option>)}
               </select>
             </div>
           )}

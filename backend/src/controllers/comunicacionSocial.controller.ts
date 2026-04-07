@@ -494,6 +494,7 @@ export async function getSnapshotActual(_req: Request, res: Response) {
          s.sentido,
          s.clima,
          s.carga_vehicular,
+         s.obstruccion_data,
          s.observaciones,
          s.ilesos,
          s.heridos_leves,
@@ -665,10 +666,10 @@ export async function getEstadoUnidades(_req: Request, res: Response) {
 
     // Plantillas disponibles para compartir
     const plantillas = await db.any(
-      `SELECT id, nombre, tipo, contenido_plantilla
+      `SELECT id, nombre, tipo_situacion, contenido_plantilla
        FROM plantilla_comunicacion
        WHERE activa = true
-       ORDER BY tipo, nombre`
+       ORDER BY tipo_situacion, nombre`
     );
 
     // Agrupar unidades por ruta y adjuntar fotos
