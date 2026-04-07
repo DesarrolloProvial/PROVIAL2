@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Component, ErrorInfo, ReactNode } from 'react';
 import {
   BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -12,6 +12,31 @@ import api from '../../services/api';
 import ThemeToggle from '../../components/ThemeToggle';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
+
+// ─── Error Boundary ────────────────────────────────────────
+class TabErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(err: Error) { return { error: err.message }; }
+  componentDidCatch(_err: Error, _info: ErrorInfo) {}
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-center">
+          <p className="text-red-700 dark:text-red-400 font-medium mb-2">Error al cargar este panel</p>
+          <p className="text-red-500 dark:text-red-500 text-xs mb-4 font-mono">{this.state.error}</p>
+          <button onClick={() => { this.setState({ error: null }); window.location.reload(); }}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm">
+            Recargar página
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ─── Colores ───────────────────────────────────────────────
 const CHART_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6','#f97316','#6366f1','#84cc16'];
@@ -151,10 +176,12 @@ export default function ComunicacionSocialPage() {
 
       {/* Content */}
       <div className="p-6">
-        {tab === 'estadisticas'  && <TabEstadisticas />}
-        {tab === 'snapshot'      && <TabSnapshot />}
-        {tab === 'plantillas'    && <TabPlantillas />}
-        {tab === 'publicaciones' && <TabPublicaciones />}
+        <TabErrorBoundary>
+          {tab === 'estadisticas'  && <TabEstadisticas />}
+          {tab === 'snapshot'      && <TabSnapshot />}
+          {tab === 'plantillas'    && <TabPlantillas />}
+          {tab === 'publicaciones' && <TabPublicaciones />}
+        </TabErrorBoundary>
       </div>
     </div>
   );
