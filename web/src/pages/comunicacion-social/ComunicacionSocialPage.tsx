@@ -921,25 +921,25 @@ interface ShareModalProps {
 }
 
 function ShareModal({ unidad, plantillas, onClose }: ShareModalProps) {
-  // Seleccionar plantilla inicial por tipo
   const plantillaInicial = plantillas.find(p =>
     p.tipo_situacion === unidad.tipo_situacion ||
     (unidad.actividad_id && p.tipo_situacion === 'OPERATIVO')
   ) || plantillas.find(p => !p.tipo_situacion) || plantillas[0] || null;
 
   const [plantillaId, setPlantillaId] = useState<number | null>(plantillaInicial?.id ?? null);
-  const [texto, setTexto] = useState(() => {
-    if (!plantillaInicial) return '';
-    return resolverPlantilla(plantillaInicial.contenido_plantilla, unidad);
-  });
+  const [texto, setTexto] = useState(() =>
+    plantillaInicial ? resolverPlantilla(plantillaInicial.contenido_plantilla, unidad) : ''
+  );
   const [copied, setCopied] = useState(false);
+  const [fotoSeleccionada, setFotoSeleccionada] = useState<string | null>(
+    unidad.fotos.length > 0 ? unidad.fotos[0].url_original : null
+  );
+  const [sharingImg, setSharingImg] = useState(false);
+  const [shareError, setShareError] = useState('');
 
   const cambiarPlantilla = (id: number) => {
     const p = plantillas.find(pl => pl.id === id);
-    if (p) {
-      setPlantillaId(id);
-      setTexto(resolverPlantilla(p.contenido_plantilla, unidad));
-    }
+    if (p) { setPlantillaId(id); setTexto(resolverPlantilla(p.contenido_plantilla, unidad)); }
   };
 
   const copiar = () => {
@@ -948,8 +948,32 @@ function ShareModal({ unidad, plantillas, onClose }: ShareModalProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const enc = encodeURIComponent(texto);
+  // Compartir texto + imagen nativo (Web Share API con files)
+  const compartirConFoto = async () => {
+    if (!fotoSeleccionada) return;
+    setShareError('');
+    setSharingImg(true);
+    try {
+      const resp = await fetch(fotoSeleccionada);
+      const blob = await resp.blob();
+      const ext = blob.type.includes('png') ? 'png' : 'jpg';
+      const file = new File([blob], `infografia.${ext}`, { type: blob.type });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ text: texto, files: [file] });
+      } else {
+        // Fallback: copiar texto + abrir imagen en nueva pestaña
+        await navigator.clipboard.writeText(texto);
+        window.open(fotoSeleccionada, '_blank');
+        setShareError('Texto copiado. Abre la imagen y compártela manualmente junto al texto.');
+      }
+    } catch (e: any) {
+      if (e?.name !== 'AbortError') {
+        setShareError('No se pudo compartir. Descarga la imagen y compártela manualmente.');
+      }
+    } finally { setSharingImg(false); }
+  };
 
+  const enc = encodeURIComponent(texto);
   const canales = [
     { label: 'WhatsApp',  color: 'bg-green-500 hover:bg-green-600',  url: `https://wa.me/?text=${enc}` },
     { label: '𝕏 Twitter', color: 'bg-black hover:bg-gray-800',       url: `https://twitter.com/intent/tweet?text=${enc}` },
@@ -987,30 +1011,78 @@ function ShareModal({ unidad, plantillas, onClose }: ShareModalProps) {
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Mensaje <span className={texto.length > 280 ? 'text-red-500' : 'text-gray-400'}>({texto.length} car.)</span>
             </label>
-            <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={6}
+            <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={5}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white font-mono" />
           </div>
 
-          {/* Fotos */}
+          {/* Selector de foto */}
           {unidad.fotos.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1">
-                <Image className="w-3 h-3" /> Infografías disponibles ({unidad.fotos.length})
-              </p>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1">
+                <Image className="w-3 h-3" /> Seleccionar infografía a compartir
+              </label>
               <div className="flex gap-2 flex-wrap">
-                {unidad.fotos.slice(0, 6).map((f, i) => (
-                  <a key={i} href={f.url_original} target="_blank" rel="noreferrer"
-                    className="w-14 h-14 rounded border border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0">
+                {unidad.fotos.map((f, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setFotoSeleccionada(f.url_original)}
+                    className={`relative w-16 h-16 rounded overflow-hidden border-2 flex-shrink-0 transition-all ${
+                      fotoSeleccionada === f.url_original
+                        ? 'border-purple-500 ring-2 ring-purple-300'
+                        : 'border-gray-200 dark:border-gray-700 opacity-70 hover:opacity-100'
+                    }`}
+                  >
                     <img src={f.url_thumbnail || f.url_original} alt="" className="w-full h-full object-cover" />
-                  </a>
+                    {fotoSeleccionada === f.url_original && (
+                      <div className="absolute inset-0 bg-purple-500/20 flex items-center justify-center">
+                        <Check className="w-5 h-5 text-white drop-shadow" />
+                      </div>
+                    )}
+                  </button>
                 ))}
+                <button
+                  onClick={() => setFotoSeleccionada(null)}
+                  className={`w-16 h-16 rounded border-2 flex-shrink-0 flex items-center justify-center text-xs transition-all ${
+                    fotoSeleccionada === null
+                      ? 'border-purple-500 ring-2 ring-purple-300 text-purple-600 dark:text-purple-400'
+                      : 'border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  Sin foto
+                </button>
               </div>
+
+              {/* Botón compartir con foto */}
+              {fotoSeleccionada && (
+                <button
+                  onClick={compartirConFoto}
+                  disabled={sharingImg}
+                  className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  {sharingImg
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparando...</>
+                    : <><Share2 className="w-4 h-4" /> Compartir texto + infografía</>
+                  }
+                </button>
+              )}
+
+              {shareError && (
+                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">{shareError}</p>
+              )}
+
+              {/* Enlace para abrir/descargar imagen */}
+              {fotoSeleccionada && (
+                <a href={fotoSeleccionada} target="_blank" rel="noreferrer"
+                  className="mt-1 flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400 hover:underline">
+                  <Image className="w-3 h-3" /> Ver infografía en tamaño completo
+                </a>
+              )}
             </div>
           )}
 
-          {/* Botones de canal */}
+          {/* Botones de canal (solo texto) */}
           <div className="space-y-2">
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">Compartir en</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">Compartir solo texto en:</label>
             <div className="grid grid-cols-2 gap-2">
               {canales.map(c => (
                 <a key={c.label} href={c.url} target="_blank" rel="noreferrer"
