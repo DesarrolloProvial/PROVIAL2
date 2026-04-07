@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { ComunicacionSocialModel } from '../models/comunicacionSocial.model';
 import { db } from '../config/database';
+import { EstadisticasService } from '../services/estadisticas.service';
 
 // ============================================
 // CONTROLADOR DE COMUNICACIÓN SOCIAL
@@ -424,7 +425,9 @@ export const ComunicacionSocialController = {
 };
 
 // ============================================================
-// ESTADÍSTICAS PARA COMUNICACIÓN SOCIAL (sin drill-down)
+// ESTADÍSTICAS PARA COMUNICACIÓN SOCIAL
+// Reutiliza EstadisticasService (mismo motor que /estadisticas)
+// 3 paneles independientes: INCIDENTE, ASISTENCIA, EMERGENCIA
 // ============================================================
 
 export async function getEstadisticasComunicacion(req: Request, res: Response) {
@@ -434,79 +437,38 @@ export async function getEstadisticasComunicacion(req: Request, res: Response) {
     const desde = (req.query.desde as string) || hace30;
     const hasta = (req.query.hasta as string) || hoy;
 
-    // Totales por categoría + personas
-    // COALESCE(fecha_hora_aviso, created_at): registros APP usan fecha_hora_aviso,
-    // registros EXCEL_2025 tienen fecha_hora_aviso NULL y usan created_at como fecha del evento
-    const kpis = await db.any(
-      `SELECT
-         tipo_situacion,
-         COUNT(*)::int                                                   AS total,
-         SUM(COALESCE(ilesos, 0))::int                                   AS ilesos,
-         SUM(COALESCE(heridos_leves, 0))::int                            AS heridos_leves,
-         SUM(COALESCE(heridos_graves, 0))::int                           AS heridos_graves,
-         SUM(COALESCE(heridos_leves,0)+COALESCE(heridos_graves,0))::int  AS heridos,
-         SUM(COALESCE(fallecidos, 0))::int                               AS fallecidos,
-         SUM(COALESCE(trasladados, 0))::int                              AS trasladados
-       FROM situacion
-       WHERE tipo_situacion IN ('INCIDENTE','ASISTENCIA','EMERGENCIA')
-         AND COALESCE(fecha_hora_aviso, created_at)::date BETWEEN $1::date AND $2::date
-       GROUP BY tipo_situacion`,
-      [desde, hasta]
-    );
+    const base = { fecha_inicio: desde, fecha_fin: hasta, origen_datos: 'ALL' };
 
-    // Por ruta
-    const porRuta = await db.any(
-      `SELECT
-         COALESCE(r.codigo, 'Sin ruta')  AS ruta,
-         COALESCE(r.nombre, 'Sin ruta')  AS ruta_nombre,
-         s.tipo_situacion,
-         COUNT(*)::int                   AS total
-       FROM situacion s
-       LEFT JOIN ruta r ON s.ruta_id = r.id
-       WHERE s.tipo_situacion IN ('INCIDENTE','ASISTENCIA','EMERGENCIA')
-         AND COALESCE(s.fecha_hora_aviso, s.created_at)::date BETWEEN $1::date AND $2::date
-       GROUP BY r.codigo, r.nombre, s.tipo_situacion
-       ORDER BY total DESC
-       LIMIT 40`,
-      [desde, hasta]
-    );
-
-    // Por subtipo
-    const porSubtipo = await db.any(
-      `SELECT
-         s.tipo_situacion,
-         COALESCE(cst.nombre, 'No especificado') AS subtipo,
-         COUNT(*)::int                           AS total
-       FROM situacion s
-       LEFT JOIN catalogo_tipo_situacion cst ON s.tipo_situacion_id = cst.id
-       WHERE s.tipo_situacion IN ('INCIDENTE','ASISTENCIA','EMERGENCIA')
-         AND COALESCE(s.fecha_hora_aviso, s.created_at)::date BETWEEN $1::date AND $2::date
-       GROUP BY s.tipo_situacion, cst.nombre
-       ORDER BY total DESC`,
-      [desde, hasta]
-    );
-
-    // Por tipo de vehículo (solo INCIDENTE)
-    const porVehiculo = await db.any(
-      `SELECT
-         COALESCE(tv.nombre, 'No especificado') AS tipo_vehiculo,
-         COUNT(*)::int                           AS total
-       FROM situacion s
-       JOIN situacion_vehiculo sv ON s.id = sv.situacion_id
-       JOIN vehiculo v             ON sv.vehiculo_id = v.id
-       LEFT JOIN tipo_vehiculo tv  ON v.tipo_vehiculo_id = tv.id
-       WHERE s.tipo_situacion = 'INCIDENTE'
-         AND COALESCE(s.fecha_hora_aviso, s.created_at)::date BETWEEN $1::date AND $2::date
-       GROUP BY tv.nombre
-       ORDER BY total DESC
-       LIMIT 15`,
-      [desde, hasta]
-    );
+    // 3 paneles en paralelo + subtipo cruzado
+    const [incidentes, asistencias, emergencias, porSubtipo] = await Promise.all([
+      EstadisticasService.obtenerTodo({ ...base, tipo_situacion: 'INCIDENTE' }),
+      EstadisticasService.obtenerTodo({ ...base, tipo_situacion: 'ASISTENCIA_ALL' }),
+      EstadisticasService.obtenerTodo({ ...base, tipo_situacion: 'EMERGENCIA' }),
+      db.any(
+        `SELECT
+           CASE WHEN s.tipo_situacion IN ('ASISTENCIA','ASISTENCIA_VEHICULAR')
+                THEN 'ASISTENCIA' ELSE s.tipo_situacion END   AS tipo_panel,
+           COALESCE(cst.nombre, 'No especificado')            AS subtipo,
+           COUNT(*)::int                                      AS total
+         FROM situacion s
+         LEFT JOIN catalogo_tipo_situacion cst ON s.tipo_situacion_id = cst.id
+         WHERE s.tipo_situacion IN ('INCIDENTE','ASISTENCIA','ASISTENCIA_VEHICULAR','EMERGENCIA')
+           AND COALESCE(s.fecha_hora_aviso, s.created_at)::date BETWEEN $1::date AND $2::date
+         GROUP BY tipo_panel, cst.nombre
+         ORDER BY tipo_panel, total DESC`,
+        [desde, hasta]
+      ),
+    ]);
 
     return res.json({
       success: true,
-      desde, hasta,
-      data: { kpis, por_ruta: porRuta, por_subtipo: porSubtipo, por_vehiculo: porVehiculo },
+      desde,
+      hasta,
+      data: {
+        incidentes:  { ...incidentes,  por_subtipo: porSubtipo.filter((r: any) => r.tipo_panel === 'INCIDENTE')  },
+        asistencias: { ...asistencias, por_subtipo: porSubtipo.filter((r: any) => r.tipo_panel === 'ASISTENCIA') },
+        emergencias: { ...emergencias, por_subtipo: porSubtipo.filter((r: any) => r.tipo_panel === 'EMERGENCIA') },
+      },
     });
   } catch (error) {
     console.error('Error en getEstadisticasComunicacion:', error);

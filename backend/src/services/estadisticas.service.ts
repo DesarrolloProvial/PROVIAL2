@@ -60,9 +60,14 @@ function buildWhere(f: EstadisticasFilters): { clause: string; params: any[] } {
     i++;
   }
   if (f.tipo_situacion) {
-    conditions.push(`s.tipo_situacion = $${i}`);
-    params.push(f.tipo_situacion);
-    i++;
+    // 'ASISTENCIA_ALL' = ASISTENCIA + ASISTENCIA_VEHICULAR (para comunicación social)
+    if (f.tipo_situacion === 'ASISTENCIA_ALL') {
+      conditions.push(`s.tipo_situacion IN ('ASISTENCIA', 'ASISTENCIA_VEHICULAR')`);
+    } else {
+      conditions.push(`s.tipo_situacion = $${i}`);
+      params.push(f.tipo_situacion);
+      i++;
+    }
   }
   if (f.origen_datos && f.origen_datos !== 'ALL') {
     conditions.push(`s.origen_datos = $${i}`);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import {
   Megaphone, LayoutTemplate, FileText, BarChart2, Globe,
@@ -59,11 +59,17 @@ interface UnidadEstado {
   fotos: Array<{ url_original: string; url_thumbnail: string; }>;
 }
 
-interface EstadisticasData {
-  kpis: Array<{ tipo_situacion: string; total: number; heridos: number; heridos_leves: number; heridos_graves: number; fallecidos: number; trasladados: number; ilesos: number; }>;
-  por_ruta: Array<{ ruta: string; ruta_nombre: string; tipo_situacion: string; total: number; }>;
-  por_subtipo: Array<{ tipo_situacion: string; subtipo: string; total: number; }>;
-  por_vehiculo: Array<{ tipo_vehiculo: string; total: number; }>;
+interface PanelData {
+  kpis: { total_situaciones: number; total_heridos: number; total_fallecidos: number; total_ilesos: number; total_trasladados: number; total_vehiculos: number; };
+  por_mes: Array<{ mes: string; total: number; }>;
+  por_ruta: Array<{ ruta: string; cantidad: number; }>;
+  heridos_fallecidos: Array<{ mes: string; heridos: number; fallecidos: number; }>;
+  por_vehiculo: Array<{ tipo: string; cantidad: number; }>;
+  por_hora: Array<{ hora: number; cantidad: number; }>;
+  por_dia_semana: Array<{ dia: string; cantidad: number; }>;
+  por_clima: Array<{ clima: string; cantidad: number; }>;
+  top_causas: Array<{ causa: string; cantidad: number; }>;
+  por_subtipo: Array<{ subtipo: string; total: number; }>;
 }
 
 interface SnapshotData {
@@ -157,70 +163,82 @@ export default function ComunicacionSocialPage() {
 // =========================================================
 // TAB: ESTADÍSTICAS — 3 paneles separados
 // =========================================================
+interface EstadisticasResponse {
+  incidentes: PanelData;
+  asistencias: PanelData;
+  emergencias: PanelData;
+}
+
 function PanelEstadisticas({
-  tipo, color, titulo, kpi, subtipos, rutas, vehiculos,
+  panel, titulo, showVehiculos, showCausas, color,
 }: {
-  tipo: string;
-  color: { border: string; bg: string; text: string; bar: string; };
+  panel: PanelData;
   titulo: string;
-  kpi: EstadisticasData['kpis'][0] | undefined;
-  subtipos: EstadisticasData['por_subtipo'];
-  rutas: EstadisticasData['por_ruta'];
-  vehiculos?: EstadisticasData['por_vehiculo'];
+  showVehiculos?: boolean;
+  showCausas?: boolean;
+  color: { border: string; bg: string; text: string; bar: string; accent: string; };
 }) {
-  const total = kpi?.total || 0;
-  const rutasData = rutas
-    .filter(r => r.tipo_situacion === tipo)
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 12);
-  const subtData = subtipos
-    .filter(s => s.tipo_situacion === tipo)
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 10);
+  const kpi = panel.kpis;
+  const total = kpi.total_situaciones;
 
   return (
     <div className={`rounded-xl border-2 ${color.border} bg-white dark:bg-gray-800 overflow-hidden`}>
-      {/* Encabezado */}
       <div className={`${color.bg} px-5 py-3 flex items-center justify-between`}>
         <h2 className={`text-base font-bold ${color.text}`}>{titulo}</h2>
         <span className={`text-3xl font-extrabold ${color.text}`}>{total}</span>
       </div>
 
       <div className="p-5 space-y-5">
-        {/* Personas (solo si hay datos) */}
-        {kpi && (kpi.heridos > 0 || kpi.fallecidos > 0 || kpi.trasladados > 0 || kpi.ilesos > 0) && (
+        {/* KPIs */}
+        {(kpi.total_heridos > 0 || kpi.total_fallecidos > 0 || kpi.total_trasladados > 0 || kpi.total_ilesos > 0) && (
           <div className="flex flex-wrap gap-4 text-sm">
-            {kpi.heridos_leves  > 0 && <span className="text-orange-600 font-medium">Heridos leves: {kpi.heridos_leves}</span>}
-            {kpi.heridos_graves > 0 && <span className="text-red-600 font-medium">Heridos graves: {kpi.heridos_graves}</span>}
-            {kpi.fallecidos     > 0 && <span className="text-gray-700 dark:text-gray-300 font-semibold">Fallecidos: {kpi.fallecidos}</span>}
-            {kpi.trasladados    > 0 && <span className="text-blue-600 font-medium">Trasladados: {kpi.trasladados}</span>}
-            {kpi.ilesos         > 0 && <span className="text-green-600 font-medium">Ilesos: {kpi.ilesos}</span>}
+            {kpi.total_heridos     > 0 && <span className="text-orange-600 font-medium">Heridos: {kpi.total_heridos}</span>}
+            {kpi.total_fallecidos  > 0 && <span className="text-red-700 font-semibold">Fallecidos: {kpi.total_fallecidos}</span>}
+            {kpi.total_trasladados > 0 && <span className="text-blue-600 font-medium">Trasladados: {kpi.total_trasladados}</span>}
+            {kpi.total_ilesos      > 0 && <span className="text-green-600 font-medium">Ilesos: {kpi.total_ilesos}</span>}
+            {kpi.total_vehiculos   > 0 && <span className="text-gray-600 dark:text-gray-400 font-medium">Vehículos inv.: {kpi.total_vehiculos}</span>}
+          </div>
+        )}
+
+        {/* Tendencia mensual */}
+        {panel.por_mes.length > 0 && (
+          <div>
+            <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Tendencia mensual</h4>
+            <ResponsiveContainer width="100%" height={140}>
+              <AreaChart data={panel.por_mes} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis dataKey="mes" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Area type="monotone" dataKey="total" fill={color.accent} stroke={color.bar} fillOpacity={0.3} />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Por ruta */}
-          {rutasData.length > 0 && (
+          {panel.por_ruta.length > 0 && (
             <div>
               <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Por ruta</h4>
-              <ResponsiveContainer width="100%" height={Math.max(160, rutasData.length * 24)}>
-                <BarChart data={rutasData} layout="vertical" margin={{ left: 4, right: 16, top: 0, bottom: 0 }}>
+              <ResponsiveContainer width="100%" height={Math.max(160, panel.por_ruta.length * 24)}>
+                <BarChart data={panel.por_ruta} layout="vertical" margin={{ left: 4, right: 16, top: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                   <XAxis type="number" tick={{ fontSize: 10 }} />
                   <YAxis dataKey="ruta" type="category" width={52} tick={{ fontSize: 10 }} />
                   <Tooltip />
-                  <Bar dataKey="total" fill={color.bar} radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="cantidad" fill={color.bar} radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
 
           {/* Por subtipo */}
-          {subtData.length > 0 && (
+          {panel.por_subtipo.length > 0 && (
             <div>
               <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Por tipo</h4>
-              <ResponsiveContainer width="100%" height={Math.max(160, subtData.length * 24)}>
-                <BarChart data={subtData} layout="vertical" margin={{ left: 4, right: 16, top: 0, bottom: 0 }}>
+              <ResponsiveContainer width="100%" height={Math.max(160, panel.por_subtipo.length * 24)}>
+                <BarChart data={panel.por_subtipo} layout="vertical" margin={{ left: 4, right: 16, top: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                   <XAxis type="number" tick={{ fontSize: 10 }} />
                   <YAxis dataKey="subtipo" type="category" width={110} tick={{ fontSize: 10 }} />
@@ -232,21 +250,105 @@ function PanelEstadisticas({
           )}
         </div>
 
+        {/* Heridos y fallecidos */}
+        {panel.heridos_fallecidos.some(r => r.heridos > 0 || r.fallecidos > 0) && (
+          <div>
+            <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Heridos y fallecidos por mes</h4>
+            <ResponsiveContainer width="100%" height={130}>
+              <AreaChart data={panel.heridos_fallecidos} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis dataKey="mes" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Area type="monotone" dataKey="heridos" name="Heridos" stroke="#f97316" fill="#f97316" fillOpacity={0.15} />
+                <Area type="monotone" dataKey="fallecidos" name="Fallecidos" stroke="#ef4444" fill="#ef4444" fillOpacity={0.15} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Por hora */}
+          {panel.por_hora.some(r => r.cantidad > 0) && (
+            <div>
+              <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Por hora del día</h4>
+              <ResponsiveContainer width="100%" height={120}>
+                <BarChart data={panel.por_hora} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis dataKey="hora" tick={{ fontSize: 9 }} />
+                  <YAxis tick={{ fontSize: 9 }} />
+                  <Tooltip />
+                  <Bar dataKey="cantidad" fill={color.bar} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Por día de semana */}
+          {panel.por_dia_semana.some(r => r.cantidad > 0) && (
+            <div>
+              <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Por día de la semana</h4>
+              <ResponsiveContainer width="100%" height={120}>
+                <BarChart data={panel.por_dia_semana} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis dataKey="dia" tick={{ fontSize: 9 }} />
+                  <YAxis tick={{ fontSize: 9 }} />
+                  <Tooltip />
+                  <Bar dataKey="cantidad" fill={color.bar} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        {/* Por clima */}
+        {panel.por_clima.filter(r => r.clima !== 'No registrado').length > 0 && (
+          <div>
+            <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Por condición climática</h4>
+            <ResponsiveContainer width="100%" height={120}>
+              <BarChart data={panel.por_clima.filter(r => r.clima !== 'No registrado')} layout="vertical" margin={{ left: 4, right: 16, top: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis type="number" tick={{ fontSize: 10 }} />
+                <YAxis dataKey="clima" type="category" width={80} tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Bar dataKey="cantidad" fill={color.bar} radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
         {/* Vehículos (solo INCIDENTE) */}
-        {vehiculos && vehiculos.length > 0 && (
+        {showVehiculos && panel.por_vehiculo.length > 0 && (
           <div>
             <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Por tipo de vehículo</h4>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
-                <Pie data={vehiculos} dataKey="total" nameKey="tipo_vehiculo"
+                <Pie data={panel.por_vehiculo} dataKey="cantidad" nameKey="tipo"
                   cx="50%" cy="50%" outerRadius={75}
-                  label={(props: any) => `${props.tipo_vehiculo} ${((props.percent ?? 0) * 100).toFixed(0)}%`}>
-                  {vehiculos.map((_, i) => (
+                  label={(props: any) => `${props.tipo} ${((props.percent ?? 0) * 100).toFixed(0)}%`}>
+                  {panel.por_vehiculo.map((_, i) => (
                     <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
               </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Top causas (solo INCIDENTE) */}
+        {showCausas && panel.top_causas.length > 0 && (
+          <div>
+            <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Top causas</h4>
+            <ResponsiveContainer width="100%" height={Math.max(120, panel.top_causas.length * 22)}>
+              <BarChart data={panel.top_causas} layout="vertical" margin={{ left: 4, right: 16, top: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis type="number" tick={{ fontSize: 10 }} />
+                <YAxis dataKey="causa" type="category" width={140} tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Bar dataKey="cantidad" fill={color.bar} radius={[0, 4, 4, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         )}
@@ -265,7 +367,7 @@ function TabEstadisticas() {
   const [desde, setDesde] = useState(hace30);
   const [hasta, setHasta] = useState(hoy);
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<EstadisticasData | null>(null);
+  const [data, setData] = useState<EstadisticasResponse | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -308,29 +410,21 @@ function TabEstadisticas() {
       {!loading && data && (
         <div className="space-y-8">
           <PanelEstadisticas
-            tipo="INCIDENTE"
-            titulo="Accidentes / Incidentes"
-            color={{ border: 'border-red-300 dark:border-red-700', bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-300', bar: '#ef4444' }}
-            kpi={data.kpis.find(k => k.tipo_situacion === 'INCIDENTE')}
-            subtipos={data.por_subtipo}
-            rutas={data.por_ruta}
-            vehiculos={data.por_vehiculo}
+            panel={data.incidentes}
+            titulo="Hechos de Tránsito"
+            showVehiculos
+            showCausas
+            color={{ border: 'border-red-300 dark:border-red-700', bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-300', bar: '#ef4444', accent: '#fca5a5' }}
           />
           <PanelEstadisticas
-            tipo="EMERGENCIA"
-            titulo="Emergencias"
-            color={{ border: 'border-amber-300 dark:border-amber-700', bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-300', bar: '#f59e0b' }}
-            kpi={data.kpis.find(k => k.tipo_situacion === 'EMERGENCIA')}
-            subtipos={data.por_subtipo}
-            rutas={data.por_ruta}
+            panel={data.asistencias}
+            titulo="Asistencia Vial"
+            color={{ border: 'border-blue-300 dark:border-blue-700', bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-300', bar: '#3b82f6', accent: '#93c5fd' }}
           />
           <PanelEstadisticas
-            tipo="ASISTENCIA"
-            titulo="Asistencias"
-            color={{ border: 'border-blue-300 dark:border-blue-700', bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-300', bar: '#3b82f6' }}
-            kpi={data.kpis.find(k => k.tipo_situacion === 'ASISTENCIA')}
-            subtipos={data.por_subtipo}
-            rutas={data.por_ruta}
+            panel={data.emergencias}
+            titulo="Emergencia Vial"
+            color={{ border: 'border-amber-300 dark:border-amber-700', bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-300', bar: '#f59e0b', accent: '#fcd34d' }}
           />
         </div>
       )}
