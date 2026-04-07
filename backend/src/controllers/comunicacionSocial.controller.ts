@@ -523,7 +523,7 @@ export async function getSnapshotActual(_req: Request, res: Response) {
         `SELECT situacion_id, url_original, url_thumbnail, infografia_numero, orden
          FROM situacion_multimedia
          WHERE situacion_id = ANY($1::int[])
-           AND tipo = 'FOTO' AND estado = 'SUBIDO'
+           AND tipo = 'FOTO' AND url_original IS NOT NULL
          ORDER BY situacion_id, infografia_numero, orden`,
         [ids]
       );
@@ -654,7 +654,7 @@ export async function getEstadoUnidades(_req: Request, res: Response) {
         `SELECT situacion_id, url_original, url_thumbnail, infografia_numero, orden
          FROM situacion_multimedia
          WHERE situacion_id = ANY($1::int[])
-           AND tipo = 'FOTO' AND estado = 'SUBIDO'
+           AND tipo = 'FOTO' AND url_original IS NOT NULL
          ORDER BY situacion_id, infografia_numero, orden`,
         [situacionIds]
       );
