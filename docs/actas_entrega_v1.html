@@ -225,6 +225,34 @@
     font-style: italic;
   }
 
+  /* ── Visto bueno ── */
+  .visto-bueno {
+    margin-top: 14px;
+    border-top: 1px dashed #bbb;
+    padding-top: 8px;
+  }
+  .vb-titulo {
+    font-size: 7.5pt;
+    font-weight: bold;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .vb-firmas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .vb-bloque {
+    text-align: center;
+    padding-top: 4px;
+  }
+  .vb-bloque .firma-linea {
+    height: 32px;
+  }
+
   /* ── Pie de página ── */
   .pie {
     position: absolute;
@@ -365,15 +393,32 @@
     <div class="firmas">
       <div class="firma-bloque">
         <div class="firma-linea"><span class="sello-hint">Sello</span></div>
-        <div class="firma-nombre">________________________________</div>
-        <div class="firma-cargo">Encargado de Desarrollo</div>
-        <div class="firma-dept">Unidad de Tecnología — ProVial</div>
+        <div class="firma-nombre">Yair Alexander Morales Mejia</div>
+        <div class="firma-cargo">Tesista / Desarrollador SIPROVIAL</div>
+        <div class="firma-dept">Universidad Mariano Gálvez de Guatemala · Carnet 1890-22-5710</div>
       </div>
       <div class="firma-bloque">
         <div class="firma-linea"><span class="sello-hint">Sello</span></div>
         <div class="firma-nombre">________________________________</div>
         <div class="firma-cargo">Nombre y cargo quien recibe</div>
         <div class="firma-dept">Centro de Operaciones y Patrullaje</div>
+      </div>
+    </div>
+    <div class="visto-bueno">
+      <div class="vb-titulo">Supervisado por:</div>
+      <div class="vb-firmas">
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Richard David Ortiz Sasvin</div>
+          <div class="firma-cargo">Asesor de Tesis</div>
+          <div class="firma-dept">Universidad Mariano Gálvez de Guatemala</div>
+        </div>
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Mario ___________________</div>
+          <div class="firma-cargo">Encargado del Depto. de Informática</div>
+          <div class="firma-dept">Dirección General de Protección y Seguridad Vial — ProVial</div>
+        </div>
       </div>
     </div>
   </div>
@@ -470,15 +515,32 @@
     <div class="firmas">
       <div class="firma-bloque">
         <div class="firma-linea"><span class="sello-hint">Sello</span></div>
-        <div class="firma-nombre">________________________________</div>
-        <div class="firma-cargo">Encargado de Desarrollo</div>
-        <div class="firma-dept">Unidad de Tecnología — ProVial</div>
+        <div class="firma-nombre">Yair Alexander Morales Mejia</div>
+        <div class="firma-cargo">Tesista / Desarrollador SIPROVIAL</div>
+        <div class="firma-dept">Universidad Mariano Gálvez de Guatemala · Carnet 1890-22-5710</div>
       </div>
       <div class="firma-bloque">
         <div class="firma-linea"><span class="sello-hint">Sello</span></div>
         <div class="firma-nombre">________________________________</div>
         <div class="firma-cargo">Nombre y cargo quien recibe</div>
         <div class="firma-dept">Departamento de Transportes</div>
+      </div>
+    </div>
+    <div class="visto-bueno">
+      <div class="vb-titulo">Supervisado por:</div>
+      <div class="vb-firmas">
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Richard David Ortiz Sasvin</div>
+          <div class="firma-cargo">Asesor de Tesis</div>
+          <div class="firma-dept">Universidad Mariano Gálvez de Guatemala</div>
+        </div>
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Mario ___________________</div>
+          <div class="firma-cargo">Encargado del Depto. de Informática</div>
+          <div class="firma-dept">Dirección General de Protección y Seguridad Vial — ProVial</div>
+        </div>
       </div>
     </div>
   </div>
@@ -575,15 +637,32 @@
     <div class="firmas">
       <div class="firma-bloque">
         <div class="firma-linea"><span class="sello-hint">Sello</span></div>
-        <div class="firma-nombre">________________________________</div>
-        <div class="firma-cargo">Encargado de Desarrollo</div>
-        <div class="firma-dept">Unidad de Tecnología — ProVial</div>
+        <div class="firma-nombre">Yair Alexander Morales Mejia</div>
+        <div class="firma-cargo">Tesista / Desarrollador SIPROVIAL</div>
+        <div class="firma-dept">Universidad Mariano Gálvez de Guatemala · Carnet 1890-22-5710</div>
       </div>
       <div class="firma-bloque">
         <div class="firma-linea"><span class="sello-hint">Sello</span></div>
         <div class="firma-nombre">________________________________</div>
         <div class="firma-cargo">Nombre y cargo quien recibe</div>
         <div class="firma-dept">Departamento de Operaciones</div>
+      </div>
+    </div>
+    <div class="visto-bueno">
+      <div class="vb-titulo">Supervisado por:</div>
+      <div class="vb-firmas">
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Richard David Ortiz Sasvin</div>
+          <div class="firma-cargo">Asesor de Tesis</div>
+          <div class="firma-dept">Universidad Mariano Gálvez de Guatemala</div>
+        </div>
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Mario ___________________</div>
+          <div class="firma-cargo">Encargado del Depto. de Informática</div>
+          <div class="firma-dept">Dirección General de Protección y Seguridad Vial — ProVial</div>
+        </div>
       </div>
     </div>
   </div>
@@ -682,15 +761,32 @@
     <div class="firmas">
       <div class="firma-bloque">
         <div class="firma-linea"><span class="sello-hint">Sello</span></div>
-        <div class="firma-nombre">________________________________</div>
-        <div class="firma-cargo">Encargado de Desarrollo</div>
-        <div class="firma-dept">Unidad de Tecnología — ProVial</div>
+        <div class="firma-nombre">Yair Alexander Morales Mejia</div>
+        <div class="firma-cargo">Tesista / Desarrollador SIPROVIAL</div>
+        <div class="firma-dept">Universidad Mariano Gálvez de Guatemala · Carnet 1890-22-5710</div>
       </div>
       <div class="firma-bloque">
         <div class="firma-linea"><span class="sello-hint">Sello</span></div>
         <div class="firma-nombre">________________________________</div>
         <div class="firma-cargo">Nombre y cargo quien recibe</div>
         <div class="firma-dept">Comunicación Social y Vocería</div>
+      </div>
+    </div>
+    <div class="visto-bueno">
+      <div class="vb-titulo">Supervisado por:</div>
+      <div class="vb-firmas">
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Richard David Ortiz Sasvin</div>
+          <div class="firma-cargo">Asesor de Tesis</div>
+          <div class="firma-dept">Universidad Mariano Gálvez de Guatemala</div>
+        </div>
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Mario ___________________</div>
+          <div class="firma-cargo">Encargado del Depto. de Informática</div>
+          <div class="firma-dept">Dirección General de Protección y Seguridad Vial — ProVial</div>
+        </div>
       </div>
     </div>
   </div>
@@ -789,15 +885,32 @@
     <div class="firmas">
       <div class="firma-bloque">
         <div class="firma-linea"><span class="sello-hint">Sello</span></div>
-        <div class="firma-nombre">________________________________</div>
-        <div class="firma-cargo">Encargado de Desarrollo</div>
-        <div class="firma-dept">Unidad de Tecnología — ProVial</div>
+        <div class="firma-nombre">Yair Alexander Morales Mejia</div>
+        <div class="firma-cargo">Tesista / Desarrollador SIPROVIAL</div>
+        <div class="firma-dept">Universidad Mariano Gálvez de Guatemala · Carnet 1890-22-5710</div>
       </div>
       <div class="firma-bloque">
         <div class="firma-linea"><span class="sello-hint">Sello</span></div>
         <div class="firma-nombre">________________________________</div>
         <div class="firma-cargo">Nombre y cargo quien recibe</div>
         <div class="firma-dept">Brigadas / Jefatura de Sede</div>
+      </div>
+    </div>
+    <div class="visto-bueno">
+      <div class="vb-titulo">Supervisado por:</div>
+      <div class="vb-firmas">
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Richard David Ortiz Sasvin</div>
+          <div class="firma-cargo">Asesor de Tesis</div>
+          <div class="firma-dept">Universidad Mariano Gálvez de Guatemala</div>
+        </div>
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Mario ___________________</div>
+          <div class="firma-cargo">Encargado del Depto. de Informática</div>
+          <div class="firma-dept">Dirección General de Protección y Seguridad Vial — ProVial</div>
+        </div>
       </div>
     </div>
   </div>
