@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Formato de Validación de Requerimientos — Sistema ProVial v1.0</title>
+<title>Formato de Validación de Requerimientos — SIPROVIAL v1.0</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -260,6 +260,57 @@
   }
   .leyenda span { font-size: 7.5pt; color: #555; }
 
+  /* ── Sección adicional / datos sensibles ── */
+  .nota-inst {
+    font-size: 7.5pt;
+    color: #666;
+    font-style: italic;
+    margin-bottom: 7px;
+    line-height: 1.4;
+  }
+  .seccion-adicional,
+  .datos-sensibles {
+    margin-top: 12px;
+  }
+  .datos-sensibles {
+    border-top: 1px dashed #bbb;
+    padding-top: 10px;
+    margin-top: 14px;
+  }
+
+  /* ── Firma única por módulo ── */
+  .firma-modulo {
+    margin-top: 16px;
+    border-top: 1px dashed #bbb;
+    padding-top: 12px;
+    display: flex;
+    justify-content: center;
+  }
+  .firma-modulo-bloque {
+    text-align: center;
+    width: 220px;
+  }
+  .firma-modulo-linea {
+    border-bottom: 1.5px solid #333;
+    height: 46px;
+    margin-bottom: 5px;
+  }
+  .firma-modulo-nombre {
+    font-size: 8.5pt;
+    font-weight: bold;
+    color: #1a1a1a;
+  }
+  .firma-modulo-cargo {
+    font-size: 7.5pt;
+    color: #555;
+    margin-top: 1px;
+  }
+  .firma-modulo-dept {
+    font-size: 7.5pt;
+    color: #2a6aad;
+    font-style: italic;
+  }
+
   @media print {
     @page { size: landscape; margin: 0; }
     body { background: #fff; }
@@ -294,21 +345,22 @@
   <div class="doc-meta">
     <div class="doc-meta-item"><label>Proyecto</label><span>Sistema Integral de PROVIAL</span></div>
     <div class="doc-meta-item"><label>Tipo de documento</label><span>Formato de Validación de Requerimientos</span></div>
-    <div class="doc-meta-item"><label>Institución</label><span>Provial — DGPSV</span></div>
+    <div class="doc-meta-item"><label>Institución</label><span>Provial</span></div>
     <div class="doc-meta-item"><label>Responsable técnico</label><span>Equipo de Desarrollo</span></div>
     <div class="doc-meta-item"><label>Fecha de emisión</label><span>Abril 2026</span></div>
   </div>
 
   <div class="instrucciones">
-    <b>Propósito:</b> Este formato permite al personal operativo y de supervisión documentar el estado de cada funcionalidad del sistema durante el período de validación, registrar observaciones, solicitar cambios y establecer prioridades de atención. Debe ser completado por el representante de cada área y devuelto al equipo de desarrollo en el período establecido.<br><br>
+    <b>Propósito:</b> Este formato permite al personal operativo y de supervisión documentar el estado de cada funcionalidad del sistema durante el período de validación, registrar observaciones y solicitar cambios. Debe ser completado por el representante de cada área y devuelto al equipo de desarrollo en el período establecido.<br><br>
     <b>Instrucciones de llenado:</b><br>
     • <b>Estado actual:</b> Marcar según el estado observado en la validación (ver leyenda).<br>
     • <b>Observación detectada:</b> Describir de forma concreta y objetiva la anomalía, comportamiento inesperado o aspecto a mejorar.<br>
     • <b>Cambio solicitado:</b> Indicar qué debe modificarse o incorporarse. Si no aplica cambio, escribir "N/A".<br>
     • <b>Justificación:</b> Explicar por qué es necesario el cambio (operativa, seguridad, cumplimiento, etc.).<br>
-    • <b>Prioridad:</b> ALTA (bloquea operación), MEDIA (afecta flujo), BAJA (mejora menor).<br>
     • <b>Aprobado por:</b> Nombre del responsable de área que avala el requerimiento.<br>
-    • <b>Firma:</b> Firma del responsable de área en la casilla correspondiente.
+    • <b>Funcionalidades adicionales:</b> Al final de cada módulo hay un espacio para solicitar funcionalidades no contempladas en la lista.<br>
+    • <b>Acceso a datos sensibles:</b> Si alguna funcionalidad requiere información de otra área o datos de acceso restringido, declararla en la sección correspondiente al final del módulo.<br>
+    • <b>Firma:</b> Una sola firma al final de cada módulo certifica que el responsable revisó y validó la totalidad del contenido.
   </div>
 
   <div class="seccion-titulo">Leyenda de estados</div>
@@ -363,7 +415,7 @@
     </div>
   </div>
 
-  <div class="titulo-formato">Módulo 1 — COP: Centro de Operaciones Policial</div>
+  <div class="titulo-formato">Módulo 1 — COP: Centro de Operaciones</div>
 
   <div class="doc-meta">
     <div class="doc-meta-item"><label>Responsable de área</label><span style="color:#bbb;font-style:italic;">_________________________</span></div>
@@ -378,11 +430,6 @@
     <span class="badge badge-obs">Con observación</span>
     <span class="badge badge-pend">Pendiente</span>
     <span class="badge badge-rechaz">No conforme</span>
-    &nbsp;|&nbsp;
-    <span>Prioridad:</span>
-    <span class="badge prio-alta">Alta</span>
-    <span class="badge prio-media">Media</span>
-    <span class="badge prio-baja">Baja</span>
   </div>
 
   <div class="tabla-wrap">
@@ -396,9 +443,7 @@
           <th style="width:105px;">Observación detectada</th>
           <th style="width:105px;">Cambio solicitado</th>
           <th style="width:105px;">Justificación del cambio</th>
-          <th style="width:52px;">Prioridad</th>
-          <th style="width:75px;">Aprobado por</th>
-          <th style="width:56px;">Firma</th>
+          <th style="width:85px;">Aprobado por</th>
         </tr>
       </thead>
       <tbody>
@@ -408,8 +453,7 @@
           <td class="func">Registro de turno y apertura de bitácora</td>
           <td class="est"><span class="badge badge-ok">Conforme</span></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">2</td>
@@ -417,8 +461,7 @@
           <td class="func">Registro de situaciones (hecho de tránsito, asistencia, emergencia)</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">3</td>
@@ -426,8 +469,7 @@
           <td class="func">Asignación de unidades a situaciones</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">4</td>
@@ -435,8 +477,7 @@
           <td class="func">Cierre de situaciones y registro de resolución</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">5</td>
@@ -444,8 +485,7 @@
           <td class="func">Mapa en tiempo real con posición de unidades y situaciones activas</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">6</td>
@@ -453,8 +493,7 @@
           <td class="func">Bitácora de turno (línea de tiempo de eventos)</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">7</td>
@@ -462,8 +501,7 @@
           <td class="func">Registro de actividades operativas (operativo, apoyo, administrativo)</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">8</td>
@@ -471,8 +509,7 @@
           <td class="func">Estado actual de unidades en pantalla de supervisión</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">9</td>
@@ -480,8 +517,7 @@
           <td class="func">Generación y consulta de reportes de turno</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">10</td>
@@ -489,11 +525,59 @@
           <td class="func">Cierre de turno y generación de resumen</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="seccion-adicional">
+    <div class="seccion-titulo">Funcionalidades no contempladas — Solicitudes del área</div>
+    <p class="nota-inst">Si existe alguna funcionalidad operativa fundamental que no aparece en la tabla anterior, descríbala. El equipo de desarrollo evaluará viabilidad e impacto en la planificación del sistema.</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:22px;">No.</th>
+          <th>Funcionalidad solicitada</th>
+          <th style="width:160px;">Justificación operativa</th>
+          <th style="width:75px;">¿Requiere datos de otra área?</th>
+          <th style="width:100px;">Área / fuente del dato</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="no">a</td><td></td><td></td><td class="est"></td><td></td></tr>
+        <tr><td class="no">b</td><td></td><td></td><td class="est"></td><td></td></tr>
+        <tr><td class="no">c</td><td></td><td></td><td class="est"></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="datos-sensibles">
+    <div class="seccion-titulo">Declaración de acceso a información sensible o interdepartamental</div>
+    <p class="nota-inst">Si alguna funcionalidad requiere acceso a información de otra área, de uso restringido o no disponible de forma general en la institución, debe declararse aquí. El desarrollador utilizará dicha información únicamente bajo autorización formal del área responsable y/o de la Dirección General.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Funcionalidad o dato requerido</th>
+          <th style="width:130px;">Área propietaria del dato</th>
+          <th style="width:130px;">Tipo / descripción de la información</th>
+          <th style="width:130px;">Autorización requerida de</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="firma-modulo">
+    <div class="firma-modulo-bloque">
+      <div class="firma-modulo-linea"></div>
+      <div class="firma-modulo-nombre">_______________________________</div>
+      <div class="firma-modulo-cargo">Responsable del área</div>
+      <div class="firma-modulo-dept">Centro de Operaciones (COP)</div>
+    </div>
   </div>
 
   <div class="pie">
@@ -522,7 +606,7 @@
     </div>
   </div>
 
-  <div class="titulo-formato">Módulo 2 — Transportes: Gestión de Flota Vehicular</div>
+  <div class="titulo-formato">Módulo 2 — Transportes: Control de Flota</div>
 
   <div class="doc-meta">
     <div class="doc-meta-item"><label>Responsable de área</label><span style="color:#bbb;font-style:italic;">_________________________</span></div>
@@ -537,11 +621,6 @@
     <span class="badge badge-obs">Con observación</span>
     <span class="badge badge-pend">Pendiente</span>
     <span class="badge badge-rechaz">No conforme</span>
-    &nbsp;|&nbsp;
-    <span>Prioridad:</span>
-    <span class="badge prio-alta">Alta</span>
-    <span class="badge prio-media">Media</span>
-    <span class="badge prio-baja">Baja</span>
   </div>
 
   <div class="tabla-wrap">
@@ -555,9 +634,7 @@
           <th style="width:105px;">Observación detectada</th>
           <th style="width:105px;">Cambio solicitado</th>
           <th style="width:105px;">Justificación del cambio</th>
-          <th style="width:52px;">Prioridad</th>
-          <th style="width:75px;">Aprobado por</th>
-          <th style="width:56px;">Firma</th>
+          <th style="width:85px;">Aprobado por</th>
         </tr>
       </thead>
       <tbody>
@@ -567,8 +644,7 @@
           <td class="func">Listado y consulta de flota vehicular</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">2</td>
@@ -576,8 +652,7 @@
           <td class="func">Registro de salidas y retornos de unidades</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">3</td>
@@ -585,8 +660,7 @@
           <td class="func">Control de kilometraje y combustible por salida</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">4</td>
@@ -594,8 +668,7 @@
           <td class="func">Visualización de disponibilidad de unidades por sede</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">5</td>
@@ -603,8 +676,7 @@
           <td class="func">Reporte de uso de flota por período</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">6</td>
@@ -612,8 +684,7 @@
           <td class="func">Gestión de tripulación (asignación de brigada a unidad)</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">7</td>
@@ -621,8 +692,7 @@
           <td class="func">Estado de unidades en tiempo real (mapa/lista)</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">8</td>
@@ -630,11 +700,59 @@
           <td class="func">Exportación de bitácora y registros en formato imprimible</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="seccion-adicional">
+    <div class="seccion-titulo">Funcionalidades no contempladas — Solicitudes del área</div>
+    <p class="nota-inst">Si existe alguna funcionalidad operativa fundamental que no aparece en la tabla anterior, descríbala. El equipo de desarrollo evaluará viabilidad e impacto en la planificación del sistema.</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:22px;">No.</th>
+          <th>Funcionalidad solicitada</th>
+          <th style="width:160px;">Justificación operativa</th>
+          <th style="width:75px;">¿Requiere datos de otra área?</th>
+          <th style="width:100px;">Área / fuente del dato</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="no">a</td><td></td><td></td><td class="est"></td><td></td></tr>
+        <tr><td class="no">b</td><td></td><td></td><td class="est"></td><td></td></tr>
+        <tr><td class="no">c</td><td></td><td></td><td class="est"></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="datos-sensibles">
+    <div class="seccion-titulo">Declaración de acceso a información sensible o interdepartamental</div>
+    <p class="nota-inst">Si alguna funcionalidad requiere acceso a información de otra área, de uso restringido o no disponible de forma general en la institución, debe declararse aquí. El desarrollador utilizará dicha información únicamente bajo autorización formal del área responsable y/o de la Dirección General.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Funcionalidad o dato requerido</th>
+          <th style="width:130px;">Área propietaria del dato</th>
+          <th style="width:130px;">Tipo / descripción de la información</th>
+          <th style="width:130px;">Autorización requerida de</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="firma-modulo">
+    <div class="firma-modulo-bloque">
+      <div class="firma-modulo-linea"></div>
+      <div class="firma-modulo-nombre">_______________________________</div>
+      <div class="firma-modulo-cargo">Responsable del área</div>
+      <div class="firma-modulo-dept">Transportes — Control de Flota</div>
+    </div>
   </div>
 
   <div class="pie">
@@ -663,7 +781,7 @@
     </div>
   </div>
 
-  <div class="titulo-formato">Módulo 3 — Operaciones: Supervisión de Jefatura</div>
+  <div class="titulo-formato">Módulo 3 — Operaciones: Supervisión</div>
 
   <div class="doc-meta">
     <div class="doc-meta-item"><label>Responsable de área</label><span style="color:#bbb;font-style:italic;">_________________________</span></div>
@@ -678,11 +796,6 @@
     <span class="badge badge-obs">Con observación</span>
     <span class="badge badge-pend">Pendiente</span>
     <span class="badge badge-rechaz">No conforme</span>
-    &nbsp;|&nbsp;
-    <span>Prioridad:</span>
-    <span class="badge prio-alta">Alta</span>
-    <span class="badge prio-media">Media</span>
-    <span class="badge prio-baja">Baja</span>
   </div>
 
   <div class="tabla-wrap">
@@ -696,9 +809,7 @@
           <th style="width:105px;">Observación detectada</th>
           <th style="width:105px;">Cambio solicitado</th>
           <th style="width:105px;">Justificación del cambio</th>
-          <th style="width:52px;">Prioridad</th>
-          <th style="width:75px;">Aprobado por</th>
-          <th style="width:56px;">Firma</th>
+          <th style="width:85px;">Aprobado por</th>
         </tr>
       </thead>
       <tbody>
@@ -708,8 +819,7 @@
           <td class="func">Panel estadístico por tipo de situación (incidentes, asistencias, emergencias)</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">2</td>
@@ -717,8 +827,7 @@
           <td class="func">Gráficos por ruta, hora, día de la semana y clima</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">3</td>
@@ -726,8 +835,7 @@
           <td class="func">Indicadores KPI: totales, promedio diario, tiempo de atención</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">4</td>
@@ -735,8 +843,7 @@
           <td class="func">Filtrado por período, sede y tipo de evento</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">5</td>
@@ -744,8 +851,7 @@
           <td class="func">Listado de situaciones con detalle expandible</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">6</td>
@@ -753,8 +859,7 @@
           <td class="func">Visualización de heridos, fallecidos y daños materiales</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">7</td>
@@ -762,8 +867,7 @@
           <td class="func">Top de causas y subtipo de incidentes</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">8</td>
@@ -771,11 +875,59 @@
           <td class="func">Exportación de reportes estadísticos</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="seccion-adicional">
+    <div class="seccion-titulo">Funcionalidades no contempladas — Solicitudes del área</div>
+    <p class="nota-inst">Si existe alguna funcionalidad operativa fundamental que no aparece en la tabla anterior, descríbala. El equipo de desarrollo evaluará viabilidad e impacto en la planificación del sistema.</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:22px;">No.</th>
+          <th>Funcionalidad solicitada</th>
+          <th style="width:160px;">Justificación operativa</th>
+          <th style="width:75px;">¿Requiere datos de otra área?</th>
+          <th style="width:100px;">Área / fuente del dato</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="no">a</td><td></td><td></td><td class="est"></td><td></td></tr>
+        <tr><td class="no">b</td><td></td><td></td><td class="est"></td><td></td></tr>
+        <tr><td class="no">c</td><td></td><td></td><td class="est"></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="datos-sensibles">
+    <div class="seccion-titulo">Declaración de acceso a información sensible o interdepartamental</div>
+    <p class="nota-inst">Si alguna funcionalidad requiere acceso a información de otra área, de uso restringido o no disponible de forma general en la institución, debe declararse aquí. El desarrollador utilizará dicha información únicamente bajo autorización formal del área responsable y/o de la Dirección General.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Funcionalidad o dato requerido</th>
+          <th style="width:130px;">Área propietaria del dato</th>
+          <th style="width:130px;">Tipo / descripción de la información</th>
+          <th style="width:130px;">Autorización requerida de</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="firma-modulo">
+    <div class="firma-modulo-bloque">
+      <div class="firma-modulo-linea"></div>
+      <div class="firma-modulo-nombre">_______________________________</div>
+      <div class="firma-modulo-cargo">Responsable del área</div>
+      <div class="firma-modulo-dept">Operaciones — Supervisión</div>
+    </div>
   </div>
 
   <div class="pie">
@@ -804,7 +956,7 @@
     </div>
   </div>
 
-  <div class="titulo-formato">Módulo 4 — Comunicación Social: Vocería y Difusión</div>
+  <div class="titulo-formato">Módulo 4 — Comunicación Social</div>
 
   <div class="doc-meta">
     <div class="doc-meta-item"><label>Responsable de área</label><span style="color:#bbb;font-style:italic;">_________________________</span></div>
@@ -819,11 +971,6 @@
     <span class="badge badge-obs">Con observación</span>
     <span class="badge badge-pend">Pendiente</span>
     <span class="badge badge-rechaz">No conforme</span>
-    &nbsp;|&nbsp;
-    <span>Prioridad:</span>
-    <span class="badge prio-alta">Alta</span>
-    <span class="badge prio-media">Media</span>
-    <span class="badge prio-baja">Baja</span>
   </div>
 
   <div class="tabla-wrap">
@@ -837,9 +984,7 @@
           <th style="width:105px;">Observación detectada</th>
           <th style="width:105px;">Cambio solicitado</th>
           <th style="width:105px;">Justificación del cambio</th>
-          <th style="width:52px;">Prioridad</th>
-          <th style="width:75px;">Aprobado por</th>
-          <th style="width:56px;">Firma</th>
+          <th style="width:85px;">Aprobado por</th>
         </tr>
       </thead>
       <tbody>
@@ -849,8 +994,7 @@
           <td class="func">Boletín en tiempo real: situaciones activas y estado de unidades</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">2</td>
@@ -858,8 +1002,7 @@
           <td class="func">Estado actual de carretera (clima, carga, obstrucciones)</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">3</td>
@@ -867,8 +1010,7 @@
           <td class="func">Galería de infografías (fotos) por situación activa</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">4</td>
@@ -876,8 +1018,7 @@
           <td class="func">Generación automática de texto de vocería para redes sociales</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">5</td>
@@ -885,8 +1026,7 @@
           <td class="func">Compartir texto e infografía (Web Share API / portapapeles)</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">6</td>
@@ -894,8 +1034,7 @@
           <td class="func">Administración de plantillas de comunicado por tipo de situación</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">7</td>
@@ -903,8 +1042,7 @@
           <td class="func">Panel de estadísticas para vocería (KPIs, gráficos por tipo)</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">8</td>
@@ -912,11 +1050,59 @@
           <td class="func">Snapshot histórico (consulta de situaciones pasadas para prensa)</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="seccion-adicional">
+    <div class="seccion-titulo">Funcionalidades no contempladas — Solicitudes del área</div>
+    <p class="nota-inst">Si existe alguna funcionalidad operativa fundamental que no aparece en la tabla anterior, descríbala. El equipo de desarrollo evaluará viabilidad e impacto en la planificación del sistema.</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:22px;">No.</th>
+          <th>Funcionalidad solicitada</th>
+          <th style="width:160px;">Justificación operativa</th>
+          <th style="width:75px;">¿Requiere datos de otra área?</th>
+          <th style="width:100px;">Área / fuente del dato</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="no">a</td><td></td><td></td><td class="est"></td><td></td></tr>
+        <tr><td class="no">b</td><td></td><td></td><td class="est"></td><td></td></tr>
+        <tr><td class="no">c</td><td></td><td></td><td class="est"></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="datos-sensibles">
+    <div class="seccion-titulo">Declaración de acceso a información sensible o interdepartamental</div>
+    <p class="nota-inst">Si alguna funcionalidad requiere acceso a información de otra área, de uso restringido o no disponible de forma general en la institución, debe declararse aquí. El desarrollador utilizará dicha información únicamente bajo autorización formal del área responsable y/o de la Dirección General.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Funcionalidad o dato requerido</th>
+          <th style="width:130px;">Área propietaria del dato</th>
+          <th style="width:130px;">Tipo / descripción de la información</th>
+          <th style="width:130px;">Autorización requerida de</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="firma-modulo">
+    <div class="firma-modulo-bloque">
+      <div class="firma-modulo-linea"></div>
+      <div class="firma-modulo-nombre">_______________________________</div>
+      <div class="firma-modulo-cargo">Responsable del área</div>
+      <div class="firma-modulo-dept">Comunicación Social</div>
+    </div>
   </div>
 
   <div class="pie">
@@ -945,7 +1131,7 @@
     </div>
   </div>
 
-  <div class="titulo-formato">Módulo 5 — Brigada: Aplicación Móvil</div>
+  <div class="titulo-formato">Módulo 5 — App Móvil: Brigada de Campo</div>
 
   <div class="doc-meta">
     <div class="doc-meta-item"><label>Responsable de área</label><span style="color:#bbb;font-style:italic;">_________________________</span></div>
@@ -960,11 +1146,6 @@
     <span class="badge badge-obs">Con observación</span>
     <span class="badge badge-pend">Pendiente</span>
     <span class="badge badge-rechaz">No conforme</span>
-    &nbsp;|&nbsp;
-    <span>Prioridad:</span>
-    <span class="badge prio-alta">Alta</span>
-    <span class="badge prio-media">Media</span>
-    <span class="badge prio-baja">Baja</span>
   </div>
 
   <div class="tabla-wrap">
@@ -978,9 +1159,7 @@
           <th style="width:105px;">Observación detectada</th>
           <th style="width:105px;">Cambio solicitado</th>
           <th style="width:105px;">Justificación del cambio</th>
-          <th style="width:52px;">Prioridad</th>
-          <th style="width:75px;">Aprobado por</th>
-          <th style="width:56px;">Firma</th>
+          <th style="width:85px;">Aprobado por</th>
         </tr>
       </thead>
       <tbody>
@@ -990,8 +1169,7 @@
           <td class="func">Inicio de sesión con chapa y contraseña</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">2</td>
@@ -999,8 +1177,7 @@
           <td class="func">Inicio de turno y asignación a unidad</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">3</td>
@@ -1008,8 +1185,7 @@
           <td class="func">Registro de situaciones desde campo (hecho tránsito, asistencia, emergencia)</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">4</td>
@@ -1017,8 +1193,7 @@
           <td class="func">Captura y carga de fotos/videos desde cámara o galería</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">5</td>
@@ -1026,8 +1201,7 @@
           <td class="func">Envío de posición GPS con la situación</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">6</td>
@@ -1035,8 +1209,7 @@
           <td class="func">Formularios diferenciados por tipo de situación (campos específicos)</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">7</td>
@@ -1044,8 +1217,7 @@
           <td class="func">Registro de actividades operativas (operativo, apoyo, etc.)</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">8</td>
@@ -1053,8 +1225,7 @@
           <td class="func">Funcionamiento offline básico (catálogos sincronizados)</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">9</td>
@@ -1062,8 +1233,7 @@
           <td class="func">Notificaciones de asignación de situaciones desde COP</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
         <tr>
           <td class="no">10</td>
@@ -1071,11 +1241,59 @@
           <td class="func">Cierre de turno y envío de resumen al sistema</td>
           <td class="est"></td>
           <td class="obs"></td><td class="cambio"></td><td class="just"></td>
-          <td class="prio"></td><td class="aprob"></td>
-          <td class="firma"><span class="firma-esp"></span></td>
+          <td class="aprob"></td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="seccion-adicional">
+    <div class="seccion-titulo">Funcionalidades no contempladas — Solicitudes del área</div>
+    <p class="nota-inst">Si existe alguna funcionalidad operativa fundamental que no aparece en la tabla anterior, descríbala. El equipo de desarrollo evaluará viabilidad e impacto en la planificación del sistema.</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:22px;">No.</th>
+          <th>Funcionalidad solicitada</th>
+          <th style="width:160px;">Justificación operativa</th>
+          <th style="width:75px;">¿Requiere datos de otra área?</th>
+          <th style="width:100px;">Área / fuente del dato</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="no">a</td><td></td><td></td><td class="est"></td><td></td></tr>
+        <tr><td class="no">b</td><td></td><td></td><td class="est"></td><td></td></tr>
+        <tr><td class="no">c</td><td></td><td></td><td class="est"></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="datos-sensibles">
+    <div class="seccion-titulo">Declaración de acceso a información sensible o interdepartamental</div>
+    <p class="nota-inst">Si alguna funcionalidad requiere acceso a información de otra área, de uso restringido o no disponible de forma general en la institución, debe declararse aquí. El desarrollador utilizará dicha información únicamente bajo autorización formal del área responsable y/o de la Dirección General.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Funcionalidad o dato requerido</th>
+          <th style="width:130px;">Área propietaria del dato</th>
+          <th style="width:130px;">Tipo / descripción de la información</th>
+          <th style="width:130px;">Autorización requerida de</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="firma-modulo">
+    <div class="firma-modulo-bloque">
+      <div class="firma-modulo-linea"></div>
+      <div class="firma-modulo-nombre">_______________________________</div>
+      <div class="firma-modulo-cargo">Responsable del área</div>
+      <div class="firma-modulo-dept">App Móvil — Brigada de Campo</div>
+    </div>
   </div>
 
   <div class="pie">
