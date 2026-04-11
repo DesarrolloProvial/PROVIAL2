@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>SIPROVIAL v1.0 — Entrega y Validación por Departamento</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; font-size: 10pt; color: #1a1a1a; background: #f0f0f0; }
+
+.pagina {
+  width: 216mm; min-height: 279mm;
+  margin: 0 auto 8mm; padding: 16mm 20mm 18mm 20mm;
+  page-break-after: always; position: relative; background: #fff;
+}
+.pagina:last-of-type { page-break-after: avoid; }
+
+/* Encabezado sin logo */
+.encabezado {
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 3px solid #1a3c6e; padding-bottom: 8px; margin-bottom: 14px; gap: 16px;
+}
+.encabezado-centro { flex: 1; text-align: center; }
+.encabezado-centro .inst { font-size: 8pt; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.encabezado-centro h1 { font-size: 12pt; font-weight: bold; color: #1a3c6e; text-transform: uppercase; }
+.encabezado-centro .subtitulo { font-size: 9pt; color: #444; margin-top: 2px; }
+.encabezado-cod { text-align: right; font-size: 7.5pt; color: #666; line-height: 1.7; flex-shrink: 0; }
+.encabezado-cod b { color: #1a3c6e; }
+
+/* Pie */
+.pie {
+  position: absolute; bottom: 8mm; left: 20mm; right: 20mm;
+  border-top: 1px solid #ccd5e0; padding-top: 4px;
+  display: flex; justify-content: space-between; font-size: 7pt; color: #888;
+}
+
+/* ── ACTA ── */
+.titulo-acta {
+  background: #1a3c6e; color: #fff; text-align: center;
+  padding: 7px 16px; font-size: 10.5pt; font-weight: bold;
+  letter-spacing: 0.4px; border-radius: 3px; margin-bottom: 14px; text-transform: uppercase;
+}
+.seccion { margin-bottom: 11px; }
+.seccion-titulo {
+  font-size: 8.5pt; font-weight: bold; text-transform: uppercase;
+  letter-spacing: 0.5px; color: #1a3c6e;
+  border-left: 4px solid #1a3c6e; padding-left: 6px; margin-bottom: 6px;
+}
+.datos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; }
+.dato { display: flex; flex-direction: column; padding: 3px 0; border-bottom: 1px solid #eee; }
+.dato.full { grid-column: 1 / -1; }
+.dato label { font-size: 7pt; text-transform: uppercase; color: #6688aa; font-weight: bold; letter-spacing: 0.3px; }
+.dato span { font-size: 8.5pt; }
+.modulo-tag {
+  display: inline-block; background: #e8f0fa; color: #1a3c6e;
+  border: 1px solid #adc4e0; border-radius: 3px; padding: 1px 8px; font-size: 8pt; font-weight: bold;
+}
+.parrafo { font-size: 8.5pt; color: #333; line-height: 1.55; text-align: justify; }
+.funcionalidades { padding-left: 16px; }
+.funcionalidades li { font-size: 8.5pt; margin-bottom: 2px; }
+.func-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
+.func-subtitulo { font-size: 7.5pt; font-weight: bold; color: #1a3c6e; text-transform: uppercase; margin: 6px 0 3px; }
+.condiciones ol { padding-left: 16px; }
+.condiciones ol li { font-size: 8.5pt; margin-bottom: 3px; line-height: 1.4; }
+
+/* Firmas acta */
+.firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 8px; }
+.firma-bloque { text-align: center; padding-top: 8px; }
+.firma-linea { border-bottom: 1.5px solid #333; height: 50px; margin-bottom: 5px; }
+.firma-nombre { font-size: 8.5pt; font-weight: bold; }
+.firma-cargo { font-size: 8pt; color: #555; margin-top: 1px; }
+.firma-dept { font-size: 8pt; color: #2a6aad; font-style: italic; }
+.visto-bueno { margin-top: 16px; border-top: 1px dashed #bbb; padding-top: 8px; }
+.vb-titulo { font-size: 7.5pt; font-weight: bold; color: #888; text-transform: uppercase; text-align: center; margin-bottom: 6px; }
+.vb-firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.vb-bloque { text-align: center; padding-top: 4px; }
+.vb-bloque .firma-linea { height: 34px; }
+
+/* ── FORMATO VALIDACIÓN ── */
+.titulo-fvr {
+  background: #2a5298; color: #fff; text-align: center;
+  padding: 6px 16px; font-size: 10pt; font-weight: bold;
+  letter-spacing: 0.4px; border-radius: 3px; margin-bottom: 10px; text-transform: uppercase;
+}
+.doc-meta {
+  display: flex; border: 1px solid #c8d4e3; border-radius: 3px;
+  overflow: hidden; margin-bottom: 10px; font-size: 8pt;
+}
+.doc-meta-item { flex: 1; padding: 4px 8px; border-right: 1px solid #dde6f0; }
+.doc-meta-item:last-child { border-right: none; }
+.doc-meta-item label { display: block; font-size: 7pt; text-transform: uppercase; color: #6688aa; font-weight: bold; }
+
+.leyenda { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; align-items: center; }
+.leyenda span { font-size: 7.5pt; color: #555; }
+.badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 7pt; font-weight: bold; text-transform: uppercase; white-space: nowrap; }
+.badge-ok     { background: #d4edda; color: #1a6630; border: 1px solid #a8d5b1; }
+.badge-obs    { background: #fff3cd; color: #856404; border: 1px solid #f0d060; }
+.badge-pend   { background: #e2e3e5; color: #383d41; border: 1px solid #c8c9ca; }
+.badge-rechaz { background: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
+
+.tabla-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 7.5pt; table-layout: fixed; }
+thead th {
+  background: #1a3c6e; color: #fff; padding: 5px 4px;
+  text-align: center; font-size: 7pt; font-weight: bold;
+  border: 1px solid #143060; vertical-align: middle; line-height: 1.3;
+}
+tbody tr { border-bottom: 1px solid #dde6f0; }
+tbody tr:nth-child(even) { background: #f5f8fc; }
+tbody td { padding: 5px 4px; border: 1px solid #dde6f0; vertical-align: top; line-height: 1.35; font-size: 7.5pt; }
+td.no   { text-align: center; font-weight: bold; color: #1a3c6e; width: 24px; }
+td.func { width: 138px; }
+td.est  { text-align: center; width: 62px; }
+td.obs, td.cambio, td.just { width: 98px; }
+td.aprob { text-align: center; width: 70px; }
+
+.subtabla-titulo {
+  background: #e8eef8; color: #1a3c6e; font-size: 8pt; font-weight: bold;
+  padding: 4px 8px; border: 1px solid #adc4e0; margin-top: 10px; margin-bottom: 4px; border-radius: 2px;
+}
+.nota-inst { font-size: 7pt; color: #666; font-style: italic; margin-bottom: 6px; line-height: 1.4; }
+.seccion-adicional { margin-top: 10px; }
+.datos-sensibles { border-top: 1px dashed #bbb; padding-top: 8px; margin-top: 12px; }
+.firma-modulo { margin-top: 14px; border-top: 1px dashed #bbb; padding-top: 10px; display: flex; justify-content: center; }
+.firma-modulo-bloque { text-align: center; width: 210px; }
+.firma-modulo-linea { border-bottom: 1.5px solid #333; height: 44px; margin-bottom: 5px; }
+.firma-modulo-cargo { font-size: 8pt; color: #555; }
+.firma-modulo-dept { font-size: 8pt; color: #2a6aad; font-style: italic; margin-top: 1px; }
+
+.instrucciones { background: #f5f8fc; border-left: 4px solid #adc4e0; padding: 7px 12px; font-size: 8pt; color: #444; line-height: 1.55; margin-bottom: 10px; border-radius: 0 3px 3px 0; }
+.instrucciones b { color: #1a3c6e; }
+
+@media print {
+  body { background: #fff; }
+  .pagina { margin: 0; box-shadow: none; }
+  @page { size: portrait; margin: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     PÁGINA 1 — COP: ACTA DE ENTREGA (contenido)
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado">
+    <div class="encabezado-centro">
+      <div class="inst">Dirección General de Protección y Seguridad Vial — ProVial</div>
+      <h1>SIPROVIAL</h1>
+      <div class="subtitulo">Acta de Entrega de Versión de Prueba Funcional</div>
+    </div>
+    <div class="encabezado-cod">
+      <b>Código:</b> ACTA-COP-001<br>
+      <b>Versión:</b> 1.0<br>
+      <b>Fecha:</b> 11/04/2026<br>
+      <b>Páginas:</b> 1 de 2
+    </div>
+  </div>
+
+  <div class="titulo-acta">Centro de Operaciones (COP)</div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">I. Datos generales</div>
+    <div class="datos-grid">
+      <div class="dato"><label>Nombre del proyecto</label><span>Sistema Integral de PROVIAL (SIPROVIAL)</span></div>
+      <div class="dato"><label>Versión entregada</label><span>v1.0 — Prueba Funcional</span></div>
+      <div class="dato"><label>Área evaluadora</label><span>Centro de Operaciones (COP)</span></div>
+      <div class="dato"><label>Fecha de entrega</label><span>11 de abril de 2026</span></div>
+      <div class="dato"><label>Nombre de quien recibe</label><span>&nbsp;</span></div>
+      <div class="dato"><label>Cargo</label><span>&nbsp;</span></div>
+    </div>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">II. Antecedentes y justificación metodológica</div>
+    <p class="parrafo">Debido a que en las primeras etapas del proyecto se identificó información parcial, dispersa y en algunos casos contradictoria entre las distintas dependencias, se optó por una estrategia iterativa de validación mediante prototipos funcionales. Esta estrategia permitió que los usuarios visualizaran de forma concreta los módulos propuestos, identificaran omisiones, errores y mejoras, y posteriormente definieran con mayor precisión sus requerimientos operativos.</p>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">III. Objetivo de la prueba</div>
+    <p class="parrafo">Validar el flujo operativo del módulo COP con personal de turno, verificando el registro en tiempo real de situaciones, actividades y salidas de unidades, identificando omisiones funcionales y errores de proceso previo a la definición formal de requerimientos.</p>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">IV. Funcionalidades incluidas en esta versión</div>
+    <ul class="funcionalidades">
+      <li>Registro de turno y apertura de bitácora</li>
+      <li>Registro de situaciones (hecho de tránsito, asistencia, emergencia)</li>
+      <li>Asignación de unidades a situaciones</li>
+      <li>Cierre de situaciones y registro de resolución</li>
+      <li>Mapa en tiempo real con posición de unidades y situaciones activas</li>
+      <li>Bitácora de turno (línea de tiempo de eventos)</li>
+      <li>Registro de actividades operativas (operativo, apoyo, administrativo)</li>
+      <li>Estado actual de unidades en pantalla de supervisión</li>
+      <li>Generación y consulta de reportes de turno</li>
+      <li>Cierre de turno y generación de resumen</li>
+    </ul>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">V. Condiciones de la entrega</div>
+    <div class="condiciones"><ol>
+      <li>El módulo se entrega en versión de prueba funcional, no como versión de producción definitiva.</li>
+      <li>El área evaluadora deberá documentar observaciones, errores y solicitudes de cambio en el Formato de Validación adjunto.</li>
+      <li>Los resultados de esta evaluación servirán como insumo para la toma formal de requerimientos v2.0.</li>
+      <li>La presente acta no implica aprobación ni cierre del módulo.</li>
+    </ol></div>
+  </div>
+
+  <div class="pie">
+    <span>ACTA-COP-001 — SIPROVIAL v1.0</span>
+    <span>Página 1 de 12</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     PÁGINA 3 — COP: FIRMAS
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado">
+    <div class="encabezado-centro">
+      <div class="inst">Dirección General de Protección y Seguridad Vial — ProVial</div>
+      <h1>SIPROVIAL</h1>
+      <div class="subtitulo">Acta de Entrega de Versión de Prueba Funcional</div>
+    </div>
+    <div class="encabezado-cod">
+      <b>Código:</b> ACTA-COP-001<br>
+      <b>Versión:</b> 1.0<br>
+      <b>Fecha:</b> 11/04/2026<br>
+      <b>Páginas:</b> 2 de 2
+    </div>
+  </div>
+
+  <div class="titulo-acta">Centro de Operaciones (COP)</div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">VI. Firmas</div>
+    <div class="firmas">
+      <div class="firma-bloque">
+        <div class="firma-linea"></div>
+        <div class="firma-nombre">Yair Alexander Morales Mejia</div>
+        <div class="firma-cargo">Tesista / Desarrollador SIPROVIAL</div>
+        <div class="firma-dept">Universidad Mariano Gálvez de Guatemala · Carnet 1890-22-5710</div>
+      </div>
+      <div class="firma-bloque">
+        <div class="firma-linea"></div>
+        <div class="firma-nombre">&nbsp;</div>
+        <div class="firma-cargo">Nombre y cargo quien recibe</div>
+        <div class="firma-dept">Centro de Operaciones (COP)</div>
+      </div>
+    </div>
+    <div class="visto-bueno">
+      <div class="vb-titulo">Supervisado por:</div>
+      <div class="vb-firmas">
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Richard David Ortiz Sasvin</div>
+          <div class="firma-cargo">Asesor de Tesis</div>
+          <div class="firma-dept">Universidad Mariano Gálvez de Guatemala</div>
+        </div>
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Mario ___________________</div>
+          <div class="firma-cargo">Encargado del Depto. de Informática</div>
+          <div class="firma-dept">Dirección General de Protección y Seguridad Vial — ProVial</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pie">
+    <span>ACTA-COP-001 — SIPROVIAL v1.0</span>
+    <span>Página 2 de 12</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     PÁGINA 4 — COP: FORMATO DE VALIDACIÓN
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado">
+    <div class="encabezado-centro">
+      <div class="inst">Dirección General de Protección y Seguridad Vial — ProVial</div>
+      <h1>SIPROVIAL</h1>
+      <div class="subtitulo">Formato de Validación de Requerimientos</div>
+    </div>
+    <div class="encabezado-cod">
+      <b>Código:</b> FVR-PRV-001<br>
+      <b>Versión:</b> 1.0<br>
+      <b>Fecha:</b> Abril 2026
+    </div>
+  </div>
+
+  <div class="titulo-fvr">Área 1 — Centro de Operaciones (COP)</div>
+
+  <div class="doc-meta">
+    <div class="doc-meta-item"><label>Responsable de área</label><span style="color:#bbb;font-style:italic;">_________________________</span></div>
+    <div class="doc-meta-item"><label>Cargo</label><span style="color:#bbb;font-style:italic;">_________________________</span></div>
+    <div class="doc-meta-item"><label>Fecha de validación</label><span style="color:#bbb;font-style:italic;">_____/_____/_______</span></div>
+  </div>
+
+  <div class="leyenda">
+    <span>Estados:</span>
+    <span class="badge badge-ok">Conforme</span>
+    <span class="badge badge-obs">Con observación</span>
+    <span class="badge badge-pend">Pendiente</span>
+    <span class="badge badge-rechaz">No conforme</span>
+  </div>
+
+  <div class="tabla-wrap">
+    <table>
+      <thead><tr>
+        <th style="width:24px;">No.</th>
+        <th style="width:138px;">Funcionalidad evaluada</th>
+        <th style="width:62px;">Estado actual</th>
+        <th style="width:98px;">Observación detectada</th>
+        <th style="width:98px;">Cambio solicitado</th>
+        <th style="width:98px;">Justificación del cambio</th>
+        <th style="width:70px;">Aprobado por</th>
+      </tr></thead>
+      <tbody>
+        <tr><td class="no">1</td><td class="func">Registro de turno y apertura de bitácora</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">2</td><td class="func">Registro de situaciones (hecho de tránsito, asistencia, emergencia)</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">3</td><td class="func">Asignación de unidades a situaciones</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">4</td><td class="func">Cierre de situaciones y registro de resolución</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">5</td><td class="func">Mapa en tiempo real con posición de unidades y situaciones activas</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">6</td><td class="func">Bitácora de turno (línea de tiempo de eventos)</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">7</td><td class="func">Registro de actividades operativas (operativo, apoyo, administrativo)</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">8</td><td class="func">Estado actual de unidades en pantalla de supervisión</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">9</td><td class="func">Generación y consulta de reportes de turno</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">10</td><td class="func">Cierre de turno y generación de resumen</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="seccion-adicional">
+    <div class="seccion-titulo">Funcionalidades no contempladas — Solicitudes del área</div>
+    <p class="nota-inst">Si existe alguna funcionalidad fundamental que no aparece arriba, descríbala. El equipo de desarrollo evaluará viabilidad e impacto.</p>
+    <table><thead><tr>
+      <th style="width:24px;">No.</th><th>Funcionalidad solicitada</th>
+      <th style="width:140px;">Justificación operativa</th>
+      <th style="width:70px;">¿Datos de otra área?</th>
+      <th style="width:90px;">Área / fuente</th>
+    </tr></thead><tbody>
+      <tr><td class="no">a</td><td></td><td></td><td class="est"></td><td></td></tr>
+      <tr><td class="no">b</td><td></td><td></td><td class="est"></td><td></td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="datos-sensibles">
+    <div class="seccion-titulo">Declaración de acceso a información sensible o interdepartamental</div>
+    <p class="nota-inst">Si alguna funcionalidad requiere información de uso restringido o de otra área, declararla aquí. El desarrollador usará dicha información solo bajo autorización formal.</p>
+    <table><thead><tr>
+      <th>Funcionalidad o dato requerido</th>
+      <th style="width:120px;">Área propietaria</th>
+      <th style="width:120px;">Tipo de información</th>
+      <th style="width:110px;">Autorización requerida de</th>
+    </tr></thead><tbody>
+      <tr><td></td><td></td><td></td><td></td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="firma-modulo">
+    <div class="firma-modulo-bloque">
+      <div class="firma-modulo-linea"></div>
+      <div class="firma-modulo-cargo">Responsable del área</div>
+      <div class="firma-modulo-dept">Centro de Operaciones (COP)</div>
+    </div>
+  </div>
+
+  <div class="pie">
+    <span>FVR-PRV-001 v1.0 — Área 1: COP</span>
+    <span>SIPROVIAL</span>
+    <span>Página 3 de 12</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     PÁGINA 5 — TRANSPORTES: ACTA (contenido)
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado">
+    <div class="encabezado-centro">
+      <div class="inst">Dirección General de Protección y Seguridad Vial — ProVial</div>
+      <h1>SIPROVIAL</h1>
+      <div class="subtitulo">Acta de Entrega de Versión de Prueba Funcional</div>
+    </div>
+    <div class="encabezado-cod">
+      <b>Código:</b> ACTA-TRP-001<br>
+      <b>Versión:</b> 1.0<br>
+      <b>Fecha:</b> 11/04/2026<br>
+      <b>Páginas:</b> 1 de 2
+    </div>
+  </div>
+
+  <div class="titulo-acta">Transportes</div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">I. Datos generales</div>
+    <div class="datos-grid">
+      <div class="dato"><label>Nombre del proyecto</label><span>Sistema Integral de PROVIAL (SIPROVIAL)</span></div>
+      <div class="dato"><label>Versión entregada</label><span>v1.0 — Prueba Funcional</span></div>
+      <div class="dato"><label>Área evaluadora</label><span>Transportes</span></div>
+      <div class="dato"><label>Fecha de entrega</label><span>11 de abril de 2026</span></div>
+      <div class="dato"><label>Nombre de quien recibe</label><span>&nbsp;</span></div>
+      <div class="dato"><label>Cargo</label><span>&nbsp;</span></div>
+    </div>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">II. Antecedentes y justificación metodológica</div>
+    <p class="parrafo">Debido a que en las primeras etapas del proyecto se identificó información parcial, dispersa y en algunos casos contradictoria entre las distintas dependencias, se optó por una estrategia iterativa de validación mediante prototipos funcionales. Esta estrategia permitió que los usuarios visualizaran de forma concreta los módulos propuestos, identificaran omisiones, errores y mejoras, y posteriormente definieran con mayor precisión sus requerimientos operativos.</p>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">III. Objetivo de la prueba</div>
+    <p class="parrafo">Validar el módulo de gestión de flota vehicular con el personal de Transportes, verificando el control de salidas, retornos, kilometraje y disponibilidad de unidades, identificando omisiones y ajustes necesarios previo a la definición formal de requerimientos.</p>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">IV. Funcionalidades incluidas en esta versión</div>
+    <ul class="funcionalidades">
+      <li>Listado y consulta de flota vehicular</li>
+      <li>Registro de salidas y retornos de unidades</li>
+      <li>Control de kilometraje y combustible por salida</li>
+      <li>Visualización de disponibilidad de unidades por sede</li>
+      <li>Reporte de uso de flota por período</li>
+      <li>Gestión de tripulación (asignación de brigada a unidad)</li>
+      <li>Estado de unidades en tiempo real (mapa/lista)</li>
+      <li>Exportación de bitácora y registros en formato imprimible</li>
+    </ul>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">V. Condiciones de la entrega</div>
+    <div class="condiciones"><ol>
+      <li>El módulo se entrega en versión de prueba funcional, no como versión de producción definitiva.</li>
+      <li>El área evaluadora deberá documentar observaciones, errores y solicitudes de cambio en el Formato de Validación adjunto.</li>
+      <li>Los resultados de esta evaluación servirán como insumo para la toma formal de requerimientos v2.0.</li>
+      <li>La presente acta no implica aprobación ni cierre del módulo.</li>
+    </ol></div>
+  </div>
+
+  <div class="pie">
+    <span>ACTA-TRP-001 — SIPROVIAL v1.0</span>
+    <span>Página 4 de 12</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     PÁGINA 6 — TRANSPORTES: FIRMAS
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado">
+    <div class="encabezado-centro">
+      <div class="inst">Dirección General de Protección y Seguridad Vial — ProVial</div>
+      <h1>SIPROVIAL</h1>
+      <div class="subtitulo">Acta de Entrega de Versión de Prueba Funcional</div>
+    </div>
+    <div class="encabezado-cod">
+      <b>Código:</b> ACTA-TRP-001<br>
+      <b>Versión:</b> 1.0<br>
+      <b>Fecha:</b> 11/04/2026<br>
+      <b>Páginas:</b> 2 de 2
+    </div>
+  </div>
+
+  <div class="titulo-acta">Transportes</div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">VI. Firmas</div>
+    <div class="firmas">
+      <div class="firma-bloque">
+        <div class="firma-linea"></div>
+        <div class="firma-nombre">Yair Alexander Morales Mejia</div>
+        <div class="firma-cargo">Tesista / Desarrollador SIPROVIAL</div>
+        <div class="firma-dept">Universidad Mariano Gálvez de Guatemala · Carnet 1890-22-5710</div>
+      </div>
+      <div class="firma-bloque">
+        <div class="firma-linea"></div>
+        <div class="firma-nombre">&nbsp;</div>
+        <div class="firma-cargo">Nombre y cargo quien recibe</div>
+        <div class="firma-dept">Transportes</div>
+      </div>
+    </div>
+    <div class="visto-bueno">
+      <div class="vb-titulo">Supervisado por:</div>
+      <div class="vb-firmas">
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Richard David Ortiz Sasvin</div>
+          <div class="firma-cargo">Asesor de Tesis</div>
+          <div class="firma-dept">Universidad Mariano Gálvez de Guatemala</div>
+        </div>
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Mario ___________________</div>
+          <div class="firma-cargo">Encargado del Depto. de Informática</div>
+          <div class="firma-dept">Dirección General de Protección y Seguridad Vial — ProVial</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pie">
+    <span>ACTA-TRP-001 — SIPROVIAL v1.0</span>
+    <span>Página 5 de 12</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     PÁGINA 7 — TRANSPORTES: FORMATO DE VALIDACIÓN
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado">
+    <div class="encabezado-centro">
+      <div class="inst">Dirección General de Protección y Seguridad Vial — ProVial</div>
+      <h1>SIPROVIAL</h1>
+      <div class="subtitulo">Formato de Validación de Requerimientos</div>
+    </div>
+    <div class="encabezado-cod">
+      <b>Código:</b> FVR-PRV-001<br>
+      <b>Versión:</b> 1.0<br>
+      <b>Fecha:</b> Abril 2026
+    </div>
+  </div>
+
+  <div class="titulo-fvr">Área 2 — Transportes</div>
+
+  <div class="doc-meta">
+    <div class="doc-meta-item"><label>Responsable de área</label><span style="color:#bbb;font-style:italic;">_________________________</span></div>
+    <div class="doc-meta-item"><label>Cargo</label><span style="color:#bbb;font-style:italic;">_________________________</span></div>
+    <div class="doc-meta-item"><label>Fecha de validación</label><span style="color:#bbb;font-style:italic;">_____/_____/_______</span></div>
+  </div>
+
+  <div class="leyenda">
+    <span>Estados:</span>
+    <span class="badge badge-ok">Conforme</span>
+    <span class="badge badge-obs">Con observación</span>
+    <span class="badge badge-pend">Pendiente</span>
+    <span class="badge badge-rechaz">No conforme</span>
+  </div>
+
+  <div class="tabla-wrap">
+    <table>
+      <thead><tr>
+        <th style="width:24px;">No.</th>
+        <th style="width:138px;">Funcionalidad evaluada</th>
+        <th style="width:62px;">Estado actual</th>
+        <th style="width:98px;">Observación detectada</th>
+        <th style="width:98px;">Cambio solicitado</th>
+        <th style="width:98px;">Justificación del cambio</th>
+        <th style="width:70px;">Aprobado por</th>
+      </tr></thead>
+      <tbody>
+        <tr><td class="no">1</td><td class="func">Listado y consulta de flota vehicular</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">2</td><td class="func">Registro de salidas y retornos de unidades</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">3</td><td class="func">Control de kilometraje y combustible por salida</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">4</td><td class="func">Visualización de disponibilidad de unidades por sede</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">5</td><td class="func">Reporte de uso de flota por período</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">6</td><td class="func">Gestión de tripulación (asignación de brigada a unidad)</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">7</td><td class="func">Estado de unidades en tiempo real (mapa/lista)</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">8</td><td class="func">Exportación de bitácora y registros en formato imprimible</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="seccion-adicional">
+    <div class="seccion-titulo">Funcionalidades no contempladas — Solicitudes del área</div>
+    <p class="nota-inst">Si existe alguna funcionalidad fundamental que no aparece arriba, descríbala.</p>
+    <table><thead><tr>
+      <th style="width:24px;">No.</th><th>Funcionalidad solicitada</th>
+      <th style="width:140px;">Justificación operativa</th>
+      <th style="width:70px;">¿Datos de otra área?</th>
+      <th style="width:90px;">Área / fuente</th>
+    </tr></thead><tbody>
+      <tr><td class="no">a</td><td></td><td></td><td class="est"></td><td></td></tr>
+      <tr><td class="no">b</td><td></td><td></td><td class="est"></td><td></td></tr>
+      <tr><td class="no">c</td><td></td><td></td><td class="est"></td><td></td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="datos-sensibles">
+    <div class="seccion-titulo">Declaración de acceso a información sensible o interdepartamental</div>
+    <p class="nota-inst">Si alguna funcionalidad requiere información de uso restringido o de otra área, declararla aquí. El desarrollador usará dicha información solo bajo autorización formal.</p>
+    <table><thead><tr>
+      <th>Funcionalidad o dato requerido</th>
+      <th style="width:120px;">Área propietaria</th>
+      <th style="width:120px;">Tipo de información</th>
+      <th style="width:110px;">Autorización requerida de</th>
+    </tr></thead><tbody>
+      <tr><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="firma-modulo">
+    <div class="firma-modulo-bloque">
+      <div class="firma-modulo-linea"></div>
+      <div class="firma-modulo-cargo">Responsable del área</div>
+      <div class="firma-modulo-dept">Transportes</div>
+    </div>
+  </div>
+
+  <div class="pie">
+    <span>FVR-PRV-001 v1.0 — Área 2: Transportes</span>
+    <span>SIPROVIAL</span>
+    <span>Página 6 de 12</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     PÁGINA 8 — OPERACIONES: ACTA (contenido)
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado">
+    <div class="encabezado-centro">
+      <div class="inst">Dirección General de Protección y Seguridad Vial — ProVial</div>
+      <h1>SIPROVIAL</h1>
+      <div class="subtitulo">Acta de Entrega de Versión de Prueba Funcional</div>
+    </div>
+    <div class="encabezado-cod">
+      <b>Código:</b> ACTA-OPS-001<br>
+      <b>Versión:</b> 1.0<br>
+      <b>Fecha:</b> 11/04/2026<br>
+      <b>Páginas:</b> 1 de 2
+    </div>
+  </div>
+
+  <div class="titulo-acta">Operaciones — Sistema Web y Aplicación Móvil</div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">I. Datos generales</div>
+    <div class="datos-grid">
+      <div class="dato"><label>Nombre del proyecto</label><span>Sistema Integral de PROVIAL (SIPROVIAL)</span></div>
+      <div class="dato"><label>Versión entregada</label><span>v1.0 — Prueba Funcional</span></div>
+      <div class="dato"><label>Área evaluadora</label><span>Operaciones (incluye brigadas de campo)</span></div>
+      <div class="dato"><label>Fecha de entrega</label><span>11 de abril de 2026</span></div>
+      <div class="dato"><label>Nombre de quien recibe</label><span>&nbsp;</span></div>
+      <div class="dato"><label>Cargo</label><span>&nbsp;</span></div>
+    </div>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">II. Antecedentes y justificación metodológica</div>
+    <p class="parrafo">Debido a que en las primeras etapas del proyecto se identificó información parcial, dispersa y en algunos casos contradictoria entre las distintas dependencias, se optó por una estrategia iterativa de validación mediante prototipos funcionales. Esta estrategia permitió que los usuarios visualizaran de forma concreta los módulos propuestos, identificaran omisiones, errores y mejoras, y posteriormente definieran con mayor precisión sus requerimientos operativos.</p>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">III. Objetivo de la prueba</div>
+    <p class="parrafo">Validar el módulo de supervisión estadística con personal de jefatura y la aplicación móvil de campo con brigadas operativas, verificando el registro de situaciones desde campo, la supervisión en escritorio y la coherencia entre ambas interfaces, identificando omisiones y ajustes necesarios previo a la definición formal de requerimientos.</p>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">IV. Funcionalidades incluidas en esta versión</div>
+    <div class="func-cols">
+      <div>
+        <div class="func-subtitulo">Sistema Web — Supervisión</div>
+        <ul class="funcionalidades">
+          <li>Panel estadístico por tipo de situación</li>
+          <li>Gráficos por ruta, hora, día y clima</li>
+          <li>Indicadores KPI: totales, promedio, tiempo de atención</li>
+          <li>Filtrado por período, sede y tipo de evento</li>
+          <li>Listado de situaciones con detalle expandible</li>
+          <li>Visualización de heridos, fallecidos y daños</li>
+          <li>Top de causas y subtipo de incidentes</li>
+          <li>Exportación de reportes estadísticos</li>
+        </ul>
+      </div>
+      <div>
+        <div class="func-subtitulo">App Móvil — Brigada de Campo</div>
+        <ul class="funcionalidades">
+          <li>Inicio de sesión con chapa y contraseña</li>
+          <li>Inicio de turno y asignación a unidad</li>
+          <li>Registro de situaciones desde campo</li>
+          <li>Captura y carga de fotos/videos</li>
+          <li>Envío de posición GPS con la situación</li>
+          <li>Formularios diferenciados por tipo de situación</li>
+          <li>Registro de actividades operativas</li>
+          <li>Funcionamiento offline básico</li>
+          <li>Notificaciones de asignación desde COP</li>
+          <li>Cierre de turno y envío de resumen</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">V. Condiciones de la entrega</div>
+    <div class="condiciones"><ol>
+      <li>El módulo se entrega en versión de prueba funcional, no como versión de producción definitiva.</li>
+      <li>El área evaluadora deberá documentar observaciones, errores y solicitudes de cambio en el Formato de Validación adjunto.</li>
+      <li>Los resultados de esta evaluación servirán como insumo para la toma formal de requerimientos v2.0.</li>
+      <li>La presente acta no implica aprobación ni cierre del módulo.</li>
+    </ol></div>
+  </div>
+
+  <div class="pie">
+    <span>ACTA-OPS-001 — SIPROVIAL v1.0</span>
+    <span>Página 7 de 12</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     PÁGINA 9 — OPERACIONES: FIRMAS
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado">
+    <div class="encabezado-centro">
+      <div class="inst">Dirección General de Protección y Seguridad Vial — ProVial</div>
+      <h1>SIPROVIAL</h1>
+      <div class="subtitulo">Acta de Entrega de Versión de Prueba Funcional</div>
+    </div>
+    <div class="encabezado-cod">
+      <b>Código:</b> ACTA-OPS-001<br>
+      <b>Versión:</b> 1.0<br>
+      <b>Fecha:</b> 11/04/2026<br>
+      <b>Páginas:</b> 2 de 2
+    </div>
+  </div>
+
+  <div class="titulo-acta">Operaciones — Sistema Web y Aplicación Móvil</div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">VI. Firmas</div>
+    <div class="firmas">
+      <div class="firma-bloque">
+        <div class="firma-linea"></div>
+        <div class="firma-nombre">Yair Alexander Morales Mejia</div>
+        <div class="firma-cargo">Tesista / Desarrollador SIPROVIAL</div>
+        <div class="firma-dept">Universidad Mariano Gálvez de Guatemala · Carnet 1890-22-5710</div>
+      </div>
+      <div class="firma-bloque">
+        <div class="firma-linea"></div>
+        <div class="firma-nombre">&nbsp;</div>
+        <div class="firma-cargo">Nombre y cargo quien recibe</div>
+        <div class="firma-dept">Operaciones</div>
+      </div>
+    </div>
+    <div class="visto-bueno">
+      <div class="vb-titulo">Supervisado por:</div>
+      <div class="vb-firmas">
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Richard David Ortiz Sasvin</div>
+          <div class="firma-cargo">Asesor de Tesis</div>
+          <div class="firma-dept">Universidad Mariano Gálvez de Guatemala</div>
+        </div>
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Mario ___________________</div>
+          <div class="firma-cargo">Encargado del Depto. de Informática</div>
+          <div class="firma-dept">Dirección General de Protección y Seguridad Vial — ProVial</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pie">
+    <span>ACTA-OPS-001 — SIPROVIAL v1.0</span>
+    <span>Página 8 de 12</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     PÁGINA 10 — OPERACIONES: FORMATO DE VALIDACIÓN
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado">
+    <div class="encabezado-centro">
+      <div class="inst">Dirección General de Protección y Seguridad Vial — ProVial</div>
+      <h1>SIPROVIAL</h1>
+      <div class="subtitulo">Formato de Validación de Requerimientos</div>
+    </div>
+    <div class="encabezado-cod">
+      <b>Código:</b> FVR-PRV-001<br>
+      <b>Versión:</b> 1.0<br>
+      <b>Fecha:</b> Abril 2026
+    </div>
+  </div>
+
+  <div class="titulo-fvr">Área 3 — Operaciones (Sistema Web + App Móvil)</div>
+
+  <div class="doc-meta">
+    <div class="doc-meta-item"><label>Responsable de área</label><span style="color:#bbb;font-style:italic;">_________________________</span></div>
+    <div class="doc-meta-item"><label>Cargo</label><span style="color:#bbb;font-style:italic;">_________________________</span></div>
+    <div class="doc-meta-item"><label>Fecha de validación</label><span style="color:#bbb;font-style:italic;">_____/_____/_______</span></div>
+  </div>
+
+  <div class="leyenda">
+    <span>Estados:</span>
+    <span class="badge badge-ok">Conforme</span>
+    <span class="badge badge-obs">Con observación</span>
+    <span class="badge badge-pend">Pendiente</span>
+    <span class="badge badge-rechaz">No conforme</span>
+  </div>
+
+  <div class="subtabla-titulo">Sistema Web — Supervisión (OPS)</div>
+  <div class="tabla-wrap">
+    <table>
+      <thead><tr>
+        <th style="width:24px;">No.</th>
+        <th style="width:138px;">Funcionalidad evaluada</th>
+        <th style="width:62px;">Estado actual</th>
+        <th style="width:98px;">Observación detectada</th>
+        <th style="width:98px;">Cambio solicitado</th>
+        <th style="width:98px;">Justificación del cambio</th>
+        <th style="width:70px;">Aprobado por</th>
+      </tr></thead>
+      <tbody>
+        <tr><td class="no">1</td><td class="func">Panel estadístico por tipo de situación (incidentes, asistencias, emergencias)</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">2</td><td class="func">Gráficos por ruta, hora, día de la semana y clima</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">3</td><td class="func">Indicadores KPI: totales, promedio diario, tiempo de atención</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">4</td><td class="func">Filtrado por período, sede y tipo de evento</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">5</td><td class="func">Listado de situaciones con detalle expandible</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">6</td><td class="func">Visualización de heridos, fallecidos y daños materiales</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">7</td><td class="func">Top de causas y subtipo de incidentes</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">8</td><td class="func">Exportación de reportes estadísticos</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subtabla-titulo">App Móvil — Brigada de Campo (MOV)</div>
+  <div class="tabla-wrap">
+    <table>
+      <thead><tr>
+        <th style="width:24px;">No.</th>
+        <th style="width:138px;">Funcionalidad evaluada</th>
+        <th style="width:62px;">Estado actual</th>
+        <th style="width:98px;">Observación detectada</th>
+        <th style="width:98px;">Cambio solicitado</th>
+        <th style="width:98px;">Justificación del cambio</th>
+        <th style="width:70px;">Aprobado por</th>
+      </tr></thead>
+      <tbody>
+        <tr><td class="no">1</td><td class="func">Inicio de sesión con chapa y contraseña</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">2</td><td class="func">Inicio de turno y asignación a unidad</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">3</td><td class="func">Registro de situaciones desde campo (hecho tránsito, asistencia, emergencia)</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">4</td><td class="func">Captura y carga de fotos/videos desde cámara o galería</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">5</td><td class="func">Envío de posición GPS con la situación</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">6</td><td class="func">Formularios diferenciados por tipo de situación</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">7</td><td class="func">Registro de actividades operativas (operativo, apoyo, etc.)</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">8</td><td class="func">Funcionamiento offline básico (catálogos sincronizados)</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">9</td><td class="func">Notificaciones de asignación de situaciones desde COP</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">10</td><td class="func">Cierre de turno y envío de resumen al sistema</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="seccion-adicional">
+    <div class="seccion-titulo">Funcionalidades no contempladas — Solicitudes del área</div>
+    <p class="nota-inst">Si existe alguna funcionalidad fundamental que no aparece arriba, descríbala.</p>
+    <table><thead><tr>
+      <th style="width:24px;">No.</th><th>Funcionalidad solicitada</th>
+      <th style="width:140px;">Justificación operativa</th>
+      <th style="width:70px;">¿Datos de otra área?</th>
+      <th style="width:90px;">Área / fuente</th>
+    </tr></thead><tbody>
+      <tr><td class="no">a</td><td></td><td></td><td class="est"></td><td></td></tr>
+      <tr><td class="no">b</td><td></td><td></td><td class="est"></td><td></td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="datos-sensibles">
+    <div class="seccion-titulo">Declaración de acceso a información sensible o interdepartamental</div>
+    <p class="nota-inst">Si alguna funcionalidad requiere información de uso restringido o de otra área, declararla aquí. El desarrollador usará dicha información solo bajo autorización formal.</p>
+    <table><thead><tr>
+      <th>Funcionalidad o dato requerido</th>
+      <th style="width:120px;">Área propietaria</th>
+      <th style="width:120px;">Tipo de información</th>
+      <th style="width:110px;">Autorización requerida de</th>
+    </tr></thead><tbody>
+      <tr><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="firma-modulo">
+    <div class="firma-modulo-bloque">
+      <div class="firma-modulo-linea"></div>
+      <div class="firma-modulo-cargo">Responsable del área</div>
+      <div class="firma-modulo-dept">Operaciones</div>
+    </div>
+  </div>
+
+  <div class="pie">
+    <span>FVR-PRV-001 v1.0 — Área 3: Operaciones</span>
+    <span>SIPROVIAL</span>
+    <span>Página 9 de 12</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     PÁGINA 11 — COM SOCIAL: ACTA (contenido)
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado">
+    <div class="encabezado-centro">
+      <div class="inst">Dirección General de Protección y Seguridad Vial — ProVial</div>
+      <h1>SIPROVIAL</h1>
+      <div class="subtitulo">Acta de Entrega de Versión de Prueba Funcional</div>
+    </div>
+    <div class="encabezado-cod">
+      <b>Código:</b> ACTA-COM-001<br>
+      <b>Versión:</b> 1.0<br>
+      <b>Fecha:</b> 11/04/2026<br>
+      <b>Páginas:</b> 1 de 2
+    </div>
+  </div>
+
+  <div class="titulo-acta">Comunicación Social</div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">I. Datos generales</div>
+    <div class="datos-grid">
+      <div class="dato"><label>Nombre del proyecto</label><span>Sistema Integral de PROVIAL (SIPROVIAL)</span></div>
+      <div class="dato"><label>Versión entregada</label><span>v1.0 — Prueba Funcional</span></div>
+      <div class="dato"><label>Área evaluadora</label><span>Comunicación Social</span></div>
+      <div class="dato"><label>Fecha de entrega</label><span>11 de abril de 2026</span></div>
+      <div class="dato"><label>Nombre de quien recibe</label><span>&nbsp;</span></div>
+      <div class="dato"><label>Cargo</label><span>&nbsp;</span></div>
+    </div>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">II. Antecedentes y justificación metodológica</div>
+    <p class="parrafo">Debido a que en las primeras etapas del proyecto se identificó información parcial, dispersa y en algunos casos contradictoria entre las distintas dependencias, se optó por una estrategia iterativa de validación mediante prototipos funcionales. Esta estrategia permitió que los usuarios visualizaran de forma concreta los módulos propuestos, identificaran omisiones, errores y mejoras, y posteriormente definieran con mayor precisión sus requerimientos operativos.</p>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">III. Objetivo de la prueba</div>
+    <p class="parrafo">Validar las herramientas de vocería y difusión con el personal de Comunicación Social, verificando el acceso a información de situaciones activas, la generación automática de comunicados y la distribución por canales institucionales, identificando omisiones y ajustes necesarios previo a la definición formal de requerimientos.</p>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">IV. Funcionalidades incluidas en esta versión</div>
+    <ul class="funcionalidades">
+      <li>Boletín en tiempo real: situaciones activas y estado de unidades</li>
+      <li>Estado actual de carretera (clima, carga, obstrucciones)</li>
+      <li>Galería de infografías (fotos) por situación activa</li>
+      <li>Generación automática de texto de vocería para redes sociales</li>
+      <li>Compartir texto e infografía (Web Share API / portapapeles)</li>
+      <li>Administración de plantillas de comunicado por tipo de situación</li>
+      <li>Panel de estadísticas para vocería (KPIs, gráficos por tipo)</li>
+      <li>Snapshot histórico (consulta de situaciones pasadas para prensa)</li>
+    </ul>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">V. Condiciones de la entrega</div>
+    <div class="condiciones"><ol>
+      <li>El módulo se entrega en versión de prueba funcional, no como versión de producción definitiva.</li>
+      <li>El área evaluadora deberá documentar observaciones, errores y solicitudes de cambio en el Formato de Validación adjunto.</li>
+      <li>Los resultados de esta evaluación servirán como insumo para la toma formal de requerimientos v2.0.</li>
+      <li>La presente acta no implica aprobación ni cierre del módulo.</li>
+    </ol></div>
+  </div>
+
+  <div class="pie">
+    <span>ACTA-COM-001 — SIPROVIAL v1.0</span>
+    <span>Página 10 de 12</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     PÁGINA 12 — COM SOCIAL: FIRMAS
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado">
+    <div class="encabezado-centro">
+      <div class="inst">Dirección General de Protección y Seguridad Vial — ProVial</div>
+      <h1>SIPROVIAL</h1>
+      <div class="subtitulo">Acta de Entrega de Versión de Prueba Funcional</div>
+    </div>
+    <div class="encabezado-cod">
+      <b>Código:</b> ACTA-COM-001<br>
+      <b>Versión:</b> 1.0<br>
+      <b>Fecha:</b> 11/04/2026<br>
+      <b>Páginas:</b> 2 de 2
+    </div>
+  </div>
+
+  <div class="titulo-acta">Comunicación Social</div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">VI. Firmas</div>
+    <div class="firmas">
+      <div class="firma-bloque">
+        <div class="firma-linea"></div>
+        <div class="firma-nombre">Yair Alexander Morales Mejia</div>
+        <div class="firma-cargo">Tesista / Desarrollador SIPROVIAL</div>
+        <div class="firma-dept">Universidad Mariano Gálvez de Guatemala · Carnet 1890-22-5710</div>
+      </div>
+      <div class="firma-bloque">
+        <div class="firma-linea"></div>
+        <div class="firma-nombre">&nbsp;</div>
+        <div class="firma-cargo">Nombre y cargo quien recibe</div>
+        <div class="firma-dept">Comunicación Social</div>
+      </div>
+    </div>
+    <div class="visto-bueno">
+      <div class="vb-titulo">Supervisado por:</div>
+      <div class="vb-firmas">
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Richard David Ortiz Sasvin</div>
+          <div class="firma-cargo">Asesor de Tesis</div>
+          <div class="firma-dept">Universidad Mariano Gálvez de Guatemala</div>
+        </div>
+        <div class="vb-bloque">
+          <div class="firma-linea"></div>
+          <div class="firma-nombre">Ing. Mario ___________________</div>
+          <div class="firma-cargo">Encargado del Depto. de Informática</div>
+          <div class="firma-dept">Dirección General de Protección y Seguridad Vial — ProVial</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pie">
+    <span>ACTA-COM-001 — SIPROVIAL v1.0</span>
+    <span>Página 11 de 12</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     PÁGINA 13 — COM SOCIAL: FORMATO DE VALIDACIÓN
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado">
+    <div class="encabezado-centro">
+      <div class="inst">Dirección General de Protección y Seguridad Vial — ProVial</div>
+      <h1>SIPROVIAL</h1>
+      <div class="subtitulo">Formato de Validación de Requerimientos</div>
+    </div>
+    <div class="encabezado-cod">
+      <b>Código:</b> FVR-PRV-001<br>
+      <b>Versión:</b> 1.0<br>
+      <b>Fecha:</b> Abril 2026
+    </div>
+  </div>
+
+  <div class="titulo-fvr">Área 4 — Comunicación Social</div>
+
+  <div class="doc-meta">
+    <div class="doc-meta-item"><label>Responsable de área</label><span style="color:#bbb;font-style:italic;">_________________________</span></div>
+    <div class="doc-meta-item"><label>Cargo</label><span style="color:#bbb;font-style:italic;">_________________________</span></div>
+    <div class="doc-meta-item"><label>Fecha de validación</label><span style="color:#bbb;font-style:italic;">_____/_____/_______</span></div>
+  </div>
+
+  <div class="leyenda">
+    <span>Estados:</span>
+    <span class="badge badge-ok">Conforme</span>
+    <span class="badge badge-obs">Con observación</span>
+    <span class="badge badge-pend">Pendiente</span>
+    <span class="badge badge-rechaz">No conforme</span>
+  </div>
+
+  <div class="tabla-wrap">
+    <table>
+      <thead><tr>
+        <th style="width:24px;">No.</th>
+        <th style="width:138px;">Funcionalidad evaluada</th>
+        <th style="width:62px;">Estado actual</th>
+        <th style="width:98px;">Observación detectada</th>
+        <th style="width:98px;">Cambio solicitado</th>
+        <th style="width:98px;">Justificación del cambio</th>
+        <th style="width:70px;">Aprobado por</th>
+      </tr></thead>
+      <tbody>
+        <tr><td class="no">1</td><td class="func">Boletín en tiempo real: situaciones activas y estado de unidades</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">2</td><td class="func">Estado actual de carretera (clima, carga, obstrucciones)</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">3</td><td class="func">Galería de infografías (fotos) por situación activa</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">4</td><td class="func">Generación automática de texto de vocería para redes sociales</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">5</td><td class="func">Compartir texto e infografía (Web Share API / portapapeles)</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">6</td><td class="func">Administración de plantillas de comunicado por tipo de situación</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">7</td><td class="func">Panel de estadísticas para vocería (KPIs, gráficos por tipo)</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+        <tr><td class="no">8</td><td class="func">Snapshot histórico (consulta de situaciones pasadas para prensa)</td><td class="est"></td><td class="obs"></td><td class="cambio"></td><td class="just"></td><td class="aprob"></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="seccion-adicional">
+    <div class="seccion-titulo">Funcionalidades no contempladas — Solicitudes del área</div>
+    <p class="nota-inst">Si existe alguna funcionalidad fundamental que no aparece arriba, descríbala.</p>
+    <table><thead><tr>
+      <th style="width:24px;">No.</th><th>Funcionalidad solicitada</th>
+      <th style="width:140px;">Justificación operativa</th>
+      <th style="width:70px;">¿Datos de otra área?</th>
+      <th style="width:90px;">Área / fuente</th>
+    </tr></thead><tbody>
+      <tr><td class="no">a</td><td></td><td></td><td class="est"></td><td></td></tr>
+      <tr><td class="no">b</td><td></td><td></td><td class="est"></td><td></td></tr>
+      <tr><td class="no">c</td><td></td><td></td><td class="est"></td><td></td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="datos-sensibles">
+    <div class="seccion-titulo">Declaración de acceso a información sensible o interdepartamental</div>
+    <p class="nota-inst">Si alguna funcionalidad requiere información de uso restringido o de otra área, declararla aquí. El desarrollador usará dicha información solo bajo autorización formal.</p>
+    <table><thead><tr>
+      <th>Funcionalidad o dato requerido</th>
+      <th style="width:120px;">Área propietaria</th>
+      <th style="width:120px;">Tipo de información</th>
+      <th style="width:110px;">Autorización requerida de</th>
+    </tr></thead><tbody>
+      <tr><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="firma-modulo">
+    <div class="firma-modulo-bloque">
+      <div class="firma-modulo-linea"></div>
+      <div class="firma-modulo-cargo">Responsable del área</div>
+      <div class="firma-modulo-dept">Comunicación Social</div>
+    </div>
+  </div>
+
+  <div class="pie">
+    <span>FVR-PRV-001 v1.0 — Área 4: Comunicación Social</span>
+    <span>SIPROVIAL</span>
+    <span>Página 12 de 12</span>
+  </div>
+</div>
+
+</body>
+</html>
