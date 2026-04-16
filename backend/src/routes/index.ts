@@ -35,7 +35,6 @@ import comunicacionSocialRoutes from './comunicacion/comunicacionSocial.routes';
 import passwordResetRoutes from './admin/passwordReset.routes';
 import rolesRoutes from './admin/roles.routes';
 import cloudinaryRoutes from './common/cloudinary.routes';
-import draftsRoutes from './cop/drafts.routes';
 import actividadRoutes from './cop/actividad.routes';
 import importExcelRoutes from './admin/importExcel.routes';
 import estadisticasRoutes from './accidentologia/estadisticas.routes';
@@ -152,9 +151,6 @@ router.use('/roles', rolesRoutes);
 
 // Cloudinary signed uploads
 router.use('/cloudinary', cloudinaryRoutes);
-
-// Drafts offline-first
-router.use('/drafts', draftsRoutes);
 
 // Actividades operativas (patrullaje, puesto fijo, comida, etc.)
 router.use('/actividades', actividadRoutes);
