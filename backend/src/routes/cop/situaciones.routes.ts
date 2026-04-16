@@ -11,6 +11,7 @@ import {
   updateDetalle,
   deleteDetalle,
   addObservacion,
+  marcarPersistente,
 } from '../../controllers/cop/situacion.controller';
 import {
   listSituaciones,
@@ -110,6 +111,9 @@ router.patch('/:id/cerrar', authenticate, canEditSituacion, cerrarSituacion);
 
 // Cambiar tipo de situación (INCIDENTE <-> ASISTENCIA_VEHICULAR)
 router.patch('/:id/cambiar-tipo', authenticate, canEditSituacion, cambiarTipoSituacion);
+
+// Marcar situación como persistente (evolución a larga duración)
+router.patch('/:id/marcar-persistente', authenticate, authorize('COP', 'OPERACIONES', 'ADMIN'), marcarPersistente);
 
 // Agregar evento al timeline de observaciones (App móvil o COP)
 router.post('/:id/observaciones', authenticate, canEditSituacion, addObservacion);

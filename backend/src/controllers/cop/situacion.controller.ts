@@ -647,3 +647,29 @@ export async function addObservacion(req: Request, res: Response) {
     return res.status(500).json({ error: error.message || 'Error interno al agregar observación' });
   }
 }
+
+// ========================================
+// MARCAR COMO PERSISTENTE
+// ========================================
+
+export async function marcarPersistente(req: Request, res: Response) {
+  try {
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
+    const situacion = await db.oneOrNone(
+      `UPDATE situacion SET persistente = true, updated_at = NOW()
+       WHERE id = $1 RETURNING *`,
+      [id]
+    );
+
+    if (!situacion) return res.status(404).json({ error: 'Situación no encontrada' });
+
+    emitSituacionActualizada(situacion);
+
+    return res.status(200).json({ situacion });
+  } catch (error: any) {
+    console.error('Error marcarPersistente:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}

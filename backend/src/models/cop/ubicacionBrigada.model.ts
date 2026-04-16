@@ -1,4 +1,4 @@
-import { db } from '../config/database';
+import { db } from '../../config/database';
 
 // ========================================
 // INTERFACES
@@ -46,8 +46,8 @@ export interface UbicacionActualBrigada {
   punto_fijo_longitud: number | null;
   punto_fijo_descripcion: string | null;
   situacion_persistente_id: number | null;
-  situacion_persistente_titulo: string | null;
-  situacion_persistente_tipo: string | null;
+  situacion_persistente_titulo: string | null; // descripcion de la situacion (persistente=true)
+  situacion_persistente_tipo: string | null;   // tipo_situacion de la situacion
   inicio_ubicacion: Date;
   motivo: string | null;
 }
@@ -80,6 +80,8 @@ export const UbicacionBrigadaModel = {
           ub.punto_fijo_longitud,
           ub.punto_fijo_descripcion,
           ub.situacion_persistente_id,
+          sp.descripcion as situacion_persistente_titulo,
+          sp.tipo_situacion as situacion_persistente_tipo,
           ub.inicio_ubicacion,
           ub.motivo
         FROM ubicacion_brigada ub
@@ -87,6 +89,7 @@ export const UbicacionBrigadaModel = {
         LEFT JOIN unidad ua ON ub.unidad_actual_id = ua.id
         LEFT JOIN unidad uo ON ub.unidad_origen_id = uo.id
         LEFT JOIN ruta r ON ub.punto_fijo_ruta_id = r.id
+        LEFT JOIN situacion sp ON ub.situacion_persistente_id = sp.id AND sp.persistente = true
         WHERE ub.usuario_id = $1 AND ub.fin_ubicacion IS NULL
         ORDER BY ub.created_at DESC
         LIMIT 1
@@ -109,12 +112,16 @@ export const UbicacionBrigadaModel = {
         ub.punto_fijo_km, ub.punto_fijo_sentido, ub.punto_fijo_ruta_id,
         r.codigo as punto_fijo_ruta_codigo,
         ub.punto_fijo_latitud, ub.punto_fijo_longitud, ub.punto_fijo_descripcion,
-        ub.situacion_persistente_id, ub.inicio_ubicacion, ub.motivo
+        ub.situacion_persistente_id,
+        sp.descripcion as situacion_persistente_titulo,
+        sp.tipo_situacion as situacion_persistente_tipo,
+        ub.inicio_ubicacion, ub.motivo
       FROM ubicacion_brigada ub
       INNER JOIN usuario u ON ub.usuario_id = u.id
       LEFT JOIN unidad ua ON ub.unidad_actual_id = ua.id
       LEFT JOIN unidad uo ON ub.unidad_origen_id = uo.id
       LEFT JOIN ruta r ON ub.punto_fijo_ruta_id = r.id
+      LEFT JOIN situacion sp ON ub.situacion_persistente_id = sp.id AND sp.persistente = true
       WHERE ub.fin_ubicacion IS NULL
       ORDER BY u.nombre_completo
     `;
@@ -133,12 +140,16 @@ export const UbicacionBrigadaModel = {
         ub.punto_fijo_km, ub.punto_fijo_sentido, ub.punto_fijo_ruta_id,
         r.codigo as punto_fijo_ruta_codigo,
         ub.punto_fijo_latitud, ub.punto_fijo_longitud, ub.punto_fijo_descripcion,
-        ub.situacion_persistente_id, ub.inicio_ubicacion, ub.motivo
+        ub.situacion_persistente_id,
+        sp.descripcion as situacion_persistente_titulo,
+        sp.tipo_situacion as situacion_persistente_tipo,
+        ub.inicio_ubicacion, ub.motivo
       FROM ubicacion_brigada ub
       INNER JOIN usuario u ON ub.usuario_id = u.id
       LEFT JOIN unidad ua ON ub.unidad_actual_id = ua.id
       LEFT JOIN unidad uo ON ub.unidad_origen_id = uo.id
       LEFT JOIN ruta r ON ub.punto_fijo_ruta_id = r.id
+      LEFT JOIN situacion sp ON ub.situacion_persistente_id = sp.id AND sp.persistente = true
       WHERE ub.unidad_actual_id = $1 AND ub.fin_ubicacion IS NULL
       ORDER BY u.nombre_completo
     `;

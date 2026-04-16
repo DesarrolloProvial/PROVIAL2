@@ -19,7 +19,6 @@ import solicitudesSalidaRoutes from './cop/solicitudesSalida';
 import testModeRoutes from './admin/testMode.routes';
 import brigadasRoutes from './operaciones/brigadas.routes';
 import unidadesRoutes from './transportes/unidades.routes';
-import eventoRoutes from './cop/evento.routes';
 import multimediaRoutes from './common/multimedia.routes';
 import asignacionAvanzadaRoutes from './operaciones/asignacionAvanzada.routes';
 import ubicacionBrigadaRoutes from './cop/ubicacionBrigada.routes';
@@ -103,9 +102,6 @@ router.use('/brigadas', brigadasRoutes);
 
 // Rutas de gestión de unidades
 router.use('/unidades', unidadesRoutes);
-
-// Rutas de eventos persistentes/situaciones de larga duración
-router.use('/eventos', eventoRoutes);
 
 // Rutas de multimedia (fotos y videos de situaciones)
 router.use('/multimedia', multimediaRoutes);
