@@ -1,48 +1,47 @@
 import { Router } from 'express';
-import authRoutes from './auth.routes';
-import turnoRoutes from './turno.routes';
+import authRoutes from './common/auth.routes';
+import turnoRoutes from './common/turno.routes';
 // import incidenteRoutes from './incidente.routes'; // OBSOLETO: Tabla incidente eliminada en migración 105
-import situacionesRoutes from './situaciones.routes';
-import gruposRoutes from './grupos.routes';
-import movimientosRoutes from './movimientos.routes';
-import auditoriaRoutes from './auditoria.routes';
-import geografiaRoutes from './geografia.routes';
-import salidaRoutes from './salida.routes';
-import ingresoRoutes from './ingreso.routes';
-import sedeRoutes from './sede.routes';
-import reasignacionRoutes from './reasignacion.routes';
-import intelligenceRoutes from './intelligence.routes';
-import operacionesRoutes from './operaciones.routes';
-import generadorTurnosRoutes from './generador-turnos.routes';
-import asignacionesRoutes from './asignaciones';
-import solicitudesSalidaRoutes from './solicitudesSalida';
-import testModeRoutes from './testMode.routes';
-import brigadasRoutes from './brigadas.routes';
-import unidadesRoutes from './unidades.routes';
-import eventoRoutes from './evento.routes';
-import multimediaRoutes from './multimedia.routes';
-import asignacionAvanzadaRoutes from './asignacionAvanzada.routes';
-import ubicacionBrigadaRoutes from './ubicacionBrigada.routes';
+import situacionesRoutes from './cop/situaciones.routes';
+import gruposRoutes from './operaciones/grupos.routes';
+import movimientosRoutes from './operaciones/movimientos.routes';
+import auditoriaRoutes from './admin/auditoria.routes';
+import geografiaRoutes from './common/geografia.routes';
+import salidaRoutes from './cop/salida.routes';
+import ingresoRoutes from './cop/ingreso.routes';
+import sedeRoutes from './common/sede.routes';
+import reasignacionRoutes from './operaciones/reasignacion.routes';
+import intelligenceRoutes from './accidentologia/intelligence.routes';
+import operacionesRoutes from './operaciones/operaciones.routes';
+import generadorTurnosRoutes from './operaciones/generador-turnos.routes';
+import asignacionesRoutes from './operaciones/asignaciones';
+import solicitudesSalidaRoutes from './cop/solicitudesSalida';
+import testModeRoutes from './admin/testMode.routes';
+import brigadasRoutes from './operaciones/brigadas.routes';
+import unidadesRoutes from './transportes/unidades.routes';
+import eventoRoutes from './cop/evento.routes';
+import multimediaRoutes from './common/multimedia.routes';
+import asignacionAvanzadaRoutes from './operaciones/asignacionAvanzada.routes';
+import ubicacionBrigadaRoutes from './cop/ubicacionBrigada.routes';
 // import situacionPersistenteRoutes from './situacionPersistente.routes'; // ELIMINADO: Tabla eliminada en migración 108
-import administracionRoutes from './administracion.routes';
-import inspeccion360Routes from './inspeccion360.routes';
-import notificacionesRoutes from './notificaciones.routes';
-import aprobacionesRoutes from './aprobaciones.routes';
-import reportesRoutes from './reportes.routes';
-import dashboardRoutes from './dashboard.routes';
-import alertasRoutes from './alertas.routes';
-import accidentologiaRoutes from './accidentologia.routes';
-import comunicacionSocialRoutes from './comunicacionSocial.routes';
-import passwordResetRoutes from './passwordReset.routes';
-import rolesRoutes from './roles.routes';
-import cloudinaryRoutes from './cloudinary.routes';
-import draftsRoutes from './drafts.routes';
-import actividadRoutes from './actividad.routes';
-import importExcelRoutes from './importExcel.routes';
-import estadisticasRoutes from './estadisticas.routes';
-import capaMapaRoutes from './capaMapa.routes';
-import dispositivoRoutes from './dispositivo.routes';
-import reparacionesRoutes from './reparaciones.routes';
+import administracionRoutes from './admin/administracion.routes';
+import inspeccion360Routes from './transportes/inspeccion360.routes';
+import notificacionesRoutes from './common/notificaciones.routes';
+import aprobacionesRoutes from './cop/aprobaciones.routes';
+import reportesRoutes from './common/reportes.routes';
+import dashboardRoutes from './admin/dashboard.routes';
+import accidentologiaRoutes from './accidentologia/accidentologia.routes';
+import comunicacionSocialRoutes from './comunicacion/comunicacionSocial.routes';
+import passwordResetRoutes from './admin/passwordReset.routes';
+import rolesRoutes from './admin/roles.routes';
+import cloudinaryRoutes from './common/cloudinary.routes';
+import draftsRoutes from './cop/drafts.routes';
+import actividadRoutes from './cop/actividad.routes';
+import importExcelRoutes from './admin/importExcel.routes';
+import estadisticasRoutes from './accidentologia/estadisticas.routes';
+import capaMapaRoutes from './cop/capaMapa.routes';
+import dispositivoRoutes from './admin/dispositivo.routes';
+import reparacionesRoutes from './transportes/reparaciones.routes';
 
 const router = Router();
 
@@ -138,9 +137,6 @@ router.use('/reportes', reportesRoutes);
 
 // Dashboard ejecutivo
 router.use('/dashboard', dashboardRoutes);
-
-// Sistema de alertas
-router.use('/alertas', alertasRoutes);
 
 // Módulo de Accidentología (hojas de accidente)
 router.use('/accidentologia', accidentologiaRoutes);
