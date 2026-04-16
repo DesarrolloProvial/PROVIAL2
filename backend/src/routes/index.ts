@@ -40,6 +40,7 @@ import estadisticasRoutes from './accidentologia/estadisticas.routes';
 import capaMapaRoutes from './cop/capaMapa.routes';
 import dispositivoRoutes from './admin/dispositivo.routes';
 import reparacionesRoutes from './transportes/reparaciones.routes';
+import situacionesPersistentesRoutes from './cop/situacionPersistente.routes';
 
 const router = Router();
 
@@ -165,5 +166,8 @@ router.use('/admin/dispositivos', dispositivoRoutes);
 
 // Reparaciones de unidades (períodos en taller)
 router.use('/reparaciones', reparacionesRoutes);
+
+// Situaciones persistentes (situaciones de larga duración: derrumbes, obras, accidentes multi-día)
+router.use('/situaciones-persistentes', situacionesPersistentesRoutes);
 
 export default router;
