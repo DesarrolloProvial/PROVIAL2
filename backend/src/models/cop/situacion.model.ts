@@ -1,4 +1,4 @@
-import { db } from '../config/database';
+import { db } from '../../config/database';
 
 // ========================================
 // INTERFACES
@@ -159,7 +159,7 @@ export const SituacionModel = {
   /**
    * Crear nueva situación
    */
-  async create(data: Partial<Situacion>): Promise<Situacion> {
+  async create(data: Partial<Situacion>, conn: any = db): Promise<Situacion> {
     const qInsert = `
       INSERT INTO situacion (
         tipo_situacion, unidad_id, salida_unidad_id, turno_id, asignacion_id,
@@ -292,7 +292,7 @@ export const SituacionModel = {
     };
 
     try {
-      return await db.one(qInsert, params);
+      return await conn.one(qInsert, params);
     } catch (err: any) {
       // Fallback: if new columns from migration 117 don't exist yet, retry without them
       if (err.message?.includes('acuerdo_involucrados') || err.message?.includes('ilesos') ||
@@ -324,7 +324,7 @@ export const SituacionModel = {
             $/grupo/
           ) RETURNING *
         `;
-        return db.one(qFallback, params);
+        return conn.one(qFallback, params);
       }
       throw err;
     }
@@ -333,7 +333,7 @@ export const SituacionModel = {
   /**
    * Actualizar situación por ID
    */
-  async update(id: number, data: Partial<Situacion>): Promise<Situacion> {
+  async update(id: number, data: Partial<Situacion>, conn: any = db): Promise<Situacion> {
     const sets: string[] = [];
     const values: any = { id, actualizado_por: data.actualizado_por };
 
@@ -372,7 +372,7 @@ export const SituacionModel = {
           RETURNING *
       `;
 
-    return db.one(query, values);
+    return conn.one(query, values);
   },
 
   /**
@@ -650,6 +650,93 @@ export const SituacionModel = {
     `;
 
     return db.manyOrNone(query, params);
+  },
+
+  /**
+   * Resumen de todas las unidades en salida con su situación/actividad actual.
+   * Usado por el dashboard de monitoreo COP.
+   */
+  async getResumen(): Promise<any[]> {
+    const rows = await db.manyOrNone(`
+      SELECT
+        u.id as unidad_id,
+        u.codigo as unidad_codigo,
+        u.tipo_unidad,
+        u.sede_id,
+        se.nombre as sede_nombre,
+        sa.situacion_id,
+        sa.tipo_situacion as ultima_situacion,
+        sa.estado as estado_situacion,
+        sa.latitud,
+        sa.longitud,
+        COALESCE(CASE WHEN sa.situacion_id IS NULL AND sa.actividad_id IS NOT NULL THEN a_ref.km ELSE NULL END, sa.km) as km,
+        COALESCE(CASE WHEN sa.situacion_id IS NULL AND sa.actividad_id IS NOT NULL THEN a_ref.sentido ELSE NULL END, sa.sentido) as sentido,
+        sa.ruta_id as sa_ruta_id,
+        sa.ruta_codigo,
+        sa.situacion_created_at,
+        sa.icono,
+        sa.actividad_id,
+        sa.actividad_tipo_nombre,
+        sa.actividad_estado,
+        sa.actividad_created_at,
+        sa.updated_at as sa_updated_at,
+        s_ref.observaciones as situacion_observaciones,
+        s_ref.clima,
+        s_ref.carga_vehicular,
+        s_ref.obstruccion_data,
+        a_ref.observaciones as actividad_observaciones,
+        a_ref.datos as actividad_datos,
+        cts_sit.icono as situacion_icono,
+        cts_sit.color as situacion_color,
+        cts_sit.nombre as situacion_nombre,
+        cts_act.icono as tipo_actividad_icono,
+        cts_act.color as tipo_actividad_color,
+        cts_act.nombre as tipo_actividad_nombre,
+        CASE WHEN sa.situacion_id IS NOT NULL THEN
+          (SELECT sm.url_thumbnail FROM situacion_multimedia sm
+           WHERE sm.situacion_id = sa.situacion_id AND sm.tipo = 'FOTO'
+           ORDER BY sm.infografia_numero, sm.orden LIMIT 1)
+        ELSE NULL END as foto_preview,
+        CASE WHEN sa.situacion_id IS NOT NULL THEN
+          (SELECT COUNT(*)::int FROM situacion_multimedia sm
+           WHERE sm.situacion_id = sa.situacion_id AND sm.tipo = 'FOTO')
+        ELSE 0 END as total_fotos,
+        CASE WHEN sa.situacion_id IS NOT NULL THEN
+          (SELECT json_agg(json_build_object(
+            'id', sm.id, 'url', sm.url_original, 'thumbnail', sm.url_thumbnail,
+            'orden', sm.orden, 'infografia_numero', sm.infografia_numero,
+            'infografia_titulo', sm.infografia_titulo
+          ) ORDER BY sm.infografia_numero, sm.orden)
+           FROM situacion_multimedia sm
+           WHERE sm.situacion_id = sa.situacion_id AND sm.tipo = 'FOTO')
+        ELSE NULL END as fotos
+      FROM unidad u
+      INNER JOIN salida_unidad su ON u.id = su.unidad_id AND su.estado = 'EN_SALIDA'
+      LEFT JOIN sede se ON u.sede_id = se.id
+      LEFT JOIN situacion_actual sa ON u.id = sa.unidad_id
+      LEFT JOIN situacion s_ref ON sa.situacion_id = s_ref.id
+      LEFT JOIN catalogo_tipo_situacion cts_sit ON s_ref.tipo_situacion_id = cts_sit.id
+      LEFT JOIN actividad a_ref ON sa.actividad_id = a_ref.id
+      LEFT JOIN catalogo_tipo_situacion cts_act ON a_ref.tipo_actividad_id = cts_act.id
+      WHERE u.activa = true
+      ORDER BY u.codigo
+    `);
+
+    return rows.map((r: any) => {
+      const esSituacion = !!r.situacion_id;
+      const esActividad = !esSituacion && !!r.actividad_id;
+      return {
+        ...r,
+        situacion_icono:  esSituacion ? r.situacion_icono  : (r.tipo_actividad_icono  || r.icono || null),
+        situacion_color:  esSituacion ? r.situacion_color  : (r.tipo_actividad_color  || null),
+        situacion_nombre: esSituacion ? r.situacion_nombre : (r.tipo_actividad_nombre || r.actividad_tipo_nombre || null),
+        ultima_situacion: esSituacion ? r.ultima_situacion : (r.tipo_actividad_nombre || r.actividad_tipo_nombre || null),
+        observaciones:    esSituacion ? r.situacion_observaciones : (esActividad ? r.actividad_observaciones : null),
+        estado_situacion: esSituacion ? r.estado_situacion : (esActividad ? r.actividad_estado : null),
+        tipo_registro:    esSituacion ? 'SITUACION' : (esActividad ? 'ACTIVIDAD' : null),
+        created_at:       esSituacion ? r.situacion_created_at : (esActividad ? r.actividad_created_at : null),
+      };
+    });
   },
 
   async cerrar(id: number, actualizado_por: number, obs?: string): Promise<Situacion> {

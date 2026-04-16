@@ -2,34 +2,36 @@ import { Router } from 'express';
 import {
   createSituacion,
   getSituacion,
-  listSituaciones,
-  listSituacionesActivas,
-  getTiposSituacion,
-  getMiUnidadHoy,
-  getBitacoraUnidad,
-  getMapaSituaciones,
   updateSituacion,
   cerrarSituacion,
   deleteSituacion,
+  cambiarTipoSituacion,
   createDetalle,
   getDetalles,
   updateDetalle,
   deleteDetalle,
+  addObservacion,
+} from '../../controllers/cop/situacion.controller';
+import {
+  listSituaciones,
+  listSituacionesActivas,
+  getMiUnidadHoy,
+  getBitacoraUnidad,
+  getMapaSituaciones,
   getResumenUnidades,
-  cambiarTipoSituacion,
+  getHeatmapData,
+  getTiposSituacion,
   getCatalogo,
   getCatalogosAuxiliares,
-  getHeatmapData,
-  addObservacion,
-} from '../controllers/situacion.controller';
+} from '../../controllers/cop/situacion.query.controller';
 import {
   registrarConflicto,
   listarConflictos,
   obtenerConflicto,
   resolverConflicto,
   misConflictos
-} from '../controllers/conflictos.controller';
-import { authenticate, authorize, canEditSituacion } from '../middlewares/auth';
+} from '../../controllers/cop/conflictos.controller';
+import { authenticate, authorize, canEditSituacion } from '../../middlewares/auth';
 
 const router = Router();
 

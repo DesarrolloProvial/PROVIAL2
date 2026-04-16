@@ -1,6 +1,6 @@
-import { db } from '../config/database';
-import { VehiculoModel } from './vehiculo.model';
-import { PilotoModel } from './piloto.model';
+import { db } from '../../config/database';
+import { VehiculoModel } from '../common/vehiculo.model';
+import { PilotoModel } from '../common/piloto.model';
 
 // ========================================
 // INTERFACES
@@ -68,11 +68,14 @@ export const SituacionDetalleModel = {
   // ==========================================
 
   /**
-   * Agregar vehiculo a situacion
-   * Upsert vehiculo master por placa -> upsert piloto master por licencia -> crear junction
+   * Agregar vehiculo a situacion.
+   * Upsert vehiculo master por placa -> upsert piloto master por licencia -> crear junction.
+   * @param conn  Conexión activa (db o task de transacción). Los upserts de tablas master
+   *              siempre usan `db` (son idempotentes). Solo el INSERT de la junction y sus
+   *              hijos usan `conn` para participar en la transacción del llamador.
    */
-  async addVehiculo(situacionId: number, data: any): Promise<SituacionVehiculo> {
-    // 1. Resolver tipo_vehiculo_id y marca_id desde nombre si no vienen como ID
+  async addVehiculo(situacionId: number, data: any, conn: any = db): Promise<SituacionVehiculo> {
+    // Resolver tipo_vehiculo_id desde nombre si no viene como ID
     let tipoVehiculoId = data.tipo_vehiculo_id || null;
     if (!tipoVehiculoId && data.tipo_vehiculo) {
       const tv = await db.oneOrNone(
@@ -91,7 +94,7 @@ export const SituacionDetalleModel = {
       if (mv) marcaId = mv.id;
     }
 
-    // 2. Upsert vehiculo en tabla maestra (por placa)
+    // Upsert vehiculo en tabla maestra (por placa) — usa db porque es master idempotente
     const vehiculo = await VehiculoModel.upsert({
       placa: data.placa || '',
       tipo_vehiculo_id: tipoVehiculoId,
@@ -102,7 +105,7 @@ export const SituacionDetalleModel = {
       tipo_carga: data.carga_tipo || data.tipo_carga,
     });
 
-    // 2. Upsert piloto en tabla maestra (por licencia_numero/DPI)
+    // Upsert piloto en tabla maestra (por licencia_numero) — usa db
     let piloto_id: number | null = null;
     const nombrePiloto = data.piloto_nombre || data.nombre_piloto;
     if (data.licencia_numero && nombrePiloto) {
@@ -119,13 +122,12 @@ export const SituacionDetalleModel = {
       piloto_id = piloto.id;
     }
 
-    // 3. Construir datos_piloto snapshot JSON
     const datos_piloto = data.datos_piloto || null;
 
-    // 4. Crear junction situacion_vehiculo (with fallback if new columns don't exist yet)
+    // INSERT junction situacion_vehiculo — usa conn (participa en la transacción del llamador)
     let result: any;
     try {
-      result = await db.one(
+      result = await conn.one(
         `INSERT INTO situacion_vehiculo (
           situacion_id, vehiculo_id, piloto_id,
           estado_piloto, numero_poliza, personas_asistidas,
@@ -158,9 +160,9 @@ export const SituacionDetalleModel = {
         ]
       );
     } catch (insertErr: any) {
-      // Fallback: columns datos_piloto/custodia_estado/custodia_datos may not exist (migration 113 not run)
+      // Fallback: columns datos_piloto/custodia_* may not exist (migration 113 not run)
       if (insertErr.message?.includes('datos_piloto') || insertErr.message?.includes('custodia_')) {
-        result = await db.one(
+        result = await conn.one(
           `INSERT INTO situacion_vehiculo (
             situacion_id, vehiculo_id, piloto_id,
             estado_piloto, numero_poliza, personas_asistidas,
@@ -190,7 +192,7 @@ export const SituacionDetalleModel = {
       }
     }
 
-    // 4. Si hay tarjeta de circulacion, agregarla (unica por vehiculo)
+    // Tarjeta de circulacion (FK a vehiculo master, idempotente)
     if (data.tarjeta_circulacion) {
       try {
         await VehiculoModel.createTarjetaCirculacion({
@@ -201,46 +203,36 @@ export const SituacionDetalleModel = {
           nombre_propietario: data.nombre_propietario || null,
           modelo: data.modelo || data.anio || null,
         });
-      } catch {
-        // Tarjeta ya existe - ignorar
-      }
+      } catch { /* ya existe — ignorar */ }
     }
 
-    // 5. Si es contenedor, agregar detalles
+    // Detalles adicionales del vehiculo master
     if (data.contenedor && data.contenedor_detalle) {
-      await VehiculoModel.createContenedor({
-        vehiculo_id: vehiculo.id,
-        ...data.contenedor_detalle,
-      });
+      await VehiculoModel.createContenedor({ vehiculo_id: vehiculo.id, ...data.contenedor_detalle });
     }
-
-    // 6. Si es bus extraurbano, agregar detalles
     if (data.bus_extraurbano && data.bus_detalle) {
-      await VehiculoModel.createBus({
-        vehiculo_id: vehiculo.id,
-        ...data.bus_detalle,
-      });
+      await VehiculoModel.createBus({ vehiculo_id: vehiculo.id, ...data.bus_detalle });
     }
 
-    // 7. Si vienen gruas, asociarlas al vehiculo
+    // Gruas y ajustadores inline — pasan conn para quedar en la misma transacción
     if (data.gruas && Array.isArray(data.gruas)) {
       for (const g of data.gruas) {
-        await this.addGrua(result.id, g);
+        await this.addGrua(result.id, g, conn);
       }
     }
-
-    // 8. Si vienen ajustadores, asociarlos al vehiculo
     if (data.ajustadores && Array.isArray(data.ajustadores)) {
       for (const a of data.ajustadores) {
-        await this.addAjustador(result.id, a);
+        await this.addAjustador(result.id, a, conn);
       }
     }
 
-    // 9. Si vienen personas (acompanantes/peatones), guardar como JSON en situacion_vehiculo
+    // Personas (acompañantes / peatones)
     if (data.personas && Array.isArray(data.personas) && data.personas.length > 0) {
       try {
-        await db.none(
-          `UPDATE situacion_vehiculo SET datos_piloto = COALESCE(datos_piloto, '{}'::jsonb) || jsonb_build_object('personas', $2::jsonb) WHERE id = $1`,
+        await conn.none(
+          `UPDATE situacion_vehiculo
+           SET datos_piloto = COALESCE(datos_piloto, '{}'::jsonb) || jsonb_build_object('personas', $2::jsonb)
+           WHERE id = $1`,
           [result.id, JSON.stringify(data.personas)]
         );
       } catch (e) {
@@ -248,17 +240,14 @@ export const SituacionDetalleModel = {
       }
     }
 
-    // 10. Si vienen dispositivos de seguridad, crear junction rows
+    // Dispositivos de seguridad
     if (data.dispositivos && Array.isArray(data.dispositivos)) {
-      await this.addDispositivos(result.id, data.dispositivos);
+      await this.addDispositivos(result.id, data.dispositivos, conn);
     }
 
     return result;
   },
 
-  /**
-   * Agregar persona (acompanante/peaton/pasajero) a un vehiculo en situacion
-   */
   async addPersona(situacionId: number, situacionVehiculoId: number, data: any): Promise<any> {
     return db.one(
       `INSERT INTO persona_accidente (
@@ -267,28 +256,23 @@ export const SituacionDetalleModel = {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *`,
       [
-        situacionId,
-        situacionVehiculoId,
-        data.nombre || null,
-        data.dpi || null,
-        data.edad || null,
-        data.genero || null,
-        data.tipo_persona || 'ACOMPANANTE',
-        data.estado || 'ILESO',
-        data.hospital_traslado || null,
-        data.descripcion_lesiones || null,
+        situacionId, situacionVehiculoId,
+        data.nombre || null, data.dpi || null, data.edad || null, data.genero || null,
+        data.tipo_persona || 'ACOMPANANTE', data.estado || 'ILESO',
+        data.hospital_traslado || null, data.descripcion_lesiones || null,
         data.datos_json ? JSON.stringify(data.datos_json) : null,
       ]
     );
   },
 
-  /**
-   * Agregar dispositivos de seguridad a un vehiculo en situacion (bulk)
-   */
-  async addDispositivos(situacionVehiculoId: number, dispositivos: { id: number; estado: string }[]): Promise<void> {
+  async addDispositivos(
+    situacionVehiculoId: number,
+    dispositivos: { id: number; estado: string }[],
+    conn: any = db
+  ): Promise<void> {
     try {
       for (const d of dispositivos) {
-        await db.none(
+        await conn.none(
           `INSERT INTO situacion_vehiculo_dispositivo (situacion_vehiculo_id, dispositivo_seguridad_id, estado)
            VALUES ($1, $2, $3)
            ON CONFLICT (situacion_vehiculo_id, dispositivo_seguridad_id) DO UPDATE SET estado = $3`,
@@ -300,91 +284,42 @@ export const SituacionDetalleModel = {
     }
   },
 
-  /**
-   * Obtener vehiculos de una situacion (JOIN con maestros + gruas + ajustadores + personas + dispositivos)
-   */
   async getVehiculos(situacionId: number): Promise<any[]> {
-    // Query base que solo usa columnas/tablas que siempre existen
-    const queryBase = `
+    return db.manyOrNone(`
       SELECT
-        sv.id,
-        sv.situacion_id,
-        sv.estado_piloto,
-        sv.numero_poliza,
-        sv.personas_asistidas,
-        sv.heridos_en_vehiculo,
-        sv.fallecidos_en_vehiculo,
-        sv.danos_estimados,
-        sv.observaciones,
-        sv.sancion,
-        sv.sancion_detalle,
-        sv.documentos_consignados,
-        sv.custodia_estado,
-        sv.custodia_datos,
-        sv.created_at,
-
-        -- Vehiculo master
-        v.id as vehiculo_id,
-        v.placa,
-        v.tipo_vehiculo_id,
-        v.marca_id,
-        v.color,
-        v.es_extranjero,
-        v.cargado,
-        v.tipo_carga,
+        sv.id, sv.situacion_id, sv.estado_piloto, sv.numero_poliza,
+        sv.personas_asistidas, sv.heridos_en_vehiculo, sv.fallecidos_en_vehiculo,
+        sv.danos_estimados, sv.observaciones, sv.sancion, sv.sancion_detalle,
+        sv.documentos_consignados, sv.custodia_estado, sv.custodia_datos, sv.created_at,
+        v.id as vehiculo_id, v.placa, v.tipo_vehiculo_id, v.marca_id,
+        v.color, v.es_extranjero, v.cargado, v.tipo_carga,
         tv.nombre as tipo_vehiculo_nombre,
         mv.nombre as marca_nombre,
-
-        -- Piloto master
-        p.id as piloto_id,
-        p.nombre as nombre_piloto,
-        p.licencia_numero,
-        p.licencia_tipo,
-        p.licencia_vencimiento,
-        p.licencia_antiguedad,
-        p.fecha_nacimiento as piloto_nacimiento,
-        p.etnia as piloto_etnia,
-        p.sexo as sexo_piloto,
-
-        -- Tarjeta de circulacion
-        tc.numero as tarjeta_circulacion,
-        tc.nit,
-        tc.nombre_propietario,
-        tc.direccion_propietario,
-        tc.modelo,
-
-        -- Gruas asignadas a este vehiculo
+        p.id as piloto_id, p.nombre as nombre_piloto,
+        p.licencia_numero, p.licencia_tipo, p.licencia_vencimiento,
+        p.licencia_antiguedad, p.fecha_nacimiento as piloto_nacimiento,
+        p.etnia as piloto_etnia, p.sexo as sexo_piloto,
+        tc.numero as tarjeta_circulacion, tc.nit, tc.nombre_propietario,
+        tc.direccion_propietario, tc.modelo,
         COALESCE(
           (SELECT json_agg(json_build_object(
-            'id', vg.id,
-            'grua_id', vg.grua_id,
-            'datos', vg.datos,
-            'grua_placa', g.placa,
-            'grua_nombre', g.nombre,
-            'grua_empresa', g.empresa,
-            'grua_tipo', g.tipo_grua
+            'id', vg.id, 'grua_id', vg.grua_id, 'datos', vg.datos,
+            'grua_placa', g.placa, 'grua_nombre', g.nombre,
+            'grua_empresa', g.empresa, 'grua_tipo', g.tipo_grua
           ) ORDER BY vg.created_at)
-          FROM vehiculo_grua vg
-          INNER JOIN grua g ON vg.grua_id = g.id
+          FROM vehiculo_grua vg INNER JOIN grua g ON vg.grua_id = g.id
           WHERE vg.situacion_vehiculo_id = sv.id),
           '[]'
         ) as gruas,
-
-        -- Ajustadores asignados a este vehiculo
         COALESCE(
           (SELECT json_agg(json_build_object(
-            'id', va.id,
-            'aseguradora_id', va.aseguradora_id,
-            'datos', va.datos,
-            'aseguradora_nombre', a.nombre,
-            'aseguradora_empresa', a.empresa
+            'id', va.id, 'aseguradora_id', va.aseguradora_id, 'datos', va.datos,
+            'aseguradora_nombre', a.nombre, 'aseguradora_empresa', a.empresa
           ) ORDER BY va.created_at)
-          FROM vehiculo_aseguradora va
-          LEFT JOIN aseguradora a ON va.aseguradora_id = a.id
+          FROM vehiculo_aseguradora va LEFT JOIN aseguradora a ON va.aseguradora_id = a.id
           WHERE va.situacion_vehiculo_id = sv.id),
           '[]'
         ) as ajustadores
-
       FROM situacion_vehiculo sv
       INNER JOIN vehiculo v ON sv.vehiculo_id = v.id
       LEFT JOIN tipo_vehiculo tv ON v.tipo_vehiculo_id = tv.id
@@ -395,13 +330,10 @@ export const SituacionDetalleModel = {
       ) tc ON true
       WHERE sv.situacion_id = $1
       ORDER BY sv.created_at
-    `;
-
-    return db.manyOrNone(queryBase, [situacionId]);
+    `, [situacionId]);
   },
 
   async deleteVehiculo(id: number): Promise<void> {
-    // CASCADE borra vehiculo_grua y vehiculo_aseguradora automaticamente
     await db.none('DELETE FROM situacion_vehiculo WHERE id = $1', [id]);
   },
 
@@ -409,19 +341,15 @@ export const SituacionDetalleModel = {
   // GRUAS (junction situacion_vehiculo <-> grua master)
   // ==========================================
 
-  /**
-   * Agregar grua a un vehiculo en situacion
-   * Upsert grua master por placa -> crear junction vehiculo_grua
-   */
-  async addGrua(situacionVehiculoId: number, data: any): Promise<VehiculoGrua> {
-    // Upsert grua en tabla maestra (por placa)
+  async addGrua(situacionVehiculoId: number, data: any, conn: any = db): Promise<VehiculoGrua> {
+    // Upsert grua en tabla maestra — usa db (idempotente)
     const grua = await db.one(
       `INSERT INTO grua (nombre, placa, telefono, empresa, tipo_grua, rango_km, tipos_vehiculo)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (placa) DO UPDATE SET
-         nombre = COALESCE(EXCLUDED.nombre, grua.nombre),
-         telefono = COALESCE(EXCLUDED.telefono, grua.telefono),
-         empresa = COALESCE(EXCLUDED.empresa, grua.empresa),
+         nombre    = COALESCE(EXCLUDED.nombre,    grua.nombre),
+         telefono  = COALESCE(EXCLUDED.telefono,  grua.telefono),
+         empresa   = COALESCE(EXCLUDED.empresa,   grua.empresa),
          tipo_grua = COALESCE(EXCLUDED.tipo_grua, grua.tipo_grua),
          updated_at = NOW()
        RETURNING id`,
@@ -436,27 +364,23 @@ export const SituacionDetalleModel = {
       ]
     );
 
-    // Extraer datos per-situacion al JSONB (traslado, costo, etc.)
     const datosSituacion = {
-      traslado: data.traslado || false,
-      traslado_a: data.traslado_a || null,
-      costo_traslado: data.costo_traslado || null,
-      color: data.color || null,
-      marca: data.marca || null,
+      traslado:      data.traslado      || false,
+      traslado_a:    data.traslado_a    || null,
+      costo_traslado:data.costo_traslado|| null,
+      color:         data.color         || null,
+      marca:         data.marca         || null,
       observaciones: data.observaciones || null,
     };
 
-    return db.one(
+    // INSERT junction vehiculo_grua — usa conn
+    return conn.one(
       `INSERT INTO vehiculo_grua (situacion_vehiculo_id, grua_id, datos)
-       VALUES ($1, $2, $3)
-       RETURNING *`,
+       VALUES ($1, $2, $3) RETURNING *`,
       [situacionVehiculoId, grua.id, datosSituacion]
     );
   },
 
-  /**
-   * Obtener todas las gruas de una situacion (a traves de vehiculos)
-   */
   async getGruas(situacionId: number): Promise<any[]> {
     return db.manyOrNone(
       `SELECT vg.*, g.placa, g.nombre, g.empresa, g.tipo_grua, g.telefono,
@@ -464,8 +388,7 @@ export const SituacionDetalleModel = {
        FROM vehiculo_grua vg
        INNER JOIN grua g ON vg.grua_id = g.id
        INNER JOIN situacion_vehiculo sv ON vg.situacion_vehiculo_id = sv.id
-       WHERE sv.situacion_id = $1
-       ORDER BY vg.created_at`,
+       WHERE sv.situacion_id = $1 ORDER BY vg.created_at`,
       [situacionId]
     );
   },
@@ -478,18 +401,13 @@ export const SituacionDetalleModel = {
   // AJUSTADORES (junction situacion_vehiculo <-> aseguradora)
   // ==========================================
 
-  /**
-   * Agregar ajustador a un vehiculo en situacion
-   * Solo empresa es mapeable (FK a aseguradora), resto en JSONB
-   */
-  async addAjustador(situacionVehiculoId: number, data: any): Promise<VehiculoAjustador> {
-    // getOrCreate aseguradora si viene nombre de empresa
+  async addAjustador(situacionVehiculoId: number, data: any, conn: any = db): Promise<VehiculoAjustador> {
+    // Upsert aseguradora en tabla maestra — usa db (idempotente)
     let aseguradora_id = data.aseguradora_id || null;
     if (!aseguradora_id && (data.aseguradora_nombre || data.empresa)) {
       const nombre = data.aseguradora_nombre || data.empresa;
       const aseg = await db.one(
-        `INSERT INTO aseguradora (nombre)
-         VALUES ($1)
+        `INSERT INTO aseguradora (nombre) VALUES ($1)
          ON CONFLICT (nombre) DO UPDATE SET nombre = EXCLUDED.nombre
          RETURNING id`,
         [nombre]
@@ -497,27 +415,23 @@ export const SituacionDetalleModel = {
       aseguradora_id = aseg.id;
     }
 
-    // Todo lo demas va al JSONB
     const datosAjustador = {
-      nombre: data.nombre || null,
-      telefono: data.telefono || null,
+      nombre:         data.nombre         || null,
+      telefono:       data.telefono       || null,
       vehiculo_placa: data.vehiculo_placa || null,
       vehiculo_marca: data.vehiculo_marca || null,
       vehiculo_color: data.vehiculo_color || null,
-      observaciones: data.observaciones || null,
+      observaciones:  data.observaciones  || null,
     };
 
-    return db.one(
+    // INSERT junction vehiculo_aseguradora — usa conn
+    return conn.one(
       `INSERT INTO vehiculo_aseguradora (situacion_vehiculo_id, aseguradora_id, datos)
-       VALUES ($1, $2, $3)
-       RETURNING *`,
+       VALUES ($1, $2, $3) RETURNING *`,
       [situacionVehiculoId, aseguradora_id, datosAjustador]
     );
   },
 
-  /**
-   * Obtener todos los ajustadores de una situacion (a traves de vehiculos)
-   */
   async getAjustadores(situacionId: number): Promise<any[]> {
     return db.manyOrNone(
       `SELECT va.*, a.nombre as aseguradora_nombre, a.empresa as aseguradora_empresa,
@@ -525,8 +439,7 @@ export const SituacionDetalleModel = {
        FROM vehiculo_aseguradora va
        LEFT JOIN aseguradora a ON va.aseguradora_id = a.id
        INNER JOIN situacion_vehiculo sv ON va.situacion_vehiculo_id = sv.id
-       WHERE sv.situacion_id = $1
-       ORDER BY va.created_at`,
+       WHERE sv.situacion_id = $1 ORDER BY va.created_at`,
       [situacionId]
     );
   },
@@ -536,29 +449,16 @@ export const SituacionDetalleModel = {
   },
 
   // ==========================================
-  // AUTORIDADES (per-situacion, multiples)
+  // AUTORIDADES (per-situacion, múltiples)
   // ==========================================
 
-  /**
-   * Agregar autoridad a situacion
-   * Mapeables: tipo, hora_llegada, hora_salida
-   * Resto: datos JSONB
-   */
-  async addAutoridad(situacionId: number, data: any): Promise<Autoridad> {
-    // Separar campos mapeables del resto
+  async addAutoridad(situacionId: number, data: any, conn: any = db): Promise<Autoridad> {
     const { tipo, hora_llegada, hora_salida, ...resto } = data;
-
-    return db.one(
+    // INSERT autoridad — usa conn
+    return conn.one(
       `INSERT INTO autoridad (situacion_id, tipo, hora_llegada, hora_salida, datos)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [
-        situacionId,
-        tipo || data.nombre || 'OTRO',
-        hora_llegada || null,
-        hora_salida || null,
-        resto,
-      ]
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [situacionId, tipo || data.nombre || 'OTRO', hora_llegada || null, hora_salida || null, resto]
     );
   },
 
@@ -584,63 +484,57 @@ export const SituacionDetalleModel = {
       this.getGruas(situacionId),
       this.getAjustadores(situacionId),
     ]);
-
     return { vehiculos, autoridades, gruas, ajustadores };
   },
 
   // ==========================================
-  // ROUTER GENERICO (para rutas /detalles)
+  // ROUTER GENÉRICO (para rutas /detalles)
   // ==========================================
 
-  async createByTipo(situacionId: number, tipoDetalle: string, datos: any): Promise<any> {
+  async createByTipo(situacionId: number, tipoDetalle: string, datos: any, conn: any = db): Promise<any> {
     switch (tipoDetalle) {
       case 'VEHICULO':
-        return this.addVehiculo(situacionId, datos);
+        return this.addVehiculo(situacionId, datos, conn);
       case 'AUTORIDAD':
       case 'AUTORIDADES_SOCORRO':
-        return this.addAutoridad(situacionId, datos);
-      case 'GRUA':
-        // Grua necesita situacion_vehiculo_id, si viene directo con vehiculo_id lo buscamos
+        return this.addAutoridad(situacionId, datos, conn);
+      case 'GRUA': {
         if (datos.situacion_vehiculo_id) {
-          return this.addGrua(datos.situacion_vehiculo_id, datos);
+          return this.addGrua(datos.situacion_vehiculo_id, datos, conn);
         }
-        // Fallback: buscar primer vehiculo de la situacion
-        const sv = await db.oneOrNone(
+        const sv = await conn.oneOrNone(
           'SELECT id FROM situacion_vehiculo WHERE situacion_id = $1 LIMIT 1',
           [situacionId]
         );
-        if (sv) return this.addGrua(sv.id, datos);
+        if (sv) return this.addGrua(sv.id, datos, conn);
         throw new Error('No hay vehiculo asociado para asignar la grua');
+      }
       case 'AJUSTADOR':
-      case 'ASEGURADORA':
+      case 'ASEGURADORA': {
         if (datos.situacion_vehiculo_id) {
-          return this.addAjustador(datos.situacion_vehiculo_id, datos);
+          return this.addAjustador(datos.situacion_vehiculo_id, datos, conn);
         }
-        const svAj = await db.oneOrNone(
+        const svAj = await conn.oneOrNone(
           'SELECT id FROM situacion_vehiculo WHERE situacion_id = $1 LIMIT 1',
           [situacionId]
         );
-        if (svAj) return this.addAjustador(svAj.id, datos);
+        if (svAj) return this.addAjustador(svAj.id, datos, conn);
         throw new Error('No hay vehiculo asociado para asignar el ajustador');
+      }
       default:
-        return this.addAutoridad(situacionId, { ...datos, tipo: tipoDetalle });
+        return this.addAutoridad(situacionId, { ...datos, tipo: tipoDetalle }, conn);
     }
   },
 
   async deleteByTipo(tipoDetalle: string, id: number): Promise<void> {
     switch (tipoDetalle) {
-      case 'VEHICULO':
-        return this.deleteVehiculo(id);
+      case 'VEHICULO':          return this.deleteVehiculo(id);
       case 'AUTORIDAD':
-      case 'AUTORIDADES_SOCORRO':
-        return this.deleteAutoridad(id);
-      case 'GRUA':
-        return this.deleteGrua(id);
+      case 'AUTORIDADES_SOCORRO': return this.deleteAutoridad(id);
+      case 'GRUA':              return this.deleteGrua(id);
       case 'AJUSTADOR':
-      case 'ASEGURADORA':
-        return this.deleteAjustador(id);
-      default:
-        return this.deleteAutoridad(id);
+      case 'ASEGURADORA':       return this.deleteAjustador(id);
+      default:                  return this.deleteAutoridad(id);
     }
   },
 };
