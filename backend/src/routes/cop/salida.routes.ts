@@ -15,7 +15,7 @@ import {
   editarDatosSalida,
   registrarRelevo,
   getRelevos,
-} from '../../controllers/cop/salida.controller';
+} from '../../controllers/common/salida.controller';
 import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
