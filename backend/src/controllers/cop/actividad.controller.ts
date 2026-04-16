@@ -64,7 +64,10 @@ export async function createActividad(req: Request, res: Response) {
     });
 
     if (!ctx.unidad_id) {
-      return res.status(400).json({ error: 'No se pudo determinar la unidad' });
+      return res.status(412).json({
+        error: 'No se pudo determinar el contexto operativo. Verifica que tienes un turno activo o selecciona una unidad manualmente.',
+        code:  'NO_CONTEXTO_OPERATIVO',
+      });
     }
 
     const unidadId = ctx.unidad_id; // narrowed: non-null from here on
