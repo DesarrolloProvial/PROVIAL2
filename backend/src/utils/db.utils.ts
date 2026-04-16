@@ -46,6 +46,30 @@ export function checkCoordenadasGuatemala(lat: number, lon: number): string | nu
   return null;
 }
 
+// Mapa de fracciones del indicador de combustible a decimal (0–1).
+// Se llama "indicador" porque es un estado del manómetro del vehículo,
+// no una medida volumétrica.
+const INDICADOR_MAP: Record<string, number> = {
+  'LLENO': 1.00,
+  '3/4':   0.75,
+  '1/2':   0.50,
+  '1/4':   0.25,
+  'VACIO': 0.00,
+};
+
+/**
+ * Convierte una fracción de indicador ('LLENO', '3/4', '1/2', '1/4', 'VACIO')
+ * o un valor numérico (0–1) al decimal correspondiente.
+ * Retorna null si el valor es nulo/vacío o no reconocido.
+ */
+export function parseIndicador(val: unknown): number | null {
+  if (val === null || val === undefined || val === '') return null;
+  if (typeof val === 'string' && INDICADOR_MAP[val] !== undefined) {
+    return INDICADOR_MAP[val];
+  }
+  return normalizeFloat(val);
+}
+
 /**
  * Construye la entrada JSON para el timeline de observaciones.
  * Comparte la lógica de firma de usuario y normalización horaria

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { SalidaModel } from '../models/salida.model';
-import { db } from '../config/database';
+import { db } from '../../config/database';
+import { normalizeId, parseIndicador } from '../../utils/db.utils';
+import { resolveContextoActivo } from '../../utils/operaciones.utils';
 
 // ========================================
 // REGISTRO DE INGRESOS
@@ -8,69 +9,92 @@ import { db } from '../config/database';
 
 /**
  * POST /api/ingresos/registrar
- * Registrar ingreso a sede (temporal o final)
+ * Registrar ingreso a sede (temporal o final).
+ *
+ * Atomicidad: el INSERT en ingreso_sede y, si es final,
+ * el cierre de jornada (finalizar_jornada_completa) ocurren
+ * dentro del mismo db.tx — si cualquiera falla ambos revierten.
  */
 export async function registrarIngreso(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
-
     const {
       sede_id,
       tipo_ingreso,
       km_ingreso,
       combustible_ingreso,
+      combustible_fraccion,
       observaciones,
-      es_ingreso_final
+      es_ingreso_final,
     } = req.body;
 
-    // Validar campos requeridos
+    const userId = req.user!.userId;
+
     if (!tipo_ingreso || !sede_id) {
       return res.status(400).json({
         error: 'Campos requeridos faltantes',
-        required: ['tipo_ingreso', 'sede_id']
+        required: ['tipo_ingreso', 'sede_id'],
       });
     }
 
-    // Validar tipos de ingreso
-    const tiposValidos = ['COMBUSTIBLE', 'COMISION', 'APOYO', 'ALMUERZO', 'MANTENIMIENTO', 'FINALIZACION', 'FINALIZAR_JORNADA', 'FINALIZACION_JORNADA', 'INGRESO_TEMPORAL'];
+    const tiposValidos = [
+      'COMBUSTIBLE', 'COMISION', 'APOYO', 'ALMUERZO', 'MANTENIMIENTO',
+      'FINALIZACION', 'FINALIZAR_JORNADA', 'FINALIZACION_JORNADA', 'INGRESO_TEMPORAL',
+    ];
     if (!tiposValidos.includes(tipo_ingreso)) {
-      return res.status(400).json({
-        error: 'Tipo de ingreso inválido',
-        tipos_validos: tiposValidos
+      return res.status(400).json({ error: 'Tipo de ingreso inválido', tipos_validos: tiposValidos });
+    }
+
+    // Resolver contexto operativo (salida_id del brigada)
+    const ctx = await resolveContextoActivo(userId);
+    if (!ctx.salida_id) {
+      return res.status(412).json({
+        error: 'No tienes salida activa para registrar un ingreso',
+        code: 'NO_CONTEXTO_OPERATIVO',
       });
     }
 
-    // Determinar si es ingreso final basado SOLO en el flag explícito
-    // FINALIZACION_JORNADA es solo un MOTIVO de ingreso, no finaliza automáticamente
-    // La finalización real ocurre cuando el usuario pulsa "Finalizar Jornada" en Home
+    // Indicador: acepta fracción ('3/4') o decimal (0.75)
+    const indicador = parseIndicador(combustible_fraccion ?? combustible_ingreso);
     const esIngresoFinal = es_ingreso_final === true;
+    const kmVal = normalizeId(km_ingreso); // INTEGER en BD
 
-    // Obtener mi salida activa
-    const miSalida = await SalidaModel.getMiSalidaActiva(req.user.userId);
+    const ingreso = await db.tx(async (conn) => {
+      // INSERT directo — la restricción UNIQUE idx_ingreso_activo_por_salida
+      // garantiza que no existan dos activos; si viola, pg lanzará error 23505.
+      const row = await conn.one(`
+        INSERT INTO ingreso_sede (
+          salida_unidad_id, sede_id, tipo_ingreso,
+          km_ingreso, combustible_ingreso,
+          observaciones_ingreso, es_ingreso_final, registrado_por
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING id
+      `, [
+        ctx.salida_id,
+        normalizeId(sede_id),
+        tipo_ingreso,
+        kmVal,
+        indicador,
+        observaciones || null,
+        esIngresoFinal,
+        userId,
+      ]);
 
-    if (!miSalida) {
-      return res.status(404).json({
-        error: 'No tienes salida activa',
-        message: 'Debes tener una salida activa para registrar un ingreso'
-      });
-    }
+      // Si es ingreso final, llamar a la función que cierra la jornada completa
+      if (esIngresoFinal) {
+        await conn.one(
+          `SELECT finalizar_jornada_completa($1, $2, $3, $4, $5) AS ok`,
+          [ctx.salida_id, kmVal, indicador, observaciones || null, userId],
+        );
+      }
 
-    // Registrar ingreso
-    const ingresoId = await SalidaModel.registrarIngreso({
-      salida_id: miSalida.salida_id,
-      sede_id,
-      tipo_ingreso,
-      km_ingreso,
-      combustible_ingreso,
-      observaciones,
-      es_ingreso_final: esIngresoFinal,
-      registrado_por: req.user.userId
+      // Leer el ingreso recién creado dentro del mismo tx para consistencia
+      return conn.one(`
+        SELECT i.*, s.codigo AS sede_codigo, s.nombre AS sede_nombre
+        FROM ingreso_sede i
+        JOIN sede s ON i.sede_id = s.id
+        WHERE i.id = $1
+      `, [row.id]);
     });
-
-    // Obtener el ingreso creado
-    const ingreso = await SalidaModel.getIngresoById(ingresoId);
 
     return res.status(201).json({
       message: esIngresoFinal
@@ -80,15 +104,16 @@ export async function registrarIngreso(req: Request, res: Response) {
       es_ingreso_final: esIngresoFinal,
       instruccion: esIngresoFinal
         ? 'La salida ha sido finalizada. Unidad y tripulación liberadas.'
-        : 'Para volver a salir, registra una salida de sede.'
+        : 'Para volver a salir, registra una salida de sede.',
     });
   } catch (error: any) {
     console.error('Error en registrarIngreso:', error);
 
-    if (error.message && error.message.includes('ya existe un ingreso activo')) {
+    // Restricción UNIQUE: ya existe un ingreso activo para esta salida
+    if (error.code === '23505' || error.message?.includes('ya existe un ingreso activo')) {
       return res.status(409).json({
         error: 'Ya tienes un ingreso activo',
-        message: 'Debes registrar salida de sede antes de ingresar nuevamente'
+        message: 'Debes registrar salida de sede antes de ingresar nuevamente',
       });
     }
 
@@ -98,64 +123,60 @@ export async function registrarIngreso(req: Request, res: Response) {
 
 /**
  * POST /api/ingresos/:id/salir
- * Registrar salida de sede (volver a la calle)
+ * Registrar salida de sede (volver a la calle).
  */
 export async function registrarSalidaDeSede(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
+    const { km_salida, combustible_salida, combustible_fraccion, observaciones } = req.body;
+    const userId = req.user!.userId;
+
+    const ctx = await resolveContextoActivo(userId);
+    if (!ctx.salida_id) {
+      return res.status(412).json({
+        error: 'No tienes salida activa',
+        code: 'NO_CONTEXTO_OPERATIVO',
+      });
     }
 
-    const { id } = req.params;
-    const { km_salida, combustible_salida, observaciones } = req.body;
-
-    // Verificar que el ingreso existe y es mío
-    const ingreso = await SalidaModel.getIngresoById(parseInt(id));
+    // Verificar que el ingreso existe, es activo, pertenece a esta salida y no es final
+    const ingreso = await db.oneOrNone(
+      `SELECT id, es_ingreso_final, salida_unidad_id
+       FROM ingreso_sede
+       WHERE id = $1 AND fecha_hora_salida IS NULL`,
+      [id],
+    );
 
     if (!ingreso) {
-      return res.status(404).json({ error: 'Ingreso no encontrado' });
+      return res.status(404).json({ error: 'Ingreso activo no encontrado' });
     }
-
-    // Verificar que el ingreso pertenece a mi salida activa
-    const miSalida = await SalidaModel.getMiSalidaActiva(req.user.userId);
-
-    if (!miSalida || ingreso.salida_unidad_id !== miSalida.salida_id) {
-      return res.status(403).json({
-        error: 'No autorizado',
-        message: 'Este ingreso no pertenece a tu salida activa'
-      });
+    if (ingreso.salida_unidad_id !== ctx.salida_id) {
+      return res.status(403).json({ error: 'Este ingreso no pertenece a tu salida activa' });
     }
-
-    // Verificar que no sea ingreso final
     if (ingreso.es_ingreso_final) {
-      return res.status(400).json({
-        error: 'No se puede salir de un ingreso final',
-        message: 'El ingreso final marca el fin de la jornada laboral'
-      });
+      return res.status(400).json({ error: 'No se puede salir de un ingreso final' });
     }
 
-    // Registrar salida de sede
-    const success = await SalidaModel.registrarSalidaDeSede({
-      ingreso_id: parseInt(id),
-      km_salida,
-      combustible_salida,
-      observaciones
-    });
+    const indicador = parseIndicador(combustible_fraccion ?? combustible_salida);
 
-    if (!success) {
-      return res.status(400).json({
-        error: 'No se pudo registrar la salida',
-        message: 'Verifica que el ingreso esté activo'
-      });
-    }
-
-    // Obtener ingreso actualizado
-    const ingresoActualizado = await SalidaModel.getIngresoById(parseInt(id));
+    const ingresoActualizado = await db.one(`
+      UPDATE ingreso_sede
+      SET fecha_hora_salida      = NOW(),
+          km_salida_nueva        = $2,
+          combustible_salida_nueva = $3,
+          observaciones_salida   = $4
+      WHERE id = $1
+      RETURNING *,
+        (SELECT codigo FROM sede WHERE id = sede_id) AS sede_codigo,
+        (SELECT nombre FROM sede WHERE id = sede_id) AS sede_nombre
+    `, [id, normalizeId(km_salida), indicador, observaciones || null]);
 
     return res.json({
       message: 'Salida de sede registrada exitosamente',
       ingreso: ingresoActualizado,
-      instruccion: 'Puedes continuar patrullando y registrando situaciones'
+      instruccion: 'Puedes continuar patrullando y registrando situaciones',
     });
   } catch (error) {
     console.error('Error en registrarSalidaDeSede:', error);
@@ -169,30 +190,28 @@ export async function registrarSalidaDeSede(req: Request, res: Response) {
 
 /**
  * GET /api/ingresos/mi-ingreso-activo
- * Obtener mi ingreso activo (si estoy ingresado)
+ * Obtener mi ingreso activo (si estoy ingresado a sede).
  */
 export async function getMiIngresoActivo(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
+    const ctx = await resolveContextoActivo(req.user!.userId);
+    if (!ctx.salida_id) {
+      return res.status(412).json({ error: 'No tienes salida activa', code: 'NO_CONTEXTO_OPERATIVO' });
     }
 
-    // Obtener mi salida activa
-    const miSalida = await SalidaModel.getMiSalidaActiva(req.user.userId);
-
-    if (!miSalida) {
-      return res.status(404).json({
-        error: 'No tienes salida activa'
-      });
-    }
-
-    // Obtener ingreso activo
-    const ingresoActivo = await SalidaModel.getIngresoActivo(miSalida.salida_id);
+    const ingresoActivo = await db.oneOrNone(`
+      SELECT i.*, s.codigo AS sede_codigo, s.nombre AS sede_nombre
+      FROM ingreso_sede i
+      JOIN sede s ON i.sede_id = s.id
+      WHERE i.salida_unidad_id = $1
+        AND i.fecha_hora_salida IS NULL
+      LIMIT 1
+    `, [ctx.salida_id]);
 
     if (!ingresoActivo) {
       return res.status(404).json({
         error: 'No tienes ingreso activo',
-        message: 'Estás en la calle, no en sede'
+        message: 'Estás en la calle, no en sede',
       });
     }
 
@@ -204,55 +223,25 @@ export async function getMiIngresoActivo(req: Request, res: Response) {
 }
 
 /**
- * GET /api/ingresos/historial/:salidaId
- * Obtener historial de ingresos de una salida
- */
-export async function getHistorialIngresos(req: Request, res: Response) {
-  try {
-    const { salidaId } = req.params;
-
-    const historial = await SalidaModel.getHistorialIngresos(parseInt(salidaId));
-
-    return res.json({
-      salida_id: parseInt(salidaId),
-      ingresos: historial,
-      total: historial.length
-    });
-  } catch (error) {
-    console.error('Error en getHistorialIngresos:', error);
-    return res.status(500).json({ error: 'Error interno del servidor' });
-  }
-}
-
-/**
  * GET /api/ingresos/mis-ingresos-hoy
- * Obtener todos mis ingresos del día (de mi salida activa)
+ * Historial de ingresos de la salida activa.
  */
 export async function getMisIngresosHoy(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
+    const ctx = await resolveContextoActivo(req.user!.userId);
+    if (!ctx.salida_id) {
+      return res.json({ ingresos: [], total: 0, message: 'No tienes salida activa' });
     }
 
-    // Obtener mi salida activa
-    const miSalida = await SalidaModel.getMiSalidaActiva(req.user.userId);
+    const ingresos = await db.any(`
+      SELECT i.*, s.codigo AS sede_codigo, s.nombre AS sede_nombre
+      FROM ingreso_sede i
+      JOIN sede s ON i.sede_id = s.id
+      WHERE i.salida_unidad_id = $1
+      ORDER BY i.fecha_hora_ingreso ASC
+    `, [ctx.salida_id]);
 
-    if (!miSalida) {
-      return res.json({
-        ingresos: [],
-        total: 0,
-        message: 'No tienes salida activa'
-      });
-    }
-
-    // Obtener historial de ingresos de esta salida
-    const historial = await SalidaModel.getHistorialIngresos(miSalida.salida_id);
-
-    return res.json({
-      salida_id: miSalida.salida_id,
-      ingresos: historial,
-      total: historial.length
-    });
+    return res.json({ salida_id: ctx.salida_id, ingresos, total: ingresos.length });
   } catch (error) {
     console.error('Error en getMisIngresosHoy:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -260,18 +249,46 @@ export async function getMisIngresosHoy(req: Request, res: Response) {
 }
 
 /**
+ * GET /api/ingresos/historial/:salidaId
+ * Historial de ingresos de una salida específica (COP / Admin).
+ */
+export async function getHistorialIngresos(req: Request, res: Response) {
+  try {
+    const salidaId = normalizeId(req.params.salidaId);
+    if (!salidaId) return res.status(400).json({ error: 'salidaId inválido' });
+
+    const ingresos = await db.any(`
+      SELECT i.*, s.codigo AS sede_codigo, s.nombre AS sede_nombre
+      FROM ingreso_sede i
+      JOIN sede s ON i.sede_id = s.id
+      WHERE i.salida_unidad_id = $1
+      ORDER BY i.fecha_hora_ingreso ASC
+    `, [salidaId]);
+
+    return res.json({ salida_id: salidaId, ingresos, total: ingresos.length });
+  } catch (error) {
+    console.error('Error en getHistorialIngresos:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+/**
  * GET /api/ingresos/:id
- * Obtener información de un ingreso específico
+ * Obtener un ingreso específico por ID.
  */
 export async function getIngreso(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
 
-    const ingreso = await SalidaModel.getIngresoById(parseInt(id));
+    const ingreso = await db.oneOrNone(`
+      SELECT i.*, s.codigo AS sede_codigo, s.nombre AS sede_nombre
+      FROM ingreso_sede i
+      JOIN sede s ON i.sede_id = s.id
+      WHERE i.id = $1
+    `, [id]);
 
-    if (!ingreso) {
-      return res.status(404).json({ error: 'Ingreso no encontrado' });
-    }
+    if (!ingreso) return res.status(404).json({ error: 'Ingreso no encontrado' });
 
     return res.json(ingreso);
   } catch (error) {
@@ -282,85 +299,62 @@ export async function getIngreso(req: Request, res: Response) {
 
 /**
  * PATCH /api/ingresos/:id
- * Editar datos de un ingreso (km, combustible, observaciones)
+ * Editar km, combustible u observaciones de un ingreso.
+ * Solo puede editar el brigada al que pertenece la salida.
  */
 export async function editarIngreso(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
 
-    const { id } = req.params;
     const { km_ingreso, combustible_ingreso, combustible_fraccion, observaciones_ingreso } = req.body;
+    const userId = req.user!.userId;
 
-    // Verificar que el ingreso existe
-    const ingreso = await SalidaModel.getIngresoById(parseInt(id));
-    if (!ingreso) {
-      return res.status(404).json({ error: 'Ingreso no encontrado' });
-    }
+    // Verificar existencia y pertenencia en una sola query
+    const ingreso = await db.oneOrNone(
+      'SELECT id, salida_unidad_id FROM ingreso_sede WHERE id = $1',
+      [id],
+    );
+    if (!ingreso) return res.status(404).json({ error: 'Ingreso no encontrado' });
 
-    // Verificar que el usuario tiene permiso (la salida le pertenece)
-    const miSalida = await SalidaModel.getMiSalidaActiva(req.user.userId);
-    if (!miSalida || miSalida.salida_id !== ingreso.salida_unidad_id) {
+    const ctx = await resolveContextoActivo(userId);
+    if (!ctx.salida_id || ctx.salida_id !== ingreso.salida_unidad_id) {
       return res.status(403).json({ error: 'No tienes permiso para editar este ingreso' });
     }
 
-    // Construir query de actualización
-    const updates: string[] = [];
-    const values: any[] = [];
-    let paramCount = 1;
+    // SQL dinámico con named params (pg-promise)
+    const sets: string[] = [];
+    const params: Record<string, unknown> = { id };
 
     if (km_ingreso !== undefined) {
-      updates.push(`km_ingreso = $${paramCount}`);
-      values.push(km_ingreso);
-      paramCount++;
+      sets.push('km_ingreso = $/km_ingreso/');
+      params.km_ingreso = normalizeId(km_ingreso); // INTEGER
     }
 
-    // Convertir fracción a decimal si se proporciona
-    if (combustible_fraccion !== undefined) {
-      let combustibleDecimal = 0;
-      switch (combustible_fraccion) {
-        case 'LLENO': combustibleDecimal = 1.0; break;
-        case '3/4': combustibleDecimal = 0.75; break;
-        case '1/2': combustibleDecimal = 0.5; break;
-        case '1/4': combustibleDecimal = 0.25; break;
-        case 'VACIO': combustibleDecimal = 0; break;
-      }
-      updates.push(`combustible_ingreso = $${paramCount}`);
-      values.push(combustibleDecimal);
-      paramCount++;
-    } else if (combustible_ingreso !== undefined) {
-      updates.push(`combustible_ingreso = $${paramCount}`);
-      values.push(combustible_ingreso);
-      paramCount++;
+    const indicador = parseIndicador(combustible_fraccion ?? combustible_ingreso);
+    if (indicador !== null) {
+      sets.push('combustible_ingreso = $/combustible/');
+      params.combustible = indicador;
     }
 
     if (observaciones_ingreso !== undefined) {
-      updates.push(`observaciones_ingreso = $${paramCount}`);
-      values.push(observaciones_ingreso);
-      paramCount++;
+      sets.push('observaciones_ingreso = $/observaciones_ingreso/');
+      params.observaciones_ingreso = observaciones_ingreso;
     }
 
-    if (updates.length === 0) {
+    if (sets.length === 0) {
       return res.status(400).json({
         error: 'Debes proporcionar al menos un campo para editar',
-        campos_permitidos: ['km_ingreso', 'combustible_ingreso', 'combustible_fraccion', 'observaciones_ingreso']
+        campos_permitidos: ['km_ingreso', 'combustible_ingreso', 'combustible_fraccion', 'observaciones_ingreso'],
       });
     }
 
-    // Agregar updated_at
-    updates.push(`updated_at = NOW()`);
+    const updated = await db.one(
+      `UPDATE ingreso_sede SET ${sets.join(', ')} WHERE id = $/id/ RETURNING *`,
+      params,
+    );
 
-    // Ejecutar update
-    const query = `UPDATE ingreso_sede SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`;
-    values.push(parseInt(id));
-
-    const updated = await db.one(query, values);
-
-    return res.json({
-      message: 'Ingreso actualizado correctamente',
-      ingreso: updated
-    });
+    return res.json({ message: 'Ingreso actualizado correctamente', ingreso: updated });
   } catch (error) {
     console.error('Error en editarIngreso:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
