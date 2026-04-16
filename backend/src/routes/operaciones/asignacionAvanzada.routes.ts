@@ -3,7 +3,7 @@
  */
 
 import { Router } from 'express';
-import { authenticate, authorize } from '../middlewares/auth';
+import { authenticate, authorize } from '../../middlewares/auth';
 import {
   getAsignacionesPorSede,
   publicarTurno,
@@ -21,7 +21,7 @@ import {
   getAlertasRotacion,
   updateAccionesFormato,
   vincularSituacionFija
-} from '../controllers/asignacionAvanzada.controller';
+} from '../../controllers/operaciones/asignacionAvanzada.controller';
 
 const router = Router();
 

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../services/api';
-import PageHeader from '../components/PageHeader';
-import ThemeToggle from '../components/ThemeToggle';
-import { useAuthStore } from '../store/authStore';
+import api from '../../services/api';
+import PageHeader from '../../components/common/PageHeader';
+import ThemeToggle from '../../components/common/ThemeToggle';
+import { useAuthStore } from '../../store/authStore';
 import {
   Users,
   Shield,

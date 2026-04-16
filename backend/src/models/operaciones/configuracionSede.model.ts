@@ -3,7 +3,7 @@
  * Maneja personalización de colores, tipografía y alertas por sede
  */
 
-import { db } from '../config/database';
+import { db } from '../../config/database';
 
 export interface ConfiguracionVisualSede {
   id: number;

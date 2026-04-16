@@ -9,8 +9,8 @@ import {
   getCambiosRealizadosPor,
   getEstadisticasCambios,
   buscarPorMotivo,
-} from '../controllers/auditoria.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+} from '../../controllers/admin/auditoria.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
 

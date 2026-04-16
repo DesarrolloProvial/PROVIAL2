@@ -10,8 +10,8 @@ import {
   getComposicionUnidad,
   updateMovimiento,
   deleteMovimiento,
-} from '../controllers/movimiento.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+} from '../../controllers/operaciones/movimiento.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
 

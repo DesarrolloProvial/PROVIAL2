@@ -10,7 +10,7 @@ import {
   TIPOS_PERSONA,
   ESTADOS_DISPOSITIVO,
   CUSTODIAS,
-} from '../../constants/situacionTypes';
+} from '../../../constants/situacionTypes';
 
 interface Persona {
   nombre: string;

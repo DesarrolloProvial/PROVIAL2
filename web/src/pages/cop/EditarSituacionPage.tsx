@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { situacionesAPI } from '../services/api';
+import { situacionesAPI } from '../../services/api';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
-import FormularioPatrullaje from '../components/FormularioPatrullaje';
-import FormularioOtros from '../components/FormularioOtros';
-import FormularioHechoTransito from '../components/FormularioHechoTransito';
-import FormularioEmergencia from '../components/FormularioEmergencia';
-import ThemeToggle from '../components/ThemeToggle';
+import FormularioPatrullaje from '../../components/cop/FormularioPatrullaje';
+import FormularioOtros from '../../components/cop/FormularioOtros';
+import FormularioHechoTransito from '../../components/cop/FormularioHechoTransito';
+import FormularioEmergencia from '../../components/cop/FormularioEmergencia';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 export default function EditarSituacionPage() {
     const { id } = useParams<{ id: string }>();

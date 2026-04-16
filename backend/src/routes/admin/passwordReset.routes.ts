@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../middlewares/auth';
+import { authenticate, authorize } from '../../middlewares/auth';
 import {
   habilitarResetPassword,
   deshabilitarResetPassword,
@@ -7,7 +7,7 @@ import {
   completarResetPassword,
   getUsuariosConResetPendiente,
   getHistorialReset,
-} from '../controllers/passwordReset.controller';
+} from '../../controllers/admin/passwordReset.controller';
 
 const router = Router();
 

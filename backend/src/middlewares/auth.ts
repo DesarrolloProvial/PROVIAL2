@@ -64,8 +64,8 @@ export async function canEditSituacion(req: Request, res: Response, next: NextFu
     const { id } = req.params;
 
     // Importar dinámicamente para evitar dependencias circulares
-    const { SituacionModel } = await import('../models/situacion.model');
-    const { TurnoModel } = await import('../models/turno.model');
+    const { SituacionModel } = await import('../models/cop/situacion.model');
+    const { TurnoModel } = await import('../models/common/turno.model');
 
     // Obtener la situación
     const situacion = await SituacionModel.getById(parseInt(id, 10));

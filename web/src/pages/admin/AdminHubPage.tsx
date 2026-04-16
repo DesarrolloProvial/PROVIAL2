@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore } from '../../store/authStore';
 import {
   Users, Truck, Shield, Map, Table, Settings,
   LogOut, ChevronRight, FileSpreadsheet, BarChart3, Smartphone,
 } from 'lucide-react';
-import ThemeToggle from '../components/ThemeToggle';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 interface MenuOption {
   id: string;

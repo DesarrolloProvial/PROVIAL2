@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { geografiaAPI } from '../services/api';
+import { geografiaAPI } from '../../services/api';
 import { X, Plus } from 'lucide-react';
 
 interface Props {

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../config/database';
+import { db } from '../../config/database';
 
 // GET /api/brigadas - Listar todas las brigadas (usuarios con rol BRIGADA)
 export async function listarBrigadas(req: Request, res: Response) {

@@ -4,7 +4,7 @@ import {
     administracionAPI,
     Rol,
     Permiso
-} from '../../services/administracion.service';
+} from '../../services/admin/administracion.service';
 import {
     Shield,
     Plus,

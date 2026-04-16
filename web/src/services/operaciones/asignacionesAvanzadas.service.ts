@@ -2,7 +2,7 @@
  * Servicio para funcionalidades avanzadas de asignaciones
  */
 
-import api from './api';
+import api from '../api';
 
 // =====================================================
 // INTERFACES

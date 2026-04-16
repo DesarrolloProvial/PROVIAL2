@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AccidentologiaModel } from '../models/accidentologia.model';
+import { AccidentologiaModel } from '../../models/accidentologia/accidentologia.model';
 
 // ============================================
 // CONTROLADOR DE ACCIDENTOLOGÍA

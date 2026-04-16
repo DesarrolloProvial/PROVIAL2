@@ -13,8 +13,8 @@ import {
   actualizarGrupoBrigada,
   toggleExentoGrupos,
   setEstadoGrupo,
-} from '../controllers/grupo.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+} from '../../controllers/operaciones/grupo.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
 

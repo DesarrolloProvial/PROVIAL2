@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getSignature, getStatus } from '../controllers/cloudinary.controller';
-import { authenticate } from '../middlewares/auth';
+import { getSignature, getStatus } from '../../controllers/common/cloudinary.controller';
+import { authenticate } from '../../middlewares/auth';
 
 const router = Router();
 

@@ -2,7 +2,7 @@
  * Modelo para gestión de multimedia de situaciones
  */
 
-import { db } from '../config/database';
+import { db } from '../../config/database';
 
 export interface MultimediaRecord {
   id: number;

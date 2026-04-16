@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Save, RefreshCw, LogIn, LogOut, AlertTriangle } from 'lucide-react';
-import { api } from '../../services/api';
+import { api } from '../../../services/api';
 
 const NIVELES = [
   { value: '0',     label: 'Reserva' },

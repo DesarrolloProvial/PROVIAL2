@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { SalidaModel } from '../models/salida.model';
+import { SalidaModel } from '../../models/common/salida.model';
 
 // ========================================
 // CONTROLADOR DE REASIGNACIONES

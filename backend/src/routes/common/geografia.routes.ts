@@ -14,8 +14,8 @@ import {
   updateMunicipio,
   buscarMunicipios,
   getRegiones,
-} from '../controllers/geografia.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+} from '../../controllers/common/geografia.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
 

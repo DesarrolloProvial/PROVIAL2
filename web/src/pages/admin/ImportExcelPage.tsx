@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 import {
   Upload,
   FileSpreadsheet,
@@ -10,7 +10,7 @@ import {
   XCircle,
   Loader2,
 } from 'lucide-react';
-import ThemeToggle from '../components/ThemeToggle';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 interface ImportResult {
   totalRows: number;

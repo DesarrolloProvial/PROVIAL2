@@ -5,13 +5,13 @@ import {
   SENTIDOS,
   AREAS,
   MATERIALES_VIA,
-} from '../../constants/situacionTypes';
-import VehiculoFormWeb from './VehiculoFormWeb';
-import GruaFormWeb from './GruaFormWeb';
-import AjustadorFormWeb from './AjustadorFormWeb';
-import AutoridadSocorroWeb from './AutoridadSocorroWeb';
-import ObstruccionSelectorWeb from './ObstruccionSelectorWeb';
-import api from '../../services/api';
+} from '../../../constants/situacionTypes';
+import VehiculoFormWeb from '../../accidentologia/forms/VehiculoFormWeb';
+import GruaFormWeb from '../../accidentologia/forms/GruaFormWeb';
+import AjustadorFormWeb from '../../accidentologia/forms/AjustadorFormWeb';
+import AutoridadSocorroWeb from '../../accidentologia/forms/AutoridadSocorroWeb';
+import ObstruccionSelectorWeb from '../../common/forms/ObstruccionSelectorWeb';
+import api from '../../../services/api';
 
 interface IncidenteFormModalProps {
   isOpen: boolean;

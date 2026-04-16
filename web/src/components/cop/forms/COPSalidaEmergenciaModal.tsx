@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../../services/api';
+import { api } from '../../../services/api';
 import { X, Save, AlertTriangle, UserPlus, Trash2, Search } from 'lucide-react';
 
 interface Props {

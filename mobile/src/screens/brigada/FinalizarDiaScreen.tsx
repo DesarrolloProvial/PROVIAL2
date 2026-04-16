@@ -19,7 +19,7 @@ import FuelSelector from '../../components/FuelSelector';
 
 export default function FinalizarDiaScreen() {
   const navigation = useNavigation();
-  const { salidaActiva, ingresoActivo, miSede, refreshEstadoBrigada } = useAuthStore();
+  const { salidaActiva, ingresoActivo, refreshEstadoBrigada } = useAuthStore();
 
   const [kmIngreso, setKmIngreso] = useState('');
   const [combustibleFraccion, setCombustibleFraccion] = useState<string | null>(null);
@@ -53,7 +53,6 @@ export default function FinalizarDiaScreen() {
   };
 
   const handleFinalizarDia = async () => {
-    // Validar campos requeridos
     if (!kmIngreso.trim()) {
       Alert.alert('Error', 'Debes ingresar el kilometraje final');
       return;
@@ -65,58 +64,55 @@ export default function FinalizarDiaScreen() {
     }
 
     const kmNum = parseInt(kmIngreso, 10);
-
     if (isNaN(kmNum) || kmNum < 0) {
       Alert.alert('Error', 'El kilometraje debe ser un número válido');
       return;
     }
 
-    // Confirmación
     Alert.alert(
       'Confirmar Finalización',
       '¿Estás seguro que deseas finalizar tu jornada laboral? Esta acción liberará la unidad y la tripulación.',
       [
-        {
-          text: 'Cancelar',
-          style: 'cancel'
-        },
+        { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Finalizar',
           style: 'destructive',
-          onPress: async () => {
-            await realizarFinalizacion(kmNum, combustibleDecimal);
-          }
-        }
+          onPress: () => realizarFinalizacion(kmNum, combustibleDecimal, false),
+        },
       ]
     );
   };
 
-  const realizarFinalizacion = async (kmNum: number, combustibleNum: number) => {
+  const realizarFinalizacion = async (kmNum: number, combustibleNum: number, confirmar: boolean) => {
     try {
       setLoading(true);
 
-      // Si ya estamos ingresados (flujo correcto), usamos la sede del ingreso activo o la asignada
-      const sedeId = ingresoActivo?.sede_id || miSede?.mi_sede_id;
-
-      if (!sedeId) {
-        Alert.alert('Error', 'No se pudo determinar la sede. Contacta a soporte.');
-        setLoading(false);
-        return;
-      }
-
-      const response = await axios.post(`${API_URL}/ingresos/registrar`, {
-        tipo_ingreso: 'FINALIZACION',
-        sede_id: sedeId,
+      const response = await axios.post(`${API_URL}/ingresos/finalizar-jornada`, {
         km_ingreso: kmNum,
         combustible_ingreso: combustibleNum,
         combustible_fraccion: combustibleFraccion,
         observaciones: observaciones.trim() || undefined,
-        es_ingreso_final: true,
+        confirmar,
       });
 
-      console.log('[FINALIZAR DIA] Respuesta:', response.data);
+      // El backend puede pedir confirmación si la sede del ingreso difiere de la asignada
+      if (response.data.requiere_confirmacion) {
+        setLoading(false);
+        Alert.alert(
+          'Sede diferente',
+          response.data.advertencia,
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            {
+              text: 'Confirmar',
+              style: 'destructive',
+              onPress: () => realizarFinalizacion(kmNum, combustibleNum, true),
+            },
+          ]
+        );
+        return;
+      }
 
-      // Actualizar estado
       await refreshEstadoBrigada();
 
       Alert.alert(
@@ -126,13 +122,12 @@ export default function FinalizarDiaScreen() {
           {
             text: 'OK',
             onPress: () => {
-              // Navegar al home
               navigation.reset({
                 index: 0,
                 routes: [{ name: 'BrigadaHome' as never }],
               });
-            }
-          }
+            },
+          },
         ]
       );
     } catch (error: any) {
@@ -144,6 +139,8 @@ export default function FinalizarDiaScreen() {
     }
   };
 
+  // ── Guardas de estado ────────────────────────────────────────────────────────
+
   if (!salidaActiva) {
     return (
       <View style={styles.container}>
@@ -153,10 +150,7 @@ export default function FinalizarDiaScreen() {
           <Text style={styles.errorText}>
             No tienes una salida activa para finalizar.
           </Text>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Text style={styles.backButtonText}>Volver</Text>
           </TouchableOpacity>
         </View>
@@ -164,25 +158,46 @@ export default function FinalizarDiaScreen() {
     );
   }
 
-  if (ingresoActivo && !ingresoActivo.es_ingreso_final) {
+  if (!ingresoActivo) {
     return (
       <View style={styles.container}>
         <View style={styles.errorCard}>
-          <Text style={styles.errorIcon}>⚠️</Text>
-          <Text style={styles.errorTitle}>Ingreso Activo</Text>
+          <Text style={styles.errorIcon}>🏠</Text>
+          <Text style={styles.errorTitle}>Debes ingresar a sede primero</Text>
           <Text style={styles.errorText}>
-            Tienes un ingreso temporal activo. Debes registrar la salida de sede antes de finalizar el día.
+            Para finalizar la jornada, primero registra un ingreso a sede de tipo{' '}
+            <Text style={{ fontWeight: '700' }}>Finalizar Jornada</Text>.
           </Text>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Text style={styles.backButtonText}>Volver</Text>
           </TouchableOpacity>
         </View>
       </View>
     );
   }
+
+  if (ingresoActivo.tipo_ingreso !== 'FINALIZACION_JORNADA') {
+    return (
+      <View style={styles.container}>
+        <View style={styles.errorCard}>
+          <Text style={styles.errorIcon}>⏳</Text>
+          <Text style={styles.errorTitle}>Ingreso temporal activo</Text>
+          <Text style={styles.errorText}>
+            Tienes un ingreso de tipo{' '}
+            <Text style={{ fontWeight: '700' }}>"{ingresoActivo.tipo_ingreso}"</Text> en{' '}
+            {ingresoActivo.sede_nombre}.{'\n\n'}
+            Para finalizar la jornada, primero registra la salida de este ingreso y luego
+            entra con motivo <Text style={{ fontWeight: '700' }}>Finalizar Jornada</Text>.
+          </Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Text style={styles.backButtonText}>Volver</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // ── Formulario principal ─────────────────────────────────────────────────────
 
   return (
     <ScrollView style={styles.container}>
@@ -221,18 +236,20 @@ export default function FinalizarDiaScreen() {
         </View>
       </View>
 
-      {/* Card de Sede */}
-      {miSede && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Ingreso a Sede</Text>
-          <View style={styles.sedeInfo}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Sede:</Text>
-              <Text style={styles.infoValue}>{miSede.mi_sede_nombre}</Text>
-            </View>
+      {/* Sede de ingreso activo */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Ingresado en</Text>
+        <View style={styles.sedeInfo}>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Sede:</Text>
+            <Text style={styles.infoValue}>{ingresoActivo.sede_nombre}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Desde:</Text>
+            <Text style={styles.infoValue}>{formatFecha(ingresoActivo.fecha_hora_ingreso)}</Text>
           </View>
         </View>
-      )}
+      </View>
 
       {/* Formulario */}
       <View style={styles.card}>

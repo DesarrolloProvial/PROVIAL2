@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 import {
   Truck,
   Search,
@@ -15,7 +15,7 @@ import {
   ArrowLeft,
   Settings,
 } from 'lucide-react';
-import ThemeToggle from '../components/ThemeToggle';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 interface Unidad {
   id: number;

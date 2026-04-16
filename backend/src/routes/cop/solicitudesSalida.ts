@@ -9,8 +9,8 @@ import {
     aprobarSalidaManualmente,
     listarSolicitudes,
     obtenerSolicitudPendiente
-} from '../controllers/solicitudesSalidaController';
-import { authenticate, authorize } from '../middlewares/auth';
+} from '../../controllers/cop/solicitudesSalidaController';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = express.Router();
 

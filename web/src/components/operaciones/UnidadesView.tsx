@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Eye } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
-import Inspeccion360Historial from '../Inspeccion360Historial';
+import Inspeccion360Historial from '../transportes/Inspeccion360Historial';
 
 interface UnidadesViewProps {
   unidades: any[];

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { administracionAPI } from '../services/administracion.service';
+import { administracionAPI } from '../../services/admin/administracion.service';
 import { Settings, GripVertical, Eye, EyeOff, Save, X, RotateCcw } from 'lucide-react';
 
 interface ConfiguracionColumnasProps {

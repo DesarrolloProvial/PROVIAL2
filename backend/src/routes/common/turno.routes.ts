@@ -15,8 +15,8 @@ import {
   cambiarRutaActiva,
   registrarCombustible,
   liberarNomina
-} from '../controllers/turno.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+} from '../../controllers/common/turno.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
 

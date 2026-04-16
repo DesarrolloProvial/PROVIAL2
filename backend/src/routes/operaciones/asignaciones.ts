@@ -8,9 +8,9 @@ import {
     listarAsignaciones,
     obtenerAsignacion,
     cancelarAsignacion
-} from '../controllers/asignacionesController';
-import { authenticate, authorize } from '../middlewares/auth';
-import { getMiAsignacionHoy } from '../controllers/turno.controller';
+} from '../../controllers/operaciones/asignacionesController';
+import { authenticate, authorize } from '../../middlewares/auth';
+import { getMiAsignacionHoy } from '../../controllers/common/turno.controller';
 
 const router = express.Router();
 

@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authAPI } from '../services/api';
-import { useAuthStore } from '../store/authStore';
+import { authAPI } from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');

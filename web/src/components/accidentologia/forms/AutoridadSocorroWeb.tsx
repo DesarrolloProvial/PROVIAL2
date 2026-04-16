@@ -1,4 +1,4 @@
-import { AUTORIDADES, UNIDADES_SOCORRO } from '../../constants/situacionTypes';
+import { AUTORIDADES, UNIDADES_SOCORRO } from '../../../constants/situacionTypes';
 
 export interface DetalleAutoridad {
   hora_llegada?: string;

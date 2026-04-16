@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { turnosService } from '../../services/turnos.service';
+import { turnosService } from '../../services/common/turnos.service';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, Truck, AlertTriangle, Fuel, Calendar,

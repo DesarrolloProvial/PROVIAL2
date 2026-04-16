@@ -15,8 +15,8 @@ import {
   registrarAbastecimiento,
   getAbastecimientosPorUnidad,
   getAbastecimientoStats,
-} from '../controllers/operaciones.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+} from '../../controllers/operaciones/operaciones.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
 

@@ -1,4 +1,4 @@
-import { OperacionesModel } from '../models/operaciones.model';
+import { OperacionesModel } from '../../models/operaciones/operaciones.model';
 
 // ============================================
 // INTERFACES

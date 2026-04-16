@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { Inspeccion360Controller } from '../controllers/inspeccion360.controller';
-import { authenticate } from '../middlewares/auth';
+import { Inspeccion360Controller } from '../../controllers/transportes/inspeccion360.controller';
+import { authenticate } from '../../middlewares/auth';
 
 const router = Router();
 

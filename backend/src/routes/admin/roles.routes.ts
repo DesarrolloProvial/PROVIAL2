@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../middlewares/auth';
+import { authenticate, authorize } from '../../middlewares/auth';
 import {
     listarRoles,
     listarPermisos,
     crearRol,
     actualizarRol,
     eliminarRol
-} from '../controllers/roles.controller';
+} from '../../controllers/admin/roles.controller';
 
 const router = Router();
 

@@ -6,9 +6,9 @@ import {
   SituacionPersistente,
   ActualizacionSituacion,
   TipoEmergenciaVial,
-} from '../services/movimientos.service';
-import { geografiaAPI, situacionesAPI } from '../services/api';
-import ThemeToggle from '../components/ThemeToggle';
+} from '../../services/operaciones/movimientos.service';
+import { geografiaAPI, situacionesAPI } from '../../services/api';
+import ThemeToggle from '../../components/common/ThemeToggle';
 import {
   ArrowLeft,
   Plus,
@@ -29,8 +29,8 @@ import {
   Shield,
   Heart,
 } from 'lucide-react';
-import ObstruccionForm, { ObstruccionData } from '../components/situaciones/ObstruccionForm';
-import AutoridadesSocorroForm, { DetalleAutoridadSocorro } from '../components/situaciones/AutoridadesSocorroForm';
+import ObstruccionForm, { ObstruccionData } from '../../components/cop/situaciones/ObstruccionForm';
+import AutoridadesSocorroForm, { DetalleAutoridadSocorro } from '../../components/cop/situaciones/AutoridadesSocorroForm';
 
 type TabType = 'activas' | 'pausadas' | 'finalizadas';
 type FormTabType = 'general' | 'obstruccion' | 'autoridades' | 'socorro';

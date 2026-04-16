@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Save, RefreshCw, MapPin } from 'lucide-react';
-import { api } from '../../services/api';
+import { api } from '../../../services/api';
 
 const ICONOS = [
   { emoji: '📍', label: 'Marcador' },

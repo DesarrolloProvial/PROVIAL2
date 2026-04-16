@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { situacionesAPI, api } from '../services/api';
+import { situacionesAPI, api } from '../../services/api';
 import { ArrowLeft, RefreshCw, MapPin, Users, Truck, Clock, Plus, Activity, LogIn, LogOut } from 'lucide-react';
-import Inspeccion360Historial from '../components/Inspeccion360Historial';
-import CrearSituacionModal from '../components/forms/CrearSituacionModal';
-import CrearActividadModal from '../components/forms/CrearActividadModal';
-import SalidaCOPModal from '../components/forms/SalidaCOPModal';
-import ThemeToggle from '../components/ThemeToggle';
+import Inspeccion360Historial from '../../components/transportes/Inspeccion360Historial';
+import CrearSituacionModal from '../../components/cop/forms/CrearSituacionModal';
+import CrearActividadModal from '../../components/cop/forms/CrearActividadModal';
+import SalidaCOPModal from '../../components/cop/forms/SalidaCOPModal';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 // Tipos de situación para colores
 const TIPOS_SITUACION = [

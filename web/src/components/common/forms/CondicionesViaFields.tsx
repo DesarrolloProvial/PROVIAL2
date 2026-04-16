@@ -2,7 +2,7 @@ import {
   CONDICIONES_CLIMATICAS, AREAS, MATERIALES_VIA,
   ESTADOS_VIA, TOPOGRAFIAS_VIA, GEOMETRIAS_VIA,
   PERALTES_VIA, CONDICIONES_SUPERFICIE,
-} from '../../constants/situacionTypes';
+} from '../../../constants/situacionTypes';
 
 interface Props {
   clima: string;

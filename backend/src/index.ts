@@ -7,7 +7,7 @@ import { config } from './config/env';
 import { /* db, */ testConnection, closeConnection } from './config/database';
 import { /* redis, */ testRedisConnection, closeRedis } from './config/redis';
 import routes from './routes';
-import { initSocketService, getConnectionStats } from './services/socket.service';
+import { initSocketService, getConnectionStats } from './services/common/socket.service';
 
 // Crear app Express
 const app = express();

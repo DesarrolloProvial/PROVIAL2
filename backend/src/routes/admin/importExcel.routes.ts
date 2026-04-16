@@ -3,9 +3,9 @@
  */
 
 import { Router } from 'express';
-import { authenticate } from '../middlewares/auth';
-import { authorizeAdminOrSuperAdmin } from '../middlewares/superAdmin';
-import { uploadExcel, importarExcel } from '../controllers/importExcel.controller';
+import { authenticate } from '../../middlewares/auth';
+import { authorizeAdminOrSuperAdmin } from '../../middlewares/superAdmin';
+import { uploadExcel, importarExcel } from '../../controllers/admin/importExcel.controller';
 
 const router = Router();
 

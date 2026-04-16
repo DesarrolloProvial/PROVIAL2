@@ -10,7 +10,7 @@ import {
   X, Loader2, Droplets,
 } from 'lucide-react';
 import api from '../../services/api';
-import ThemeToggle from '../../components/ThemeToggle';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 

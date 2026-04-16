@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Plus, Activity, Route } from 'lucide-react';
-import SituacionIcon from './SituacionIcon';
+import SituacionIcon from '../common/SituacionIcon';
 
 
 interface ResumenUnidad {

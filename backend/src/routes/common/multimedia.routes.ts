@@ -4,8 +4,8 @@
  */
 
 import { Router } from 'express';
-import { authenticate, authorize } from '../middlewares/auth';
-import multimediaController from '../controllers/multimedia.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
+import multimediaController from '../../controllers/common/multimedia.controller';
 
 const router = Router();
 

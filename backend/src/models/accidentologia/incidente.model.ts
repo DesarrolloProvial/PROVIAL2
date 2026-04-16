@@ -1,6 +1,6 @@
-import { db } from '../config/database';
-import { VehiculoModel } from './vehiculo.model';
-import { PilotoModel } from './piloto.model';
+import { db } from '../../config/database';
+import { VehiculoModel } from '../common/vehiculo.model';
+import { PilotoModel } from '../common/piloto.model';
 
 // ========================================
 // INTERFACES

@@ -1,13 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { situacionesAPI, actividadesAPI } from '../services/api';
+import { situacionesAPI, actividadesAPI } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import {
   RefreshCw, ArrowLeft, Search, Filter, MapPin,
   ChevronDown, ChevronUp, X, Wifi, WifiOff, Calendar,
 } from 'lucide-react';
-import { useDashboardSocket } from '../hooks/useSocket';
-import ThemeToggle from '../components/ThemeToggle';
+import { useDashboardSocket } from '../../hooks/useSocket';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 const COLORES_SEDE: Record<number, string> = {
   1: '#3B82F6', 2: '#10B981', 3: '#F59E0B', 4: '#8B5CF6',

@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { SalidaModel } from '../models/salida.model';
-import { TurnoModel } from '../models/turno.model';
-import { Inspeccion360Model } from '../models/inspeccion360.model';
-import { ActividadModel } from '../models/actividad.model';
-import { db } from '../config/database';
-import { emitUnidadCambioEstado, UnidadEvent } from '../services/socket.service';
+import { SalidaModel } from '../../models/common/salida.model';
+import { TurnoModel } from '../../models/common/turno.model';
+import { Inspeccion360Model } from '../../models/transportes/inspeccion360.model';
+import { ActividadModel } from '../../models/cop/actividad.model';
+import { db } from '../../config/database';
+import { emitUnidadCambioEstado, UnidadEvent } from '../../services/common/socket.service';
 
 // Helper para convertir fracciones de combustible a decimal
 function convertirCombustibleADecimal(valor: any): number | null {

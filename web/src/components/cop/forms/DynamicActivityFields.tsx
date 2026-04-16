@@ -1,5 +1,5 @@
 import { Plus, Trash2, Minus } from 'lucide-react';
-import { TIPOS_VEHICULO } from '../../constants/situacionTypes';
+import { TIPOS_VEHICULO } from '../../../constants/situacionTypes';
 
 interface Props {
   activityTypeName: string;

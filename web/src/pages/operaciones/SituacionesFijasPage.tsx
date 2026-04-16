@@ -9,9 +9,9 @@ import { useNavigate } from 'react-router-dom';
 import {
   asignacionesAvanzadasAPI,
   SituacionFija
-} from '../services/asignacionesAvanzadas.service';
-import { geografiaAPI } from '../services/api';
-import ThemeToggle from '../components/ThemeToggle';
+} from '../../services/operaciones/asignacionesAvanzadas.service';
+import { geografiaAPI } from '../../services/api';
+import ThemeToggle from '../../components/common/ThemeToggle';
 import {
   ArrowLeft,
   Plus,

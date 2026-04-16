@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { db } from '../config/database';
-import { TurnoModel } from '../models/turno.model';
+import { db } from '../../config/database';
+import { TurnoModel } from '../../models/common/turno.model';
 
 // GET /api/unidades - Listar todas las unidades
 export async function listarUnidades(req: Request, res: Response) {

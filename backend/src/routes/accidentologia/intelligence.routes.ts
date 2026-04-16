@@ -15,8 +15,8 @@ import {
   getAnalisisFranjaHoraria,
   getDashboard,
   refreshViews
-} from '../controllers/intelligence.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+} from '../../controllers/accidentologia/intelligence.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
 

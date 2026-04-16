@@ -1,8 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 import { ArrowLeft, Loader2, MapPin, Clock, User, Users, Truck } from 'lucide-react';
-import ThemeToggle from '../components/ThemeToggle';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 interface Tripulante {
     usuario_id: number;

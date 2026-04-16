@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { TurnoModel } from '../models/turno.model';
-import { db } from '../config/database';
+import { TurnoModel } from '../../models/common/turno.model';
+import { db } from '../../config/database';
 
 // GET /api/turnos/hoy - Obtener turno de hoy con asignaciones de hoy y futuras
 // SIEMPRE filtra por sede del usuario (puede_ver_todas_sedes solo aplica en página de Sedes)

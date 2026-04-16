@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 import { FileText, Download, Eye, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 interface Inspeccion360Item {

@@ -1,4 +1,4 @@
-import { OBSTRUCCIONES } from '../../constants/situacionTypes';
+import { OBSTRUCCIONES } from '../../../constants/situacionTypes';
 
 interface ObstruccionSelectorWebProps {
   value: string;

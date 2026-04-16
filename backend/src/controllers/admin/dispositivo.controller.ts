@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { DispositivoModel } from '../models/dispositivo.model';
+import { DispositivoModel } from '../../models/admin/dispositivo.model';
 
 /** GET /api/admin/dispositivos — Lista todos los dispositivos */
 export async function listarDispositivos(_req: Request, res: Response) {

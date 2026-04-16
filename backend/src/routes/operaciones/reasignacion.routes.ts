@@ -3,8 +3,8 @@ import {
   crearReasignacion,
   getReasignacionesActivas,
   finalizarReasignacion
-} from '../controllers/reasignacion.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+} from '../../controllers/operaciones/reasignacion.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
 

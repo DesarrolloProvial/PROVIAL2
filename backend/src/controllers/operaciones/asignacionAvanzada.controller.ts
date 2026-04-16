@@ -3,8 +3,8 @@
  */
 
 import { Request, Response } from 'express';
-import { AsignacionAvanzadaModel } from '../models/asignacionAvanzada.model';
-import { ConfiguracionSedeModel } from '../models/configuracionSede.model';
+import { AsignacionAvanzadaModel } from '../../models/operaciones/asignacionAvanzada.model';
+import { ConfiguracionSedeModel } from '../../models/operaciones/configuracionSede.model';
 // import { SituacionFijaModel } from '../models/situacionFija.model'; // ELIMINADO: Tabla eliminada en migración 108
 
 // =====================================================

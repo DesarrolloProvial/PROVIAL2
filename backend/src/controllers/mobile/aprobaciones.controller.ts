@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { db } from '../config/database';
-import { PushNotificationService } from '../services/pushNotification.service';
+import { db } from '../../config/database';
+import { PushNotificationService } from '../../services/common/pushNotification.service';
 
 // ============================================
 // CONTROLADOR DE APROBACIONES DE TRIPULACION

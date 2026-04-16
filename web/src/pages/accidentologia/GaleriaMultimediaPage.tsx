@@ -23,8 +23,8 @@ import {
   Calendar,
   ArrowLeft,
 } from 'lucide-react';
-import api from '../services/api';
-import ThemeToggle from '../components/ThemeToggle';
+import api from '../../services/api';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 interface MultimediaItem {
   id: number;

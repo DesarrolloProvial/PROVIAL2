@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import {
   Users,
@@ -19,7 +19,7 @@ import {
   Plus,
   KeyRound
 } from 'lucide-react';
-import ThemeToggle from '../components/ThemeToggle';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 interface Brigada {
   id: number;

@@ -15,9 +15,9 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { LogOut, RefreshCw } from 'lucide-react';
-import api from '../services/api';
-import { useAuthStore } from '../store/authStore';
-import ThemeToggle from '../components/ThemeToggle';
+import api from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 interface DashboardData {
   resumen: {

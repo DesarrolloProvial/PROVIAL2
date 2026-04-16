@@ -11,7 +11,7 @@
  */
 
 import { Request, Response } from 'express';
-import pool from '../config/database';
+import pool from '../../config/database';
 
 /**
  * Crear una nueva asignación

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GeografiaModel } from '../models/geografia.model';
+import { GeografiaModel } from '../../models/common/geografia.model';
 
 // ========================================
 // RUTAS

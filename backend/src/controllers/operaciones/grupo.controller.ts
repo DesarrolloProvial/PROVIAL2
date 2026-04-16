@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GrupoModel } from '../models/grupo.model';
+import { GrupoModel } from '../../models/operaciones/grupo.model';
 
 // ========================================
 // OBTENER ESTADO DE GRUPOS HOY

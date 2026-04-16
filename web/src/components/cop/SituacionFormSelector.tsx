@@ -1,6 +1,6 @@
 import React from 'react';
 import { IncidenteFormModal, AsistenciaFormModal } from './forms';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 
 interface SituacionFormSelectorProps {
   isOpen: boolean;

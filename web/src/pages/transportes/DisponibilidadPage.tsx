@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
 import { ArrowLeft, CheckSquare, XSquare, Save } from 'lucide-react';
-import ThemeToggle from '../../components/ThemeToggle';
+import ThemeToggle from '../../components/common/ThemeToggle';
 import api from '../../services/api';
 
 // ── Tipos ────────────────────────────────────────────────────────────────────

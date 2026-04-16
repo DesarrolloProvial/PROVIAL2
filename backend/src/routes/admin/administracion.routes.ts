@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { authenticate } from '../middlewares/auth';
+import { authenticate } from '../../middlewares/auth';
 import {
   authorizeSuperAdmin,
   authorizeAdminOrSuperAdmin,
   authorizeGestionUsuarios,
   authorizeGestionGrupos
-} from '../middlewares/superAdmin';
-import * as controller from '../controllers/administracion.controller';
+} from '../../middlewares/superAdmin';
+import * as controller from '../../controllers/admin/administracion.controller';
 
 const router = Router();
 

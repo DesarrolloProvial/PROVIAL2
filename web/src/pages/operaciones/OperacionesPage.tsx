@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { operacionesService } from '../services/operaciones.service';
-import { turnosService } from '../services/turnos.service';
-import { useAuthStore } from '../store/authStore';
+import { operacionesService } from '../../services/operaciones/operaciones.service';
+import { turnosService } from '../../services/common/turnos.service';
+import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, RefreshCw, LogOut, Lock } from 'lucide-react';
-import CambiarPasswordModal from '../components/CambiarPasswordModal';
-import DashboardView from '../components/operaciones/DashboardView';
-import BrigadasView from '../components/operaciones/BrigadasView';
-import ThemeToggle from '../components/ThemeToggle';
+import CambiarPasswordModal from '../../components/common/CambiarPasswordModal';
+import DashboardView from '../../components/operaciones/DashboardView';
+import BrigadasView from '../../components/operaciones/BrigadasView';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 export default function OperacionesPage() {
   const { user, logout } = useAuthStore();

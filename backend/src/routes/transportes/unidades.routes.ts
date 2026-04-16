@@ -13,8 +13,8 @@ import {
   obtenerUltimaAsignacion,
   reservarNumeroSalida,
   setDisponibilidadTransportes
-} from '../controllers/unidades.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+} from '../../controllers/transportes/unidades.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
 

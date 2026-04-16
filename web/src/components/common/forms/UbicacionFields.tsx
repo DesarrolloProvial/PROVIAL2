@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { api } from '../../services/api';
-import { SENTIDOS } from '../../constants/situacionTypes';
+import { api } from '../../../services/api';
+import { SENTIDOS } from '../../../constants/situacionTypes';
 import MapPickerModal from './MapPickerModal';
 
 interface Props {

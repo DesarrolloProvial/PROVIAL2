@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api, situacionesAPI, catalogosAPI } from '../../services/api';
+import { api, situacionesAPI, catalogosAPI } from '../../../services/api';
 import {
   X, Save, RefreshCw, Plus,
   MapPin, Car, AlertTriangle, FileText,
@@ -11,14 +11,14 @@ import {
   TIPOS_HECHO_TRANSITO,
   TIPOS_ASISTENCIA,
   TIPOS_EMERGENCIA,
-} from '../../constants/situacionTypes';
-import VehiculoFormWeb from './VehiculoFormWeb';
+} from '../../../constants/situacionTypes';
+import VehiculoFormWeb from '../../accidentologia/forms/VehiculoFormWeb';
 import ObstruccionForm, { getDefaultObstruccion, type ObstruccionData } from '../situaciones/ObstruccionForm';
-import UbicacionFields from './UbicacionFields';
-import CondicionesViaFields from './CondicionesViaFields';
-import VictimasFields from './VictimasFields';
-import RecursosSection from './RecursosSection';
-import CausasSelectorWeb from './CausasSelectorWeb';
+import UbicacionFields from '../../common/forms/UbicacionFields';
+import CondicionesViaFields from '../../common/forms/CondicionesViaFields';
+import VictimasFields from '../../accidentologia/forms/VictimasFields';
+import RecursosSection from '../../common/forms/RecursosSection';
+import CausasSelectorWeb from '../../accidentologia/forms/CausasSelectorWeb';
 
 // ============================================
 // CONSTANTES

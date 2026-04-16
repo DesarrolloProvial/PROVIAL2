@@ -6,8 +6,8 @@ import {
   Clock, MapPin, AlertTriangle, Activity, Users, Loader2,
   LogIn, LogOut, RefreshCw, Camera, Video,
 } from 'lucide-react';
-import api from '../services/api';
-import ThemeToggle from '../components/ThemeToggle';
+import api from '../../services/api';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

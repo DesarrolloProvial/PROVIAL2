@@ -15,7 +15,7 @@ import sharp from 'sharp';
 
 // Configuración desde variables de entorno
 const STORAGE_TYPE = process.env.STORAGE_TYPE || 'local'; // 'local' | 'r2' | 's3'
-const UPLOADS_DIR = path.join(__dirname, '../../uploads');
+const UPLOADS_DIR = path.join(__dirname, '../../../uploads');
 const BASE_URL = process.env.STORAGE_BASE_URL || 'http://localhost:3000/uploads';
 
 // Configuración de compresión (optimizada para balance calidad/tamaño)

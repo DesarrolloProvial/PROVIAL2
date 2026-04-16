@@ -5,8 +5,8 @@ import {
   ubicacionBrigadasAPI,
   UbicacionBrigada,
   BrigadaParaPrestamo
-} from '../services/movimientos.service';
-import { geografiaAPI, situacionesAPI } from '../services/api';
+} from '../../services/operaciones/movimientos.service';
+import { geografiaAPI, situacionesAPI } from '../../services/api';
 import {
   ArrowLeft,
   Users,
@@ -19,7 +19,7 @@ import {
   Check,
   AlertTriangle
 } from 'lucide-react';
-import ThemeToggle from '../components/ThemeToggle';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 type TabType = 'ubicaciones' | 'prestamos' | 'divisiones';
 

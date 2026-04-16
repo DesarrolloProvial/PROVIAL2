@@ -1,4 +1,4 @@
-import { db } from '../config/database';
+import { db } from '../../config/database';
 
 // Interfaz para sub-rol COP (cuando se carga por JOIN)
 export interface SubRolCopInfo {

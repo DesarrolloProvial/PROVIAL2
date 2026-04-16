@@ -19,8 +19,8 @@ import {
   // Relevos
   registrarRelevo,
   getRelevos
-} from '../controllers/salida.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+} from '../../controllers/cop/salida.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
 

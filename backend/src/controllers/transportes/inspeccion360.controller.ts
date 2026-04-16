@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { Inspeccion360Model } from '../models/inspeccion360.model';
-import { PDF360Service } from '../services/pdf360.service';
-import { db } from '../config/database';
+import { Inspeccion360Model } from '../../models/transportes/inspeccion360.model';
+import { PDF360Service } from '../../services/transportes/pdf360.service';
+import { db } from '../../config/database';
 
 // ========================================
 // CONTROLADOR: INSPECCIÓN 360

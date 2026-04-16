@@ -6,7 +6,7 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import jwt from 'jsonwebtoken';
-import { config } from '../config/env';
+import { config } from '../../config/env';
 
 // Tipos de eventos
 export interface SituacionEvent {

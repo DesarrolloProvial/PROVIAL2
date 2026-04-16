@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { SalidaModel } from '../models/salida.model';
-import { ConfiguracionSedeModel } from '../models/configuracionSede.model';
+import { SalidaModel } from '../../models/common/salida.model';
+import { ConfiguracionSedeModel } from '../../models/operaciones/configuracionSede.model';
 
 // ========================================
 // CONSULTAS DE SEDES
@@ -116,7 +116,7 @@ export async function getMiSede(req: Request, res: Response) {
     }
 
     // 2. Si no tiene salida activa, buscar la sede del propio usuario
-    const { db } = require('../config/database');
+    const { db } = require('../../config/database');
     const userSede = await db.oneOrNone(`
       SELECT u.sede_id as mi_sede_id, s.codigo as mi_sede_codigo, s.nombre as mi_sede_nombre
       FROM usuario u

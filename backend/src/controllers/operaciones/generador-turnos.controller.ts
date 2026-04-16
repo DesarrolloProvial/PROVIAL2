@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { generadorTurnosService } from '../services/generador-turnos.service';
+import { generadorTurnosService } from '../../services/operaciones/generador-turnos.service';
 
 export const GeneradorTurnosController = {
   /**

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { transportesService, Inspeccion360, Plantilla360, SeccionPlantilla, ItemPlantilla } from '../../services/transportes.service';
+import { transportesService, Inspeccion360, Plantilla360, SeccionPlantilla, ItemPlantilla } from '../../services/transportes/transportes.service';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import ThemeToggle from '../../components/ThemeToggle';
+import ThemeToggle from '../../components/common/ThemeToggle';
 import {
   ClipboardCheck,
   CheckCircle,

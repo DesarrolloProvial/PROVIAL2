@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { ComunicacionSocialController, getEstadisticasComunicacion, getSnapshotActual, getEstadoUnidades } from '../controllers/comunicacionSocial.controller';
-import { authenticate } from '../middlewares/auth';
+import { ComunicacionSocialController, getEstadisticasComunicacion, getSnapshotActual, getEstadoUnidades } from '../../controllers/comunicacion/comunicacionSocial.controller';
+import { authenticate } from '../../middlewares/auth';
 
 const router = Router();
 

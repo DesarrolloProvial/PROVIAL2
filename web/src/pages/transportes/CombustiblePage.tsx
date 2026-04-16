@@ -5,10 +5,10 @@ import {
   Fuel, Truck, RefreshCw, X, ChevronRight, AlertTriangle, ArrowLeft,
   Wrench, CheckCircle, Loader2, History, Search,
 } from 'lucide-react';
-import { transportesService, HistorialItem, Abastecimiento } from '../../services/transportes.service';
+import { transportesService, HistorialItem, Abastecimiento } from '../../services/transportes/transportes.service';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
-import ThemeToggle from '../../components/ThemeToggle';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 // ── Constantes de nivel ───────────────────────────────────────────────────────
 

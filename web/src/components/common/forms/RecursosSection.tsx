@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
-import GruaFormWeb from './GruaFormWeb';
-import AjustadorFormWeb from './AjustadorFormWeb';
-import AutoridadSocorroWeb from './AutoridadSocorroWeb';
+import GruaFormWeb from '../../accidentologia/forms/GruaFormWeb';
+import AjustadorFormWeb from '../../accidentologia/forms/AjustadorFormWeb';
+import AutoridadSocorroWeb from '../../accidentologia/forms/AutoridadSocorroWeb';
 
 interface Props {
   gruas: any[];

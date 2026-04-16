@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
-import api from '../services/api';
+import api from '../../services/api';
 import { Search, Plus, Edit2, Power, Repeat, X, RefreshCw } from 'lucide-react';
-import PageHeader from '../components/PageHeader';
-import { useDebounce } from '../hooks/useDebounce';
-import { useAuthStore } from '../store/authStore';
-import ConfiguracionColumnas, { useConfiguracionColumnas } from '../components/ConfiguracionColumnas';
-import ThemeToggle from '../components/ThemeToggle';
+import PageHeader from '../../components/common/PageHeader';
+import { useDebounce } from '../../hooks/useDebounce';
+import { useAuthStore } from '../../store/authStore';
+import ConfiguracionColumnas, { useConfiguracionColumnas } from '../../components/common/ConfiguracionColumnas';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 interface Unidad {
   id: number;

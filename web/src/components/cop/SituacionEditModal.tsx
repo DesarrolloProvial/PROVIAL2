@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 import { X, Save, RefreshCw, Plus, Trash2, MapPin, Car, Truck, FileText, Camera } from 'lucide-react';
 
 // Constantes

@@ -5,14 +5,14 @@
 
 import { Request, Response } from 'express';
 import multer from 'multer';
-import { MultimediaModel } from '../models/multimedia.model';
+import { MultimediaModel } from '../../models/common/multimedia.model';
 import {
   uploadPhotoBuffer,
   uploadVideoBuffer,
   deleteByUrl,
   isCloudinaryConfiguredUnsigned
-} from '../services/cloudinary.service';
-import { db } from '../config/database';
+} from '../../services/common/cloudinary.service';
+import { db } from '../../config/database';
 
 // Configuración de multer para manejo de archivos en memoria
 const storage = multer.memoryStorage();

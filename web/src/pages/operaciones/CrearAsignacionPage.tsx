@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { turnosService, geografiaService } from '../services/turnos.service';
-import { asignacionesService } from '../services/asignaciones.service';
-import { operacionesService } from '../services/operaciones.service';
-import { administracionAPI } from '../services/administracion.service';
-import type { TripulacionMiembro, CreateAsignacionDTO } from '../services/turnos.service';
-import type { CreateAsignacionProgramadaDTO } from '../services/asignaciones.service';
-import type { BrigadaDisponible } from '../services/operaciones.service';
+import { turnosService, geografiaService } from '../../services/common/turnos.service';
+import { asignacionesService } from '../../services/operaciones/asignaciones.service';
+import { operacionesService } from '../../services/operaciones/operaciones.service';
+import { administracionAPI } from '../../services/admin/administracion.service';
+import type { TripulacionMiembro, CreateAsignacionDTO } from '../../services/common/turnos.service';
+import type { CreateAsignacionProgramadaDTO } from '../../services/operaciones/asignaciones.service';
+import type { BrigadaDisponible } from '../../services/operaciones/operaciones.service';
 import { AlertCircle, CheckCircle, Users, Truck, ArrowLeft, Plus, X, Search, Crown } from 'lucide-react';
-import ThemeToggle from '../components/ThemeToggle';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 export default function CrearAsignacionPage() {
   const navigate = useNavigate();

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 import { Camera, Video, Plus, Trash2, Loader2 } from 'lucide-react';
 
 interface Props {

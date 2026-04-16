@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin';
-import { db } from '../config/database';
+import { db } from '../../config/database';
 
 // ============================================
 // SERVICIO DE FIREBASE CLOUD MESSAGING

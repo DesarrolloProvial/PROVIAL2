@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { EstadisticasService } from '../services/estadisticas.service';
+import { EstadisticasService } from '../../services/accidentologia/estadisticas.service';
 
 // ============================================
 // CONTROLADOR DE ESTADÍSTICAS DE ACCIDENTOLOGÍA

@@ -4,7 +4,7 @@
  */
 
 import { Request, Response } from 'express';
-import { generateSignedUploadParams, isCloudinaryConfigured } from '../services/cloudinary.service';
+import { generateSignedUploadParams, isCloudinaryConfigured } from '../../services/common/cloudinary.service';
 
 /**
  * POST /api/cloudinary/sign

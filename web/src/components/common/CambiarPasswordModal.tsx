@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 import { Lock, Eye, EyeOff, X } from 'lucide-react';
 
 interface Props {

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { login, refresh, logout, me, checkResetStatus, resetPassword, cambiarPassword } from '../controllers/auth.controller';
-import { authenticate } from '../middlewares/auth';
+import { login, refresh, logout, me, checkResetStatus, resetPassword, cambiarPassword } from '../../controllers/common/auth.controller';
+import { authenticate } from '../../middlewares/auth';
 
 const router = Router();
 

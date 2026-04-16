@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../config/database';
+import { db } from '../../config/database';
 
 // GET /api/roles - Listar roles con sus permisos
 export async function listarRoles(_req: Request, res: Response) {

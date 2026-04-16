@@ -9,8 +9,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   asignacionesAvanzadasAPI,
   ConfiguracionVisualSede
-} from '../services/asignacionesAvanzadas.service';
-import ThemeToggle from '../components/ThemeToggle';
+} from '../../services/operaciones/asignacionesAvanzadas.service';
+import ThemeToggle from '../../components/common/ThemeToggle';
 import {
   ArrowLeft,
   Save,

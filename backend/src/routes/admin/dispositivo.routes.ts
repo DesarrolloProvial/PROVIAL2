@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { authenticate } from '../middlewares/auth';
-import { listarDispositivos, actualizarEstadoDispositivo } from '../controllers/dispositivo.controller';
+import { authenticate } from '../../middlewares/auth';
+import { listarDispositivos, actualizarEstadoDispositivo } from '../../controllers/admin/dispositivo.controller';
 
 const router = Router();
 

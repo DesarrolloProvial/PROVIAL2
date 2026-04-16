@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { UbicacionBrigadaModel } from '../models/ubicacionBrigada.model';
-import { db } from '../config/database';
+import { UbicacionBrigadaModel } from '../../models/cop/ubicacionBrigada.model';
+import { db } from '../../config/database';
 
 // ========================================
 // UBICACIÓN DE BRIGADAS

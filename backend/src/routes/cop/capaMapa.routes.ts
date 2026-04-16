@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../middlewares/auth';
+import { authenticate, authorize } from '../../middlewares/auth';
 import {
   listarCapas, crearCapa, actualizarCapa, eliminarCapa,
   getPuntosDeCapa, getTodosPuntos, crearPunto, actualizarPunto, eliminarPunto,
-} from '../controllers/capaMapa.controller';
+} from '../../controllers/cop/capaMapa.controller';
 
 const router = Router();
 

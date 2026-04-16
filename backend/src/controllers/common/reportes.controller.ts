@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ReportesService } from '../services/reportes.service';
+import { ReportesService } from '../../services/common/reportes.service';
 
 // ============================================
 // CONTROLADOR DE REPORTES

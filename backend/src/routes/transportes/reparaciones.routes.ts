@@ -6,8 +6,8 @@ import {
   completarReparacion,
   cancelarReparacion,
   getHistorialUnificado,
-} from '../controllers/reparaciones.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+} from '../../controllers/transportes/reparaciones.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
 

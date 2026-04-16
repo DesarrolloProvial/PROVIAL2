@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { OperacionesModel } from '../models/operaciones.model';
-import { db } from '../config/database';
+import { OperacionesModel } from '../../models/operaciones/operaciones.model';
+import { db } from '../../config/database';
 
 // ========================================
 // DASHBOARD DE OPERACIONES

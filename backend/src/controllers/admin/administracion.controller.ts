@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { AdministracionModel } from '../models/administracion.model';
-import { esSuperAdmin, puedeVerTodosDepartamentos } from '../middlewares/superAdmin';
+import { AdministracionModel } from '../../models/admin/administracion.model';
+import { esSuperAdmin, puedeVerTodosDepartamentos } from '../../middlewares/superAdmin';
 
 // =====================================================
 // DEPARTAMENTOS

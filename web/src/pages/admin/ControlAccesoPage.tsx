@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
-import ThemeToggle from '../components/ThemeToggle';
+import { api } from '../../services/api';
+import ThemeToggle from '../../components/common/ThemeToggle';
 import {
   Shield,
   RefreshCw,

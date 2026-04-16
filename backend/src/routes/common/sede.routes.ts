@@ -6,8 +6,8 @@ import {
   getPersonalDeSede,
   getMiSede,
   getConfiguracion
-} from '../controllers/sede.controller';
-import { authenticate } from '../middlewares/auth';
+} from '../../controllers/common/sede.controller';
+import { authenticate } from '../../middlewares/auth';
 
 const router = Router();
 

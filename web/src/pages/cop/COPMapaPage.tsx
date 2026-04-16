@@ -2,21 +2,21 @@ import { useEffect, useState, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import type { LeafletMouseEvent } from 'leaflet';
 import { Icon, LatLngExpression } from 'leaflet';
-import HeatmapLayer from '../components/HeatmapLayer';
+import HeatmapLayer from '../../components/common/HeatmapLayer';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { situacionesAPI, api } from '../services/api';
+import { situacionesAPI, api } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { RefreshCw, Wifi, WifiOff, AlertTriangle, Layers, Filter, X, LogOut, Search, Map as MapIcon, Plus, Eye, EyeOff, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
-import { useDashboardSocket } from '../hooks/useSocket';
-import ResumenUnidadesTable from '../components/ResumenUnidadesTable';
-import SituacionIcon from '../components/SituacionIcon';
-import CrearSituacionModal from '../components/forms/CrearSituacionModal';
-import CrearActividadModal from '../components/forms/CrearActividadModal';
-import CrearPuntoMapaModal from '../components/forms/CrearPuntoMapaModal';
-import CambiarPasswordModal from '../components/CambiarPasswordModal';
-import COPSalidaEmergenciaModal from '../components/forms/COPSalidaEmergenciaModal';
-import { useAuthStore } from '../store/authStore';
-import ThemeToggle from '../components/ThemeToggle';
+import { useDashboardSocket } from '../../hooks/useSocket';
+import ResumenUnidadesTable from '../../components/cop/ResumenUnidadesTable';
+import SituacionIcon from '../../components/common/SituacionIcon';
+import CrearSituacionModal from '../../components/cop/forms/CrearSituacionModal';
+import CrearActividadModal from '../../components/cop/forms/CrearActividadModal';
+import CrearPuntoMapaModal from '../../components/common/forms/CrearPuntoMapaModal';
+import CambiarPasswordModal from '../../components/common/CambiarPasswordModal';
+import COPSalidaEmergenciaModal from '../../components/cop/forms/COPSalidaEmergenciaModal';
+import { useAuthStore } from '../../store/authStore';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 // Emoji corto por nombre de icono MDI (para el pin del mapa)
 const MDI_EMOJI: Record<string, string> = {

@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import { UsuarioModel } from '../models/usuario.model';
-import { DispositivoModel } from '../models/dispositivo.model';
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
-import { cache } from '../config/redis';
-import { config } from '../config/env';
+import { UsuarioModel } from '../../models/common/usuario.model';
+import { DispositivoModel } from '../../models/admin/dispositivo.model';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../../utils/jwt';
+import { cache } from '../../config/redis';
+import { config } from '../../config/env';
 
 // Login
 export async function login(req: Request, res: Response) {

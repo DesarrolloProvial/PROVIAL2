@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { GeneradorTurnosController } from '../controllers/generador-turnos.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+import { GeneradorTurnosController } from '../../controllers/operaciones/generador-turnos.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
 

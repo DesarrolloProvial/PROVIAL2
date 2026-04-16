@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AuditoriaModel } from '../models/auditoria.model';
+import { AuditoriaModel } from '../../models/admin/auditoria.model';
 
 // ========================================
 // REGISTRAR CAMBIO MANUALMENTE

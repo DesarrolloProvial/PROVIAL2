@@ -5,7 +5,7 @@
 
 import { Request, Response } from 'express';
 import multer from 'multer';
-import { importExcelData } from '../services/importExcel.service';
+import { importExcelData } from '../../services/admin/importExcel.service';
 
 // Multer en memoria, solo archivos Excel
 const storage = multer.memoryStorage();

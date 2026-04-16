@@ -10,8 +10,8 @@ import {
   asignacionesAvanzadasAPI,
   SedeConAsignaciones,
   AsignacionConDetalle
-} from '../services/asignacionesAvanzadas.service';
-import { useAuthStore } from '../store/authStore';
+} from '../../services/operaciones/asignacionesAvanzadas.service';
+import { useAuthStore } from '../../store/authStore';
 import {
   ChevronDown,
   ChevronRight,
@@ -34,7 +34,7 @@ import {
   Edit2,
   ArrowLeft
 } from 'lucide-react';
-import ThemeToggle from '../components/ThemeToggle';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 export default function DashboardSedesPage() {
   const { user, logout } = useAuthStore();

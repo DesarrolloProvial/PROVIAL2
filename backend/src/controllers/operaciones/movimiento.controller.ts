@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { MovimientoModel } from '../models/movimiento.model';
+import { MovimientoModel } from '../../models/operaciones/movimiento.model';
 
 // ========================================
 // CREAR MOVIMIENTO

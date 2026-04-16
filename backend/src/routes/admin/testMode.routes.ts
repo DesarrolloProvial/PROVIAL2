@@ -11,8 +11,8 @@ import {
   resetIngresosActivos,
   resetSituacionesHoy,
   resetTodoUsuario
-} from '../controllers/testModeController';
-import { authenticate } from '../middlewares/auth';
+} from '../../controllers/admin/testModeController';
+import { authenticate } from '../../middlewares/auth';
 
 const router = express.Router();
 

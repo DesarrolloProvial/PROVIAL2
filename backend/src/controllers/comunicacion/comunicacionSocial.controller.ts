@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { ComunicacionSocialModel } from '../models/comunicacionSocial.model';
-import { db } from '../config/database';
-import { EstadisticasService } from '../services/estadisticas.service';
+import { ComunicacionSocialModel } from '../../models/comunicacion/comunicacionSocial.model';
+import { db } from '../../config/database';
+import { EstadisticasService } from '../../services/accidentologia/estadisticas.service';
 
 // ============================================
 // CONTROLADOR DE COMUNICACIÓN SOCIAL

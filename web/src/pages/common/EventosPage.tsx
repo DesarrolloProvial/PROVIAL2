@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { eventosAPI, geografiaAPI, situacionesAPI } from '../services/api';
+import { eventosAPI, geografiaAPI, situacionesAPI } from '../../services/api';
 import { Plus, MapPin, AlertTriangle, Truck, Save, X, ArrowLeft } from 'lucide-react';
-import ThemeToggle from '../components/ThemeToggle';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 export default function EventosPage() {
     const navigate = useNavigate();

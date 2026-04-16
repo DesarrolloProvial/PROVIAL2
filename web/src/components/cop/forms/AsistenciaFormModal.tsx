@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import {
   TIPOS_ASISTENCIA,
   SENTIDOS,
-} from '../../constants/situacionTypes';
-import VehiculoFormWeb from './VehiculoFormWeb';
-import AutoridadSocorroWeb from './AutoridadSocorroWeb';
-import ObstruccionSelectorWeb from './ObstruccionSelectorWeb';
-import api from '../../services/api';
+} from '../../../constants/situacionTypes';
+import VehiculoFormWeb from '../../accidentologia/forms/VehiculoFormWeb';
+import AutoridadSocorroWeb from '../../accidentologia/forms/AutoridadSocorroWeb';
+import ObstruccionSelectorWeb from '../../common/forms/ObstruccionSelectorWeb';
+import api from '../../../services/api';
 
 interface AsistenciaFormModalProps {
   isOpen: boolean;

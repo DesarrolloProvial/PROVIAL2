@@ -4,7 +4,7 @@
  */
 
 import * as XLSX from 'xlsx';
-import { db } from '../config/database';
+import { db } from '../../config/database';
 
 // ============================================================
 // CONFIGURACIÓN

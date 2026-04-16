@@ -9,7 +9,7 @@
  */
 
 import { Request, Response } from 'express';
-import { db } from '../config/database';
+import { db } from '../../config/database';
 
 /**
  * POST /api/situaciones/conflictos

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api, actividadesAPI, catalogosAPI } from '../../services/api';
+import { api, actividadesAPI, catalogosAPI } from '../../../services/api';
 import {
   X, Save, RefreshCw, ChevronRight, ChevronLeft,
   Activity, Shield, Briefcase, Check, Camera,
 } from 'lucide-react';
-import UbicacionFields from './UbicacionFields';
+import UbicacionFields from '../../common/forms/UbicacionFields';
 import DynamicActivityFields from './DynamicActivityFields';
 import SituacionMultimediaUploader from '../SituacionMultimediaUploader';
 

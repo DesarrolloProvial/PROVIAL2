@@ -15,8 +15,8 @@ import {
   asignarRolBrigada,
   revocarRolBrigada,
   getHistorialInactividad
-} from '../controllers/brigadas.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+} from '../../controllers/operaciones/brigadas.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
 

@@ -7,8 +7,8 @@ import {
   getActividad,
   getMiUnidadHoy,
   addObservacion,
-} from '../controllers/actividad.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+} from '../../controllers/cop/actividad.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
 

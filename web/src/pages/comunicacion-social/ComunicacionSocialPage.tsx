@@ -9,7 +9,7 @@ import {
   MapPin, Activity, ChevronDown, ChevronUp, LogOut, Share2, X, Image,
 } from 'lucide-react';
 import api from '../../services/api';
-import ThemeToggle from '../../components/ThemeToggle';
+import ThemeToggle from '../../components/common/ThemeToggle';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
 

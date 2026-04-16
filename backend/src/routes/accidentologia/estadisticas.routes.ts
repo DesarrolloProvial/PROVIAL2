@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { authenticate } from '../middlewares/auth';
-import EstadisticasController from '../controllers/estadisticas.controller';
+import { authenticate } from '../../middlewares/auth';
+import EstadisticasController from '../../controllers/accidentologia/estadisticas.controller';
 
 const router = Router();
 

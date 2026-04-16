@@ -1,14 +1,15 @@
 import { Router } from 'express';
 import {
   registrarIngreso,
+  finalizarJornada,
   registrarSalidaDeSede,
   getMiIngresoActivo,
   getMisIngresosHoy,
   getHistorialIngresos,
   getIngreso,
   editarIngreso
-} from '../controllers/ingreso.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+} from '../../controllers/cop/ingreso.controller';
+import { authenticate, authorize } from '../../middlewares/auth';
 
 const router = Router();
 
@@ -18,6 +19,9 @@ const router = Router();
 
 // Registrar ingreso a sede (Brigada)
 router.post('/registrar', authenticate, authorize('BRIGADA'), registrarIngreso);
+
+// Finalizar jornada laboral (Brigada) - requiere ingreso activo de tipo FINALIZACION_JORNADA
+router.post('/finalizar-jornada', authenticate, authorize('BRIGADA'), finalizarJornada);
 
 // Registrar salida de sede - volver a la calle (Brigada)
 router.post('/:id/salir', authenticate, authorize('BRIGADA'), registrarSalidaDeSede);

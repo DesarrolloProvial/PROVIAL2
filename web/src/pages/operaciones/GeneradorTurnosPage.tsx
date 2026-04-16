@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { generadorService } from '../services/generador.service';
-import type { SugerenciaAsignacion, ParametrosGenerador } from '../services/generador.service';
+import { generadorService } from '../../services/operaciones/generador.service';
+import type { SugerenciaAsignacion, ParametrosGenerador } from '../../services/operaciones/generador.service';
 import { ArrowLeft, Sparkles, Users, Truck, CheckCircle, AlertCircle, Info, Settings, Shield, Home } from 'lucide-react';
-import ThemeToggle from '../components/ThemeToggle';
+import ThemeToggle from '../../components/common/ThemeToggle';
 
 export default function GeneradorTurnosPage() {
   const navigate = useNavigate();

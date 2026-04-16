@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import PageHeader from '../components/PageHeader';
-import ThemeToggle from '../components/ThemeToggle';
-import { useAuthStore } from '../store/authStore';
+import PageHeader from '../../components/common/PageHeader';
+import ThemeToggle from '../../components/common/ThemeToggle';
+import { useAuthStore } from '../../store/authStore';
 import {
   administracionAPI,
   DepartamentoSistema,
@@ -15,7 +15,7 @@ import {
   Rol,
   getNombreGrupo,
   getColorGrupo,
-} from '../services/administracion.service';
+} from '../../services/admin/administracion.service';
 import {
   Users,
   Shield,
@@ -42,7 +42,7 @@ import {
   Star,
   Lock
 } from 'lucide-react';
-import RolesTab from '../components/admin/RolesTab';
+import RolesTab from '../../components/admin/RolesTab';
 
 type TabType = 'dashboard' | 'usuarios' | 'roles' | 'grupos' | 'encargados' | 'configuracion' | 'auditoria';
 
