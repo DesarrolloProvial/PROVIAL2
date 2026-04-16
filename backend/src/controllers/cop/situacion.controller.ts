@@ -6,7 +6,7 @@ import { MultimediaModel } from '../../models/common/multimedia.model';
 import { SalidaModel } from '../../models/common/salida.model';
 import { UbicacionBrigadaModel } from '../../models/cop/ubicacionBrigada.model';
 import { db } from '../../config/database';
-import { normalizeId } from '../../utils/db.utils';
+import { normalizeId, buildObservacionEntry } from '../../utils/db.utils';
 import {
   emitSituacionNueva,
   emitSituacionActualizada,
@@ -630,29 +630,13 @@ export async function addObservacion(req: Request, res: Response) {
       return res.status(400).json({ error: 'La observación no puede estar vacía' });
     }
 
-    const user = await db.oneOrNone(
-      'SELECT chapa, nombre_completo, rol FROM usuario WHERE id = $1',
-      [userId]
-    );
-    const firmaUsuario = user
-      ? (user.chapa ? `${user.chapa} - ${user.nombre_completo}` : `${user.rol} ${user.nombre_completo}`)
-      : 'Usuario';
-
-    const parts = new Intl.DateTimeFormat('en-US', {
-      hour12: false, hour: '2-digit', minute: '2-digit', timeZone: 'America/Guatemala',
-    }).formatToParts(new Date());
-    const horaServidor = `${parts.find(p => p.type === 'hour')?.value}:${parts.find(p => p.type === 'minute')?.value}`;
-    const horaFinal = (hora_local && hora_local !== horaServidor)
-      ? `¡${hora_local} / Servidor: ${horaServidor}!`
-      : horaServidor;
-
-    const nuevoMensaje = JSON.stringify([{ hora: horaFinal, usuario: firmaUsuario, mensaje: observacion }]);
+    const nuevoMensaje = await buildObservacionEntry(userId, observacion, hora_local);
 
     const situacionModificada = await db.one(
       `UPDATE situacion
        SET observaciones = COALESCE(observaciones, '[]'::jsonb) || $1::jsonb, updated_at = NOW()
        WHERE id = $2 RETURNING *`,
-      [nuevoMensaje, id]
+      [nuevoMensaje, id],
     );
 
     emitSituacionActualizada(situacionModificada as any);

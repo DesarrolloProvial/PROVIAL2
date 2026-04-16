@@ -1,4 +1,4 @@
-import { db } from '../config/database';
+import { db } from '../../config/database';
 
 // ========================================
 // INTERFACES
@@ -44,7 +44,7 @@ export const ActividadModel = {
   /**
    * Crear nueva actividad
    */
-  async create(data: Partial<Actividad>): Promise<Actividad> {
+  async create(data: Partial<Actividad>, conn: any = db): Promise<Actividad> {
     const query = `
       INSERT INTO actividad (
         tipo_actividad_id, unidad_id, salida_unidad_id, creado_por,
@@ -88,7 +88,7 @@ export const ActividadModel = {
       carga_vehicular: data.carga_vehicular || null,
     };
 
-    return db.one(query, params);
+    return conn.one(query, params);
   },
 
   /**
@@ -216,6 +216,47 @@ export const ActividadModel = {
   },
 
   /**
+   * Actualizar campos editables de una actividad.
+   * Si no hay nada que actualizar, devuelve la actividad sin tocar la BD.
+   */
+  async update(
+    id: number,
+    patch: {
+      km?: any; sentido?: any; ruta_id?: any;
+      latitud?: any; longitud?: any; observaciones?: any; datos?: any;
+    },
+  ): Promise<ActividadCompleta | null> {
+    const sets: string[] = [];
+    const vals: any[]    = [];
+    let i = 1;
+
+    if (patch.km !== undefined)        { sets.push(`km = $${i++}`);        vals.push(patch.km); }
+    if (patch.sentido !== undefined)   { sets.push(`sentido = $${i++}`);   vals.push(patch.sentido); }
+    if (patch.ruta_id !== undefined)   { sets.push(`ruta_id = $${i++}`);   vals.push(patch.ruta_id); }
+    if (patch.latitud !== undefined)   { sets.push(`latitud = $${i++}`);   vals.push(patch.latitud); }
+    if (patch.longitud !== undefined)  { sets.push(`longitud = $${i++}`);  vals.push(patch.longitud); }
+    if (patch.datos !== undefined)     { sets.push(`datos = $${i++}`);     vals.push(JSON.stringify(patch.datos)); }
+    if (patch.observaciones !== undefined) {
+      if (typeof patch.observaciones === 'string' && patch.observaciones.trim()) {
+        const hora = new Intl.DateTimeFormat('en-US', {
+          hour12: false, hour: '2-digit', minute: '2-digit', timeZone: 'America/Guatemala',
+        }).format(new Date());
+        sets.push(`observaciones = $${i++}`);
+        vals.push(JSON.stringify([{ hora, usuario: 'Edición', mensaje: patch.observaciones }]));
+      } else if (Array.isArray(patch.observaciones)) {
+        sets.push(`observaciones = $${i++}`);
+        vals.push(JSON.stringify(patch.observaciones));
+      }
+    }
+
+    if (sets.length > 0) {
+      vals.push(id);
+      await db.none(`UPDATE actividad SET ${sets.join(', ')} WHERE id = $${i}`, vals);
+    }
+    return this.getById(id);
+  },
+
+  /**
    * Cerrar todas las actividades activas de una unidad (al crear nueva)
    */
   async list(filters: any = {}): Promise<ActividadCompleta[]> {
@@ -243,8 +284,8 @@ export const ActividadModel = {
     `, params);
   },
 
-  async cerrarActivasDeUnidad(unidadId: number): Promise<void> {
-    await db.none(`
+  async cerrarActivasDeUnidad(unidadId: number, conn: any = db): Promise<void> {
+    await conn.none(`
       UPDATE actividad SET estado = 'CERRADA', closed_at = NOW()
       WHERE unidad_id = $1 AND estado = 'ACTIVA'
     `, [unidadId]);
