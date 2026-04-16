@@ -27,7 +27,7 @@ import ubicacionBrigadaRoutes from './cop/ubicacionBrigada.routes';
 import administracionRoutes from './admin/administracion.routes';
 import inspeccion360Routes from './transportes/inspeccion360.routes';
 import notificacionesRoutes from './common/notificaciones.routes';
-import aprobacionesRoutes from './cop/aprobaciones.routes';
+import aprobacionesRoutes from './mobile/aprobaciones.routes';
 import reportesRoutes from './common/reportes.routes';
 import dashboardRoutes from './admin/dashboard.routes';
 import accidentologiaRoutes from './accidentologia/accidentologia.routes';

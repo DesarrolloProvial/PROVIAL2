@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { authenticate } from '../middlewares/auth';
-import AprobacionesController from '../controllers/aprobaciones.controller';
+import { authenticate } from '../../middlewares/auth';
+import AprobacionesController from '../../controllers/mobile/aprobaciones.controller';
 
 const router = Router();
 
