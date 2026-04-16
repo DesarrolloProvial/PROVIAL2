@@ -8,7 +8,7 @@ import movimientosRoutes from './operaciones/movimientos.routes';
 import auditoriaRoutes from './admin/auditoria.routes';
 import geografiaRoutes from './common/geografia.routes';
 import salidaRoutes from './cop/salida.routes';
-import ingresoRoutes from './cop/ingreso.routes';
+import ingresoRoutes from './common/ingreso.routes';
 import sedeRoutes from './common/sede.routes';
 import reasignacionRoutes from './operaciones/reasignacion.routes';
 import intelligenceRoutes from './accidentologia/intelligence.routes';

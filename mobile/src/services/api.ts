@@ -134,19 +134,8 @@ export const turnosAPI = {
 };
 
 export const salidasAPI = {
-  async finalizarSalida(params: {
-    km_final?: number;
-    combustible_final?: number;
-    observaciones?: string;
-  }): Promise<any> {
-    const { data } = await api.post('/salidas/finalizar', params);
-    return data;
-  },
-
-  async finalizarJornadaCompleta(): Promise<any> {
-    const { data } = await api.post('/salidas/finalizar-jornada');
-    return data;
-  },
+  // Salidas — funciones de consulta y administración
+  // Brigada finaliza jornada por ingresosAPI.finalizarJornada (POST /ingresos/finalizar-jornada)
 };
 
 export const ingresosAPI = {

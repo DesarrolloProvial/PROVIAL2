@@ -13,7 +13,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useSituacionesStore } from '../../store/situacionesStore';
 import { COLORS } from '../../constants/colors';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { turnosAPI, salidasAPI } from '../../services/api';
+import { turnosAPI } from '../../services/api';
 import RutaSelector from '../../components/RutaSelector';
 import AsignacionDetalleCard from '../../components/AsignacionDetalleCard';
 
@@ -30,7 +30,7 @@ export default function BrigadaHomeScreen() {
   const [cambiandoRuta, setCambiandoRuta] = useState(false);
   const [asignacionDia, setAsignacionDia] = useState<any>(null);
   const [loadingAsignacionDia, setLoadingAsignacionDia] = useState(false);
-  const [finalizandoJornada, setFinalizandoJornada] = useState(false);
+  const [finalizandoJornada] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -201,7 +201,7 @@ export default function BrigadaHomeScreen() {
   };
 
 
-  const handleFinalizarJornada = async () => {
+  const handleFinalizarJornada = () => {
     if (situacionActiva || actividadActiva) {
       Alert.alert(
         situacionActiva ? 'Situación Activa' : 'Actividad Activa',
@@ -213,7 +213,6 @@ export default function BrigadaHomeScreen() {
       return;
     }
 
-    // Verificar que hay ingreso activo con FINALIZACION_JORNADA
     if (!ingresoActivo || ingresoActivo.tipo_ingreso !== 'FINALIZACION_JORNADA') {
       Alert.alert(
         'Ingreso Requerido',
@@ -223,39 +222,7 @@ export default function BrigadaHomeScreen() {
       return;
     }
 
-    Alert.alert(
-      'Finalizar Jornada',
-      '¿Estás seguro de que deseas finalizar tu jornada laboral?\n\nEsta acción cerrará tu salida y liberará la unidad.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Finalizar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setFinalizandoJornada(true);
-              await salidasAPI.finalizarJornadaCompleta();
-
-              // Limpiar TODOS los estados relacionados con la jornada
-              await refreshEstadoBrigada();
-              setAsignacionDia(null); // Limpiar asignación del día (estado local)
-
-              Alert.alert(
-                'Jornada Finalizada',
-                'Tu jornada ha sido finalizada exitosamente. ¡Buen trabajo!',
-                [{ text: 'OK' }]
-              );
-            } catch (error: any) {
-              console.error('[FINALIZAR JORNADA] Error:', error);
-              const mensaje = error.response?.data?.message || error.response?.data?.error || error.message || 'No se pudo finalizar la jornada';
-              Alert.alert('Error', mensaje);
-            } finally {
-              setFinalizandoJornada(false);
-            }
-          }
-        }
-      ]
-    );
+    navigation.navigate('FinalizarDia' as never);
   };
 
   const getTipoSituacionColor = (tipo: string) => {
