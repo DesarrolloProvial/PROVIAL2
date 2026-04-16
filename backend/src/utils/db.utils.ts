@@ -16,6 +16,37 @@ export function normalizeId(val: unknown): number | null {
 }
 
 /**
+ * Convierte cualquier valor a number | null, aceptando decimales.
+ * Descarta: '', null, undefined, NaN e Infinity.
+ */
+export function normalizeFloat(val: unknown): number | null {
+  if (val === '' || val === null || val === undefined) return null;
+  const num = Number(val);
+  return Number.isFinite(num) ? num : null;
+}
+
+// Bounding box aproximado del territorio continental de Guatemala
+const GT_LAT_MIN =  13.7;
+const GT_LAT_MAX =  18.5;
+const GT_LON_MIN = -92.3;
+const GT_LON_MAX = -88.2;
+
+/**
+ * Devuelve un mensaje de advertencia si las coordenadas están fuera de Guatemala.
+ * No bloquea la operación — el caller decide si incluirlo en la respuesta.
+ */
+export function checkCoordenadasGuatemala(lat: number, lon: number): string | null {
+  const dentro =
+    lat >= GT_LAT_MIN && lat <= GT_LAT_MAX &&
+    lon >= GT_LON_MIN && lon <= GT_LON_MAX;
+  if (!dentro) {
+    return `Ojo: la coordenada (${lat}, ${lon}) probablemente no es de Guatemala ` +
+           `(rango esperado lat ${GT_LAT_MIN}–${GT_LAT_MAX}, lon ${GT_LON_MIN}–${GT_LON_MAX}). ¿Estás seguro?`;
+  }
+  return null;
+}
+
+/**
  * Construye la entrada JSON para el timeline de observaciones.
  * Comparte la lógica de firma de usuario y normalización horaria
  * entre situacion y actividad.
