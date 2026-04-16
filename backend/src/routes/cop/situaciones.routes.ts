@@ -30,7 +30,7 @@ import {
   obtenerConflicto,
   resolverConflicto,
   misConflictos
-} from '../../controllers/cop/conflictos.controller';
+} from '../../controllers/common/conflictos.controller';
 import { authenticate, authorize, canEditSituacion } from '../../middlewares/auth';
 
 const router = Router();

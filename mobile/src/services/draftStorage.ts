@@ -141,26 +141,34 @@ export interface DraftSituacion {
 }
 
 /**
- * Verificar si hay draft pendiente
+ * Verificar si hay draft pendiente válido.
+ * Delega a getDraftPendiente para que también aplique la validación de formato.
  */
 export async function hasDraftPendiente(): Promise<boolean> {
-  try {
-    const draft = await AsyncStorage.getItem(DRAFT_KEY);
-    return draft !== null;
-  } catch (error) {
-    console.error('[DRAFT] Error verificando draft pendiente:', error);
-    return false;
-  }
+  return (await getDraftPendiente()) !== null;
 }
 
 /**
- * Obtener draft pendiente
+ * Obtener draft pendiente.
+ * Si existe un draft con ID en formato legacy (7 partes, sin salida_id)
+ * lo descarta automáticamente y retorna null — ese draft no puede subirse.
  */
 export async function getDraftPendiente(): Promise<DraftSituacion | null> {
   try {
     const json = await AsyncStorage.getItem(DRAFT_KEY);
     if (!json) return null;
-    return JSON.parse(json) as DraftSituacion;
+
+    const draft = JSON.parse(json) as DraftSituacion;
+
+    // Validar formato del ID: debe tener 8 partes (incluye salida_id)
+    const partes = draft.id?.split('-').length ?? 0;
+    if (partes !== 8) {
+      console.warn(`[DRAFT] Draft con ID legacy (${partes} partes), descartando: ${draft.id}`);
+      await AsyncStorage.removeItem(DRAFT_KEY);
+      return null;
+    }
+
+    return draft;
   } catch (error) {
     console.error('[DRAFT] Error obteniendo draft:', error);
     return null;

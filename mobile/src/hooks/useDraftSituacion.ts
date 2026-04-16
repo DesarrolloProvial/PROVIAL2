@@ -87,6 +87,7 @@ export function useDraftSituacion() {
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const token = useAuthStore(state => state.token);
   const salidaActiva = useAuthStore(state => state.salidaActiva);
+  const miSede = useAuthStore(state => state.miSede);
 
   // Cargar draft al iniciar
   useEffect(() => {
@@ -223,7 +224,7 @@ export function useDraftSituacion() {
       reserva = {
         num_situacion_salida: 0, // 0 indica pendiente de sincronizar
         fecha: new Date().toISOString(),
-        sede_id: 1, // Default (idealmente debería venir del AuthStore)
+        sede_id: miSede?.mi_sede_id ?? 0,
         unidad_id: params.unidad_id || 0,
         unidad_codigo: params.unidad_codigo,
         salida_id: params.salida_id || 0,
