@@ -15,7 +15,7 @@ import intelligenceRoutes from './accidentologia/intelligence.routes';
 import operacionesRoutes from './operaciones/operaciones.routes';
 import generadorTurnosRoutes from './operaciones/generador-turnos.routes';
 import asignacionesRoutes from './operaciones/asignaciones';
-import solicitudesSalidaRoutes from './cop/solicitudesSalida';
+
 import testModeRoutes from './admin/testMode.routes';
 import brigadasRoutes from './operaciones/brigadas.routes';
 import unidadesRoutes from './transportes/unidades.routes';
@@ -92,8 +92,7 @@ router.use('/generador-turnos', generadorTurnosRoutes);
 // Rutas de asignaciones programadas (protocolos de salida)
 router.use('/asignaciones', asignacionesRoutes);
 
-// Rutas de solicitudes de salida y autorizaciones
-router.use('/solicitudes-salida', solicitudesSalidaRoutes);
+
 
 // Rutas de modo de pruebas (eliminación de datos de testing)
 router.use('/test-mode', testModeRoutes);

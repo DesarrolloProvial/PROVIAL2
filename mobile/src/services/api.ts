@@ -4,25 +4,55 @@ import { API_URL } from '../constants/config';
 
 // API_URL viene de config.ts (actualmente: 192.168.10.105:3001)
 
+import * as Device from 'expo-device';
+import * as Application from 'expo-application';
+import { Platform } from 'react-native';
+
 const api = axios.create({
   baseURL: API_URL,
   timeout: 30000, // Aumentado a 30 segundos
   headers: {
     'Content-Type': 'application/json',
+    'X-App-Platform': 'mobile',
   },
   validateStatus: (status) => status < 500, // Aceptar respuestas 4xx
 });
 
-// Interceptor para agregar token
+// Obtener o crear IDs persistentes
+async function getDeviceIds() {
+  let uuid = await AsyncStorage.getItem('device_uuid');
+  let imei = await AsyncStorage.getItem('device_imei');
+
+  if (!uuid) {
+    uuid = Platform.OS === 'android' ? Application.androidId : await Application.getIosIdForVendorAsync();
+    if (!uuid) uuid = 'uuid-' + Math.random().toString(36).substring(2);
+    await AsyncStorage.setItem('device_uuid', uuid);
+  }
+
+  if (!imei) {
+    // Generamos un pseudo-IMEI si no existe porque iOS/Android moderno ya no permite leer el real fácilmente
+    imei = 'IMEI-' + Math.floor(100000000000000 + Math.random() * 900000000000000).toString();
+    await AsyncStorage.setItem('device_imei', imei);
+  }
+
+  return { uuid, imei };
+}
+
+// Interceptor para agregar token y headers de dispositivo
 api.interceptors.request.use(
   async (config) => {
-    // Use 'token' key to match STORAGE_KEYS.TOKEN
     const token = await AsyncStorage.getItem('token');
-    console.log('[API Interceptor] Token retrieved:', token ? 'YES (length: ' + token.length + ')' : 'NO');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log('[API Interceptor] Request to:', config.url);
+
+    // Agregar headers de dispositivo siempre
+    const { uuid, imei } = await getDeviceIds();
+    config.headers['X-Device-UUID'] = uuid;
+    config.headers['X-Device-IMEI'] = imei;
+    config.headers['X-Device-Model'] = Device.modelName || 'Unknown Device';
+
+    console.log(`[API Interceptor] Request to: ${config.url} (Device: ${imei}:${uuid})`);
     return config;
   },
   (error) => {

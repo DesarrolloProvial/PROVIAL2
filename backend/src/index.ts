@@ -8,6 +8,7 @@ import { /* db, */ testConnection, closeConnection } from './config/database';
 import { /* redis, */ testRedisConnection, closeRedis } from './config/redis';
 import routes from './routes';
 import { initSocketService, getConnectionStats } from './services/common/socket.service';
+import { deviceSecurity } from './middlewares/deviceSecurity';
 
 // Crear app Express
 const app = express();
@@ -21,7 +22,7 @@ app.use(helmet());
 app.use(cors({
   origin: config.cors.origins,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-App-Platform', 'X-Device-IMEI', 'X-Device-UUID', 'X-Device-Model'],
   credentials: true,
 }));
 app.use(express.json({ limit: '50mb' }));
@@ -71,6 +72,9 @@ app.get(config.apiPrefix, (_req, res) => {
 
 // Servir archivos estáticos de uploads (multimedia)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// Seguridad por dispositivo (whitelist móvil + blacklist global + rate limiting)
+app.use(deviceSecurity);
 
 // Rutas de la API
 app.use(config.apiPrefix, routes);

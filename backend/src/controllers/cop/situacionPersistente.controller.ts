@@ -44,8 +44,10 @@ const SELECT_PERSISTENTE = `
     s.created_at                              AS fecha_inicio,
     s.fecha_fin_estimada,
     s.fecha_hora_finalizacion                 AS fecha_fin_real,
-    s.creado_por                              AS promovido_por,
-    u.nombre_completo                         AS creado_por_nombre,
+    s.creado_por,
+    u_creador.nombre_completo                 AS creado_por_nombre,
+    s.promovido_por,
+    u_cop.nombre_completo                     AS promovido_por_nombre,
     s.obstruccion_data                        AS obstruccion,
     s.persistente,
     s.latitud,
@@ -57,8 +59,9 @@ const SELECT_PERSISTENTE = `
         AND spa.fecha_hora_desasignacion IS NULL
     ) AS unidades_asignadas_count
   FROM situacion s
-  LEFT JOIN ruta r   ON s.ruta_id = r.id
-  LEFT JOIN usuario u ON s.creado_por = u.id
+  LEFT JOIN ruta r        ON s.ruta_id      = r.id
+  LEFT JOIN usuario u_creador ON s.creado_por   = u_creador.id
+  LEFT JOIN usuario u_cop     ON s.promovido_por = u_cop.id
   LEFT JOIN catalogo_tipo_situacion cts ON s.tipo_situacion_id = cts.id
   WHERE s.persistente = true
 `;
@@ -737,33 +740,49 @@ export async function promover(req: Request, res: Response) {
     const situacionId = normalizeId(req.params.situacionId);
     if (!situacionId) return res.status(400).json({ error: 'ID inválido' });
 
+    const copUserId = req.user!.userId;
     const { titulo, tipo_emergencia_id, importancia, descripcion } = req.body;
 
-    const sets: string[] = [
-      'persistente = true',
-      'estado = CASE WHEN estado = \'CERRADA\' THEN \'ACTIVA\' ELSE estado END',
-      'updated_at = NOW()',
-    ];
-    const params: any[] = [];
-    let i = 1;
+    // Verificar que la situación existe y no es ya persistente
+    const existente = await db.oneOrNone(
+      'SELECT id, persistente FROM situacion WHERE id = $1',
+      [situacionId]
+    );
+    if (!existente) return res.status(404).json({ error: 'Situación no encontrada' });
+    if (existente.persistente) return res.status(409).json({ error: 'La situación ya es persistente' });
 
-    if (titulo)             { sets.push(`titulo = $${i++}`);            params.push(titulo); }
+    const sets: string[] = [
+      'persistente      = true',
+      'promovido_por    = $1',
+      'estado           = CASE WHEN estado = \'CERRADA\' THEN \'ACTIVA\' ELSE estado END',
+      'updated_at       = NOW()',
+    ];
+    const params: any[] = [copUserId];
+    let i = 2;
+
+    if (titulo)             { sets.push(`titulo            = $${i++}`); params.push(titulo); }
     if (tipo_emergencia_id) { sets.push(`tipo_situacion_id = $${i++}`); params.push(normalizeId(tipo_emergencia_id)); }
-    if (importancia)        { sets.push(`importancia = $${i++}`);       params.push(importancia); }
-    if (descripcion)        { sets.push(`descripcion = $${i++}`);       params.push(descripcion); }
+    if (importancia)        { sets.push(`importancia       = $${i++}`); params.push(importancia); }
+    if (descripcion)        { sets.push(`descripcion       = $${i++}`); params.push(descripcion); }
 
     params.push(situacionId);
 
-    const s = await db.oneOrNone(
-      `UPDATE situacion SET ${sets.join(', ')} WHERE id = $${i} RETURNING id`,
-      params
-    );
-    if (!s) return res.status(404).json({ error: 'Situación no encontrada' });
+    const resultado = await db.tx(async (conn) => {
+      const s = await conn.oneOrNone(
+        `UPDATE situacion SET ${sets.join(', ')} WHERE id = $${i} RETURNING id`,
+        params
+      );
+      if (!s) throw new Error('NOT_FOUND');
 
-    const resultado = await db.one(`${SELECT_PERSISTENTE} AND s.id = $1`, [situacionId]);
+      return conn.one(`${SELECT_PERSISTENTE} AND s.id = $1`, [s.id]);
+    });
+
     emitSituacionActualizada(resultado as any);
     return res.json({ situacion: resultado });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'NOT_FOUND') {
+      return res.status(404).json({ error: 'Situación no encontrada' });
+    }
     console.error('promover:', error);
     return res.status(500).json({ error: 'Error interno' });
   }

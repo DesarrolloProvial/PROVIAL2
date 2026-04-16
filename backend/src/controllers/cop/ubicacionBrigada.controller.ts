@@ -510,7 +510,7 @@ export const getBrigadasEnPuntoFijo = async (_req: Request, res: Response) => {
       JOIN usuario u ON ub.usuario_id = u.id
       LEFT JOIN unidad uo ON ub.unidad_origen_id = uo.id
       LEFT JOIN ruta r ON ub.punto_fijo_ruta_id = r.id
-      LEFT JOIN situacion_persistente sp ON ub.situacion_persistente_id = sp.id
+      LEFT JOIN situacion sp ON ub.situacion_persistente_id = sp.id AND sp.persistente = true
       WHERE ub.fin_ubicacion IS NULL
         AND ub.estado = 'EN_PUNTO_FIJO'
       ORDER BY ub.inicio_ubicacion DESC
