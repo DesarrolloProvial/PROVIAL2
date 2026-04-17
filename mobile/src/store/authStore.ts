@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL, STORAGE_KEYS } from '../constants/config';
 import { syncCatalogosAuxiliares } from '../services/catalogSync';
+import { getDeviceIds } from '../services/api';
+import * as Device from 'expo-device';
 
 // ========================================
 // INTERFACES
@@ -476,6 +478,14 @@ axios.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Añadir headers de seguridad para el backend
+    const { uuid, imei } = await getDeviceIds();
+    config.headers['X-App-Platform'] = 'mobile';
+    config.headers['X-Device-UUID'] = uuid;
+    config.headers['X-Device-IMEI'] = imei;
+    config.headers['X-Device-Model'] = Device.modelName || 'Unknown Device';
+
     return config;
   },
   (error) => {

@@ -111,6 +111,11 @@ async function checkWhitelistMovil(
 
 export async function deviceSecurity(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    // Ignorar peticiones preflight CORS (no traen headers custom)
+    if (req.method === 'OPTIONS') {
+      return next();
+    }
+
     const key = getRateLimitKey(req);
 
     // 1. Blacklist global en BD

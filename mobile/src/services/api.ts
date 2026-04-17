@@ -19,7 +19,7 @@ const api = axios.create({
 });
 
 // Obtener o crear IDs persistentes
-async function getDeviceIds() {
+export async function getDeviceIds() {
   let uuid = await AsyncStorage.getItem('device_uuid');
   let imei = await AsyncStorage.getItem('device_imei');
 
