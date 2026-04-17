@@ -76,6 +76,13 @@ async function isWhitelistActiva(): Promise<boolean> {
   return row?.valor === 'true' || row?.valor === true;
 }
 
+async function isMobileAccessEnabled(): Promise<boolean> {
+  const row = await db.oneOrNone(
+    `SELECT valor FROM configuracion_sistema WHERE clave = 'dispositivos_por_unidad' LIMIT 1`
+  );
+  return row?.valor !== '0' && row?.valor !== 0;
+}
+
 async function checkWhitelistMovil(
   imei: string,
   uuid: string,
@@ -145,8 +152,19 @@ export async function deviceSecurity(req: Request, res: Response, next: NextFunc
       return;
     }
 
-    // 4. Whitelist solo para clientes móviles
+    // 4. Modo "Ignorar Móvil" global
     if (platform === 'mobile') {
+      const mobileHabilitado = await isMobileAccessEnabled();
+      if (!mobileHabilitado) {
+        res.status(403).json({
+          error: 'Acceso móvil deshabilitado por política de la institución. Reporte exclusivamente operando a través del COP.',
+          code: 'MOBILE_ACCESS_DISABLED'
+        });
+        return;
+      }
+
+      // 5. Whitelist solo para clientes móviles
+
       const whitelistActiva = await isWhitelistActiva();
       if (whitelistActiva) {
         const imei  = req.headers['x-device-imei']  as string | undefined;
