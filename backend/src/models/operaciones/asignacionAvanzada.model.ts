@@ -398,56 +398,28 @@ export const AsignacionAvanzadaModel = {
     );
   },
 
-  /**
-   * Registrar asignación en historial de situaciones
-   */
-  async registrarHistorialSituacion(params: {
-    usuarioId: number;
-    situacionFijaId: number;
-    fecha: string;
-    turnoId?: number;
-    asignacionId?: number;
-  }): Promise<void> {
-    await db.none(
-      `INSERT INTO historial_situacion_brigada (usuario_id, situacion_fija_id, fecha, turno_id, asignacion_id)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [params.usuarioId, params.situacionFijaId, params.fecha, params.turnoId || null, params.asignacionId || null]
-    );
-  },
+
 
   /**
    * Obtener alertas de rotación para un brigada
    */
-  async getAlertasRotacion(usuarioId: number, rutaId?: number, situacionFijaId?: number, umbral: number = 3): Promise<{
+  async getAlertasRotacion(usuarioId: number, rutaId?: number, umbral: number = 3): Promise<{
     alertaRuta: boolean;
     vecesEnRuta: number;
-    alertaSituacion: boolean;
-    vecesEnSituacion: number;
   }> {
     let vecesEnRuta = 0;
-    let vecesEnSituacion = 0;
 
     if (rutaId) {
       const resultRuta = await db.one(
         `SELECT contar_veces_en_ruta($1, $2, 30) as count`,
         [usuarioId, rutaId]
       );
-      vecesEnRuta = resultRuta.count;
-    }
-
-    if (situacionFijaId) {
-      const resultSituacion = await db.one(
-        `SELECT contar_veces_en_situacion($1, $2, 30) as count`,
-        [usuarioId, situacionFijaId]
-      );
-      vecesEnSituacion = resultSituacion.count;
+      vecesEnRuta = parseInt(resultRuta.count, 10) || 0;
     }
 
     return {
       alertaRuta: vecesEnRuta >= umbral,
-      vecesEnRuta,
-      alertaSituacion: vecesEnSituacion >= umbral,
-      vecesEnSituacion
+      vecesEnRuta
     };
   },
 
