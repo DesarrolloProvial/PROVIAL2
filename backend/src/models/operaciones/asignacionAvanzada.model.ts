@@ -401,14 +401,19 @@ export const AsignacionAvanzadaModel = {
 
 
   /**
-   * Obtener alertas de rotación para un brigada
+   * Obtener alertas de rotación y el historial reciente para un brigada
    */
-  async getAlertasRotacion(usuarioId: number, rutaId?: number, umbral: number = 3): Promise<{
+  async getAlertasRotacion(usuarioId: number, rutaId?: number, umbral: number = 3, fechaAsignacion?: string): Promise<{
     alertaRuta: boolean;
     vecesEnRuta: number;
+    ultimaRutaNombre: string | null;
+    salioAyer: boolean;
   }> {
     let vecesEnRuta = 0;
+    let ultimaRutaNombre = null;
+    let salioAyer = false;
 
+    // Verificar veces en la ruta proporcionada (lógica actual para rotación)
     if (rutaId) {
       const resultRuta = await db.one(
         `SELECT contar_veces_en_ruta($1, $2, 30) as count`,
@@ -417,41 +422,46 @@ export const AsignacionAvanzadaModel = {
       vecesEnRuta = parseInt(resultRuta.count, 10) || 0;
     }
 
+    // Obtener la última salida y verificar si salió "ayer"
+    // Buscamos la última salida física en la bitácora
+    const ultimaSalida = await db.oneOrNone(`
+      SELECT r.codigo as ruta_nombre, date(su.fecha_hora_salida) as fecha_salida
+      FROM salida_unidad su
+      JOIN unidad u ON su.unidad_id = u.id
+      LEFT JOIN ruta r ON su.ruta_inicial_id = r.id
+      WHERE su.tripulacion @> jsonb_build_array(jsonb_build_object('usuario_id', $1::int))
+      ORDER BY su.fecha_hora_salida DESC
+      LIMIT 1
+    `, [usuarioId]);
+
+    if (ultimaSalida) {
+      ultimaRutaNombre = ultimaSalida.ruta_nombre;
+
+      if (fechaAsignacion && ultimaSalida.fecha_salida) {
+        // Calcular si "fecha_salida" es exactamente el día calendario anterior a "fechaAsignacion"
+        const dAsignacion = new Date(fechaAsignacion);
+        const dSalida = new Date(ultimaSalida.fecha_salida);
+        
+        // Normalizamos a medianoche UTC para comparar días sin ruidos horarios
+        dAsignacion.setUTCHours(0, 0, 0, 0);
+        dSalida.setUTCHours(0, 0, 0, 0);
+
+        const diffTime = Math.abs(dAsignacion.getTime() - dSalida.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        
+        if (diffDays === 1) {
+          salioAyer = true;
+        }
+      }
+    }
+
     return {
       alertaRuta: vecesEnRuta >= umbral,
-      vecesEnRuta
+      vecesEnRuta,
+      ultimaRutaNombre,
+      salioAyer
     };
   },
-
-  /**
-   * Crear aviso en asignación
-   */
-  async crearAviso(params: {
-    asignacionId: number;
-    tipo: 'ADVERTENCIA' | 'INFO' | 'URGENTE';
-    mensaje: string;
-    color?: string;
-    creadoPor: number;
-  }): Promise<AvisoAsignacion> {
-    return db.one(
-      `INSERT INTO aviso_asignacion (asignacion_id, tipo, mensaje, color, creado_por)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [params.asignacionId, params.tipo, params.mensaje, params.color || '#f59e0b', params.creadoPor]
-    );
-  },
-
-  /**
-   * Eliminar aviso
-   */
-  async eliminarAviso(avisoId: number): Promise<boolean> {
-    const result = await db.result(
-      `DELETE FROM aviso_asignacion WHERE id = $1`,
-      [avisoId]
-    );
-    return result.rowCount > 0;
-  },
-
   /**
    * Actualizar acciones con formato
    */
@@ -461,19 +471,6 @@ export const AsignacionAvanzadaModel = {
        SET acciones_formato = $2, updated_at = NOW()
        WHERE id = $1`,
       [asignacionId, accionesFormato]
-    );
-    return result.rowCount > 0;
-  },
-
-  /**
-   * Vincular asignación con situación fija
-   */
-  async vincularSituacionFija(asignacionId: number, situacionFijaId: number): Promise<boolean> {
-    const result = await db.result(
-      `UPDATE asignacion_unidad
-       SET situacion_fija_id = $2, updated_at = NOW()
-       WHERE id = $1`,
-      [asignacionId, situacionFijaId]
     );
     return result.rowCount > 0;
   }

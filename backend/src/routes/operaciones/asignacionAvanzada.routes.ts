@@ -11,16 +11,8 @@ import {
   getConfiguracionSede,
   getAllConfiguracionesSede,
   updateConfiguracionSede,
-  getSituacionesFijas,
-  getSituacionFija,
-  createSituacionFija,
-  updateSituacionFija,
-  deleteSituacionFija,
-  crearAviso,
-  eliminarAviso,
   getAlertasRotacion,
-  updateAccionesFormato,
-  vincularSituacionFija
+  updateAccionesFormato
 } from '../../controllers/operaciones/asignacionAvanzada.controller';
 
 const router = Router();
@@ -59,34 +51,7 @@ router.get('/configuracion-sede/:sedeId', authorize('ADMIN', 'OPERACIONES', 'ENC
 // Actualizar configuración de sede (solo ADMIN/OPERACIONES pueden editar)
 router.put('/configuracion-sede/:sedeId', authorize('ADMIN', 'OPERACIONES'), updateConfiguracionSede);
 
-// =====================================================
-// SITUACIONES FIJAS
-// =====================================================
 
-// Obtener todas las situaciones fijas (ENCARGADO_NOMINAS solo lectura)
-router.get('/situaciones-fijas', authorize('ADMIN', 'OPERACIONES', 'ENCARGADO_NOMINAS'), getSituacionesFijas);
-
-// Obtener situación fija por ID (ENCARGADO_NOMINAS solo lectura)
-router.get('/situaciones-fijas/:id', authorize('ADMIN', 'OPERACIONES', 'ENCARGADO_NOMINAS'), getSituacionFija);
-
-// Crear situación fija
-router.post('/situaciones-fijas', authorize('ADMIN', 'OPERACIONES'), createSituacionFija);
-
-// Actualizar situación fija
-router.put('/situaciones-fijas/:id', authorize('ADMIN', 'OPERACIONES'), updateSituacionFija);
-
-// Desactivar situación fija
-router.delete('/situaciones-fijas/:id', authorize('ADMIN', 'OPERACIONES'), deleteSituacionFija);
-
-// =====================================================
-// AVISOS EN ASIGNACIONES
-// =====================================================
-
-// Crear aviso en asignación
-router.post('/asignacion/:asignacionId/aviso', authorize('ADMIN', 'OPERACIONES'), crearAviso);
-
-// Eliminar aviso
-router.delete('/aviso/:avisoId', authorize('ADMIN', 'OPERACIONES'), eliminarAviso);
 
 // =====================================================
 // ALERTAS DE ROTACIÓN
@@ -102,7 +67,6 @@ router.get('/alertas-rotacion/:usuarioId', authorize('ADMIN', 'OPERACIONES', 'EN
 // Actualizar acciones con formato
 router.put('/asignacion/:asignacionId/acciones-formato', authorize('ADMIN', 'OPERACIONES'), updateAccionesFormato);
 
-// Vincular asignación con situación fija
-router.put('/asignacion/:asignacionId/vincular-situacion', authorize('ADMIN', 'OPERACIONES'), vincularSituacionFija);
+
 
 export default router;

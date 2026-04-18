@@ -94,16 +94,16 @@ export async function publicarTurno(req: Request, res: Response) {
     res.json({ message: 'Turno (plantilla) publicado correctamente. Las patrullas ya son visibles.', publicado: true });
   } catch (error: any) {
     console.error('Error en publicarTurno:', error);
-    
+
     if (error.message === 'MISSING_UNITS') {
-      return res.status(400).json({ 
-        error: 'Incapaz de publicar turno. Existen patrullas sin unidad asignada. Transportes debe designar los vehículos pendientes antes de liberar la salida.' 
+      return res.status(400).json({
+        error: 'Incapaz de publicar turno. Existen patrullas sin unidad asignada. Transportes debe designar los vehículos pendientes antes de liberar la salida.'
       });
     }
 
     if (error.message === 'EMPTY_TURNO') {
-      return res.status(400).json({ 
-        error: 'No se puede publicar un turno vacío. Debes crear al menos una asignación operativa.' 
+      return res.status(400).json({
+        error: 'No se puede publicar un turno vacío. Debes crear al menos una asignación operativa.'
       });
     }
 
@@ -192,7 +192,7 @@ export async function updateConfiguracionSede(req: Request, res: Response) {
   try {
     const sedeId = normalizeId(req.params.sedeId);
     if (!sedeId) return res.status(400).json({ error: 'ID de sede inválido' });
-    
+
     const {
       color_fondo,
       color_fondo_header,
@@ -222,93 +222,6 @@ export async function updateConfiguracionSede(req: Request, res: Response) {
   }
 }
 
-// =====================================================
-// SITUACIONES FIJAS
-// =====================================================
-
-// FUNCIONES DE SITUACIONES FIJAS - ELIMINADAS (tabla eliminada en migración 108)
-// Se reemplazará por el sistema de situacion_sesiones
-
-export async function getSituacionesFijas(_req: Request, res: Response) {
-  return res.status(410).json({ error: 'Funcionalidad eliminada. Usar situaciones persistentes.' });
-}
-
-export async function getSituacionFija(_req: Request, res: Response) {
-  return res.status(410).json({ error: 'Funcionalidad eliminada. Usar situaciones persistentes.' });
-}
-
-export async function createSituacionFija(_req: Request, res: Response) {
-  return res.status(410).json({ error: 'Funcionalidad eliminada. Usar situaciones persistentes.' });
-}
-
-export async function updateSituacionFija(_req: Request, res: Response) {
-  return res.status(410).json({ error: 'Funcionalidad eliminada. Usar situaciones persistentes.' });
-}
-
-export async function deleteSituacionFija(_req: Request, res: Response) {
-  return res.status(410).json({ error: 'Funcionalidad eliminada. Usar situaciones persistentes.' });
-}
-
-// =====================================================
-// AVISOS EN ASIGNACIONES
-// =====================================================
-
-/**
- * POST /api/asignaciones-avanzadas/asignacion/:asignacionId/aviso
- * Crear aviso en una asignación
- */
-export async function crearAviso(req: Request, res: Response) {
-  try {
-    const asignacionId = normalizeId(req.params.asignacionId);
-    if (!asignacionId) return res.status(400).json({ error: 'ID de asignación inválido' });
-    
-    const userId = (req.user as any).userId;
-    const { tipo, mensaje, color } = req.body;
-
-    if (!tipo || !mensaje) {
-      return res.status(400).json({ error: 'Tipo y mensaje son requeridos' });
-    }
-
-    if (!['ADVERTENCIA', 'INFO', 'URGENTE'].includes(tipo)) {
-      return res.status(400).json({ error: 'Tipo debe ser ADVERTENCIA, INFO o URGENTE' });
-    }
-
-    const aviso = await AsignacionAvanzadaModel.crearAviso({
-      asignacionId,
-      tipo,
-      mensaje,
-      color,
-      creadoPor: userId
-    });
-
-    res.status(201).json(aviso);
-  } catch (error: any) {
-    console.error('Error en crearAviso:', error);
-    res.status(500).json({ error: 'Error al crear aviso', details: error.message });
-  }
-}
-
-/**
- * DELETE /api/asignaciones-avanzadas/aviso/:avisoId
- * Eliminar aviso
- */
-export async function eliminarAviso(req: Request, res: Response) {
-  try {
-    const avisoId = normalizeId(req.params.avisoId);
-    if (!avisoId) return res.status(400).json({ error: 'ID de aviso inválido' });
-
-    const success = await AsignacionAvanzadaModel.eliminarAviso(avisoId);
-
-    if (!success) {
-      return res.status(404).json({ error: 'Aviso no encontrado' });
-    }
-
-    res.json({ message: 'Aviso eliminado' });
-  } catch (error: any) {
-    console.error('Error en eliminarAviso:', error);
-    res.status(500).json({ error: 'Error al eliminar aviso', details: error.message });
-  }
-}
 
 // =====================================================
 // ALERTAS DE ROTACIÓN
@@ -322,14 +235,14 @@ export async function getAlertasRotacion(req: Request, res: Response) {
   try {
     const usuarioId = normalizeId(req.params.usuarioId);
     if (!usuarioId) return res.status(400).json({ error: 'ID de usuario inválido' });
-    
-    const { rutaId, umbral } = req.query;
+
+    const { rutaId, umbral, fecha } = req.query;
 
     const alertas = await AsignacionAvanzadaModel.getAlertasRotacion(
       usuarioId,
       rutaId ? normalizeId(String(rutaId)) || undefined : undefined,
-      undefined, // situacion_fija removido
-      umbral ? parseInt(String(umbral), 10) : 3
+      umbral ? parseInt(String(umbral), 10) : 3,
+      fecha ? String(fecha) : undefined
     );
 
     res.json(alertas);
@@ -351,7 +264,7 @@ export async function updateAccionesFormato(req: Request, res: Response) {
   try {
     const asignacionId = normalizeId(req.params.asignacionId);
     if (!asignacionId) return res.status(400).json({ error: 'ID de asignación inválido' });
-    
+
     const { acciones_formato } = req.body;
 
     // A partir de ahora acciones_formato DEBE ser un array JSON válido estructurado 
@@ -362,7 +275,7 @@ export async function updateAccionesFormato(req: Request, res: Response) {
       if (!Array.isArray(acciones_formato)) {
         return res.status(400).json({ error: 'acciones_formato debe ser un JSON Array estructurado.' });
       }
-      
+
       // Mapear elementos para evitar inserción de keys no deseadas/maliciosas
       const safeArray = acciones_formato.map(item => ({
         texto: typeof item.texto === 'string' ? item.texto.substring(0, 500) : '',
