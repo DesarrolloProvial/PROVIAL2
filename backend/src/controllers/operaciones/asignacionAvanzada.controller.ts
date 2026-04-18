@@ -5,7 +5,7 @@
 import { Request, Response } from 'express';
 import { AsignacionAvanzadaModel } from '../../models/operaciones/asignacionAvanzada.model';
 import { ConfiguracionSedeModel } from '../../models/operaciones/configuracionSede.model';
-// import { SituacionFijaModel } from '../models/situacionFija.model'; // ELIMINADO: Tabla eliminada en migración 108
+import { normalizeId } from '../../utils/db.utils';
 
 // =====================================================
 // ASIGNACIONES POR SEDE
@@ -34,14 +34,14 @@ export async function getAsignacionesPorSede(req: Request, res: Response) {
       (user.rol === 'ENCARGADO_NOMINAS' && user.puede_ver_todas_sedes);
 
     if (sedeId) {
-      sedeIdNum = parseInt(String(sedeId), 10);
+      sedeIdNum = normalizeId(sedeId) || undefined;
     } else if (!puedeVerTodo && user.sede) {
       // ENCARGADO_NOMINAS sin puede_ver_todas_sedes solo ve su sede
       sedeIdNum = user.sede;
     }
 
     // Determinar si puede ver borradores
-    const puedeVerBorradores = user.rol === 'ADMIN' || user.rol === 'OPERACIONES' || user.rol === 'ENCARGADO_NOMINAS';
+    const puedeVerBorradores = ['ADMIN', 'OPERACIONES', 'ENCARGADO_NOMINAS', 'TRANSPORTES'].includes(user.rol);
 
     // Si mostrarPendientes=true, mostrar hoy y futuras; sino usar fecha específica
     const usarPendientes = mostrarPendientes === 'true';
@@ -78,10 +78,12 @@ export async function getAsignacionesPorSede(req: Request, res: Response) {
  */
 export async function publicarTurno(req: Request, res: Response) {
   try {
-    const { turnoId } = req.params;
-    const userId = (req as any).user.userId;
+    const turnoId = normalizeId(req.params.turnoId);
+    if (!turnoId) return res.status(400).json({ error: 'ID de turno inválido' });
 
-    const success = await AsignacionAvanzadaModel.publicarTurno(parseInt(turnoId, 10), userId);
+    const userId = (req.user as any).userId;
+
+    const success = await AsignacionAvanzadaModel.publicarTurno(turnoId, userId);
 
     if (!success) {
       return res.status(404).json({ error: 'Turno no encontrado' });
@@ -89,10 +91,23 @@ export async function publicarTurno(req: Request, res: Response) {
 
     // TODO: Enviar notificación a brigadas asignadas
 
-    res.json({ message: 'Turno publicado correctamente', publicado: true });
+    res.json({ message: 'Turno (plantilla) publicado correctamente. Las patrullas ya son visibles.', publicado: true });
   } catch (error: any) {
     console.error('Error en publicarTurno:', error);
-    res.status(500).json({ error: 'Error al publicar turno', details: error.message });
+    
+    if (error.message === 'MISSING_UNITS') {
+      return res.status(400).json({ 
+        error: 'Incapaz de publicar turno. Existen patrullas sin unidad asignada. Transportes debe designar los vehículos pendientes antes de liberar la salida.' 
+      });
+    }
+
+    if (error.message === 'EMPTY_TURNO') {
+      return res.status(400).json({ 
+        error: 'No se puede publicar un turno vacío. Debes crear al menos una asignación operativa.' 
+      });
+    }
+
+    res.status(500).json({ error: 'Error interno al publicar turno', details: error.message });
   }
 }
 
@@ -102,9 +117,10 @@ export async function publicarTurno(req: Request, res: Response) {
  */
 export async function despublicarTurno(req: Request, res: Response) {
   try {
-    const { turnoId } = req.params;
+    const turnoId = normalizeId(req.params.turnoId);
+    if (!turnoId) return res.status(400).json({ error: 'ID de turno inválido' });
 
-    const success = await AsignacionAvanzadaModel.despublicarTurno(parseInt(turnoId, 10));
+    const success = await AsignacionAvanzadaModel.despublicarTurno(turnoId);
 
     if (!success) {
       return res.status(404).json({ error: 'Turno no encontrado' });
@@ -127,14 +143,15 @@ export async function despublicarTurno(req: Request, res: Response) {
  */
 export async function getConfiguracionSede(req: Request, res: Response) {
   try {
-    const { sedeId } = req.params;
+    const sedeId = normalizeId(req.params.sedeId);
+    if (!sedeId) return res.status(400).json({ error: 'ID de sede inválido' });
 
-    const config = await ConfiguracionSedeModel.getBySede(parseInt(sedeId, 10));
+    const config = await ConfiguracionSedeModel.getBySede(sedeId);
 
     if (!config) {
       // Retornar configuración por defecto
       return res.json({
-        sede_id: parseInt(sedeId, 10),
+        sede_id: sedeId,
         color_fondo: '#ffffff',
         color_fondo_header: '#f3f4f6',
         color_texto: '#1f2937',
@@ -173,7 +190,9 @@ export async function getAllConfiguracionesSede(_req: Request, res: Response) {
  */
 export async function updateConfiguracionSede(req: Request, res: Response) {
   try {
-    const { sedeId } = req.params;
+    const sedeId = normalizeId(req.params.sedeId);
+    if (!sedeId) return res.status(400).json({ error: 'ID de sede inválido' });
+    
     const {
       color_fondo,
       color_fondo_header,
@@ -185,7 +204,7 @@ export async function updateConfiguracionSede(req: Request, res: Response) {
       umbral_rotacion_rutas
     } = req.body;
 
-    const config = await ConfiguracionSedeModel.upsert(parseInt(sedeId, 10), {
+    const config = await ConfiguracionSedeModel.upsert(sedeId, {
       color_fondo,
       color_fondo_header,
       color_texto,
@@ -240,8 +259,10 @@ export async function deleteSituacionFija(_req: Request, res: Response) {
  */
 export async function crearAviso(req: Request, res: Response) {
   try {
-    const { asignacionId } = req.params;
-    const userId = (req as any).user.userId;
+    const asignacionId = normalizeId(req.params.asignacionId);
+    if (!asignacionId) return res.status(400).json({ error: 'ID de asignación inválido' });
+    
+    const userId = (req.user as any).userId;
     const { tipo, mensaje, color } = req.body;
 
     if (!tipo || !mensaje) {
@@ -253,7 +274,7 @@ export async function crearAviso(req: Request, res: Response) {
     }
 
     const aviso = await AsignacionAvanzadaModel.crearAviso({
-      asignacionId: parseInt(asignacionId, 10),
+      asignacionId,
       tipo,
       mensaje,
       color,
@@ -273,9 +294,10 @@ export async function crearAviso(req: Request, res: Response) {
  */
 export async function eliminarAviso(req: Request, res: Response) {
   try {
-    const { avisoId } = req.params;
+    const avisoId = normalizeId(req.params.avisoId);
+    if (!avisoId) return res.status(400).json({ error: 'ID de aviso inválido' });
 
-    const success = await AsignacionAvanzadaModel.eliminarAviso(parseInt(avisoId, 10));
+    const success = await AsignacionAvanzadaModel.eliminarAviso(avisoId);
 
     if (!success) {
       return res.status(404).json({ error: 'Aviso no encontrado' });
@@ -298,13 +320,15 @@ export async function eliminarAviso(req: Request, res: Response) {
  */
 export async function getAlertasRotacion(req: Request, res: Response) {
   try {
-    const { usuarioId } = req.params;
-    const { rutaId, situacionFijaId, umbral } = req.query;
+    const usuarioId = normalizeId(req.params.usuarioId);
+    if (!usuarioId) return res.status(400).json({ error: 'ID de usuario inválido' });
+    
+    const { rutaId, umbral } = req.query;
 
     const alertas = await AsignacionAvanzadaModel.getAlertasRotacion(
-      parseInt(usuarioId, 10),
-      rutaId ? parseInt(String(rutaId), 10) : undefined,
-      situacionFijaId ? parseInt(String(situacionFijaId), 10) : undefined,
+      usuarioId,
+      rutaId ? normalizeId(String(rutaId)) || undefined : undefined,
+      undefined, // situacion_fija removido
       umbral ? parseInt(String(umbral), 10) : 3
     );
 
@@ -321,61 +345,45 @@ export async function getAlertasRotacion(req: Request, res: Response) {
 
 /**
  * PUT /api/asignaciones-avanzadas/asignacion/:asignacionId/acciones-formato
- * Actualizar acciones con formato HTML
+ * Actualizar acciones (Validando formato Estructurado JSON Array)
  */
 export async function updateAccionesFormato(req: Request, res: Response) {
   try {
-    const { asignacionId } = req.params;
+    const asignacionId = normalizeId(req.params.asignacionId);
+    if (!asignacionId) return res.status(400).json({ error: 'ID de asignación inválido' });
+    
     const { acciones_formato } = req.body;
 
-    // Sanitizar HTML básico (permitir solo tags seguros: b, strong, i, em, u, span, br)
-    let sanitized = acciones_formato || '';
+    // A partir de ahora acciones_formato DEBE ser un array JSON válido estructurado 
+    // Ej: [{ texto: "Vigilancia de garita", resaltar: true }]
+    let jsonArray = '[]';
 
-    // Remover tags no permitidos (seguridad básica)
-    sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gi, '');
-    sanitized = sanitized.replace(/on\w+="[^"]*"/gi, '');
+    if (acciones_formato) {
+      if (!Array.isArray(acciones_formato)) {
+        return res.status(400).json({ error: 'acciones_formato debe ser un JSON Array estructurado.' });
+      }
+      
+      // Mapear elementos para evitar inserción de keys no deseadas/maliciosas
+      const safeArray = acciones_formato.map(item => ({
+        texto: typeof item.texto === 'string' ? item.texto.substring(0, 500) : '',
+        resaltar: item.resaltar === true
+      })).filter(i => i.texto.trim() !== '');
+
+      jsonArray = JSON.stringify(safeArray);
+    }
 
     const success = await AsignacionAvanzadaModel.actualizarAccionesFormato(
-      parseInt(asignacionId, 10),
-      sanitized
+      asignacionId,
+      jsonArray
     );
 
     if (!success) {
       return res.status(404).json({ error: 'Asignación no encontrada' });
     }
 
-    res.json({ message: 'Acciones actualizadas', acciones_formato: sanitized });
+    res.json({ message: 'Acciones actualizadas estructuralmente', acciones_formato: JSON.parse(jsonArray) });
   } catch (error: any) {
     console.error('Error en updateAccionesFormato:', error);
     res.status(500).json({ error: 'Error al actualizar acciones', details: error.message });
-  }
-}
-
-/**
- * PUT /api/asignaciones-avanzadas/asignacion/:asignacionId/vincular-situacion
- * Vincular asignación con situación fija
- */
-export async function vincularSituacionFija(req: Request, res: Response) {
-  try {
-    const { asignacionId } = req.params;
-    const { situacion_fija_id } = req.body;
-
-    if (!situacion_fija_id) {
-      return res.status(400).json({ error: 'situacion_fija_id es requerido' });
-    }
-
-    const success = await AsignacionAvanzadaModel.vincularSituacionFija(
-      parseInt(asignacionId, 10),
-      situacion_fija_id
-    );
-
-    if (!success) {
-      return res.status(404).json({ error: 'Asignación no encontrada' });
-    }
-
-    res.json({ message: 'Situación fija vinculada' });
-  } catch (error: any) {
-    console.error('Error en vincularSituacionFija:', error);
-    res.status(500).json({ error: 'Error al vincular situación', details: error.message });
   }
 }

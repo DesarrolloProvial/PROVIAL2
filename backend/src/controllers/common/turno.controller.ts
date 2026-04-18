@@ -181,16 +181,15 @@ export async function createAsignacion(req: Request, res: Response) {
     } = req.body;
 
     const tipo = tipo_asignacion || 'PATRULLA';
-
-    if (tipo === 'PATRULLA' && !unidad_id) {
-      return res.status(400).json({ error: 'unidad_id es requerido para asignaciones de patrulla' });
-    }
+    
+    // NOTA: Operaciones ya no asigna unidades directamente. Transportes lo hace.
+    // La validación original de 'unidad_id es requerido para PATRULLA' ha sido eliminada.
 
     // Verificar conflictos de tripulación ANTES de la transacción
     if (tripulacion && Array.isArray(tripulacion)) {
       for (const miembro of tripulacion) {
         const conflicto = await db.oneOrNone(
-          `SELECT u.codigo, t.fecha, au.tipo_asignacion
+          `SELECT u.codigo, t.fecha, au.tipo_asignacion, t.publicado
             FROM tripulacion_turno tt
             JOIN asignacion_unidad au ON tt.asignacion_id = au.id
             JOIN turno t ON au.turno_id = t.id
@@ -198,16 +197,16 @@ export async function createAsignacion(req: Request, res: Response) {
             WHERE tt.usuario_id = $1
               AND t.fecha = (SELECT fecha FROM turno WHERE id = $2)
            `,
-          [miembro.usuario_id, parseInt(turnoId)]
+          [miembro.usuario_id, parseInt(turnoId, 10)]
         );
 
         if (conflicto) {
           const usuarioConflictivo = await db.oneOrNone('SELECT nombre_completo, chapa FROM usuario WHERE id = $1', [miembro.usuario_id]);
           const nombre = usuarioConflictivo ? `${usuarioConflictivo.nombre_completo} (${usuarioConflictivo.chapa})` : `Usuario ID ${miembro.usuario_id}`;
-          const detalle = conflicto.codigo || conflicto.tipo_asignacion || 'Asignación';
+          const detalle = conflicto.codigo || 'asignación en trámite';
 
-          return res.status(400).json({
-            error: `El usuario ${nombre} ya está asignado a ${detalle} en la fecha ${conflicto.fecha}`
+          return res.status(409).json({
+            error: `El brigada ${nombre} ya se encuentra empadronado a una ${detalle} para esta fecha.`
           });
         }
       }
@@ -581,18 +580,19 @@ export async function updateAsignacion(req: Request, res: Response) {
           FROM tripulacion_turno tt
           JOIN asignacion_unidad au ON tt.asignacion_id = au.id
           JOIN turno t ON au.turno_id = t.id
-          JOIN unidad u ON au.unidad_id = u.id
+          LEFT JOIN unidad u ON au.unidad_id = u.id
           WHERE tt.usuario_id = $1
             AND t.fecha = (SELECT t2.fecha FROM turno t2 JOIN asignacion_unidad au2 ON au2.turno_id = t2.id WHERE au2.id = $2)
             AND au.id != $2 -- Excluir esta misma asignación
-        `, [miembro.usuario_id, parseInt(asignacionId)]);
+        `, [miembro.usuario_id, parseInt(asignacionId, 10)]);
 
         if (conflicto) {
           const usuarioConflictivo = await db.oneOrNone('SELECT nombre_completo, chapa FROM usuario WHERE id = $1', [miembro.usuario_id]);
           const nombre = usuarioConflictivo ? `${usuarioConflictivo.nombre_completo} (${usuarioConflictivo.chapa})` : `Usuario ID ${miembro.usuario_id}`;
+          const detalle = conflicto.codigo || 'asignación en trámite';
 
-          return res.status(400).json({
-            error: `El usuario ${nombre} ya está asignado a la unidad ${conflicto.codigo} en esta fecha`
+          return res.status(409).json({
+            error: `El brigada ${nombre} ya se encuentra empadronado a una ${detalle} para esta fecha.`
           });
         }
       }

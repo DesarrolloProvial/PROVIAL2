@@ -336,6 +336,23 @@ export const AsignacionAvanzadaModel = {
    * Publicar turno (hacer visible para brigadas)
    */
   async publicarTurno(turnoId: number, userId: number): Promise<boolean> {
+    // 1. Verificar si el turno está vacío y si hay asignaciones sin unidad
+    const stats = await db.one<{ empty: boolean, missing_units: boolean }>(`
+      SELECT 
+        (COUNT(*) = 0) as empty,
+        (COUNT(*) FILTER (WHERE tipo_asignacion = 'PATRULLA' AND unidad_id IS NULL) > 0) as missing_units
+      FROM asignacion_unidad
+      WHERE turno_id = $1
+    `, [turnoId]);
+
+    if (stats.empty) {
+      throw new Error('EMPTY_TURNO');
+    }
+
+    if (stats.missing_units) {
+      throw new Error('MISSING_UNITS');
+    }
+
     const result = await db.result(
       `UPDATE turno
        SET publicado = true,
