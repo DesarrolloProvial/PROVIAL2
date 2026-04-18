@@ -185,32 +185,8 @@ export async function createAsignacion(req: Request, res: Response) {
     // NOTA: Operaciones ya no asigna unidades directamente. Transportes lo hace.
     // La validación original de 'unidad_id es requerido para PATRULLA' ha sido eliminada.
 
-    // Verificar conflictos de tripulación ANTES de la transacción
-    if (tripulacion && Array.isArray(tripulacion)) {
-      for (const miembro of tripulacion) {
-        const conflicto = await db.oneOrNone(
-          `SELECT u.codigo, t.fecha, au.tipo_asignacion, t.publicado
-            FROM tripulacion_turno tt
-            JOIN asignacion_unidad au ON tt.asignacion_id = au.id
-            JOIN turno t ON au.turno_id = t.id
-            LEFT JOIN unidad u ON au.unidad_id = u.id
-            WHERE tt.usuario_id = $1
-              AND t.fecha = (SELECT fecha FROM turno WHERE id = $2)
-           `,
-          [miembro.usuario_id, parseInt(turnoId, 10)]
-        );
-
-        if (conflicto) {
-          const usuarioConflictivo = await db.oneOrNone('SELECT nombre_completo, chapa FROM usuario WHERE id = $1', [miembro.usuario_id]);
-          const nombre = usuarioConflictivo ? `${usuarioConflictivo.nombre_completo} (${usuarioConflictivo.chapa})` : `Usuario ID ${miembro.usuario_id}`;
-          const detalle = conflicto.codigo || 'asignación en trámite';
-
-          return res.status(409).json({
-            error: `El brigada ${nombre} ya se encuentra empadronado a una ${detalle} para esta fecha.`
-          });
-        }
-      }
-    }
+    // NOTA: Se ha eliminado la restricción estricta por fecha. La unidad/brigada puede estar en múltiples 
+    // asignaciones planeadas en el mismo día (ej. turnos partidos), y la restricción física ocurrirá en vivo.
 
     // TRANSACCIÓN ATÓMICA: Si falla algo, se deshace todo
     const resultado = await db.tx(async (t) => {
@@ -571,32 +547,7 @@ export async function updateAsignacion(req: Request, res: Response) {
       });
     }
 
-    // Verificar conflictos de tripulación en update
-    if (tripulacion && Array.isArray(tripulacion)) {
-      for (const miembro of tripulacion) {
-        // Verificar conflicto en OTRAS asignaciones del MISMO turno (fecha)
-        const conflicto = await db.oneOrNone(`
-          SELECT u.codigo, t.fecha
-          FROM tripulacion_turno tt
-          JOIN asignacion_unidad au ON tt.asignacion_id = au.id
-          JOIN turno t ON au.turno_id = t.id
-          LEFT JOIN unidad u ON au.unidad_id = u.id
-          WHERE tt.usuario_id = $1
-            AND t.fecha = (SELECT t2.fecha FROM turno t2 JOIN asignacion_unidad au2 ON au2.turno_id = t2.id WHERE au2.id = $2)
-            AND au.id != $2 -- Excluir esta misma asignación
-        `, [miembro.usuario_id, parseInt(asignacionId, 10)]);
-
-        if (conflicto) {
-          const usuarioConflictivo = await db.oneOrNone('SELECT nombre_completo, chapa FROM usuario WHERE id = $1', [miembro.usuario_id]);
-          const nombre = usuarioConflictivo ? `${usuarioConflictivo.nombre_completo} (${usuarioConflictivo.chapa})` : `Usuario ID ${miembro.usuario_id}`;
-          const detalle = conflicto.codigo || 'asignación en trámite';
-
-          return res.status(409).json({
-            error: `El brigada ${nombre} ya se encuentra empadronado a una ${detalle} para esta fecha.`
-          });
-        }
-      }
-    }
+    // NOTA: Se ha eliminado la restricción estricta por fecha.
 
     // Actualizar asignación
     const asignacionActualizada = await TurnoModel.updateAsignacion(parseInt(asignacionId), {
