@@ -336,49 +336,54 @@ export const AsignacionAvanzadaModel = {
    * Publicar turno (hacer visible para brigadas)
    */
   async publicarTurno(turnoId: number, userId: number): Promise<boolean> {
-    // 1. Verificar si el turno está vacío y si hay asignaciones sin unidad
-    const stats = await db.one<{ empty: boolean, missing_units: boolean }>(`
-      SELECT 
-        (COUNT(*) = 0) as empty,
-        (COUNT(*) FILTER (WHERE tipo_asignacion = 'PATRULLA' AND unidad_id IS NULL) > 0) as missing_units
-      FROM asignacion_unidad
-      WHERE turno_id = $1
-    `, [turnoId]);
+    return await db.tx(async t => {
+      // 1. Verificar si el turno está vacío y si hay asignaciones sin unidad
+      const stats = await t.one<{ empty: boolean, missing_units: boolean }>(`
+        SELECT 
+          (COUNT(*) = 0) as empty,
+          (COUNT(*) FILTER (WHERE tipo_asignacion = 'PATRULLA' AND unidad_id IS NULL) > 0) as missing_units
+        FROM asignacion_unidad
+        WHERE turno_id = $1
+      `, [turnoId]);
 
-    if (stats.empty) {
-      throw new Error('EMPTY_TURNO');
-    }
+      if (stats.empty) {
+        throw new Error('EMPTY_TURNO');
+      }
 
-    if (stats.missing_units) {
-      throw new Error('MISSING_UNITS');
-    }
+      if (stats.missing_units) {
+        throw new Error('MISSING_UNITS');
+      }
 
-    const result = await db.result(
-      `UPDATE turno
-       SET publicado = true,
-           fecha_publicacion = NOW(),
-           publicado_por = $2,
-           updated_at = NOW()
-       WHERE id = $1`,
-      [turnoId, userId]
-    );
-    return result.rowCount > 0;
+      const result = await t.result(
+        `UPDATE turno
+         SET publicado = true,
+             fecha_publicacion = NOW(),
+             publicado_por = $2,
+             updated_at = NOW()
+         WHERE id = $1`,
+        [turnoId, userId]
+      );
+      
+      return result.rowCount > 0;
+    });
   },
 
   /**
    * Despublicar turno (volver a borrador)
    */
   async despublicarTurno(turnoId: number): Promise<boolean> {
-    const result = await db.result(
-      `UPDATE turno
-       SET publicado = false,
-           fecha_publicacion = NULL,
-           publicado_por = NULL,
-           updated_at = NOW()
-       WHERE id = $1`,
-      [turnoId]
-    );
-    return result.rowCount > 0;
+    return await db.tx(async t => {
+      const result = await t.result(
+        `UPDATE turno
+         SET publicado = false,
+             fecha_publicacion = NULL,
+             publicado_por = NULL,
+             updated_at = NOW()
+         WHERE id = $1`,
+        [turnoId]
+      );
+      return result.rowCount > 0;
+    });
   },
 
   /**
