@@ -20,6 +20,7 @@ import brigadasRoutes from './operaciones/brigadas.routes';
 import unidadesRoutes from './transportes/unidades.routes';
 import multimediaRoutes from './common/multimedia.routes';
 import asignacionAvanzadaRoutes from './operaciones/asignacionAvanzada.routes';
+import asignacionTransporteRoutes from './transportes/asignacionTransporte.routes';
 import ubicacionBrigadaRoutes from './cop/ubicacionBrigada.routes';
 // import situacionPersistenteRoutes from './situacionPersistente.routes'; // ELIMINADO: Tabla eliminada en migración 108
 import administracionRoutes from './admin/administracion.routes';
@@ -105,6 +106,9 @@ router.use('/multimedia', multimediaRoutes);
 
 // Rutas de asignaciones avanzadas (por sede, borradores, situaciones fijas)
 router.use('/asignaciones-avanzadas', asignacionAvanzadaRoutes);
+
+// Rutas exclusivas de Transportes para asignación de unidades
+router.use('/transportes/asignaciones', asignacionTransporteRoutes);
 
 // Rutas de ubicación de brigadas (préstamos, divisiones, cambios)
 router.use('/ubicacion-brigadas', ubicacionBrigadaRoutes);
