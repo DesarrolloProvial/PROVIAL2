@@ -31,9 +31,7 @@ backend/uploads/
 backend/.env
 backend/.env.local.bak
 backend/.env.production
-# NO ignorar los templates de configuración
-!backend/.env.pc1
-!backend/.env.pc2
+# NO ignorar el template de configuración
 !backend/.env.example
 
 # Mobile
