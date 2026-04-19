@@ -14,7 +14,6 @@ import reasignacionRoutes from './operaciones/reasignacion.routes';
 import intelligenceRoutes from './accidentologia/intelligence.routes';
 import operacionesRoutes from './operaciones/operaciones.routes';
 import generadorTurnosRoutes from './operaciones/generador-turnos.routes';
-import asignacionesRoutes from './operaciones/asignaciones';
 
 import testModeRoutes from './admin/testMode.routes';
 import brigadasRoutes from './operaciones/brigadas.routes';
@@ -89,8 +88,6 @@ router.use('/operaciones', operacionesRoutes);
 // Rutas del generador automático de turnos
 router.use('/generador-turnos', generadorTurnosRoutes);
 
-// Rutas de asignaciones programadas (protocolos de salida)
-router.use('/asignaciones', asignacionesRoutes);
 
 
 
