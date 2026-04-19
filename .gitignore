@@ -81,6 +81,17 @@ backup_*.sql
 # Archive folder (old files)
 archive/
 
+# Vault Obsidian (documentación local, no versionada por ahora)
+docs/vault/
+
+# Archivos de Office y datos institucionales sensibles
+*.xlsx
+*.xls
+*.docx
+*.doc
+*.pdf
+*.csv
+
 # Reorganization script
 reorganize.ps1
 
