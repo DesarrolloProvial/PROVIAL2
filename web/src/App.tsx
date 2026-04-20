@@ -36,6 +36,7 @@ import CombustiblePage from './pages/transportes/CombustiblePage';
 import Inspecciones360Page from './pages/transportes/Inspecciones360Page';
 import DisponibilidadPage from './pages/transportes/DisponibilidadPage';
 import FlotaAnalyticsPage from './pages/transportes/FlotaAnalyticsPage';
+import AsignacionesPage from './pages/transportes/AsignacionesPage';
 import COPBitacoraPage from './pages/cop/COPBitacoraPage';
 import COPBitacoraDiaPage from './pages/cop/COPBitacoraDiaPage';
 import ComunicacionSocialPage from './pages/comunicacion-social/ComunicacionSocialPage';
@@ -477,6 +478,14 @@ function App() {
             element={
               <TransportesRoute>
                 <FlotaAnalyticsPage />
+              </TransportesRoute>
+            }
+          />
+          <Route
+            path="/transportes/asignaciones"
+            element={
+              <TransportesRoute>
+                <AsignacionesPage />
               </TransportesRoute>
             }
           />

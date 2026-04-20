@@ -14,7 +14,7 @@ export interface TripulacionMiembro {
 }
 
 export interface CreateAsignacionProgramadaDTO {
-  unidad_id: number;
+  unidad_id?: number | null; // Transportes lo asigna en paso posterior (D-011)
   fecha_programada: string; // YYYY-MM-DD
   ruta_id?: number | null;
   recorrido_inicio_km?: number;

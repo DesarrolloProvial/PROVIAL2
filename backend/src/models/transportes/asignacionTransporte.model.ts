@@ -1,4 +1,4 @@
-import pool, { db } from '../../config/database';
+import { db } from '../../config/database';
 
 export const AsignacionTransporteModel = {
   /**
@@ -83,37 +83,31 @@ export const AsignacionTransporteModel = {
    */
   async asignarUnidad(asignacionId: number, unidadId: number) {
     return db.tx(async t => {
-      // 1. Obtener la fecha del turno y los datos base de la asignación
-      const asignacion = await t.oneOrNone(\`
+      const asignacion = await t.oneOrNone(`
         SELECT au.turno_id, t.fecha, au.unidad_id
         FROM asignacion_unidad au
         JOIN turno t ON au.turno_id = t.id
         WHERE au.id = $1
-      \`, [asignacionId]);
+      `, [asignacionId]);
 
       if (!asignacion) throw new Error('ASIGNACION_NO_ENCONTRADA');
 
-      // 2. Verificar estatus íntegro de la Unidad (Que no esté en taller)
-      const unidadOK = await t.oneOrNone(\`
-        SELECT id 
+      const unidadOK = await t.oneOrNone(`
+        SELECT id
         FROM unidad u
         WHERE id = $1
-          AND activa = true 
+          AND activa = true
           AND disponible_transportes = true
           AND NOT EXISTS (
             SELECT 1 FROM unidad_reparacion ur
             WHERE ur.unidad_id = u.id AND ur.activa = true
           )
-      \`, [unidadId]);
+      `, [unidadId]);
 
-      if (!unidadOK) {
-        throw new Error('UNIDAD_NO_DISPONIBLE_O_EN_TALLER');
-      }
+      if (!unidadOK) throw new Error('UNIDAD_NO_DISPONIBLE_O_EN_TALLER');
 
-      // 3. Verificar que la unidad no tenga OTRA asignación para EL MISMO TURNO/FECHA
-      //    (Regla: Una unidad no puede tener dos "asignaciones" planificadas/activas cruzadas para el mismo día).
-      const conflicto = await t.oneOrNone(\`
-        SELECT au.id 
+      const conflicto = await t.oneOrNone(`
+        SELECT au.id
         FROM asignacion_unidad au
         JOIN turno t ON au.turno_id = t.id
         WHERE au.unidad_id = $1
@@ -121,19 +115,16 @@ export const AsignacionTransporteModel = {
           AND au.id != $3
           AND t.estado IN ('PLANIFICADO', 'ACTIVO')
         LIMIT 1
-      \`, [unidadId, asignacion.fecha, asignacionId]);
+      `, [unidadId, asignacion.fecha, asignacionId]);
 
-      if (conflicto) {
-        throw new Error('UNIDAD_YA_ASIGNADA_EN_ESTA_FECHA');
-      }
+      if (conflicto) throw new Error('UNIDAD_YA_ASIGNADA_EN_ESTA_FECHA');
 
-      // 4. Aplicar el UPDATE inyectando el vehículo
-      await t.none(\`
+      await t.none(`
         UPDATE asignacion_unidad
         SET unidad_id = $2,
             updated_at = NOW()
         WHERE id = $1
-      \`, [asignacionId, unidadId]);
+      `, [asignacionId, unidadId]);
 
       return true;
     });

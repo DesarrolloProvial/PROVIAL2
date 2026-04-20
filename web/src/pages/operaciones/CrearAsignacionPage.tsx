@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { turnosService, geografiaService } from '../../services/common/turnos.service';
@@ -8,7 +8,7 @@ import { administracionAPI } from '../../services/admin/administracion.service';
 import type { TripulacionMiembro, CreateAsignacionDTO } from '../../services/common/turnos.service';
 import type { CreateAsignacionProgramadaDTO } from '../../services/operaciones/asignaciones.service';
 import type { BrigadaDisponible } from '../../services/operaciones/operaciones.service';
-import { AlertCircle, CheckCircle, Users, Truck, ArrowLeft, Plus, X, Search, Crown } from 'lucide-react';
+import { CheckCircle, AlertCircle, Users, Truck, ArrowLeft, Plus, X, Search, Crown, Info } from 'lucide-react';
 import ThemeToggle from '../../components/common/ThemeToggle';
 
 export default function CrearAsignacionPage() {
@@ -33,7 +33,6 @@ export default function CrearAsignacionPage() {
   });
   const [esComisionLarga, setEsComisionLarga] = useState(false);
   const [fechaFin, setFechaFin] = useState('');
-  const [unidadId, setUnidadId] = useState<number | null>(asignacionEdit?.unidad_id || null);
   const [rutaId, setRutaId] = useState<number | null>(asignacionEdit?.ruta_id || null);
   const [kmInicio, setKmInicio] = useState(asignacionEdit?.km_inicio?.toString() || '');
   const [kmFinal, setKmFinal] = useState(asignacionEdit?.km_final?.toString() || '');
@@ -69,12 +68,6 @@ export default function CrearAsignacionPage() {
     enabled: !!fecha,
   });
 
-  const { data: unidades = [], isLoading: loadingUnidades } = useQuery({
-    queryKey: ['unidades-disponibles', fecha],
-    queryFn: () => operacionesService.getUnidadesDisponibles(fecha),
-    enabled: !!fecha,
-  });
-
   const { data: rutas = [] } = useQuery({
     queryKey: ['rutas'],
     queryFn: () => geografiaService.getRutas(),
@@ -91,44 +84,6 @@ export default function CrearAsignacionPage() {
     enabled: !!sedeId,
   });
 
-  // Efecto para Memoria de Ruta y Continuidad de Kilometraje + Tripulación
-  useEffect(() => {
-    async function checkLastAssignment() {
-      if (!unidadId || isEditMode || tipoAsignacion !== 'PATRULLA') return;
-
-      try {
-        const result = await turnosService.getUltimaAsignacion(unidadId);
-        if (result && result.asignacion) {
-          const { asignacion, tripulacion: lastTripulacion } = result;
-
-          // Memoria de Ruta
-          if (asignacion.ruta_id && !rutaId) {
-            setRutaId(asignacion.ruta_id);
-          }
-
-          // Continuidad de Kilometraje
-          if (asignacion.km_final) {
-            setKmInicio(asignacion.km_final.toString());
-          }
-
-          // Memoria de Tripulación (Si la config lo permite o por defecto)
-          // Solo si la tripulación actual está vacía
-          if (lastTripulacion && lastTripulacion.length > 0 && tripulacion.length === 0) {
-            const newTripulacion = lastTripulacion.map(m => ({
-              usuario_id: m.usuario_id,
-              rol_tripulacion: m.rol_tripulacion,
-              presente: true // Default to present
-            }));
-            setTripulacion(newTripulacion);
-          }
-        }
-      } catch (error) {
-        console.warn("Could not fetch last assignment for auto-fill", error);
-      }
-    }
-
-    checkLastAssignment();
-  }, [unidadId, isEditMode, tipoAsignacion]);
 
 
   // Mutation para crear asignacion programada
@@ -222,11 +177,6 @@ export default function CrearAsignacionPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (tipoAsignacion === 'PATRULLA' && !unidadId) {
-      alert('Debe seleccionar una unidad');
-      return;
-    }
-
     // Validacion de ruta solo si no es reaccion y es patrulla
     if (tipoAsignacion === 'PATRULLA' && !esReaccion && !rutaId) {
       alert('Debe seleccionar una ruta');
@@ -256,7 +206,7 @@ export default function CrearAsignacionPage() {
       // Modo edicion - usar sistema de turnos (mantener compatibilidad)
       const asignacionData: CreateAsignacionDTO = {
         tipo_asignacion: tipoAsignacion,
-        unidad_id: tipoAsignacion === 'PATRULLA' ? unidadId : null,
+        unidad_id: asignacionEdit?.unidad_id ?? null,
         ruta_id: (tipoAsignacion === 'PATRULLA' && !esReaccion) ? rutaId : null,
         km_inicio: (tipoAsignacion === 'PATRULLA' && kmInicio) ? parseFloat(kmInicio) : undefined,
         km_final: (tipoAsignacion === 'PATRULLA' && kmFinal) ? parseFloat(kmFinal) : undefined,
@@ -275,7 +225,6 @@ export default function CrearAsignacionPage() {
     } else {
       // Modo creacion - usar sistema de asignaciones programadas
       const asignacionData: CreateAsignacionProgramadaDTO = {
-        unidad_id: unidadId!,
         fecha_programada: fecha,
         ruta_id: (tipoAsignacion === 'PATRULLA' && !esReaccion) ? rutaId : null,
         recorrido_inicio_km: (tipoAsignacion === 'PATRULLA' && kmInicio) ? parseFloat(kmInicio) : undefined,
@@ -308,8 +257,6 @@ export default function CrearAsignacionPage() {
     if (ruta.nombre.includes(ruta.codigo)) return ruta.nombre;
     return `${ruta.codigo} - ${ruta.nombre}`;
   };
-
-  // getUnidadSeleccionada disponible si se necesita: unidades.find(u => u.id === unidadId)
 
   return (
     <div className="page-container">
@@ -411,69 +358,23 @@ export default function CrearAsignacionPage() {
             </div>
           </div>
 
-          {/* Seleccion de Unidad (Solo si es Patrulla) */}
+          {/* Nota de asignación de unidad (Solo si es Patrulla) */}
           {tipoAsignacion === 'PATRULLA' && (
             <div className="card">
               <div className="card-body">
-                <div className="flex items-center gap-2 mb-4">
-                  <Truck className="h-5 w-5 text-blue-600" />
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Unidad *</h2>
-                </div>
-
-                {loadingUnidades ? (
-                  <p className="text-gray-600 dark:text-gray-400">Cargando unidades...</p>
-                ) : unidades.length === 0 ? (
-                  <p className="text-gray-600 dark:text-gray-400">No hay unidades disponibles para esta fecha</p>
-                ) : (
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {unidades.map((unidad) => (
-                      <label
-                        key={unidad.id}
-                        className={`selection-card flex items-start gap-3 ${unidadId === unidad.id
-                          ? 'selection-card-selected'
-                          : 'selection-card-default'
-                          }`}
-                      >
-                        <input
-                          type="radio"
-                          name="unidad"
-                          value={unidad.id}
-                          checked={unidadId === unidad.id}
-                          onChange={() => setUnidadId(unidad.id)}
-                          className="mt-1"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-bold text-gray-900 dark:text-gray-100">{unidad.codigo}</span>
-                            <span className="text-gray-700 dark:text-gray-300 text-sm">
-                              {unidad.marca} {unidad.modelo}
-                            </span>
-                            {unidad.disponible ? (
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <AlertCircle className="h-4 w-4 text-amber-500" />
-                            )}
-                            {unidad.disponible_transportes === false && (
-                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
-                                No autorizada
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{unidad.mensaje}</p>
-                          {unidad.instrucciones_transportes && (
-                            <p className="text-xs text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded px-2 py-1 mt-1.5">
-                              Transportes: {unidad.instrucciones_transportes}
-                            </p>
-                          )}
-                          <div className="flex gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
-                            <span>Odometro: {unidad.odometro_actual?.toLocaleString()} km</span>
-                            <span>Turnos mes: {unidad.turnos_ultimo_mes}</span>
-                          </div>
-                        </div>
-                      </label>
-                    ))}
+                <div className="flex items-start gap-3">
+                  <Truck className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Unidad vehicular</h2>
+                    <div className="mt-2 flex items-start gap-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 px-4 py-3 text-sm text-blue-800 dark:text-blue-300">
+                      <Info className="h-4 w-4 mt-0.5 shrink-0" />
+                      <span>
+                        La unidad será asignada por <strong>Transportes</strong> una vez guardada esta asignación.
+                        El turno no puede publicarse hasta que Transportes complete la asignación del vehículo.
+                      </span>
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           )}
@@ -631,10 +532,7 @@ export default function CrearAsignacionPage() {
                     setShowBrigadaModal(true);
                   }}
                   className="btn-primary flex items-center gap-2"
-                  disabled={
-                    // Solo motos tienen restricción de 2 tripulantes (piloto + acompañante)
-                    unidades.find(u => u.id === unidadId)?.tipo_unidad === 'MOTO' && tripulacion.length >= 2
-                  }
+                  disabled={false}
                 >
                   <Plus className="h-4 w-4" />
                   Agregar Tripulante

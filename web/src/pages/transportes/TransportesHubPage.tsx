@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import {
   Truck, Fuel, ClipboardCheck, CheckSquare, BarChart2,
-  LogOut, Building2, User, ChevronRight,
+  LogOut, Building2, User, ChevronRight, ListTodo,
 } from 'lucide-react';
 import ThemeToggle from '../../components/common/ThemeToggle';
 
@@ -56,6 +56,15 @@ export default function TransportesHubPage() {
       path: '/transportes/disponibilidad',
       color: 'text-green-600 dark:text-green-400',
       bgColor: 'bg-green-50 hover:bg-green-100 border-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 dark:border-green-800',
+    },
+    {
+      id: 'asignaciones',
+      title: 'Asignación de Unidades',
+      description: 'Asignar vehículos a turnos pendientes creados por Operaciones',
+      icon: <ListTodo className="w-8 h-8" />,
+      path: '/transportes/asignaciones',
+      color: 'text-orange-600 dark:text-orange-400',
+      bgColor: 'bg-orange-50 hover:bg-orange-100 border-orange-200 dark:bg-orange-900/20 dark:hover:bg-orange-900/40 dark:border-orange-800',
     },
     {
       id: 'analytics',

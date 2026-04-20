@@ -41,6 +41,7 @@ import capaMapaRoutes from './cop/capaMapa.routes';
 import dispositivoRoutes from './admin/dispositivo.routes';
 import reparacionesRoutes from './transportes/reparaciones.routes';
 import situacionesPersistentesRoutes from './cop/situacionPersistente.routes';
+import copAccesoRoutes from './cop/acceso.routes';
 
 const router = Router();
 
@@ -168,5 +169,8 @@ router.use('/reparaciones', reparacionesRoutes);
 
 // Situaciones persistentes (situaciones de larga duración: derrumbes, obras, accidentes multi-día)
 router.use('/situaciones-persistentes', situacionesPersistentesRoutes);
+
+// Gestión de acceso COP (brigadas activas, suspensión individual, delegaciones)
+router.use('/cop/acceso', copAccesoRoutes);
 
 export default router;
