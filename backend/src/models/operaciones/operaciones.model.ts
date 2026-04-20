@@ -176,46 +176,7 @@ export const OperacionesModel = {
     return db.manyOrNone(query, params);
   },
 
-  // ========================================
-  // VALIDACIONES
-  // ========================================
 
-  async validarDisponibilidadBrigada(
-    usuarioId: number,
-    fecha: string
-  ): Promise<ValidacionBrigada> {
-    const result = await db.oneOrNone(
-      'SELECT * FROM validar_disponibilidad_brigada($1, $2)',
-      [usuarioId, fecha]
-    );
-
-    return result || {
-      disponible: true,
-      mensaje: 'Brigada disponible',
-      ultimo_turno_fecha: null,
-      dias_descanso: 999,
-    };
-  },
-
-  async validarDisponibilidadUnidad(
-    unidadId: number,
-    fecha: string
-  ): Promise<ValidacionUnidad> {
-    const result = await db.oneOrNone(
-      'SELECT * FROM validar_disponibilidad_unidad($1, $2)',
-      [unidadId, fecha]
-    );
-
-    return result || {
-      disponible: false,
-      mensaje: 'No se pudo validar unidad',
-      ultimo_uso_fecha: null,
-      dias_descanso: 0,
-      combustible_suficiente: false,
-    };
-  },
-
-  // ========================================
   // COMBUSTIBLE
   // ========================================
 
