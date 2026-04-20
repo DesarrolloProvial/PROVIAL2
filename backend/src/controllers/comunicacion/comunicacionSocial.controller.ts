@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
 import { ComunicacionSocialModel } from '../../models/comunicacion/comunicacionSocial.model';
-import { db } from '../../config/database';
 import { EstadisticasService } from '../../services/accidentologia/estadisticas.service';
+import { normalizeId } from '../../utils/db.utils';
+
+const NOMBRE_MAX = 200;
+const CONTENIDO_MAX = 5000;
 
 // ============================================
 // CONTROLADOR DE COMUNICACIÓN SOCIAL
@@ -12,100 +15,90 @@ export const ComunicacionSocialController = {
   // PLANTILLAS
   // ============================================
 
-  /**
-   * Crear plantilla de comunicación
-   * POST /api/comunicacion-social/plantillas
-   */
   async crearPlantilla(req: Request, res: Response) {
     try {
-      const usuarioId = (req as any).user.userId;
+      const usuarioId = req.user!.userId;
       const data = req.body;
 
-      if (!data.nombre || !data.contenido_plantilla) {
-        return res.status(400).json({
-          error: 'nombre y contenido_plantilla son requeridos'
-        });
+      const nombre = (data.nombre ?? '').trim();
+      const contenido = (data.contenido_plantilla ?? '').trim();
+
+      if (!nombre || !contenido) {
+        return res.status(400).json({ error: 'nombre y contenido_plantilla son requeridos' });
+      }
+      if (nombre.length > NOMBRE_MAX) {
+        return res.status(400).json({ error: `nombre no puede superar ${NOMBRE_MAX} caracteres` });
+      }
+      if (contenido.length > CONTENIDO_MAX) {
+        return res.status(400).json({ error: `contenido_plantilla no puede superar ${CONTENIDO_MAX} caracteres` });
       }
 
       const id = await ComunicacionSocialModel.crearPlantilla({
         ...data,
-        creado_por: usuarioId
+        nombre,
+        contenido_plantilla: contenido,
+        creado_por: usuarioId,
       });
 
-      res.status(201).json({
-        message: 'Plantilla creada',
-        id
-      });
+      return res.status(201).json({ message: 'Plantilla creada', id });
     } catch (error) {
       console.error('Error creando plantilla:', error);
-      res.status(500).json({ error: 'Error al crear plantilla' });
+      return res.status(500).json({ error: 'Error al crear plantilla' });
     }
   },
 
-  /**
-   * Actualizar plantilla
-   * PUT /api/comunicacion-social/plantillas/:id
-   */
   async actualizarPlantilla(req: Request, res: Response) {
     try {
-      const id = parseInt(req.params.id);
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
 
       await ComunicacionSocialModel.actualizarPlantilla(id, req.body);
 
-      res.json({ message: 'Plantilla actualizada' });
+      return res.json({ message: 'Plantilla actualizada' });
     } catch (error: any) {
       console.error('Error actualizando plantilla:', error);
       if (error.message?.includes('predefinida')) {
         return res.status(400).json({ error: error.message });
       }
-      res.status(500).json({ error: 'Error al actualizar plantilla' });
+      return res.status(500).json({ error: 'Error al actualizar plantilla' });
     }
   },
 
-  /**
-   * Eliminar plantilla
-   * DELETE /api/comunicacion-social/plantillas/:id
-   */
   async eliminarPlantilla(req: Request, res: Response) {
     try {
-      const id = parseInt(req.params.id);
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
 
       await ComunicacionSocialModel.eliminarPlantilla(id);
 
-      res.json({ message: 'Plantilla eliminada' });
+      return res.json({ message: 'Plantilla eliminada' });
     } catch (error: any) {
       console.error('Error eliminando plantilla:', error);
       if (error.message?.includes('predefinida')) {
         return res.status(400).json({ error: error.message });
       }
-      res.status(500).json({ error: 'Error al eliminar plantilla' });
+      return res.status(500).json({ error: 'Error al eliminar plantilla' });
     }
   },
 
-  /**
-   * Obtener plantilla por ID
-   * GET /api/comunicacion-social/plantillas/:id
-   */
   async obtenerPlantilla(req: Request, res: Response) {
     try {
-      const id = parseInt(req.params.id);
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+
       const plantilla = await ComunicacionSocialModel.obtenerPlantilla(id);
 
       if (!plantilla) {
         return res.status(404).json({ error: 'Plantilla no encontrada' });
       }
 
-      res.json(plantilla);
+      return res.json(plantilla);
     } catch (error) {
       console.error('Error obteniendo plantilla:', error);
-      res.status(500).json({ error: 'Error al obtener plantilla' });
+      return res.status(500).json({ error: 'Error al obtener plantilla' });
     }
   },
 
-  /**
-   * Listar plantillas
-   * GET /api/comunicacion-social/plantillas
-   */
   async listarPlantillas(req: Request, res: Response) {
     try {
       const { tipo_situacion, tipo_accidente, incluir_inactivas } = req.query;
@@ -113,49 +106,44 @@ export const ComunicacionSocialController = {
       const plantillas = await ComunicacionSocialModel.listarPlantillas({
         tipo_situacion: tipo_situacion as string,
         tipo_accidente: tipo_accidente as string,
-        solo_activas: incluir_inactivas !== 'true'
+        solo_activas: incluir_inactivas !== 'true',
       });
 
-      res.json(plantillas);
+      return res.json(plantillas);
     } catch (error) {
       console.error('Error listando plantillas:', error);
-      res.status(500).json({ error: 'Error al listar plantillas' });
+      return res.status(500).json({ error: 'Error al listar plantillas' });
     }
   },
 
-  /**
-   * Previsualizar mensaje generado desde plantilla
-   * POST /api/comunicacion-social/plantillas/:id/preview
-   */
   async previewPlantilla(req: Request, res: Response) {
     try {
-      const plantillaId = parseInt(req.params.id);
-      const { situacion_id } = req.body;
+      const plantillaId = normalizeId(req.params.id);
+      if (!plantillaId) return res.status(400).json({ error: 'ID inválido' });
 
+      const { situacion_id } = req.body;
       if (!situacion_id) {
         return res.status(400).json({ error: 'situacion_id es requerido' });
       }
 
       const mensaje = await ComunicacionSocialModel.generarMensaje(plantillaId, situacion_id);
-
       if (!mensaje) {
         return res.status(404).json({ error: 'No se pudo generar el mensaje' });
       }
 
-      // Obtener fotos de la situación
-      const fotos = await ComunicacionSocialModel.obtenerFotosSituacion(situacion_id);
+      const [fotos, plantilla] = await Promise.all([
+        ComunicacionSocialModel.obtenerFotosSituacion(situacion_id),
+        ComunicacionSocialModel.obtenerPlantilla(plantillaId),
+      ]);
 
-      // Obtener hashtags de la plantilla
-      const plantilla = await ComunicacionSocialModel.obtenerPlantilla(plantillaId);
-
-      res.json({
+      return res.json({
         mensaje,
         hashtags: plantilla?.hashtags || [],
-        fotos
+        fotos,
       });
     } catch (error) {
       console.error('Error previsualizando:', error);
-      res.status(500).json({ error: 'Error al previsualizar mensaje' });
+      return res.status(500).json({ error: 'Error al previsualizar mensaje' });
     }
   },
 
@@ -163,59 +151,45 @@ export const ComunicacionSocialController = {
   // PUBLICACIONES
   // ============================================
 
-  /**
-   * Crear publicación
-   * POST /api/comunicacion-social/publicaciones
-   */
   async crearPublicacion(req: Request, res: Response) {
     try {
-      const usuarioId = (req as any).user.userId;
+      const usuarioId = req.user!.userId;
       const data = req.body;
 
-      if (!data.contenido_texto) {
+      if (!data.contenido_texto?.trim()) {
         return res.status(400).json({ error: 'contenido_texto es requerido' });
       }
 
       const id = await ComunicacionSocialModel.crearPublicacion({
         ...data,
-        publicado_por: usuarioId
+        publicado_por: usuarioId,
       });
 
-      res.status(201).json({
-        message: 'Publicación creada',
-        id
-      });
+      return res.status(201).json({ message: 'Publicación creada', id });
     } catch (error) {
       console.error('Error creando publicación:', error);
-      res.status(500).json({ error: 'Error al crear publicación' });
+      return res.status(500).json({ error: 'Error al crear publicación' });
     }
   },
 
-  /**
-   * Crear publicación desde plantilla
-   * POST /api/comunicacion-social/publicaciones/desde-plantilla
-   */
   async crearDesePlantilla(req: Request, res: Response) {
     try {
-      const usuarioId = (req as any).user.userId;
+      const usuarioId = req.user!.userId;
       const { plantilla_id, situacion_id, fotos_urls, edicion } = req.body;
 
       if (!plantilla_id || !situacion_id) {
-        return res.status(400).json({
-          error: 'plantilla_id y situacion_id son requeridos'
-        });
+        return res.status(400).json({ error: 'plantilla_id y situacion_id son requeridos' });
       }
 
-      // Generar mensaje
-      const mensaje = await ComunicacionSocialModel.generarMensaje(plantilla_id, situacion_id);
+      const [mensaje, plantilla] = await Promise.all([
+        ComunicacionSocialModel.generarMensaje(plantilla_id, situacion_id),
+        ComunicacionSocialModel.obtenerPlantilla(plantilla_id),
+      ]);
+
       if (!mensaje) {
         return res.status(400).json({ error: 'No se pudo generar el mensaje' });
       }
 
-      // Obtener plantilla para hashtags
-      const plantilla = await ComunicacionSocialModel.obtenerPlantilla(plantilla_id);
-
-      // Crear publicación
       const id = await ComunicacionSocialModel.crearPublicacion({
         situacion_id,
         plantilla_id,
@@ -224,130 +198,114 @@ export const ComunicacionSocialController = {
         hashtags: plantilla?.hashtags || [],
         fotos_urls: fotos_urls || [],
         publicado_por: usuarioId,
-        estado: 'BORRADOR'
+        estado: 'BORRADOR',
       });
 
-      res.status(201).json({
+      return res.status(201).json({
         message: 'Publicación creada desde plantilla',
         id,
-        contenido: edicion || mensaje
+        contenido: edicion || mensaje,
       });
     } catch (error) {
       console.error('Error creando publicación:', error);
-      res.status(500).json({ error: 'Error al crear publicación' });
+      return res.status(500).json({ error: 'Error al crear publicación' });
     }
   },
 
-  /**
-   * Actualizar publicación
-   * PUT /api/comunicacion-social/publicaciones/:id
-   */
   async actualizarPublicacion(req: Request, res: Response) {
     try {
-      const id = parseInt(req.params.id);
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+
       await ComunicacionSocialModel.actualizarPublicacion(id, req.body);
 
-      res.json({ message: 'Publicación actualizada' });
+      return res.json({ message: 'Publicación actualizada' });
     } catch (error) {
       console.error('Error actualizando publicación:', error);
-      res.status(500).json({ error: 'Error al actualizar publicación' });
+      return res.status(500).json({ error: 'Error al actualizar publicación' });
     }
   },
 
-  /**
-   * Obtener publicación por ID
-   * GET /api/comunicacion-social/publicaciones/:id
-   */
   async obtenerPublicacion(req: Request, res: Response) {
     try {
-      const id = parseInt(req.params.id);
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+
       const publicacion = await ComunicacionSocialModel.obtenerPublicacion(id);
 
       if (!publicacion) {
         return res.status(404).json({ error: 'Publicación no encontrada' });
       }
 
-      res.json(publicacion);
+      return res.json(publicacion);
     } catch (error) {
       console.error('Error obteniendo publicación:', error);
-      res.status(500).json({ error: 'Error al obtener publicación' });
+      return res.status(500).json({ error: 'Error al obtener publicación' });
     }
   },
 
-  /**
-   * Listar publicaciones
-   * GET /api/comunicacion-social/publicaciones
-   */
   async listarPublicaciones(req: Request, res: Response) {
     try {
       const { situacion_id, estado, fecha_desde, fecha_hasta, limit, offset } = req.query;
 
       const publicaciones = await ComunicacionSocialModel.listarPublicaciones({
-        situacion_id: situacion_id ? parseInt(situacion_id as string) : undefined,
+        situacion_id: situacion_id ? normalizeId(situacion_id as string) ?? undefined : undefined,
         estado: estado as string,
         fecha_desde: fecha_desde as string,
         fecha_hasta: fecha_hasta as string,
-        limit: limit ? parseInt(limit as string) : 50,
-        offset: offset ? parseInt(offset as string) : 0
+        limit: limit ? Math.min(parseInt(limit as string, 10) || 50, 200) : 50,
+        offset: offset ? parseInt(offset as string, 10) || 0 : 0,
       });
 
-      res.json(publicaciones);
+      return res.json(publicaciones);
     } catch (error) {
       console.error('Error listando publicaciones:', error);
-      res.status(500).json({ error: 'Error al listar publicaciones' });
+      return res.status(500).json({ error: 'Error al listar publicaciones' });
     }
   },
 
-  /**
-   * Obtener publicaciones de una situación
-   * GET /api/comunicacion-social/publicaciones/situacion/:situacionId
-   */
   async obtenerPublicacionesSituacion(req: Request, res: Response) {
     try {
-      const situacionId = parseInt(req.params.situacionId);
+      const situacionId = normalizeId(req.params.situacionId);
+      if (!situacionId) return res.status(400).json({ error: 'ID inválido' });
+
       const publicaciones = await ComunicacionSocialModel.obtenerPublicacionesSituacion(situacionId);
 
-      res.json(publicaciones);
+      return res.json(publicaciones);
     } catch (error) {
       console.error('Error obteniendo publicaciones:', error);
-      res.status(500).json({ error: 'Error al obtener publicaciones' });
+      return res.status(500).json({ error: 'Error al obtener publicaciones' });
     }
   },
 
-  /**
-   * Marcar publicación como compartida en red social
-   * POST /api/comunicacion-social/publicaciones/:id/compartido
-   */
   async marcarCompartido(req: Request, res: Response) {
     try {
-      const id = parseInt(req.params.id);
-      const { red } = req.body;
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
 
+      const { red } = req.body;
       const redesValidas = ['facebook', 'twitter', 'instagram', 'whatsapp', 'threads'];
       if (!redesValidas.includes(red)) {
         return res.status(400).json({
-          error: `Red inválida. Valores permitidos: ${redesValidas.join(', ')}`
+          error: `Red inválida. Valores permitidos: ${redesValidas.join(', ')}`,
         });
       }
 
       await ComunicacionSocialModel.marcarPublicado(id, red);
 
-      res.json({ message: `Marcado como compartido en ${red}` });
+      return res.json({ message: `Marcado como compartido en ${red}` });
     } catch (error) {
       console.error('Error marcando compartido:', error);
-      res.status(500).json({ error: 'Error al marcar como compartido' });
+      return res.status(500).json({ error: 'Error al marcar como compartido' });
     }
   },
 
-  /**
-   * Obtener links para compartir en redes sociales
-   * GET /api/comunicacion-social/publicaciones/:id/compartir
-   */
   async obtenerLinksCompartir(req: Request, res: Response) {
     try {
-      const id = parseInt(req.params.id);
-      const publicacion = await ComunicacionSocialModel.obtenerPublicacion(id);
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
 
+      const publicacion = await ComunicacionSocialModel.obtenerPublicacion(id);
       if (!publicacion) {
         return res.status(404).json({ error: 'Publicación no encontrada' });
       }
@@ -358,70 +316,57 @@ export const ComunicacionSocialController = {
         publicacion.hashtags || [],
         publicacion.fotos_urls || []
       );
-
-      // Preparar datos para compartir en móvil (API nativa)
       const datosMovil = ComunicacionSocialModel.prepararDatosCompartir(
         publicacion,
         publicacion.fotos_urls || []
       );
 
-      res.json({
+      return res.json({
         links,
         movil: datosMovil,
         contenido_final: contenido,
         hashtags: publicacion.hashtags,
-        fotos: publicacion.fotos_urls
+        fotos: publicacion.fotos_urls,
       });
     } catch (error) {
       console.error('Error obteniendo links:', error);
-      res.status(500).json({ error: 'Error al obtener links de compartir' });
+      return res.status(500).json({ error: 'Error al obtener links de compartir' });
     }
   },
 
-  /**
-   * Obtener fotos de una situación
-   * GET /api/comunicacion-social/fotos/situacion/:situacionId
-   */
   async obtenerFotosSituacion(req: Request, res: Response) {
     try {
-      const situacionId = parseInt(req.params.situacionId);
+      const situacionId = normalizeId(req.params.situacionId);
+      if (!situacionId) return res.status(400).json({ error: 'ID inválido' });
+
       const fotos = await ComunicacionSocialModel.obtenerFotosSituacion(situacionId);
 
-      res.json(fotos);
+      return res.json(fotos);
     } catch (error) {
       console.error('Error obteniendo fotos:', error);
-      res.status(500).json({ error: 'Error al obtener fotos' });
+      return res.status(500).json({ error: 'Error al obtener fotos' });
     }
   },
 
-  /**
-   * Obtener variables disponibles para plantillas
-   * GET /api/comunicacion-social/plantillas/variables
-   */
   async obtenerVariables(_req: Request, res: Response) {
-    try {
-      res.json({
-        variables: [
-          { codigo: '{fecha}', descripcion: 'Fecha del reporte (DD/MM/YYYY)' },
-          { codigo: '{hora}', descripcion: 'Hora del reporte (HH:MM)' },
-          { codigo: '{ubicacion}', descripcion: 'Ubicación (km y sentido)' },
-          { codigo: '{municipio}', descripcion: 'Nombre del municipio' },
-          { codigo: '{departamento}', descripcion: 'Nombre del departamento' },
-          { codigo: '{tipo}', descripcion: 'Tipo de situación' },
-          { codigo: '{descripcion}', descripcion: 'Descripción de la situación' },
-          { codigo: '{heridos}', descripcion: 'Número de personas heridas' },
-          { codigo: '{fallecidos}', descripcion: 'Número de personas fallecidas' },
-          { codigo: '{vehiculos}', descripcion: 'Número de vehículos involucrados' },
-          { codigo: '{tipo_accidente}', descripcion: 'Tipo de accidente (solo accidentología)' },
-          { codigo: '{km}', descripcion: 'Kilómetro específico del accidente' }
-        ],
-        ejemplo: 'Accidente en {ubicacion}, {municipio}. Heridos: {heridos}'
-      });
-    } catch (error) {
-      console.error('Error obteniendo variables:', error);
-      res.status(500).json({ error: 'Error al obtener variables' });
-    }
-  }
+    return res.json({
+      variables: [
+        { codigo: '{fecha}',         descripcion: 'Fecha del reporte (DD/MM/YYYY)' },
+        { codigo: '{hora}',          descripcion: 'Hora del reporte (HH:MM)' },
+        { codigo: '{ubicacion}',     descripcion: 'Ubicación (km y sentido)' },
+        { codigo: '{municipio}',     descripcion: 'Nombre del municipio' },
+        { codigo: '{departamento}',  descripcion: 'Nombre del departamento' },
+        { codigo: '{tipo}',          descripcion: 'Tipo de situación' },
+        { codigo: '{descripcion}',   descripcion: 'Descripción de la situación' },
+        { codigo: '{heridos}',       descripcion: 'Número de personas heridas' },
+        { codigo: '{fallecidos}',    descripcion: 'Número de personas fallecidas' },
+        { codigo: '{vehiculos}',     descripcion: 'Número de vehículos involucrados' },
+        { codigo: '{tipo_accidente}',descripcion: 'Tipo de accidente (solo accidentología)' },
+        { codigo: '{km}',            descripcion: 'Kilómetro específico del accidente' },
+      ],
+      ejemplo: 'Accidente en {ubicacion}, {municipio}. Heridos: {heridos}',
+    });
+  },
 };
 
 // ============================================================
@@ -439,25 +384,11 @@ export async function getEstadisticasComunicacion(req: Request, res: Response) {
 
     const base = { fecha_inicio: desde, fecha_fin: hasta, origen_datos: 'ALL' };
 
-    // 3 paneles en paralelo + subtipo cruzado
     const [incidentes, asistencias, emergencias, porSubtipo] = await Promise.all([
       EstadisticasService.obtenerTodo({ ...base, tipo_situacion: 'INCIDENTE' }),
       EstadisticasService.obtenerTodo({ ...base, tipo_situacion: 'ASISTENCIA_ALL' }),
       EstadisticasService.obtenerTodo({ ...base, tipo_situacion: 'EMERGENCIA' }),
-      db.any(
-        `SELECT
-           CASE WHEN s.tipo_situacion IN ('ASISTENCIA','ASISTENCIA_VEHICULAR')
-                THEN 'ASISTENCIA' ELSE s.tipo_situacion END   AS tipo_panel,
-           COALESCE(cst.nombre, 'No especificado')            AS subtipo,
-           COUNT(*)::int                                      AS total
-         FROM situacion s
-         LEFT JOIN catalogo_tipo_situacion cst ON s.tipo_situacion_id = cst.id
-         WHERE s.tipo_situacion IN ('INCIDENTE','ASISTENCIA','ASISTENCIA_VEHICULAR','EMERGENCIA')
-           AND COALESCE(s.fecha_hora_aviso, s.created_at)::date BETWEEN $1::date AND $2::date
-         GROUP BY tipo_panel, cst.nombre
-         ORDER BY tipo_panel, total DESC`,
-        [desde, hasta]
-      ),
+      ComunicacionSocialModel.getPorSubtipo(desde, hasta),
     ]);
 
     return res.json({
@@ -465,9 +396,9 @@ export async function getEstadisticasComunicacion(req: Request, res: Response) {
       desde,
       hasta,
       data: {
-        incidentes:  { ...incidentes,  por_subtipo: porSubtipo.filter((r: any) => r.tipo_panel === 'INCIDENTE')  },
-        asistencias: { ...asistencias, por_subtipo: porSubtipo.filter((r: any) => r.tipo_panel === 'ASISTENCIA') },
-        emergencias: { ...emergencias, por_subtipo: porSubtipo.filter((r: any) => r.tipo_panel === 'EMERGENCIA') },
+        incidentes:  { ...incidentes,  por_subtipo: porSubtipo.filter((r) => r.tipo_panel === 'INCIDENTE')  },
+        asistencias: { ...asistencias, por_subtipo: porSubtipo.filter((r) => r.tipo_panel === 'ASISTENCIA') },
+        emergencias: { ...emergencias, por_subtipo: porSubtipo.filter((r) => r.tipo_panel === 'EMERGENCIA') },
       },
     });
   } catch (error) {
@@ -482,99 +413,23 @@ export async function getEstadisticasComunicacion(req: Request, res: Response) {
 
 export async function getSnapshotActual(_req: Request, res: Response) {
   try {
-    // Situaciones activas (campos limitados, sin vehiculos/causas/detalles privados)
-    const situaciones = await db.any(
-      `SELECT
-         s.id,
-         s.codigo_situacion,
-         s.tipo_situacion,
-         cst.nombre                       AS subtipo_nombre,
-         s.estado,
-         s.km,
-         s.sentido,
-         s.clima,
-         s.carga_vehicular,
-         s.obstruccion_data,
-         s.observaciones,
-         s.ilesos,
-         s.heridos_leves,
-         s.heridos_graves,
-         s.fallecidos,
-         s.trasladados,
-         s.fecha_hora_aviso,
-         s.fecha_hora_finalizacion,
-         COALESCE(r.codigo, 'Sin ruta')   AS ruta_codigo,
-         COALESCE(r.nombre, 'Sin ruta')   AS ruta_nombre,
-         u.codigo                         AS unidad_codigo
-       FROM situacion s
-       LEFT JOIN ruta r                   ON s.ruta_id = r.id
-       LEFT JOIN catalogo_tipo_situacion cst ON s.tipo_situacion_id = cst.id
-       LEFT JOIN unidad u                 ON s.unidad_id = u.id
-       WHERE s.estado = 'ACTIVA'
-         AND s.tipo_situacion IN ('INCIDENTE','ASISTENCIA','EMERGENCIA')
-       ORDER BY r.codigo NULLS LAST, s.fecha_hora_aviso DESC`
-    );
+    const [situaciones, actividades, unidades] = await Promise.all([
+      ComunicacionSocialModel.getSnapshotSituaciones(),
+      ComunicacionSocialModel.getSnapshotActividades(),
+      ComunicacionSocialModel.getSnapshotUnidades(),
+    ]);
 
-    // Infografías de las situaciones activas (solo URLs)
-    let fotos: any[] = [];
+    let fotosMap: Record<number, any[]> = {};
     if (situaciones.length > 0) {
-      const ids = situaciones.map((s: any) => s.id);
-      fotos = await db.any(
-        `SELECT situacion_id, url_original, url_thumbnail, infografia_numero, orden
-         FROM situacion_multimedia
-         WHERE situacion_id = ANY($1::int[])
-           AND tipo = 'FOTO' AND url_original IS NOT NULL
-         ORDER BY situacion_id, infografia_numero, orden`,
-        [ids]
-      );
+      const ids = situaciones.map((s) => s.id);
+      const fotos = await ComunicacionSocialModel.getFotosPorSituaciones(ids);
+      fotos.forEach((f) => {
+        if (!fotosMap[f.situacion_id]) fotosMap[f.situacion_id] = [];
+        fotosMap[f.situacion_id].push(f);
+      });
     }
 
-    // Actividades activas (sin campo datos JSONB)
-    const actividades = await db.any(
-      `SELECT
-         a.id,
-         cst.nombre                       AS tipo_nombre,
-         a.km,
-         a.sentido,
-         a.clima,
-         a.carga_vehicular,
-         a.estado,
-         a.created_at,
-         COALESCE(r.codigo, 'Sin ruta')   AS ruta_codigo,
-         COALESCE(r.nombre, 'Sin ruta')   AS ruta_nombre,
-         u.codigo                         AS unidad_codigo,
-         u.tipo_unidad
-       FROM actividad a
-       LEFT JOIN catalogo_tipo_situacion cst ON a.tipo_actividad_id = cst.id
-       LEFT JOIN ruta r                   ON a.ruta_id = r.id
-       LEFT JOIN unidad u                 ON a.unidad_id = u.id
-       WHERE a.estado = 'ACTIVA'
-       ORDER BY r.codigo NULLS LAST, a.created_at DESC`
-    );
-
-    // Unidades en salida activa
-    const unidades = await db.any(
-      `SELECT
-         u.codigo,
-         u.tipo_unidad,
-         COALESCE(r.codigo, 'Sin ruta')   AS ruta_codigo,
-         COALESCE(r.nombre, 'Sin ruta')   AS ruta_nombre,
-         su.fecha_hora_salida,
-         su.km_inicial
-       FROM salida_unidad su
-       JOIN  unidad u  ON su.unidad_id = u.id
-       LEFT JOIN ruta r ON su.ruta_inicial_id = r.id
-       WHERE su.estado = 'EN_SALIDA'
-       ORDER BY r.codigo NULLS LAST, u.codigo`
-    );
-
-    // Adjuntar fotos a sus situaciones
-    const fotosMap: Record<number, any[]> = {};
-    fotos.forEach((f: any) => {
-      if (!fotosMap[f.situacion_id]) fotosMap[f.situacion_id] = [];
-      fotosMap[f.situacion_id].push(f);
-    });
-    const situacionesConFotos = situaciones.map((s: any) => ({
+    const situacionesConFotos = situaciones.map((s) => ({
       ...s,
       fotos: fotosMap[s.id] || [],
     }));
@@ -596,85 +451,26 @@ export async function getSnapshotActual(_req: Request, res: Response) {
 
 export async function getEstadoUnidades(_req: Request, res: Response) {
   try {
-    // Todas las unidades en salida activa con su estado actual
-    const unidades = await db.any(`
-      SELECT
-        u.id            AS unidad_id,
-        u.codigo        AS unidad_codigo,
-        u.tipo_unidad,
-        COALESCE(r.codigo, 'Sin ruta') AS ruta_codigo,
-        COALESCE(r.nombre, 'Sin ruta') AS ruta_nombre,
-        su.fecha_hora_salida,
-        -- Estado actual (situacion_actual cache)
-        sa.km,
-        sa.sentido,
-        sa.tipo_situacion,
-        sa.actividad_tipo_nombre,
-        sa.updated_at   AS ultima_actualizacion,
-        sa.situacion_id,
-        sa.actividad_id,
-        -- Detalle situacion activa
-        s.observaciones,
-        s.clima,
-        s.carga_vehicular,
-        s.obstruccion_data,
-        s.heridos_leves,
-        s.heridos_graves,
-        s.fallecidos,
-        s.trasladados,
-        cst.nombre      AS subtipo_nombre,
-        cst.categoria   AS subtipo_categoria,
-        -- Detalle actividad activa
-        a.observaciones AS act_observaciones,
-        a.clima         AS act_clima,
-        a.carga_vehicular AS act_carga,
-        a.km            AS act_km,
-        a.sentido       AS act_sentido
-      FROM salida_unidad su
-      JOIN  unidad u  ON su.unidad_id = u.id
-      LEFT JOIN ruta r  ON su.ruta_inicial_id = r.id
-      LEFT JOIN situacion_actual sa ON sa.unidad_id = u.id
-      LEFT JOIN situacion s
-             ON sa.situacion_id = s.id AND s.estado = 'ACTIVA'
-      LEFT JOIN catalogo_tipo_situacion cst ON s.tipo_situacion_id = cst.id
-      LEFT JOIN actividad a
-             ON sa.actividad_id = a.id AND a.estado = 'ACTIVA'
-      WHERE su.estado = 'EN_SALIDA'
-      ORDER BY r.codigo NULLS LAST, u.codigo
-    `);
+    const [unidades, plantillas] = await Promise.all([
+      ComunicacionSocialModel.getEstadoUnidadesDetalle(),
+      ComunicacionSocialModel.getPlantillasActivas(),
+    ]);
 
-    // Fotos de situaciones activas (solo las que tienen situacion_id)
-    const situacionIds = [...new Set(unidades
-      .filter((u: any) => u.situacion_id)
-      .map((u: any) => u.situacion_id))];
+    const situacionIds = [...new Set(
+      unidades.filter((u) => u.situacion_id).map((u) => u.situacion_id)
+    )] as number[];
 
     let fotosMap: Record<number, any[]> = {};
     if (situacionIds.length > 0) {
-      const fotos = await db.any(
-        `SELECT situacion_id, url_original, url_thumbnail, infografia_numero, orden
-         FROM situacion_multimedia
-         WHERE situacion_id = ANY($1::int[])
-           AND tipo = 'FOTO' AND url_original IS NOT NULL
-         ORDER BY situacion_id, infografia_numero, orden`,
-        [situacionIds]
-      );
-      fotos.forEach((f: any) => {
+      const fotos = await ComunicacionSocialModel.getFotosPorSituaciones(situacionIds);
+      fotos.forEach((f) => {
         if (!fotosMap[f.situacion_id]) fotosMap[f.situacion_id] = [];
         fotosMap[f.situacion_id].push(f);
       });
     }
 
-    // Plantillas disponibles para compartir
-    const plantillas = await db.any(
-      `SELECT id, nombre, tipo_situacion, contenido_plantilla
-       FROM plantilla_comunicacion
-       WHERE activa = true
-       ORDER BY tipo_situacion, nombre`
-    );
-
-    // Agrupar unidades por ruta y adjuntar fotos
     const porRuta: Record<string, any[]> = {};
-    unidades.forEach((u: any) => {
+    unidades.forEach((u) => {
       const r = u.ruta_codigo;
       if (!porRuta[r]) porRuta[r] = [];
       porRuta[r].push({

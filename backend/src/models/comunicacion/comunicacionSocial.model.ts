@@ -336,14 +336,176 @@ export const ComunicacionSocialModel = {
   /**
    * Obtener fotos de una situación para compartir
    */
-  async obtenerFotosSituacion(situacionId: number): Promise<string[]> {
-    const result = await db.any(`
-      SELECT fs.url
-      FROM foto_situacion fs
-      WHERE fs.situacion_id = $1
-      ORDER BY fs.created_at DESC
-    `, [situacionId]);
-    return result.map(r => r.url);
+  async obtenerFotosSituacion(situacionId: number): Promise<any[]> {
+    return db.any(
+      `SELECT url_original, url_thumbnail, infografia_numero, orden
+       FROM situacion_multimedia
+       WHERE situacion_id = $1
+         AND tipo = 'FOTO' AND url_original IS NOT NULL
+       ORDER BY infografia_numero, orden`,
+      [situacionId]
+    );
+  },
+
+  // ============================================
+  // CONSULTAS PARA SNAPSHOT Y BOLETÍN
+  // ============================================
+
+  async getSnapshotSituaciones(): Promise<any[]> {
+    return db.any(
+      `SELECT
+         s.id,
+         s.codigo_situacion,
+         s.tipo_situacion,
+         cst.nombre                       AS subtipo_nombre,
+         s.estado,
+         s.km,
+         s.sentido,
+         s.clima,
+         s.carga_vehicular,
+         s.obstruccion_data,
+         s.observaciones,
+         s.ilesos,
+         s.heridos_leves,
+         s.heridos_graves,
+         s.fallecidos,
+         s.trasladados,
+         s.fecha_hora_aviso,
+         s.fecha_hora_finalizacion,
+         COALESCE(r.codigo, 'Sin ruta')   AS ruta_codigo,
+         COALESCE(r.nombre, 'Sin ruta')   AS ruta_nombre,
+         u.codigo                         AS unidad_codigo
+       FROM situacion s
+       LEFT JOIN ruta r                      ON s.ruta_id = r.id
+       LEFT JOIN catalogo_tipo_situacion cst ON s.tipo_situacion_id = cst.id
+       LEFT JOIN unidad u                    ON s.unidad_id = u.id
+       WHERE s.estado = 'ACTIVA'
+         AND s.tipo_situacion IN ('INCIDENTE','ASISTENCIA','EMERGENCIA')
+       ORDER BY r.codigo NULLS LAST, s.fecha_hora_aviso DESC`
+    );
+  },
+
+  async getSnapshotActividades(): Promise<any[]> {
+    return db.any(
+      `SELECT
+         a.id,
+         cst.nombre                       AS tipo_nombre,
+         a.km,
+         a.sentido,
+         a.clima,
+         a.carga_vehicular,
+         a.estado,
+         a.created_at,
+         COALESCE(r.codigo, 'Sin ruta')   AS ruta_codigo,
+         COALESCE(r.nombre, 'Sin ruta')   AS ruta_nombre,
+         u.codigo                         AS unidad_codigo,
+         u.tipo_unidad
+       FROM actividad a
+       LEFT JOIN catalogo_tipo_situacion cst ON a.tipo_actividad_id = cst.id
+       LEFT JOIN ruta r                      ON a.ruta_id = r.id
+       LEFT JOIN unidad u                    ON a.unidad_id = u.id
+       WHERE a.estado = 'ACTIVA'
+       ORDER BY r.codigo NULLS LAST, a.created_at DESC`
+    );
+  },
+
+  async getSnapshotUnidades(): Promise<any[]> {
+    return db.any(
+      `SELECT
+         u.codigo,
+         u.tipo_unidad,
+         COALESCE(r.codigo, 'Sin ruta')   AS ruta_codigo,
+         COALESCE(r.nombre, 'Sin ruta')   AS ruta_nombre,
+         su.fecha_hora_salida,
+         su.km_inicial
+       FROM salida_unidad su
+       JOIN  unidad u  ON su.unidad_id = u.id
+       LEFT JOIN ruta r ON su.ruta_inicial_id = r.id
+       WHERE su.estado = 'EN_SALIDA'
+       ORDER BY r.codigo NULLS LAST, u.codigo`
+    );
+  },
+
+  async getFotosPorSituaciones(ids: number[]): Promise<any[]> {
+    return db.any(
+      `SELECT situacion_id, url_original, url_thumbnail, infografia_numero, orden
+       FROM situacion_multimedia
+       WHERE situacion_id = ANY($1::int[])
+         AND tipo = 'FOTO' AND url_original IS NOT NULL
+       ORDER BY situacion_id, infografia_numero, orden`,
+      [ids]
+    );
+  },
+
+  async getEstadoUnidadesDetalle(): Promise<any[]> {
+    return db.any(
+      `SELECT
+         u.id            AS unidad_id,
+         u.codigo        AS unidad_codigo,
+         u.tipo_unidad,
+         COALESCE(r.codigo, 'Sin ruta')   AS ruta_codigo,
+         COALESCE(r.nombre, 'Sin ruta')   AS ruta_nombre,
+         su.fecha_hora_salida,
+         sa.km,
+         sa.sentido,
+         sa.tipo_situacion,
+         sa.actividad_tipo_nombre,
+         sa.updated_at                    AS ultima_actualizacion,
+         sa.situacion_id,
+         sa.actividad_id,
+         s.observaciones,
+         s.clima,
+         s.carga_vehicular,
+         s.obstruccion_data,
+         s.heridos_leves,
+         s.heridos_graves,
+         s.fallecidos,
+         s.trasladados,
+         cst.nombre                       AS subtipo_nombre,
+         cst.categoria                    AS subtipo_categoria,
+         a.observaciones AS act_observaciones,
+         a.clima         AS act_clima,
+         a.carga_vehicular AS act_carga,
+         a.km            AS act_km,
+         a.sentido       AS act_sentido
+       FROM salida_unidad su
+       JOIN  unidad u  ON su.unidad_id = u.id
+       LEFT JOIN ruta r              ON su.ruta_inicial_id = r.id
+       LEFT JOIN situacion_actual sa ON sa.unidad_id = u.id
+       LEFT JOIN situacion s
+              ON sa.situacion_id = s.id AND s.estado = 'ACTIVA'
+       LEFT JOIN catalogo_tipo_situacion cst ON s.tipo_situacion_id = cst.id
+       LEFT JOIN actividad a
+              ON sa.actividad_id = a.id AND a.estado = 'ACTIVA'
+       WHERE su.estado = 'EN_SALIDA'
+       ORDER BY r.codigo NULLS LAST, u.codigo`
+    );
+  },
+
+  async getPlantillasActivas(): Promise<any[]> {
+    return db.any(
+      `SELECT id, nombre, tipo_situacion, contenido_plantilla
+       FROM plantilla_comunicacion
+       WHERE activa = true
+       ORDER BY tipo_situacion, nombre`
+    );
+  },
+
+  async getPorSubtipo(desde: string, hasta: string): Promise<any[]> {
+    return db.any(
+      `SELECT
+         CASE WHEN s.tipo_situacion IN ('ASISTENCIA','ASISTENCIA_VEHICULAR')
+              THEN 'ASISTENCIA' ELSE s.tipo_situacion END   AS tipo_panel,
+         COALESCE(cst.nombre, 'No especificado')            AS subtipo,
+         COUNT(*)::int                                      AS total
+       FROM situacion s
+       LEFT JOIN catalogo_tipo_situacion cst ON s.tipo_situacion_id = cst.id
+       WHERE s.tipo_situacion IN ('INCIDENTE','ASISTENCIA','ASISTENCIA_VEHICULAR','EMERGENCIA')
+         AND COALESCE(s.fecha_hora_aviso, s.created_at)::date BETWEEN $1::date AND $2::date
+       GROUP BY tipo_panel, cst.nombre
+       ORDER BY tipo_panel, total DESC`,
+      [desde, hasta]
+    );
   },
 
   /**
