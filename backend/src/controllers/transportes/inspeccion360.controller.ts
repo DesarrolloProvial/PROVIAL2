@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { Inspeccion360Model } from '../../models/transportes/inspeccion360.model';
 import { PDF360Service } from '../../services/transportes/pdf360.service';
-import { db } from '../../config/database';
+import { normalizeId } from '../../utils/db.utils';
 
 // ========================================
 // CONTROLADOR: INSPECCIÓN 360
@@ -56,7 +56,7 @@ export const Inspeccion360Controller = {
   async crearPlantilla(req: Request, res: Response) {
     try {
       const { tipo_unidad, nombre, descripcion, secciones } = req.body;
-      const userId = (req as any).user?.userId;
+      const userId = req.user!.userId;
 
       if (!tipo_unidad || !nombre || !secciones) {
         return res.status(400).json({
@@ -87,7 +87,7 @@ export const Inspeccion360Controller = {
     try {
       const { id } = req.params;
       const { nombre, descripcion, secciones } = req.body;
-      const userId = (req as any).user?.userId;
+      const userId = req.user!.userId;
 
       const plantilla = await Inspeccion360Model.actualizarPlantilla(parseInt(id), {
         nombre,
@@ -123,7 +123,7 @@ export const Inspeccion360Controller = {
         salida_id,
         danos // Nuevo: array de daños reportados
       } = req.body;
-      const userId = (req as any).user?.userId;
+      const userId = req.user!.userId;
 
       console.log('Creando inspección 360:', {
         userId,
@@ -324,7 +324,7 @@ export const Inspeccion360Controller = {
     try {
       const { id } = req.params;
       const { firma, observaciones } = req.body;
-      const userId = (req as any).user?.userId;
+      const userId = req.user!.userId;
 
       const resultado = await Inspeccion360Model.aprobarInspeccion(
         parseInt(id),
@@ -352,7 +352,7 @@ export const Inspeccion360Controller = {
     try {
       const { id } = req.params;
       const { motivo } = req.body;
-      const userId = (req as any).user?.userId;
+      const userId = req.user!.userId;
 
       if (!motivo) {
         return res.status(400).json({ error: 'Debe proporcionar un motivo de rechazo' });
@@ -381,11 +381,11 @@ export const Inspeccion360Controller = {
    */
   async listarPendientes(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.userId;
-      const userRol = (req as any).user?.rol;
+      const userId = req.user!.userId;
+      const userRol = req.user!.rol;
 
       // Si es admin, ver todas. Si no, solo las suyas como comandante
-      const comandanteId = ['SUPER_ADMIN', 'ADMIN', 'OPERACIONES', 'TRANSPORTES'].includes(userRol)
+      const comandanteId = ['SUPER_ADMIN', 'ADMIN', 'OPERACIONES', 'TRANSPORTES'].includes(userRol ?? '')
         ? undefined
         : userId;
 
@@ -482,29 +482,15 @@ export const Inspeccion360Controller = {
   async verificarUnidad(req: Request, res: Response) {
     try {
       const { unidadId } = req.params;
-      const userId = (req as any).user?.userId;
+      const userId = req.user!.userId;
 
-      // Buscar inspección pendiente o aprobada del día
-      const inspeccion = await db.oneOrNone(`
-        SELECT i.id, i.estado, i.fecha_realizacion, i.motivo_rechazo,
-               u.nombre_completo as inspector_nombre
-        FROM inspeccion_360 i
-        JOIN usuario u ON i.realizado_por = u.id
-        WHERE i.unidad_id = $1
-          AND i.salida_id IS NULL
-          AND i.fecha_realizacion > NOW() - INTERVAL '24 hours'
-        ORDER BY 
-          CASE i.estado 
-            WHEN 'APROBADA' THEN 1 
-            WHEN 'PENDIENTE' THEN 2 
-            ELSE 3 
-          END,
-          i.created_at DESC
-        LIMIT 1
-      `, [unidadId]);
+      const unidadIdNum = normalizeId(unidadId);
+      if (!unidadIdNum) return res.status(400).json({ error: 'ID de unidad inválido' });
 
-      // Verificar si el usuario es comandante
-      const esComandante = await Inspeccion360Model.esComandante(userId, parseInt(unidadId));
+      const [inspeccion, esComandante] = await Promise.all([
+        Inspeccion360Model.obtenerEstadoInspeccionDia(unidadIdNum),
+        Inspeccion360Model.esComandante(userId, unidadIdNum),
+      ]);
 
       if (!inspeccion) {
         return res.json({
@@ -599,32 +585,10 @@ export const Inspeccion360Controller = {
         return res.status(404).json({ error: 'Plantilla no encontrada' });
       }
 
-      // Obtener datos de la unidad
-      const unidad = await db.one(`
-        SELECT u.id, u.codigo, u.tipo_unidad, u.placa, s.nombre as sede_nombre
-        FROM unidad u
-        LEFT JOIN sede s ON u.sede_id = s.id
-        WHERE u.id = $1
-      `, [inspeccion.unidad_id]);
+      const datosPDF = await Inspeccion360Model.obtenerDatosParaPDF(inspeccionId);
+      if (!datosPDF) return res.status(404).json({ error: 'Inspección no encontrada' });
+      const { unidad, inspector, comandante } = datosPDF;
 
-      // Obtener datos del inspector
-      const inspector = await db.one(`
-        SELECT id, nombre_completo, chapa
-        FROM usuario
-        WHERE id = $1
-      `, [inspeccion.realizado_por]);
-
-      // Obtener datos del comandante (si existe)
-      let comandante = null;
-      if (inspeccion.aprobado_por) {
-        comandante = await db.oneOrNone(`
-          SELECT id, nombre_completo, chapa
-          FROM usuario
-          WHERE id = $1
-        `, [inspeccion.aprobado_por]);
-      }
-
-      // Preparar datos para el PDF
       const pdfData = await PDF360Service.prepararDatos(
         inspeccion,
         plantilla,
@@ -656,32 +620,15 @@ export const Inspeccion360Controller = {
    */
   async listarPDFsUnidad(req: Request, res: Response) {
     try {
-      const { unidadId } = req.params;
-      const diasParam = parseInt(req.query.dias as string) || 30;
-      const limiteParam = parseInt(req.query.limite as string) || 50;
+      const unidadIdNum = normalizeId(req.params.unidadId);
+      if (!unidadIdNum) return res.status(400).json({ error: 'ID de unidad inválido' });
 
-      // Limites maximos para evitar sobrecarga
-      const dias = Math.min(diasParam, 90);
-      const limite = Math.min(limiteParam, 100);
+      const diasRaw = parseInt(req.query.dias as string, 10);
+      const limiteRaw = parseInt(req.query.limite as string, 10);
+      const dias = Math.min(isNaN(diasRaw) ? 30 : diasRaw, 90);
+      const limite = Math.min(isNaN(limiteRaw) ? 50 : limiteRaw, 100);
 
-      const inspecciones = await db.manyOrNone(`
-        SELECT
-          i.id,
-          i.fecha_realizacion,
-          i.fecha_aprobacion,
-          i.estado,
-          u.codigo as unidad_codigo,
-          ins.nombre_completo as inspector_nombre,
-          cmd.nombre_completo as comandante_nombre
-        FROM inspeccion_360 i
-        JOIN unidad u ON i.unidad_id = u.id
-        JOIN usuario ins ON i.realizado_por = ins.id
-        LEFT JOIN usuario cmd ON i.aprobado_por = cmd.id
-        WHERE i.unidad_id = $1
-          AND i.fecha_realizacion >= CURRENT_DATE - $2::int
-        ORDER BY i.fecha_realizacion DESC
-        LIMIT $3
-      `, [unidadId, dias, limite]);
+      const inspecciones = await Inspeccion360Model.listarParaPDFs(unidadIdNum, dias, limite);
 
       res.json({
         inspecciones: inspecciones.map(i => ({

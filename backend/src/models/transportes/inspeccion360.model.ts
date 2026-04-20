@@ -561,6 +561,78 @@ export const Inspeccion360Model = {
     return result.rowCount > 0;
   },
 
+  async obtenerDatosParaPDF(inspeccionId: number): Promise<{
+    unidad: any;
+    inspector: any;
+    comandante: any | null;
+  } | null> {
+    const inspeccion = await this.obtenerInspeccionPorId(inspeccionId);
+    if (!inspeccion) return null;
+
+    const [unidad, inspector, comandante] = await Promise.all([
+      db.one(
+        `SELECT u.id, u.codigo, u.tipo_unidad, u.placa, s.nombre AS sede_nombre
+         FROM unidad u LEFT JOIN sede s ON u.sede_id = s.id WHERE u.id = $1`,
+        [inspeccion.unidad_id]
+      ),
+      db.one(
+        `SELECT id, nombre_completo, chapa FROM usuario WHERE id = $1`,
+        [inspeccion.realizado_por]
+      ),
+      inspeccion.aprobado_por
+        ? db.oneOrNone(
+            `SELECT id, nombre_completo, chapa FROM usuario WHERE id = $1`,
+            [inspeccion.aprobado_por]
+          )
+        : Promise.resolve(null),
+    ]);
+
+    return { unidad, inspector, comandante };
+  },
+
+  async obtenerEstadoInspeccionDia(unidadId: number): Promise<any | null> {
+    return db.oneOrNone(
+      `SELECT i.id, i.estado, i.fecha_realizacion, i.motivo_rechazo,
+              u.nombre_completo AS inspector_nombre
+       FROM inspeccion_360 i
+       JOIN usuario u ON i.realizado_por = u.id
+       WHERE i.unidad_id = $1
+         AND i.salida_id IS NULL
+         AND i.fecha_realizacion > NOW() - INTERVAL '24 hours'
+       ORDER BY
+         CASE i.estado
+           WHEN 'APROBADA'  THEN 1
+           WHEN 'PENDIENTE' THEN 2
+           ELSE 3
+         END,
+         i.created_at DESC
+       LIMIT 1`,
+      [unidadId]
+    );
+  },
+
+  async listarParaPDFs(unidadId: number, dias: number, limite: number): Promise<any[]> {
+    return db.any(
+      `SELECT
+         i.id,
+         i.fecha_realizacion,
+         i.fecha_aprobacion,
+         i.estado,
+         u.codigo  AS unidad_codigo,
+         ins.nombre_completo AS inspector_nombre,
+         cmd.nombre_completo AS comandante_nombre
+       FROM inspeccion_360 i
+       JOIN unidad u    ON i.unidad_id     = u.id
+       JOIN usuario ins ON i.realizado_por = ins.id
+       LEFT JOIN usuario cmd ON i.aprobado_por = cmd.id
+       WHERE i.unidad_id = $1
+         AND i.fecha_realizacion >= CURRENT_DATE - $2::int
+       ORDER BY i.fecha_realizacion DESC
+       LIMIT $3`,
+      [unidadId, dias, limite]
+    );
+  },
+
   // ========================================
   // ESTADÍSTICAS
   // ========================================
