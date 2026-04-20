@@ -13,18 +13,17 @@ import {
   isCloudinaryConfiguredUnsigned
 } from '../../services/common/cloudinary.service';
 import { db } from '../../config/database';
+import { normalizeId } from '../../utils/db.utils';
 
-// Configuración de multer para manejo de archivos en memoria
 const storage = multer.memoryStorage();
 
 export const upload = multer({
   storage,
   limits: {
-    fileSize: 15 * 1024 * 1024, // 15MB máximo (antes de compresión)
-    files: 4 // Máximo 4 archivos (3 fotos + 1 video)
+    fileSize: 15 * 1024 * 1024,
+    files: 4
   },
   fileFilter: (_req, file, cb) => {
-    // Aceptar imágenes y videos
     if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
       cb(null, true);
     } else {
@@ -33,37 +32,25 @@ export const upload = multer({
   }
 });
 
-/**
- * POST /api/multimedia/situacion/:situacionId/foto
- * Subir una foto a una situación
- */
 export async function subirFoto(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
+    if (!req.user) return res.status(401).json({ error: 'No autorizado' });
 
-    const { situacionId } = req.params;
+    const situacionIdNum = normalizeId(req.params.situacionId);
+    if (!situacionIdNum) return res.status(400).json({ error: 'ID inválido' });
+
     const { latitud, longitud, infografia_numero, infografia_titulo } = req.body;
-
     const infografiaNumero = infografia_numero ? parseInt(infografia_numero, 10) : 1;
 
-    if (!req.file) {
-      return res.status(400).json({ error: 'No se recibió ningún archivo' });
-    }
+    if (!req.file) return res.status(400).json({ error: 'No se recibió ningún archivo' });
 
-    // Verificar que la situación existe y obtener código determinista
     const situacion = await db.oneOrNone(
       'SELECT id, tipo_situacion, codigo_situacion FROM situacion WHERE id = $1',
-      [situacionId]
+      [situacionIdNum]
     );
+    if (!situacion) return res.status(404).json({ error: 'Situación no encontrada' });
 
-    if (!situacion) {
-      return res.status(404).json({ error: 'Situación no encontrada' });
-    }
-
-    // Verificar límite de fotos por infografía
-    const ordenSiguiente = await MultimediaModel.getSiguienteOrdenFoto(parseInt(situacionId), infografiaNumero);
+    const ordenSiguiente = await MultimediaModel.getSiguienteOrdenFoto(situacionIdNum, infografiaNumero);
     if (ordenSiguiente > 3) {
       return res.status(400).json({
         error: 'Límite de fotos alcanzado',
@@ -71,19 +58,17 @@ export async function subirFoto(req: Request, res: Response) {
       });
     }
 
-    // Verificar que Cloudinary está configurado
     if (!isCloudinaryConfiguredUnsigned()) {
       console.error('[MULTIMEDIA] Cloudinary NO está configurado!');
       return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
     }
 
-    // Subir foto a Cloudinary usando el código determinista y número de infografía
-    console.log(`[MULTIMEDIA] Subiendo foto a Cloudinary para situación ${situacionId} Infografía ${infografiaNumero}...`);
+    console.log(`[MULTIMEDIA] Subiendo foto a Cloudinary para situación ${situacionIdNum} Infografía ${infografiaNumero}...`);
     const result = await uploadPhotoBuffer(
       req.file.buffer,
-      parseInt(situacionId),
+      situacionIdNum,
       ordenSiguiente,
-      situacion.codigo_situacion, // Usar código determinista para nombrar archivo
+      situacion.codigo_situacion,
       infografiaNumero
     );
 
@@ -92,11 +77,8 @@ export async function subirFoto(req: Request, res: Response) {
       return res.status(500).json({ error: result.error });
     }
 
-    console.log(`[MULTIMEDIA] Foto subida a Cloudinary: ${result.url}`);
-
-    // Guardar referencia en BD
     const multimediaId = await MultimediaModel.create({
-      situacion_id: parseInt(situacionId),
+      situacion_id: situacionIdNum,
       infografia_numero: infografiaNumero,
       infografia_titulo: infografia_titulo || null,
       tipo: 'FOTO',
@@ -110,13 +92,12 @@ export async function subirFoto(req: Request, res: Response) {
       alto: result.height,
       latitud: latitud ? parseFloat(latitud) : null,
       longitud: longitud ? parseFloat(longitud) : null,
-      subido_por: req.user.userId
+      subido_por: req.user!.userId
     });
 
-    // Verificar completitud (Legacy check, maybe update later)
-    const completitud = await MultimediaModel.verificarCompletitud(parseInt(situacionId));
+    const completitud = await MultimediaModel.verificarCompletitud(situacionIdNum);
 
-    console.log(`[MULTIMEDIA] Foto ${ordenSiguiente}/3 (Inf ${infografiaNumero}) subida para situación ${situacionId}`);
+    console.log(`[MULTIMEDIA] Foto ${ordenSiguiente}/3 (Inf ${infografiaNumero}) subida para situación ${situacionIdNum}`);
 
     return res.status(201).json({
       message: `Foto ${ordenSiguiente} de 3 subida correctamente`,
@@ -138,37 +119,25 @@ export async function subirFoto(req: Request, res: Response) {
   }
 }
 
-/**
- * POST /api/multimedia/situacion/:situacionId/video
- * Subir video a una situación
- */
 export async function subirVideo(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
+    if (!req.user) return res.status(401).json({ error: 'No autorizado' });
 
-    const { situacionId } = req.params;
+    const situacionIdNum = normalizeId(req.params.situacionId);
+    if (!situacionIdNum) return res.status(400).json({ error: 'ID inválido' });
+
     const { latitud, longitud, duracion_segundos, infografia_numero, infografia_titulo } = req.body;
-
     const infografiaNumero = infografia_numero ? parseInt(infografia_numero, 10) : 1;
 
-    if (!req.file) {
-      return res.status(400).json({ error: 'No se recibió ningún archivo' });
-    }
+    if (!req.file) return res.status(400).json({ error: 'No se recibió ningún archivo' });
 
-    // Verificar que la situación existe y obtener código determinista
     const situacion = await db.oneOrNone(
       'SELECT id, tipo_situacion, codigo_situacion FROM situacion WHERE id = $1',
-      [situacionId]
+      [situacionIdNum]
     );
+    if (!situacion) return res.status(404).json({ error: 'Situación no encontrada' });
 
-    if (!situacion) {
-      return res.status(404).json({ error: 'Situación no encontrada' });
-    }
-
-    // Verificar si ya existe video para esta infografía
-    const existeVideo = await MultimediaModel.existeVideo(parseInt(situacionId), infografiaNumero);
+    const existeVideo = await MultimediaModel.existeVideo(situacionIdNum, infografiaNumero);
     if (existeVideo) {
       return res.status(400).json({
         error: 'Ya existe un video',
@@ -176,18 +145,16 @@ export async function subirVideo(req: Request, res: Response) {
       });
     }
 
-    // Verificar que Cloudinary está configurado
     if (!isCloudinaryConfiguredUnsigned()) {
       console.error('[MULTIMEDIA] Cloudinary NO está configurado!');
       return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
     }
 
-    // Subir video a Cloudinary usando el código determinista
-    console.log(`[MULTIMEDIA] Subiendo video a Cloudinary para situación ${situacionId} Infografía ${infografiaNumero}...`);
+    console.log(`[MULTIMEDIA] Subiendo video a Cloudinary para situación ${situacionIdNum} Infografía ${infografiaNumero}...`);
     const result = await uploadVideoBuffer(
       req.file.buffer,
-      parseInt(situacionId),
-      situacion.codigo_situacion, // Usar código determinista para nombrar archivo
+      situacionIdNum,
+      situacion.codigo_situacion,
       infografiaNumero
     );
 
@@ -196,11 +163,8 @@ export async function subirVideo(req: Request, res: Response) {
       return res.status(500).json({ error: result.error });
     }
 
-    console.log(`[MULTIMEDIA] Video subido a Cloudinary: ${result.url}`);
-
-    // Guardar referencia en BD
     const multimediaId = await MultimediaModel.create({
-      situacion_id: parseInt(situacionId),
+      situacion_id: situacionIdNum,
       infografia_numero: infografiaNumero,
       infografia_titulo: infografia_titulo || null,
       tipo: 'VIDEO',
@@ -211,13 +175,12 @@ export async function subirVideo(req: Request, res: Response) {
       duracion_segundos: duracion_segundos ? parseInt(duracion_segundos) : (result.duration ? Math.round(result.duration) : null),
       latitud: latitud ? parseFloat(latitud) : null,
       longitud: longitud ? parseFloat(longitud) : null,
-      subido_por: req.user.userId
+      subido_por: req.user!.userId
     });
 
-    // Verificar completitud
-    const completitud = await MultimediaModel.verificarCompletitud(parseInt(situacionId));
+    const completitud = await MultimediaModel.verificarCompletitud(situacionIdNum);
 
-    console.log(`[MULTIMEDIA] Video subido para situación ${situacionId} por usuario ${req.user.userId}`);
+    console.log(`[MULTIMEDIA] Video subido para situación ${situacionIdNum} por usuario ${req.user!.userId}`);
 
     return res.status(201).json({
       message: 'Video subido correctamente',
@@ -235,50 +198,32 @@ export async function subirVideo(req: Request, res: Response) {
   }
 }
 
-/**
- * GET /api/multimedia/situacion/:situacionId
- * Obtener multimedia de una situación
- */
 export async function getMultimediaSituacion(req: Request, res: Response) {
   try {
-    const { situacionId } = req.params;
+    const situacionIdNum = normalizeId(req.params.situacionId);
+    if (!situacionIdNum) return res.status(400).json({ error: 'ID inválido' });
 
-    const multimedia = await MultimediaModel.getBySituacionId(parseInt(situacionId));
-    const completitud = await MultimediaModel.verificarCompletitud(parseInt(situacionId));
+    const multimedia = await MultimediaModel.getBySituacionId(situacionIdNum);
+    const completitud = await MultimediaModel.verificarCompletitud(situacionIdNum);
 
     const fotos = multimedia.filter(m => m.tipo === 'FOTO');
     const videos = multimedia.filter(m => m.tipo === 'VIDEO');
 
-    return res.json({
-      situacion_id: parseInt(situacionId),
-      fotos,
-      videos,
-      completitud
-    });
+    return res.json({ situacion_id: situacionIdNum, fotos, videos, completitud });
   } catch (error: any) {
     console.error('Error al obtener multimedia:', error);
     return res.status(500).json({ error: 'Error al obtener multimedia' });
   }
 }
 
-/**
- * GET /api/multimedia/resumen
- * Obtener resumen de multimedia para varias situaciones (para mapa)
- */
 export async function getResumenMultimedia(req: Request, res: Response) {
   try {
     const { situacionIds } = req.query;
-
     if (!situacionIds || typeof situacionIds !== 'string') {
       return res.status(400).json({ error: 'Se requiere situacionIds como query param' });
     }
-
     const ids = situacionIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
-
-    if (ids.length === 0) {
-      return res.json({ resumen: [] });
-    }
-
+    if (ids.length === 0) return res.json({ resumen: [] });
     const resumen = await MultimediaModel.getResumenBySituaciones(ids);
     return res.json({ resumen });
   } catch (error: any) {
@@ -287,38 +232,24 @@ export async function getResumenMultimedia(req: Request, res: Response) {
   }
 }
 
-/**
- * DELETE /api/multimedia/:id
- * Eliminar un archivo multimedia
- */
 export async function eliminarMultimedia(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
+    if (!req.user) return res.status(401).json({ error: 'No autorizado' });
 
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
 
-    // Obtener info del archivo
-    const multimedia = await MultimediaModel.getById(parseInt(id));
-    if (!multimedia) {
-      return res.status(404).json({ error: 'Archivo no encontrado' });
-    }
+    const multimedia = await MultimediaModel.getById(id);
+    if (!multimedia) return res.status(404).json({ error: 'Archivo no encontrado' });
 
-    // Verificar permisos (solo quien subió o admin)
-    if (multimedia.subido_por !== req.user.userId && req.user.rol !== 'ADMIN') {
+    if (multimedia.subido_por !== req.user!.userId && req.user!.rol !== 'ADMIN') {
       return res.status(403).json({ error: 'No tienes permiso para eliminar este archivo' });
     }
 
-    // Eliminar archivos de Cloudinary
     await deleteByUrl(multimedia.url_original);
-    // El thumbnail se genera dinámicamente en Cloudinary, no necesita eliminarse
+    await MultimediaModel.delete(id);
 
-    // Eliminar de BD
-    await MultimediaModel.delete(parseInt(id));
-
-    console.log(`[MULTIMEDIA] Archivo ${id} eliminado por usuario ${req.user.userId}`);
-
+    console.log(`[MULTIMEDIA] Archivo ${id} eliminado por usuario ${req.user!.userId}`);
     return res.json({ message: 'Archivo eliminado correctamente' });
   } catch (error: any) {
     console.error('Error al eliminar multimedia:', error);
@@ -326,22 +257,10 @@ export async function eliminarMultimedia(req: Request, res: Response) {
   }
 }
 
-/**
- * GET /api/multimedia/galeria
- * Galería de multimedia para Accidentología y Comunicación Social
- */
 export async function getGaleria(req: Request, res: Response) {
   try {
-    const {
-      desde,
-      hasta,
-      soloIncompletas,
-      tipoSituacion,
-      limit = '50',
-      offset = '0'
-    } = req.query;
+    const { desde, hasta, soloIncompletas, tipoSituacion, limit = '50', offset = '0' } = req.query;
 
-    // Construir filtros
     let whereConditions = ["s.tipo_situacion IN ('INCIDENTE', 'ASISTENCIA_VEHICULAR', 'EMERGENCIA')"];
     const params: any[] = [];
     let paramCount = 0;
@@ -351,13 +270,11 @@ export async function getGaleria(req: Request, res: Response) {
       whereConditions.push(`s.created_at >= $${paramCount}`);
       params.push(new Date(desde as string));
     }
-
     if (hasta) {
       paramCount++;
       whereConditions.push(`s.created_at <= $${paramCount}`);
       params.push(new Date(hasta as string));
     }
-
     if (tipoSituacion) {
       paramCount++;
       whereConditions.push(`s.tipo_situacion = $${paramCount}`);
@@ -414,7 +331,6 @@ export async function getGaleria(req: Request, res: Response) {
 
     const situaciones = await db.any(query, params);
 
-    // Contar total
     const countQuery = `
       SELECT COUNT(*) as total
       FROM situacion s
@@ -440,13 +356,9 @@ export async function getGaleria(req: Request, res: Response) {
   }
 }
 
-/**
- * GET /api/multimedia/stats
- * Estadísticas de almacenamiento (solo admin/operaciones)
- */
 export async function getStats(req: Request, res: Response) {
   try {
-    if (!req.user || !['ADMIN', 'OPERACIONES'].includes(req.user.rol)) {
+    if (!req.user || !['ADMIN', 'OPERACIONES'].includes(req.user!.rol)) {
       return res.status(403).json({ error: 'No autorizado' });
     }
 
@@ -479,56 +391,36 @@ export async function getStats(req: Request, res: Response) {
   }
 }
 
-/**
- * POST /api/multimedia/situacion/:situacionId/batch
- * Guardar referencias de archivos ya subidos a Cloudinary
- * Usado por el sistema offline-first cuando sincroniza
- */
 export async function guardarReferenciasCloudinary(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
+    if (!req.user) return res.status(401).json({ error: 'No autorizado' });
 
-    const { situacionId } = req.params;
+    const situacionIdNum = normalizeId(req.params.situacionId);
+    if (!situacionIdNum) return res.status(400).json({ error: 'ID inválido' });
+
     const { archivos } = req.body;
-
     if (!archivos || !Array.isArray(archivos) || archivos.length === 0) {
       return res.status(400).json({ error: 'Se requiere un array de archivos' });
     }
 
-    // Verificar que la situación existe
-    const situacion = await db.oneOrNone(
-      'SELECT id FROM situacion WHERE id = $1',
-      [situacionId]
-    );
-
-    if (!situacion) {
-      return res.status(404).json({ error: 'Situación no encontrada' });
-    }
+    const situacion = await db.oneOrNone('SELECT id FROM situacion WHERE id = $1', [situacionIdNum]);
+    if (!situacion) return res.status(404).json({ error: 'Situación no encontrada' });
 
     const resultados = [];
-
     for (const archivo of archivos) {
       const { url, public_id, tipo, orden, infografia_numero, infografia_titulo } = archivo;
-
       if (!url || !tipo) {
         resultados.push({ url, error: 'Faltan campos requeridos (url, tipo)' });
         continue;
       }
-
       try {
         const infografiaNumero = infografia_numero ? parseInt(infografia_numero, 10) : 1;
-
-        // Determinar orden si es foto y no viene especificado
         let ordenFinal = orden;
         if (tipo === 'FOTO' && !ordenFinal) {
-          ordenFinal = await MultimediaModel.getSiguienteOrdenFoto(parseInt(situacionId), infografiaNumero);
+          ordenFinal = await MultimediaModel.getSiguienteOrdenFoto(situacionIdNum, infografiaNumero);
         }
-
-        // Guardar referencia en BD
         const multimediaId = await MultimediaModel.create({
-          situacion_id: parseInt(situacionId),
+          situacion_id: situacionIdNum,
           infografia_numero: infografiaNumero,
           infografia_titulo: infografia_titulo || null,
           tipo: tipo as 'FOTO' | 'VIDEO',
@@ -536,82 +428,45 @@ export async function guardarReferenciasCloudinary(req: Request, res: Response) 
           url_original: url,
           nombre_archivo: public_id || url.split('/').pop() || 'archivo',
           mime_type: tipo === 'VIDEO' ? 'video/mp4' : 'image/jpeg',
-          tamanio_bytes: 0, // No tenemos el tamaño real desde Cloudinary
-          subido_por: req.user.userId
+          tamanio_bytes: 0,
+          subido_por: req.user!.userId
         });
-
-        resultados.push({
-          url,
-          id: multimediaId,
-          success: true
-        });
+        resultados.push({ url, id: multimediaId, success: true });
       } catch (err: any) {
-        resultados.push({
-          url,
-          error: err.message
-        });
+        resultados.push({ url, error: err.message });
       }
     }
 
-    // Verificar completitud
-    const completitud = await MultimediaModel.verificarCompletitud(parseInt(situacionId));
+    const completitud = await MultimediaModel.verificarCompletitud(situacionIdNum);
+    console.log(`[MULTIMEDIA] Batch: ${resultados.filter(r => r.success).length}/${archivos.length} guardados para situación ${situacionIdNum}`);
 
-    console.log(`[MULTIMEDIA] Batch: ${resultados.filter(r => r.success).length}/${archivos.length} guardados para situación ${situacionId}`);
-
-    return res.status(201).json({
-      message: 'Referencias procesadas',
-      resultados,
-      completitud
-    });
+    return res.status(201).json({ message: 'Referencias procesadas', resultados, completitud });
   } catch (error: any) {
     console.error('Error al guardar referencias batch:', error);
     return res.status(500).json({ error: 'Error al procesar archivos' });
   }
 }
 
-/**
- * POST /api/multimedia/upload
- * Subir una foto genérica a Cloudinary (para inspecciones, daños, etc.)
- * No requiere situacion_id, devuelve URL de Cloudinary directamente
- */
 export async function subirFotoGenerica(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
+    if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+    if (!req.file) return res.status(400).json({ error: 'No se recibió ningún archivo' });
 
-    if (!req.file) {
-      return res.status(400).json({ error: 'No se recibió ningún archivo' });
-    }
-
-    // Verificar que Cloudinary está configurado
     if (!isCloudinaryConfiguredUnsigned()) {
       console.error('[MULTIMEDIA] Cloudinary NO está configurado!');
       return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
     }
 
-    // Generar un ID único para el archivo
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 8);
     const folder = req.body.folder || 'provial_general';
     const publicId = `${folder}/${timestamp}_${randomId}`;
 
-    console.log(`[MULTIMEDIA] Subiendo foto genérica a Cloudinary: ${publicId}...`);
-
-    // Subir foto a Cloudinary usando función existente pero sin situacionId
-    const result = await uploadPhotoBuffer(
-      req.file.buffer,
-      0, // No hay situacion_id
-      1, // orden
-      publicId // usar como identificador
-    );
-
+    const result = await uploadPhotoBuffer(req.file.buffer, 0, 1, publicId);
     if (!result.success) {
       console.error('[MULTIMEDIA] Error subiendo a Cloudinary:', result.error);
       return res.status(500).json({ error: result.error });
     }
-
-    console.log(`[MULTIMEDIA] Foto genérica subida: ${result.url}`);
 
     return res.status(201).json({
       success: true,
@@ -631,24 +486,28 @@ export async function subirFotoGenerica(req: Request, res: Response) {
 export async function subirFotoActividad(req: Request, res: Response) {
   try {
     if (!req.user) return res.status(401).json({ error: 'No autorizado' });
-    const { actividadId } = req.params;
+
+    const actividadIdNum = normalizeId(req.params.actividadId);
+    if (!actividadIdNum) return res.status(400).json({ error: 'ID inválido' });
+
     const { infografia_numero, infografia_titulo } = req.body;
     const infografiaNumero = infografia_numero ? parseInt(infografia_numero, 10) : 1;
+
     if (!req.file) return res.status(400).json({ error: 'No se recibió ningún archivo' });
 
-    const actividad = await db.oneOrNone('SELECT id FROM actividad WHERE id = $1', [actividadId]);
+    const actividad = await db.oneOrNone('SELECT id FROM actividad WHERE id = $1', [actividadIdNum]);
     if (!actividad) return res.status(404).json({ error: 'Actividad no encontrada' });
 
-    const ordenSiguiente = await MultimediaModel.getSiguienteOrdenFotoActividad(parseInt(actividadId), infografiaNumero);
+    const ordenSiguiente = await MultimediaModel.getSiguienteOrdenFotoActividad(actividadIdNum, infografiaNumero);
     if (ordenSiguiente > 3) return res.status(400).json({ error: `Límite de fotos alcanzado para infografía ${infografiaNumero}` });
 
     if (!isCloudinaryConfiguredUnsigned()) return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
 
-    const result = await uploadPhotoBuffer(req.file.buffer, parseInt(actividadId), ordenSiguiente, `ACT-${actividadId}`, infografiaNumero);
+    const result = await uploadPhotoBuffer(req.file.buffer, actividadIdNum, ordenSiguiente, `ACT-${actividadIdNum}`, infografiaNumero);
     if (!result.success) return res.status(500).json({ error: result.error });
 
     const multimediaId = await MultimediaModel.create({
-      actividad_id: parseInt(actividadId),
+      actividad_id: actividadIdNum,
       infografia_numero: infografiaNumero,
       infografia_titulo: infografia_titulo || null,
       tipo: 'FOTO',
@@ -660,10 +519,13 @@ export async function subirFotoActividad(req: Request, res: Response) {
       tamanio_bytes: result.size || req.file.size,
       ancho: result.width,
       alto: result.height,
-      subido_por: req.user.userId
+      subido_por: req.user!.userId
     });
 
-    return res.status(201).json({ message: `Foto ${ordenSiguiente} de 3 subida`, multimedia: { id: multimediaId, infografia_numero: infografiaNumero, orden: ordenSiguiente, url: result.url, thumbnailUrl: result.thumbnailUrl } });
+    return res.status(201).json({
+      message: `Foto ${ordenSiguiente} de 3 subida`,
+      multimedia: { id: multimediaId, infografia_numero: infografiaNumero, orden: ordenSiguiente, url: result.url, thumbnailUrl: result.thumbnailUrl }
+    });
   } catch (error: any) {
     console.error('Error al subir foto actividad:', error);
     return res.status(500).json({ error: 'Error al subir la foto' });
@@ -673,30 +535,34 @@ export async function subirFotoActividad(req: Request, res: Response) {
 export async function subirVideoActividad(req: Request, res: Response) {
   try {
     if (!req.user) return res.status(401).json({ error: 'No autorizado' });
-    const { actividadId } = req.params;
+
+    const actividadIdNum = normalizeId(req.params.actividadId);
+    if (!actividadIdNum) return res.status(400).json({ error: 'ID inválido' });
+
     const { infografia_numero, infografia_titulo } = req.body;
     const infografiaNumero = infografia_numero ? parseInt(infografia_numero, 10) : 1;
+
     if (!req.file) return res.status(400).json({ error: 'No se recibió ningún archivo' });
 
-    const actividad = await db.oneOrNone('SELECT id FROM actividad WHERE id = $1', [actividadId]);
+    const actividad = await db.oneOrNone('SELECT id FROM actividad WHERE id = $1', [actividadIdNum]);
     if (!actividad) return res.status(404).json({ error: 'Actividad no encontrada' });
 
     if (!isCloudinaryConfiguredUnsigned()) return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
 
-    const result = await uploadVideoBuffer(req.file.buffer, parseInt(actividadId), `ACT-${actividadId}`, infografiaNumero);
+    const result = await uploadVideoBuffer(req.file.buffer, actividadIdNum, `ACT-${actividadIdNum}`, infografiaNumero);
     if (!result.success) return res.status(500).json({ error: result.error });
 
     const multimediaId = await MultimediaModel.create({
-      actividad_id: parseInt(actividadId),
+      actividad_id: actividadIdNum,
       infografia_numero: infografiaNumero,
       infografia_titulo: infografia_titulo || null,
       tipo: 'VIDEO',
       url_original: result.url!,
-      nombre_archivo: result.publicId || `video_act_${actividadId}`,
+      nombre_archivo: result.publicId || `video_act_${actividadIdNum}`,
       mime_type: req.file.mimetype,
       tamanio_bytes: result.size || req.file.size,
       duracion_segundos: req.body.duracion_segundos ? parseInt(req.body.duracion_segundos) : null,
-      subido_por: req.user.userId
+      subido_por: req.user!.userId
     });
 
     return res.status(201).json({ message: 'Video subido', multimedia: { id: multimediaId, infografia_numero: infografiaNumero, url: result.url } });
@@ -708,11 +574,13 @@ export async function subirVideoActividad(req: Request, res: Response) {
 
 export async function getMultimediaActividad(req: Request, res: Response) {
   try {
-    const { actividadId } = req.params;
-    const multimedia = await MultimediaModel.getByActividadId(parseInt(actividadId));
+    const actividadIdNum = normalizeId(req.params.actividadId);
+    if (!actividadIdNum) return res.status(400).json({ error: 'ID inválido' });
+
+    const multimedia = await MultimediaModel.getByActividadId(actividadIdNum);
     const fotos = multimedia.filter(m => m.tipo === 'FOTO');
     const videos = multimedia.filter(m => m.tipo === 'VIDEO');
-    return res.json({ actividad_id: parseInt(actividadId), fotos, videos });
+    return res.json({ actividad_id: actividadIdNum, fotos, videos });
   } catch (error: any) {
     console.error('Error al obtener multimedia actividad:', error);
     return res.status(500).json({ error: 'Error al obtener multimedia' });

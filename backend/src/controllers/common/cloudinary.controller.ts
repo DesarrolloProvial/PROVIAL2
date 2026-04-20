@@ -54,7 +54,7 @@ export async function getSignature(req: Request, res: Response) {
       tags
     });
 
-    console.log(`[CLOUDINARY] Signature generada para publicId ${signedParams.publicId} (${fileType}) por usuario ${req.user.userId}`);
+    console.log(`[CLOUDINARY] Signature generada para publicId ${signedParams.publicId} (${fileType}) por usuario ${req.user!.userId}`);
 
     return res.json({
       success: true,
