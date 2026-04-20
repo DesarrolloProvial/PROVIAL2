@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AdministracionModel } from '../../models/admin/administracion.model';
 import { esSuperAdmin, puedeVerTodosDepartamentos } from '../../middlewares/superAdmin';
+import { normalizeId } from '../../utils/db.utils';
 
 // =====================================================
 // DEPARTAMENTOS
@@ -19,102 +20,73 @@ export async function getDepartamentos(req: Request, res: Response) {
 
 export async function createDepartamento(req: Request, res: Response) {
   try {
-    if (!esSuperAdmin(req)) {
-      return res.status(403).json({ error: 'Solo SUPER_ADMIN puede crear departamentos' });
-    }
+    if (!esSuperAdmin(req)) return res.status(403).json({ error: 'Solo SUPER_ADMIN puede crear departamentos' });
 
     const { codigo, nombre, descripcion, usa_sistema_grupos, orden } = req.body;
-
-    if (!codigo || !nombre) {
-      return res.status(400).json({ error: 'Codigo y nombre son requeridos' });
-    }
+    if (!codigo || !nombre) return res.status(400).json({ error: 'Codigo y nombre son requeridos' });
 
     const id = await AdministracionModel.createDepartamento({
-      codigo: codigo.toUpperCase(),
-      nombre,
-      descripcion,
-      usa_sistema_grupos,
-      orden,
+      codigo: codigo.toUpperCase(), nombre, descripcion, usa_sistema_grupos, orden,
     });
 
     await AdministracionModel.registrarAccion('CREAR_DEPARTAMENTO', req.user!.userId, {
-      tablaAfectada: 'departamento_sistema',
-      registroId: id,
-      datosNuevos: { codigo, nombre, descripcion, usa_sistema_grupos },
-      ipAddress: req.ip,
+      tablaAfectada: 'departamento_sistema', registroId: id,
+      datosNuevos: { codigo, nombre, descripcion, usa_sistema_grupos }, ipAddress: req.ip,
     });
 
     res.status(201).json({ success: true, id, message: 'Departamento creado correctamente' });
   } catch (error: any) {
     console.error('Error al crear departamento:', error);
-    if (error.code === '23505') {
-      return res.status(400).json({ error: 'Ya existe un departamento con ese codigo' });
-    }
+    if (error.code === '23505') return res.status(400).json({ error: 'Ya existe un departamento con ese codigo' });
     res.status(500).json({ error: 'Error al crear departamento' });
   }
 }
 
 export async function updateDepartamento(req: Request, res: Response) {
   try {
-    if (!esSuperAdmin(req)) {
-      return res.status(403).json({ error: 'Solo SUPER_ADMIN puede editar departamentos' });
-    }
+    if (!esSuperAdmin(req)) return res.status(403).json({ error: 'Solo SUPER_ADMIN puede editar departamentos' });
 
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
     const { codigo, nombre, descripcion, usa_sistema_grupos, orden, activo } = req.body;
 
-    const deptoAnterior = await AdministracionModel.getDepartamento(parseInt(id));
-    if (!deptoAnterior) {
-      return res.status(404).json({ error: 'Departamento no encontrado' });
-    }
+    const deptoAnterior = await AdministracionModel.getDepartamento(id);
+    if (!deptoAnterior) return res.status(404).json({ error: 'Departamento no encontrado' });
 
-    await AdministracionModel.updateDepartamento(parseInt(id), {
-      codigo: codigo?.toUpperCase(),
-      nombre,
-      descripcion,
-      usa_sistema_grupos,
-      orden,
-      activo,
+    await AdministracionModel.updateDepartamento(id, {
+      codigo: codigo?.toUpperCase(), nombre, descripcion, usa_sistema_grupos, orden, activo,
     });
 
     await AdministracionModel.registrarAccion('EDITAR_DEPARTAMENTO', req.user!.userId, {
-      tablaAfectada: 'departamento_sistema',
-      registroId: parseInt(id),
+      tablaAfectada: 'departamento_sistema', registroId: id,
       datosAnteriores: deptoAnterior as unknown as Record<string, unknown>,
-      datosNuevos: { codigo, nombre, descripcion, usa_sistema_grupos, orden, activo },
-      ipAddress: req.ip,
+      datosNuevos: { codigo, nombre, descripcion, usa_sistema_grupos, orden, activo }, ipAddress: req.ip,
     });
 
     res.json({ success: true, message: 'Departamento actualizado correctamente' });
   } catch (error: any) {
     console.error('Error al actualizar departamento:', error);
-    if (error.code === '23505') {
-      return res.status(400).json({ error: 'Ya existe un departamento con ese codigo' });
-    }
+    if (error.code === '23505') return res.status(400).json({ error: 'Ya existe un departamento con ese codigo' });
     res.status(500).json({ error: 'Error al actualizar departamento' });
   }
 }
 
 export async function deleteDepartamento(req: Request, res: Response) {
   try {
-    if (!esSuperAdmin(req)) {
-      return res.status(403).json({ error: 'Solo SUPER_ADMIN puede eliminar departamentos' });
-    }
+    if (!esSuperAdmin(req)) return res.status(403).json({ error: 'Solo SUPER_ADMIN puede eliminar departamentos' });
 
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
 
-    const depto = await AdministracionModel.getDepartamento(parseInt(id));
-    if (!depto) {
-      return res.status(404).json({ error: 'Departamento no encontrado' });
-    }
+    const depto = await AdministracionModel.getDepartamento(id);
+    if (!depto) return res.status(404).json({ error: 'Departamento no encontrado' });
 
-    await AdministracionModel.deleteDepartamento(parseInt(id));
+    await AdministracionModel.deleteDepartamento(id);
 
     await AdministracionModel.registrarAccion('ELIMINAR_DEPARTAMENTO', req.user!.userId, {
-      tablaAfectada: 'departamento_sistema',
-      registroId: parseInt(id),
-      datosAnteriores: depto as unknown as Record<string, unknown>,
-      ipAddress: req.ip,
+      tablaAfectada: 'departamento_sistema', registroId: id,
+      datosAnteriores: depto as unknown as Record<string, unknown>, ipAddress: req.ip,
     });
 
     res.json({ success: true, message: 'Departamento desactivado correctamente' });
@@ -141,11 +113,10 @@ export async function getSedes(req: Request, res: Response) {
 
 export async function getSede(req: Request, res: Response) {
   try {
-    const { id } = req.params;
-    const sede = await AdministracionModel.getSede(parseInt(id));
-    if (!sede) {
-      return res.status(404).json({ error: 'Sede no encontrada' });
-    }
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+    const sede = await AdministracionModel.getSede(id);
+    if (!sede) return res.status(404).json({ error: 'Sede no encontrada' });
     res.json(sede);
   } catch (error) {
     console.error('Error al obtener sede:', error);
@@ -155,37 +126,25 @@ export async function getSede(req: Request, res: Response) {
 
 export async function createSede(req: Request, res: Response) {
   try {
-    if (!esSuperAdmin(req)) {
-      return res.status(403).json({ error: 'Solo SUPER_ADMIN puede crear sedes' });
-    }
+    if (!esSuperAdmin(req)) return res.status(403).json({ error: 'Solo SUPER_ADMIN puede crear sedes' });
 
     const { codigo, nombre, departamento_id, es_sede_central } = req.body;
-
-    if (!codigo || !nombre) {
-      return res.status(400).json({ error: 'Codigo y nombre son requeridos' });
-    }
+    if (!codigo || !nombre) return res.status(400).json({ error: 'Codigo y nombre son requeridos' });
 
     const id = await AdministracionModel.createSede({
-      codigo: codigo.toUpperCase(),
-      nombre,
-      departamento_id,
-      es_sede_central,
+      codigo: codigo.toUpperCase(), nombre, departamento_id, es_sede_central,
     });
 
     await AdministracionModel.registrarAccion('CREAR_SEDE', req.user!.userId, {
-      tablaAfectada: 'sede',
-      registroId: id,
-      datosNuevos: { codigo, nombre, departamento_id, es_sede_central },
-      ipAddress: req.ip,
+      tablaAfectada: 'sede', registroId: id,
+      datosNuevos: { codigo, nombre, departamento_id, es_sede_central }, ipAddress: req.ip,
     });
 
     res.status(201).json({ success: true, id, message: 'Sede creada correctamente' });
   } catch (error: any) {
     console.error('Error al crear sede:', error);
     if (error.code === '23505') {
-      if (error.constraint === 'idx_una_sede_central') {
-        return res.status(400).json({ error: 'Ya existe una sede central definida' });
-      }
+      if (error.constraint === 'idx_una_sede_central') return res.status(400).json({ error: 'Ya existe una sede central definida' });
       return res.status(400).json({ error: 'Ya existe una sede con ese codigo' });
     }
     res.status(500).json({ error: 'Error al crear sede' });
@@ -194,41 +153,31 @@ export async function createSede(req: Request, res: Response) {
 
 export async function updateSede(req: Request, res: Response) {
   try {
-    if (!esSuperAdmin(req)) {
-      return res.status(403).json({ error: 'Solo SUPER_ADMIN puede editar sedes' });
-    }
+    if (!esSuperAdmin(req)) return res.status(403).json({ error: 'Solo SUPER_ADMIN puede editar sedes' });
 
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
     const { codigo, nombre, departamento_id, activa, es_sede_central } = req.body;
 
-    const sedeAnterior = await AdministracionModel.getSede(parseInt(id));
-    if (!sedeAnterior) {
-      return res.status(404).json({ error: 'Sede no encontrada' });
-    }
+    const sedeAnterior = await AdministracionModel.getSede(id);
+    if (!sedeAnterior) return res.status(404).json({ error: 'Sede no encontrada' });
 
-    await AdministracionModel.updateSede(parseInt(id), {
-      codigo: codigo?.toUpperCase(),
-      nombre,
-      departamento_id,
-      activa,
-      es_sede_central,
+    await AdministracionModel.updateSede(id, {
+      codigo: codigo?.toUpperCase(), nombre, departamento_id, activa, es_sede_central,
     });
 
     await AdministracionModel.registrarAccion('EDITAR_SEDE', req.user!.userId, {
-      tablaAfectada: 'sede',
-      registroId: parseInt(id),
+      tablaAfectada: 'sede', registroId: id,
       datosAnteriores: sedeAnterior as unknown as Record<string, unknown>,
-      datosNuevos: { codigo, nombre, departamento_id, es_sede_central, activa },
-      ipAddress: req.ip,
+      datosNuevos: { codigo, nombre, departamento_id, es_sede_central, activa }, ipAddress: req.ip,
     });
 
     res.json({ success: true, message: 'Sede actualizada correctamente' });
   } catch (error: any) {
     console.error('Error al actualizar sede:', error);
     if (error.code === '23505') {
-      if (error.constraint === 'idx_una_sede_central') {
-        return res.status(400).json({ error: 'Ya existe una sede central definida' });
-      }
+      if (error.constraint === 'idx_una_sede_central') return res.status(400).json({ error: 'Ya existe una sede central definida' });
       return res.status(400).json({ error: 'Ya existe una sede con ese codigo' });
     }
     res.status(500).json({ error: 'Error al actualizar sede' });
@@ -237,24 +186,19 @@ export async function updateSede(req: Request, res: Response) {
 
 export async function deleteSede(req: Request, res: Response) {
   try {
-    if (!esSuperAdmin(req)) {
-      return res.status(403).json({ error: 'Solo SUPER_ADMIN puede eliminar sedes' });
-    }
+    if (!esSuperAdmin(req)) return res.status(403).json({ error: 'Solo SUPER_ADMIN puede eliminar sedes' });
 
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
 
-    const sede = await AdministracionModel.getSede(parseInt(id));
-    if (!sede) {
-      return res.status(404).json({ error: 'Sede no encontrada' });
-    }
+    const sede = await AdministracionModel.getSede(id);
+    if (!sede) return res.status(404).json({ error: 'Sede no encontrada' });
 
-    await AdministracionModel.deleteSede(parseInt(id));
+    await AdministracionModel.deleteSede(id);
 
     await AdministracionModel.registrarAccion('ELIMINAR_SEDE', req.user!.userId, {
-      tablaAfectada: 'sede',
-      registroId: parseInt(id),
-      datosAnteriores: sede,
-      ipAddress: req.ip,
+      tablaAfectada: 'sede', registroId: id,
+      datosAnteriores: sede, ipAddress: req.ip,
     });
 
     res.json({ success: true, message: 'Sede desactivada correctamente' });
@@ -276,8 +220,9 @@ export async function getDepartamentosGeograficos(_req: Request, res: Response) 
 
 export async function getMunicipiosPorDepartamento(req: Request, res: Response) {
   try {
-    const { departamento_id } = req.params;
-    const municipios = await AdministracionModel.getMunicipiosPorDepartamento(parseInt(departamento_id));
+    const depId = normalizeId(req.params.departamento_id);
+    if (!depId) return res.status(400).json({ error: 'ID inválido' });
+    const municipios = await AdministracionModel.getMunicipiosPorDepartamento(depId);
     res.json(municipios);
   } catch (error) {
     console.error('Error al obtener municipios:', error);
@@ -293,15 +238,14 @@ export async function getEstadoGrupos(req: Request, res: Response) {
   try {
     const { sede_id, departamento_id } = req.query;
 
-    // Si no puede ver todos los departamentos, filtrar por su sede
-    let sedeIdFiltro = sede_id ? parseInt(sede_id as string) : undefined;
+    let sedeIdFiltro = normalizeId(sede_id as string) ?? undefined;
     if (!await puedeVerTodosDepartamentos(req) && req.user?.sede) {
       sedeIdFiltro = req.user.sede;
     }
 
     const estados = await AdministracionModel.getEstadoGrupos(
       sedeIdFiltro,
-      departamento_id ? parseInt(departamento_id as string) : undefined
+      normalizeId(departamento_id as string) ?? undefined
     );
 
     res.json(estados);
@@ -323,37 +267,22 @@ export async function toggleGrupo(req: Request, res: Response) {
     let registrosAfectados = 0;
 
     if (aplicar_todas_sedes) {
-      // Aplicar a todas las sedes para un departamento
-      registrosAfectados = await AdministracionModel.toggleGrupoTodasSedes(
-        departamento_id, grupo, activo, modificadoPor, observaciones
-      );
+      registrosAfectados = await AdministracionModel.toggleGrupoTodasSedes(departamento_id, grupo, activo, modificadoPor, observaciones);
     } else if (aplicar_todos_departamentos && sede_id) {
-      // Aplicar a todos los departamentos para una sede
-      registrosAfectados = await AdministracionModel.toggleGrupoTodosDepartamentos(
-        sede_id, grupo, activo, modificadoPor, observaciones
-      );
+      registrosAfectados = await AdministracionModel.toggleGrupoTodosDepartamentos(sede_id, grupo, activo, modificadoPor, observaciones);
     } else if (sede_id) {
-      // Aplicar solo a un departamento/sede especifica
-      await AdministracionModel.toggleGrupo(
-        departamento_id, sede_id, grupo, activo, modificadoPor, observaciones
-      );
+      await AdministracionModel.toggleGrupo(departamento_id, sede_id, grupo, activo, modificadoPor, observaciones);
       registrosAfectados = 1;
     } else {
       return res.status(400).json({ error: 'Debe especificar sede_id o aplicar_todas_sedes' });
     }
 
-    // Registrar en log
     await AdministracionModel.registrarAccion('TOGGLE_GRUPO', modificadoPor, {
       tablaAfectada: 'estado_grupo_departamento',
-      datosNuevos: { departamento_id, sede_id, grupo, activo, observaciones },
-      ipAddress: req.ip
+      datosNuevos: { departamento_id, sede_id, grupo, activo, observaciones }, ipAddress: req.ip
     });
 
-    res.json({
-      success: true,
-      message: `Grupo ${activo ? 'activado' : 'desactivado'} correctamente`,
-      registros_afectados: registrosAfectados
-    });
+    res.json({ success: true, message: `Grupo ${activo ? 'activado' : 'desactivado'} correctamente`, registros_afectados: registrosAfectados });
   } catch (error) {
     console.error('Error al cambiar estado de grupo:', error);
     res.status(500).json({ error: 'Error al cambiar estado de grupo' });
@@ -368,7 +297,7 @@ export async function getEncargados(req: Request, res: Response) {
   try {
     const { sede_id } = req.query;
 
-    let sedeIdFiltro = sede_id ? parseInt(sede_id as string) : undefined;
+    let sedeIdFiltro = normalizeId(sede_id as string) ?? undefined;
     if (!await puedeVerTodosDepartamentos(req) && req.user?.sede) {
       sedeIdFiltro = req.user.sede;
     }
@@ -384,39 +313,21 @@ export async function getEncargados(req: Request, res: Response) {
 export async function asignarEncargado(req: Request, res: Response) {
   try {
     const { usuario_id, sede_id, grupo, motivo } = req.body;
-
-    if (!usuario_id || !sede_id || grupo === undefined) {
-      return res.status(400).json({ error: 'Faltan parametros requeridos' });
-    }
+    if (!usuario_id || !sede_id || grupo === undefined) return res.status(400).json({ error: 'Faltan parametros requeridos' });
 
     const asignadoPor = req.user!.userId;
-
-    // Verificar si ya hay encargado y obtener datos para log
     const encargadoAnterior = await AdministracionModel.getEncargadoPorSedeGrupo(sede_id, grupo);
+    const asignacionId = await AdministracionModel.asignarEncargado(usuario_id, sede_id, grupo, asignadoPor, motivo);
 
-    const asignacionId = await AdministracionModel.asignarEncargado(
-      usuario_id, sede_id, grupo, asignadoPor, motivo
-    );
-
-    // Registrar en log
     await AdministracionModel.registrarAccion('ASIGNAR_ENCARGADO', asignadoPor, {
-      tablaAfectada: 'historial_encargado_sede_grupo',
-      registroId: asignacionId,
+      tablaAfectada: 'historial_encargado_sede_grupo', registroId: asignacionId,
       usuarioAfectadoId: usuario_id,
       datosAnteriores: encargadoAnterior ? { usuario_id: encargadoAnterior.usuario_id } : undefined,
-      datosNuevos: { usuario_id, sede_id, grupo, motivo },
-      ipAddress: req.ip
+      datosNuevos: { usuario_id, sede_id, grupo, motivo }, ipAddress: req.ip
     });
 
-    // Obtener datos del nuevo encargado
     const nuevoEncargado = await AdministracionModel.getEncargadoPorSedeGrupo(sede_id, grupo);
-
-    res.json({
-      success: true,
-      message: 'Encargado asignado correctamente',
-      asignacion_id: asignacionId,
-      encargado: nuevoEncargado
-    });
+    res.json({ success: true, message: 'Encargado asignado correctamente', asignacion_id: asignacionId, encargado: nuevoEncargado });
   } catch (error) {
     console.error('Error al asignar encargado:', error);
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
@@ -426,35 +337,25 @@ export async function asignarEncargado(req: Request, res: Response) {
 
 export async function removerEncargado(req: Request, res: Response) {
   try {
-    const { sede_id, grupo } = req.params;
+    const sedeId = normalizeId(req.params.sede_id);
+    if (!sedeId) return res.status(400).json({ error: 'ID de sede inválido' });
+    const { grupo } = req.params;
+    if (grupo === undefined) return res.status(400).json({ error: 'Faltan parametros requeridos' });
+
     const { motivo } = req.body;
-
-    if (!sede_id || grupo === undefined) {
-      return res.status(400).json({ error: 'Faltan parametros requeridos' });
-    }
-
     const removidoPor = req.user!.userId;
+    const grupoNum = parseInt(grupo, 10) as 0 | 1 | 2;
 
-    // Obtener encargado actual para log
-    const encargadoActual = await AdministracionModel.getEncargadoPorSedeGrupo(
-      parseInt(sede_id), parseInt(grupo) as 0 | 1 | 2
-    );
+    const encargadoActual = await AdministracionModel.getEncargadoPorSedeGrupo(sedeId, grupoNum);
+    const removido = await AdministracionModel.removerEncargado(sedeId, grupoNum, removidoPor, motivo);
 
-    const removido = await AdministracionModel.removerEncargado(
-      parseInt(sede_id), parseInt(grupo) as 0 | 1 | 2, removidoPor, motivo
-    );
+    if (!removido) return res.status(404).json({ error: 'No hay encargado asignado para esta sede/grupo' });
 
-    if (!removido) {
-      return res.status(404).json({ error: 'No hay encargado asignado para esta sede/grupo' });
-    }
-
-    // Registrar en log
     await AdministracionModel.registrarAccion('REMOVER_ENCARGADO', removidoPor, {
       tablaAfectada: 'historial_encargado_sede_grupo',
       usuarioAfectadoId: encargadoActual?.usuario_id,
       datosAnteriores: encargadoActual ? { usuario_id: encargadoActual.usuario_id } : undefined,
-      datosNuevos: { motivo },
-      ipAddress: req.ip
+      datosNuevos: { motivo }, ipAddress: req.ip
     });
 
     res.json({ success: true, message: 'Encargado removido correctamente' });
@@ -466,14 +367,12 @@ export async function removerEncargado(req: Request, res: Response) {
 
 export async function getHistorialEncargados(req: Request, res: Response) {
   try {
-    const { sede_id } = req.params;
+    const sedeId = normalizeId(req.params.sede_id);
+    if (!sedeId) return res.status(400).json({ error: 'ID inválido' });
     const { grupo } = req.query;
+    const grupoNum = grupo !== undefined ? parseInt(grupo as string, 10) as 0 | 1 | 2 : undefined;
 
-    const historial = await AdministracionModel.getHistorialEncargados(
-      parseInt(sede_id),
-      grupo !== undefined ? parseInt(grupo as string) as 0 | 1 | 2 : undefined
-    );
-
+    const historial = await AdministracionModel.getHistorialEncargados(sedeId, grupoNum);
     res.json(historial);
   } catch (error) {
     console.error('Error al obtener historial de encargados:', error);
@@ -489,8 +388,7 @@ export async function getUsuarios(req: Request, res: Response) {
   try {
     const { departamento, sede_id, grupo, activo, busqueda } = req.query;
 
-    // Si no puede ver todos los departamentos, filtrar por su sede
-    let sedeIdFiltro = sede_id ? parseInt(sede_id as string) : undefined;
+    let sedeIdFiltro = normalizeId(sede_id as string) ?? undefined;
     if (!await puedeVerTodosDepartamentos(req) && req.user?.sede) {
       sedeIdFiltro = req.user.sede;
     }
@@ -498,9 +396,7 @@ export async function getUsuarios(req: Request, res: Response) {
     const usuarios = await AdministracionModel.getUsuarios({
       departamento: departamento as string,
       sedeId: sedeIdFiltro,
-      grupo: grupo !== undefined
-        ? (grupo === 'null' ? null : parseInt(grupo as string) as 0 | 1 | 2)
-        : undefined,
+      grupo: grupo !== undefined ? (grupo === 'null' ? null : parseInt(grupo as string, 10) as 0 | 1 | 2) : undefined,
       activo: activo !== undefined ? activo === 'true' : undefined,
       busqueda: busqueda as string
     });
@@ -514,13 +410,10 @@ export async function getUsuarios(req: Request, res: Response) {
 
 export async function getUsuario(req: Request, res: Response) {
   try {
-    const { id } = req.params;
-    const usuario = await AdministracionModel.getUsuario(parseInt(id));
-
-    if (!usuario) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+    const usuario = await AdministracionModel.getUsuario(id);
+    if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
     res.json(usuario);
   } catch (error) {
     console.error('Error al obtener usuario:', error);
@@ -530,43 +423,28 @@ export async function getUsuario(req: Request, res: Response) {
 
 export async function toggleUsuario(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const usuarioId = normalizeId(req.params.id);
+    if (!usuarioId) return res.status(400).json({ error: 'ID inválido' });
     const { activo } = req.body;
+    if (activo === undefined) return res.status(400).json({ error: 'Falta parametro activo' });
 
-    if (activo === undefined) {
-      return res.status(400).json({ error: 'Falta parametro activo' });
-    }
-
-    const usuarioId = parseInt(id);
     const modificadoPor = req.user!.userId;
-
-    // Obtener datos anteriores
     const usuarioAnterior = await AdministracionModel.getUsuario(usuarioId);
-    if (!usuarioAnterior) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
+    if (!usuarioAnterior) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-    // Proteccion para usuario 19109
     if (usuarioAnterior.chapa === '19109') {
       return res.status(403).json({ error: 'No se puede desactivar al usuario maestro (19109)' });
     }
 
     await AdministracionModel.toggleAccesoUsuario(usuarioId, activo);
 
-    // Registrar en log
     await AdministracionModel.registrarAccion('TOGGLE_USUARIO', modificadoPor, {
-      tablaAfectada: 'usuario',
-      registroId: usuarioId,
-      usuarioAfectadoId: usuarioId,
+      tablaAfectada: 'usuario', registroId: usuarioId, usuarioAfectadoId: usuarioId,
       datosAnteriores: { activo: usuarioAnterior.activo },
-      datosNuevos: { activo },
-      ipAddress: req.ip
+      datosNuevos: { activo }, ipAddress: req.ip
     });
 
-    res.json({
-      success: true,
-      message: `Usuario ${activo ? 'activado' : 'desactivado'} correctamente`
-    });
+    res.json({ success: true, message: `Usuario ${activo ? 'activado' : 'desactivado'} correctamente` });
   } catch (error) {
     console.error('Error al cambiar estado de usuario:', error);
     res.status(500).json({ error: 'Error al cambiar estado de usuario' });
@@ -575,36 +453,24 @@ export async function toggleUsuario(req: Request, res: Response) {
 
 export async function toggleAccesoApp(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const usuarioId = normalizeId(req.params.id);
+    if (!usuarioId) return res.status(400).json({ error: 'ID inválido' });
     const { acceso_app_activo } = req.body;
+    if (acceso_app_activo === undefined) return res.status(400).json({ error: 'Falta parametro acceso_app_activo' });
 
-    if (acceso_app_activo === undefined) {
-      return res.status(400).json({ error: 'Falta parametro acceso_app_activo' });
-    }
-
-    const usuarioId = parseInt(id);
     const modificadoPor = req.user!.userId;
-
     const usuarioAnterior = await AdministracionModel.getUsuario(usuarioId);
-    if (!usuarioAnterior) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
+    if (!usuarioAnterior) return res.status(404).json({ error: 'Usuario no encontrado' });
 
     await AdministracionModel.toggleAccesoAppUsuario(usuarioId, acceso_app_activo);
 
     await AdministracionModel.registrarAccion('TOGGLE_ACCESO_APP', modificadoPor, {
-      tablaAfectada: 'usuario',
-      registroId: usuarioId,
-      usuarioAfectadoId: usuarioId,
+      tablaAfectada: 'usuario', registroId: usuarioId, usuarioAfectadoId: usuarioId,
       datosAnteriores: { acceso_app_activo: usuarioAnterior.acceso_app_activo },
-      datosNuevos: { acceso_app_activo },
-      ipAddress: req.ip
+      datosNuevos: { acceso_app_activo }, ipAddress: req.ip
     });
 
-    res.json({
-      success: true,
-      message: `Acceso a app ${acceso_app_activo ? 'activado' : 'desactivado'} correctamente`
-    });
+    res.json({ success: true, message: `Acceso a app ${acceso_app_activo ? 'activado' : 'desactivado'} correctamente` });
   } catch (error) {
     console.error('Error al cambiar acceso a app:', error);
     res.status(500).json({ error: 'Error al cambiar acceso a app' });
@@ -613,31 +479,24 @@ export async function toggleAccesoApp(req: Request, res: Response) {
 
 export async function cambiarGrupoUsuario(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const usuarioId = normalizeId(req.params.id);
+    if (!usuarioId) return res.status(400).json({ error: 'ID inválido' });
     const { grupo } = req.body;
 
-    // grupo puede ser 0, 1, 2 o null
     if (grupo !== null && grupo !== 0 && grupo !== 1 && grupo !== 2) {
       return res.status(400).json({ error: 'Grupo debe ser 0, 1, 2 o null' });
     }
 
-    const usuarioId = parseInt(id);
     const modificadoPor = req.user!.userId;
-
     const usuarioAnterior = await AdministracionModel.getUsuario(usuarioId);
-    if (!usuarioAnterior) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
+    if (!usuarioAnterior) return res.status(404).json({ error: 'Usuario no encontrado' });
 
     await AdministracionModel.cambiarGrupoUsuario(usuarioId, grupo);
 
     await AdministracionModel.registrarAccion('CAMBIAR_GRUPO', modificadoPor, {
-      tablaAfectada: 'usuario',
-      registroId: usuarioId,
-      usuarioAfectadoId: usuarioId,
+      tablaAfectada: 'usuario', registroId: usuarioId, usuarioAfectadoId: usuarioId,
       datosAnteriores: { grupo: usuarioAnterior.grupo },
-      datosNuevos: { grupo },
-      ipAddress: req.ip
+      datosNuevos: { grupo }, ipAddress: req.ip
     });
 
     res.json({ success: true, message: 'Grupo cambiado correctamente' });
@@ -649,37 +508,25 @@ export async function cambiarGrupoUsuario(req: Request, res: Response) {
 
 export async function cambiarRolUsuario(req: Request, res: Response) {
   try {
-    // Solo SUPER_ADMIN puede cambiar roles
-    if (!esSuperAdmin(req)) {
-      return res.status(403).json({ error: 'Solo SUPER_ADMIN puede cambiar roles' });
-    }
+    if (!esSuperAdmin(req)) return res.status(403).json({ error: 'Solo SUPER_ADMIN puede cambiar roles' });
 
-    const { id } = req.params;
+    const usuarioId = normalizeId(req.params.id);
+    if (!usuarioId) return res.status(400).json({ error: 'ID inválido' });
     const { rol_id } = req.body;
+    if (!rol_id) return res.status(400).json({ error: 'Falta parametro rol_id' });
 
-    if (!rol_id) {
-      return res.status(400).json({ error: 'Falta parametro rol_id' });
-    }
-
-    const usuarioId = parseInt(id);
     const modificadoPor = req.user!.userId;
-
     const usuarioAnterior = await AdministracionModel.getUsuario(usuarioId);
-    if (!usuarioAnterior) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
+    if (!usuarioAnterior) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-    // Validacion estricta para rol SUPER_ADMIN
     const requester = await AdministracionModel.getUsuario(modificadoPor);
     const roles = await AdministracionModel.getRoles();
     const superAdminRole = roles.find(r => r.nombre === 'SUPER_ADMIN');
 
     if (requester?.chapa !== '19109') {
-      // Si no es el 19109, no puede asignar SUPER_ADMIN
       if (superAdminRole && rol_id === superAdminRole.id) {
         return res.status(403).json({ error: 'Solo el usuario maestro (19109) puede asignar el rol de SUPER_ADMIN' });
       }
-      // Si no es el 19109, no puede quitar/modificar a un SUPER_ADMIN existente
       if (usuarioAnterior.rol_codigo === 'SUPER_ADMIN') {
         return res.status(403).json({ error: 'Solo el usuario maestro (19109) puede modificar a un SUPER_ADMIN' });
       }
@@ -688,12 +535,9 @@ export async function cambiarRolUsuario(req: Request, res: Response) {
     await AdministracionModel.cambiarRolUsuario(usuarioId, rol_id);
 
     await AdministracionModel.registrarAccion('CAMBIAR_ROL', modificadoPor, {
-      tablaAfectada: 'usuario',
-      registroId: usuarioId,
-      usuarioAfectadoId: usuarioId,
+      tablaAfectada: 'usuario', registroId: usuarioId, usuarioAfectadoId: usuarioId,
       datosAnteriores: { rol: usuarioAnterior.rol_codigo },
-      datosNuevos: { rol_id },
-      ipAddress: req.ip
+      datosNuevos: { rol_id }, ipAddress: req.ip
     });
 
     res.json({ success: true, message: 'Rol cambiado correctamente' });
@@ -705,31 +549,21 @@ export async function cambiarRolUsuario(req: Request, res: Response) {
 
 export async function cambiarSubRolCop(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const usuarioId = normalizeId(req.params.id);
+    if (!usuarioId) return res.status(400).json({ error: 'ID inválido' });
     const { sub_rol_cop_id } = req.body;
-
-    const usuarioId = parseInt(id);
     const modificadoPor = req.user!.userId;
 
     const usuarioAnterior = await AdministracionModel.getUsuario(usuarioId);
-    if (!usuarioAnterior) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-
-    // Verificar que el usuario es COP
-    if (usuarioAnterior.rol_codigo !== 'COP') {
-      return res.status(400).json({ error: 'Solo usuarios COP pueden tener sub-rol COP' });
-    }
+    if (!usuarioAnterior) return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (usuarioAnterior.rol_codigo !== 'COP') return res.status(400).json({ error: 'Solo usuarios COP pueden tener sub-rol COP' });
 
     await AdministracionModel.cambiarSubRolCop(usuarioId, sub_rol_cop_id || null);
 
     await AdministracionModel.registrarAccion('CAMBIAR_SUBROL_COP', modificadoPor, {
-      tablaAfectada: 'usuario',
-      registroId: usuarioId,
-      usuarioAfectadoId: usuarioId,
+      tablaAfectada: 'usuario', registroId: usuarioId, usuarioAfectadoId: usuarioId,
       datosAnteriores: { sub_rol_cop: usuarioAnterior.sub_rol_cop_codigo },
-      datosNuevos: { sub_rol_cop_id },
-      ipAddress: req.ip
+      datosNuevos: { sub_rol_cop_id }, ipAddress: req.ip
     });
 
     res.json({ success: true, message: 'Sub-rol COP cambiado correctamente' });
@@ -741,26 +575,20 @@ export async function cambiarSubRolCop(req: Request, res: Response) {
 
 export async function cambiarSedeUsuario(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const usuarioId = normalizeId(req.params.id);
+    if (!usuarioId) return res.status(400).json({ error: 'ID inválido' });
     const { sede_id } = req.body;
-
-    const usuarioId = parseInt(id);
     const modificadoPor = req.user!.userId;
 
     const usuarioAnterior = await AdministracionModel.getUsuario(usuarioId);
-    if (!usuarioAnterior) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
+    if (!usuarioAnterior) return res.status(404).json({ error: 'Usuario no encontrado' });
 
     await AdministracionModel.cambiarSedeUsuario(usuarioId, sede_id || null);
 
     await AdministracionModel.registrarAccion('CAMBIAR_SEDE', modificadoPor, {
-      tablaAfectada: 'usuario',
-      registroId: usuarioId,
-      usuarioAfectadoId: usuarioId,
+      tablaAfectada: 'usuario', registroId: usuarioId, usuarioAfectadoId: usuarioId,
       datosAnteriores: { sede_id: usuarioAnterior.sede_id },
-      datosNuevos: { sede_id },
-      ipAddress: req.ip
+      datosNuevos: { sede_id }, ipAddress: req.ip
     });
 
     res.json({ success: true, message: 'Sede cambiada correctamente' });
@@ -787,22 +615,16 @@ export async function getConfiguracion(_req: Request, res: Response) {
 export async function setConfiguracion(req: Request, res: Response) {
   try {
     const { clave, valor } = req.body;
-
-    if (!clave || valor === undefined) {
-      return res.status(400).json({ error: 'Faltan parametros clave y valor' });
-    }
+    if (!clave || valor === undefined) return res.status(400).json({ error: 'Faltan parametros clave y valor' });
 
     const modificadoPor = req.user!.userId;
-
     const configAnterior = await AdministracionModel.getConfiguracionPorClave(clave);
-
     await AdministracionModel.setConfiguracion(clave, valor, modificadoPor);
 
     await AdministracionModel.registrarAccion('CAMBIAR_CONFIG', modificadoPor, {
       tablaAfectada: 'configuracion_sistema',
       datosAnteriores: configAnterior ? { valor: configAnterior.valor } : undefined,
-      datosNuevos: { clave, valor },
-      ipAddress: req.ip
+      datosNuevos: { clave, valor }, ipAddress: req.ip
     });
 
     res.json({ success: true, message: 'Configuracion actualizada correctamente' });
@@ -843,14 +665,15 @@ export async function getSubRolesCop(_req: Request, res: Response) {
 export async function getLogAdministracion(req: Request, res: Response) {
   try {
     const { accion, usuario_afectado_id, realizado_por, fecha_desde, fecha_hasta, limite } = req.query;
+    const limiteRaw = parseInt(limite as string, 10);
 
     const log = await AdministracionModel.getLogAdministracion({
       accion: accion as string,
-      usuarioAfectadoId: usuario_afectado_id ? parseInt(usuario_afectado_id as string) : undefined,
-      realizadoPor: realizado_por ? parseInt(realizado_por as string) : undefined,
+      usuarioAfectadoId: normalizeId(usuario_afectado_id as string) ?? undefined,
+      realizadoPor: normalizeId(realizado_por as string) ?? undefined,
       fechaDesde: fecha_desde ? new Date(fecha_desde as string) : undefined,
       fechaHasta: fecha_hasta ? new Date(fecha_hasta as string) : undefined,
-      limite: limite ? parseInt(limite as string) : undefined
+      limite: isNaN(limiteRaw) ? undefined : limiteRaw
     });
 
     res.json(log);
@@ -878,7 +701,6 @@ export async function getEstadisticas(_req: Request, res: Response) {
 // CONFIGURACION DE COLUMNAS DINAMICAS
 // =====================================================
 
-// Columnas disponibles por tabla
 const COLUMNAS_DISPONIBLES = {
   brigadas: [
     { key: 'chapa', label: 'Chapa', descripcion: 'Numero de identificacion' },
@@ -906,15 +728,10 @@ const COLUMNAS_DISPONIBLES = {
 export async function getColumnasDisponibles(req: Request, res: Response) {
   try {
     const { tabla } = req.params;
-
     if (!COLUMNAS_DISPONIBLES[tabla as keyof typeof COLUMNAS_DISPONIBLES]) {
       return res.status(400).json({ error: 'Tabla no valida. Use: brigadas o unidades' });
     }
-
-    res.json({
-      tabla,
-      columnas: COLUMNAS_DISPONIBLES[tabla as keyof typeof COLUMNAS_DISPONIBLES]
-    });
+    res.json({ tabla, columnas: COLUMNAS_DISPONIBLES[tabla as keyof typeof COLUMNAS_DISPONIBLES] });
   } catch (error) {
     console.error('Error al obtener columnas disponibles:', error);
     res.status(500).json({ error: 'Error al obtener columnas disponibles' });
@@ -924,7 +741,7 @@ export async function getColumnasDisponibles(req: Request, res: Response) {
 export async function getConfiguracionColumnas(req: Request, res: Response) {
   try {
     const { tabla } = req.params;
-    const sedeId = req.query.sede_id ? parseInt(req.query.sede_id as string) : null;
+    const sedeId = normalizeId(req.query.sede_id as string);
 
     if (!['brigadas', 'unidades'].includes(tabla)) {
       return res.status(400).json({ error: 'Tabla no valida. Use: brigadas o unidades' });
@@ -933,20 +750,11 @@ export async function getConfiguracionColumnas(req: Request, res: Response) {
     const config = await AdministracionModel.getConfiguracionColumnas(sedeId, tabla);
 
     if (!config) {
-      // Retornar configuracion por defecto
-      const defaultColumns = COLUMNAS_DISPONIBLES[tabla as keyof typeof COLUMNAS_DISPONIBLES]
-        .map(c => c.key);
-      return res.json({
-        columnas_visibles: defaultColumns,
-        orden_columnas: defaultColumns,
-        es_default: true
-      });
+      const defaultColumns = COLUMNAS_DISPONIBLES[tabla as keyof typeof COLUMNAS_DISPONIBLES].map(c => c.key);
+      return res.json({ columnas_visibles: defaultColumns, orden_columnas: defaultColumns, es_default: true });
     }
 
-    res.json({
-      ...config,
-      es_default: false
-    });
+    res.json({ ...config, es_default: false });
   } catch (error) {
     console.error('Error al obtener configuracion de columnas:', error);
     res.status(500).json({ error: 'Error al obtener configuracion de columnas' });
@@ -961,37 +769,24 @@ export async function setConfiguracionColumnas(req: Request, res: Response) {
     if (!['brigadas', 'unidades'].includes(tabla)) {
       return res.status(400).json({ error: 'Tabla no valida. Use: brigadas o unidades' });
     }
-
     if (!columnas_visibles || !Array.isArray(columnas_visibles) || columnas_visibles.length === 0) {
       return res.status(400).json({ error: 'Debe especificar al menos una columna visible' });
     }
 
-    // Validar que todas las columnas sean validas
-    const columnasValidas = COLUMNAS_DISPONIBLES[tabla as keyof typeof COLUMNAS_DISPONIBLES]
-      .map(c => c.key);
+    const columnasValidas = COLUMNAS_DISPONIBLES[tabla as keyof typeof COLUMNAS_DISPONIBLES].map(c => c.key);
     const invalidColumns = columnas_visibles.filter(c => !columnasValidas.includes(c));
     if (invalidColumns.length > 0) {
-      return res.status(400).json({
-        error: `Columnas invalidas: ${invalidColumns.join(', ')}`,
-        columnas_validas: columnasValidas
-      });
+      return res.status(400).json({ error: `Columnas invalidas: ${invalidColumns.join(', ')}`, columnas_validas: columnasValidas });
     }
 
-    const sedeIdParsed = sede_id !== undefined && sede_id !== null ? parseInt(sede_id) : null;
+    const sedeIdParsed = sede_id !== undefined && sede_id !== null ? normalizeId(String(sede_id)) : null;
     const ordenFinal = orden_columnas || columnas_visibles;
 
-    await AdministracionModel.setConfiguracionColumnas(
-      sedeIdParsed,
-      tabla,
-      columnas_visibles,
-      ordenFinal,
-      req.user!.userId
-    );
+    await AdministracionModel.setConfiguracionColumnas(sedeIdParsed, tabla, columnas_visibles, ordenFinal, req.user!.userId);
 
     await AdministracionModel.registrarAccion('CONFIGURAR_COLUMNAS', req.user!.userId, {
       tablaAfectada: 'configuracion_columnas_tabla',
-      datosNuevos: { tabla, sede_id: sedeIdParsed, columnas_visibles, orden_columnas: ordenFinal },
-      ipAddress: req.ip,
+      datosNuevos: { tabla, sede_id: sedeIdParsed, columnas_visibles, orden_columnas: ordenFinal }, ipAddress: req.ip,
     });
 
     res.json({ success: true, message: 'Configuracion de columnas guardada correctamente' });
@@ -1004,23 +799,17 @@ export async function setConfiguracionColumnas(req: Request, res: Response) {
 export async function getAllConfiguracionColumnas(req: Request, res: Response) {
   try {
     const { tabla } = req.params;
-
     if (!['brigadas', 'unidades'].includes(tabla)) {
       return res.status(400).json({ error: 'Tabla no valida. Use: brigadas o unidades' });
     }
-
     const configuraciones = await AdministracionModel.getAllConfiguracionColumnas(tabla);
-
-    res.json({
-      tabla,
-      columnas_disponibles: COLUMNAS_DISPONIBLES[tabla as keyof typeof COLUMNAS_DISPONIBLES],
-      configuraciones
-    });
+    res.json({ tabla, columnas_disponibles: COLUMNAS_DISPONIBLES[tabla as keyof typeof COLUMNAS_DISPONIBLES], configuraciones });
   } catch (error) {
     console.error('Error al obtener todas las configuraciones:', error);
     res.status(500).json({ error: 'Error al obtener configuraciones' });
   }
 }
+
 // =====================================================
 // CAMPOS PERSONALIZADOS
 // =====================================================
@@ -1039,18 +828,10 @@ export async function getCamposPersonalizados(req: Request, res: Response) {
 export async function createCampoPersonalizado(req: Request, res: Response) {
   try {
     const { tabla_destino, clave, etiqueta, tipo, opciones } = req.body;
-
-    if (!tabla_destino || !clave || !etiqueta) {
-      return res.status(400).json({ error: 'Tabla, clave y etiqueta son requeridos' });
-    }
+    if (!tabla_destino || !clave || !etiqueta) return res.status(400).json({ error: 'Tabla, clave y etiqueta son requeridos' });
 
     const id = await AdministracionModel.createCampoPersonalizado({
-      tabla_destino,
-      clave,
-      etiqueta,
-      tipo: tipo || 'text',
-      opciones,
-      creado_por: req.user!.userId
+      tabla_destino, clave, etiqueta, tipo: tipo || 'text', opciones, creado_por: req.user!.userId
     });
 
     res.status(201).json({ success: true, id, message: 'Campo personalizado creado' });
@@ -1062,11 +843,11 @@ export async function createCampoPersonalizado(req: Request, res: Response) {
 
 export async function toggleCampoPersonalizado(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
     const { activo } = req.body;
 
-    await AdministracionModel.toggleCampoPersonalizado(parseInt(id), activo);
-
+    await AdministracionModel.toggleCampoPersonalizado(id, activo);
     res.json({ success: true, message: `Campo ${activo ? 'activado' : 'desactivado'} correctamente` });
   } catch (error) {
     console.error('Error al cambiar estado de campo personalizado:', error);

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { DispositivoModel } from '../../models/admin/dispositivo.model';
+import { normalizeId } from '../../utils/db.utils';
 
 /** GET /api/admin/dispositivos — Lista todos los dispositivos */
 export async function listarDispositivos(_req: Request, res: Response) {
@@ -15,7 +16,8 @@ export async function listarDispositivos(_req: Request, res: Response) {
 /** PATCH /api/admin/dispositivos/:id — Aprobar o bloquear un dispositivo */
 export async function actualizarEstadoDispositivo(req: Request, res: Response) {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
     const { estado, notas } = req.body;
 
     if (!['APROBADO', 'BLOQUEADO', 'PENDIENTE'].includes(estado)) {
