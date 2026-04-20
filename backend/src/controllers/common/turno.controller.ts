@@ -230,6 +230,12 @@ export async function createAsignacion(req: Request, res: Response) {
             comandanteAsignado = true;
           }
 
+          // NUEVO: Validar si el usuario está inactivo (vacaciones, suspendido, error)
+          const inactividad = await t.oneOrNone('SELECT * FROM get_motivo_inactividad_actual($1)', [miembro.usuario_id]);
+          if (inactividad && inactividad.codigo) {
+            throw new Error(`INACTIVO:${miembro.usuario_id}:${inactividad.nombre}`);
+          }
+
           const tripulante = await t.one(
             `INSERT INTO tripulacion_turno (asignacion_id, usuario_id, rol_tripulacion, es_comandante, telefono_contacto)
              VALUES ($1, $2, $3, $4, $5)
@@ -262,6 +268,16 @@ export async function createAsignacion(req: Request, res: Response) {
     if (error.code === '23514') {
       return res.status(400).json({
         error: `Valor inválido: ${error.message}`
+      });
+    }
+
+    // Manejar error de inactividad de tripulante
+    if (error.message && error.message.startsWith('INACTIVO:')) {
+      const parts = error.message.split(':');
+      // parts = ['INACTIVO', 'usuario_id', 'Nombre del motivo']
+      const motivo = parts.length > 2 ? parts[2] : 'Desconocido';
+      return res.status(409).json({
+        error: `No se puede asignar la tripulación. Uno de los usuarios está inactivo por: ${motivo}`
       });
     }
 
