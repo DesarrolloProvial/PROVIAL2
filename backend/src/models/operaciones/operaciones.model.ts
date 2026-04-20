@@ -341,4 +341,18 @@ export const OperacionesModel = {
 
     return db.manyOrNone(query, params);
   },
+
+  async validarDisponibilidadBrigada(usuarioId: number, fecha: string) {
+    return db.oneOrNone(
+      `SELECT * FROM validar_disponibilidad_brigada($1, $2::DATE)`,
+      [usuarioId, fecha]
+    );
+  },
+
+  async validarDisponibilidadUnidad(unidadId: number, fecha: string) {
+    return db.oneOrNone(
+      `SELECT * FROM validar_disponibilidad_unidad($1, $2::DATE)`,
+      [unidadId, fecha]
+    );
+  },
 };
