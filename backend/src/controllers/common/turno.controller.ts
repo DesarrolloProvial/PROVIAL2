@@ -1,35 +1,18 @@
 import { Request, Response } from 'express';
 import { TurnoModel } from '../../models/common/turno.model';
-import { db } from '../../config/database';
+import { normalizeId } from '../../utils/db.utils';
 
-// GET /api/turnos/hoy - Obtener turno de hoy con asignaciones de hoy y futuras
-// SIEMPRE filtra por sede del usuario (puede_ver_todas_sedes solo aplica en página de Sedes)
 export async function getTurnoHoy(req: Request, res: Response) {
   try {
-    const userSedeId = req.user?.sede;
-    const turno = await TurnoModel.findHoy(userSedeId);
-
-    // SIEMPRE filtrar por sede del usuario en el dashboard general
-    // Excluir asignaciones FINALIZADAS (jornada completada)
-    let asignaciones;
-    if (userSedeId) {
-      asignaciones = await db.any(
-        `SELECT * FROM v_asignaciones_pendientes
-         WHERE sede_id = $1
-           AND (salida_estado IS NULL OR salida_estado != 'FINALIZADA')
-         ORDER BY fecha, hora_salida`,
-        [userSedeId]
-      );
-    } else {
-      // Usuarios sin sede no ven ninguna asignación
-      asignaciones = [];
-    }
+    const sedeId = req.user!.sede;
+    const turno = await TurnoModel.findHoy(sedeId);
+    const asignaciones = sedeId ? await TurnoModel.getAsignacionesPendientes(sedeId) : [];
 
     return res.json({
       turno,
       asignaciones,
       total_asignaciones: asignaciones.length,
-      sede_usuario: userSedeId
+      sede_usuario: sedeId,
     });
   } catch (error) {
     console.error('Error en getTurnoHoy:', error);
@@ -37,54 +20,26 @@ export async function getTurnoHoy(req: Request, res: Response) {
   }
 }
 
-// GET /api/turnos/pendientes - Obtener asignaciones pendientes (filtradas por sede)
-// SIEMPRE filtra por sede del usuario
 export async function getAsignacionesPendientes(req: Request, res: Response) {
   try {
-    const userSedeId = req.user?.sede;
-
-    let asignaciones;
-    if (userSedeId) {
-      asignaciones = await db.any(
-        `SELECT * FROM v_asignaciones_pendientes
-         WHERE sede_id = $1
-           AND (salida_estado IS NULL OR salida_estado != 'FINALIZADA')
-         ORDER BY fecha, hora_salida`,
-        [userSedeId]
-      );
-    } else {
-      asignaciones = [];
-    }
-
-    return res.json({
-      asignaciones,
-      total: asignaciones.length,
-      sede_usuario: userSedeId
-    });
+    const sedeId = req.user!.sede;
+    const asignaciones = sedeId ? await TurnoModel.getAsignacionesPendientes(sedeId) : [];
+    return res.json({ asignaciones, total: asignaciones.length, sede_usuario: sedeId });
   } catch (error) {
     console.error('Error en getAsignacionesPendientes:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
-// GET /api/turnos/mi-asignacion-hoy - Obtener mi asignación de hoy (para app móvil)
 export async function getMiAsignacionHoy(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
-
-    console.log('getMiAsignacionHoy - UserID:', req.user.userId);
-    const asignacion = await TurnoModel.getMiAsignacionHoy(req.user.userId);
-    console.log('getMiAsignacionHoy - Resultado:', asignacion ? 'Encontrado' : 'NULL');
-
+    const asignacion = await TurnoModel.getMiAsignacionHoy(req.user!.userId);
     if (!asignacion) {
       return res.status(404).json({
         error: 'No tienes asignación para hoy',
-        message: 'No estás asignado a ninguna unidad el día de hoy. Contacta a Operaciones.'
+        message: 'No estás asignado a ninguna unidad el día de hoy. Contacta a Operaciones.',
       });
     }
-
     return res.json(asignacion);
   } catch (error) {
     console.error('Error en getMiAsignacionHoy:', error);
@@ -92,23 +47,13 @@ export async function getMiAsignacionHoy(req: Request, res: Response) {
   }
 }
 
-// GET /api/turnos/fecha/:fecha - Obtener turno por fecha
 export async function getTurnoByFecha(req: Request, res: Response) {
   try {
     const { fecha } = req.params;
-
-    if (!fecha) {
-      return res.status(400).json({ error: 'La fecha es requerida' });
-    }
+    if (!fecha) return res.status(400).json({ error: 'La fecha es requerida' });
 
     const turno = await TurnoModel.findByFecha(fecha);
-
-    if (!turno) {
-      return res.status(404).json({
-        error: 'No existe turno para esta fecha',
-        fecha
-      });
-    }
+    if (!turno) return res.status(404).json({ error: 'No existe turno para esta fecha', fecha });
 
     return res.json({ turno });
   } catch (error) {
@@ -117,30 +62,16 @@ export async function getTurnoByFecha(req: Request, res: Response) {
   }
 }
 
-// POST /api/turnos - Crear turno (solo Operaciones)
 export async function createTurno(req: Request, res: Response) {
   try {
     const { fecha, fecha_fin, observaciones, sede_id } = req.body;
+    if (!fecha) return res.status(400).json({ error: 'La fecha es requerida' });
 
-    if (!fecha) {
-      return res.status(400).json({ error: 'La fecha es requerida' });
-    }
+    const sedeIdFinal = sede_id || req.user!.sede || null;
 
-    // Determinar sede_id: del body, o del usuario que crea
-    const sedeIdFinal = sede_id || req.user?.sede || null;
-
-    // Verificar que no exista ya un turno para esa fecha y sede
-    const existente = await db.oneOrNone(
-      'SELECT * FROM turno WHERE fecha = $1 AND (sede_id = $2 OR ($2 IS NULL AND sede_id IS NULL))',
-      [fecha, sedeIdFinal]
-    );
-
+    const existente = await TurnoModel.findTurnoExistente(fecha, sedeIdFinal);
     if (existente) {
-      // Si existe, lo usamos (las asignaciones se agregarán a este turno)
-      return res.status(200).json({
-        message: 'Turno existente encontrado',
-        turno: existente
-      });
+      return res.status(200).json({ message: 'Turno existente encontrado', turno: existente });
     }
 
     const turno = await TurnoModel.create({
@@ -148,201 +79,75 @@ export async function createTurno(req: Request, res: Response) {
       fecha_fin: fecha_fin || null,
       observaciones,
       creado_por: req.user!.userId,
-      sede_id: sedeIdFinal
+      sede_id: sedeIdFinal,
     });
 
-    return res.status(201).json({
-      message: 'Turno creado exitosamente',
-      turno
-    });
+    return res.status(201).json({ message: 'Turno creado exitosamente', turno });
   } catch (error) {
     console.error('Error en createTurno:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
-// POST /api/turnos/:id/asignaciones - Crear asignación de unidad
 export async function createAsignacion(req: Request, res: Response) {
   try {
-    const { id: turnoId } = req.params;
+    const turnoId = normalizeId(req.params.id);
+    if (!turnoId) return res.status(400).json({ error: 'turnoId inválido' });
+
     const {
-      tipo_asignacion, // Nuevo campo
-      unidad_id,
-      ruta_id,
-      km_inicio,
-      km_final,
-      sentido,
-      acciones,
-      combustible_inicial,
-      combustible_asignado,
-      hora_salida,
-      hora_entrada_estimada,
-      tripulacion // Array de { usuario_id, rol_tripulacion }
+      tipo_asignacion, unidad_id, ruta_id, km_inicio, km_final,
+      sentido, acciones, combustible_inicial, combustible_asignado,
+      hora_salida, hora_entrada_estimada, tripulacion,
     } = req.body;
 
     const tipo = tipo_asignacion || 'PATRULLA';
-    
-    // NOTA: Operaciones ya no asigna unidades directamente. Transportes lo hace.
-    // La validación original de 'unidad_id es requerido para PATRULLA' ha sido eliminada.
 
-    // NOTA: Se ha eliminado la restricción estricta por fecha. La unidad/brigada puede estar en múltiples 
-    // asignaciones planeadas en el mismo día (ej. turnos partidos), y la restricción física ocurrirá en vivo.
-
-    // TRANSACCIÓN ATÓMICA: Si falla algo, se deshace todo
-    const resultado = await db.tx(async (t) => {
-      // Crear asignación
-      const asignacion = await t.one(
-        `INSERT INTO asignacion_unidad
-         (turno_id, tipo_asignacion, unidad_id, ruta_id, km_inicio, km_final, sentido, acciones,
-          combustible_inicial, combustible_asignado, hora_salida, hora_entrada_estimada)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-         RETURNING *`,
-        [
-          parseInt(turnoId), tipo, unidad_id, ruta_id, km_inicio, km_final,
-          sentido, acciones, combustible_inicial, combustible_asignado,
-          hora_salida, hora_entrada_estimada
-        ]
-      );
-
-      // Agregar tripulación si se proporcionó
-      const tripulacionCreada = [];
-      if (tripulacion && Array.isArray(tripulacion)) {
-        // Ordenar para que PILOTO sea primero
-        const tripulacionOrdenada = [...tripulacion].sort((a: any, b: any) => {
-          const orden: Record<string, number> = { 'PILOTO': 1, 'COPILOTO': 2, 'ACOMPANANTE': 3 };
-          return (orden[a.rol_tripulacion] || 4) - (orden[b.rol_tripulacion] || 4);
-        });
-
-        // Determinar quién es comandante:
-        // 1. Si alguien tiene es_comandante explícito, respetar eso
-        // 2. Si no, el primer PILOTO es comandante
-        // 3. Si no hay PILOTO, el primero de la lista es comandante
-        let comandanteAsignado = tripulacionOrdenada.some((m: any) => m.es_comandante);
-
-        for (let i = 0; i < tripulacionOrdenada.length; i++) {
-          const miembro = tripulacionOrdenada[i];
-
-          // Determinar si este miembro es comandante
-          let esComandante = miembro.es_comandante || false;
-          if (!comandanteAsignado && i === 0) {
-            // El primero (que será PILOTO si existe) es comandante
-            esComandante = true;
-            comandanteAsignado = true;
-          }
-
-          // NUEVO: Validar si el usuario está inactivo (vacaciones, suspendido, error)
-          const inactividad = await t.oneOrNone('SELECT * FROM get_motivo_inactividad_actual($1)', [miembro.usuario_id]);
-          if (inactividad && inactividad.codigo) {
-            throw new Error(`INACTIVO:${miembro.usuario_id}:${inactividad.nombre}`);
-          }
-
-          const tripulante = await t.one(
-            `INSERT INTO tripulacion_turno (asignacion_id, usuario_id, rol_tripulacion, es_comandante, telefono_contacto)
-             VALUES ($1, $2, $3, $4, $5)
-             RETURNING *`,
-            [asignacion.id, miembro.usuario_id, miembro.rol_tripulacion, esComandante, miembro.telefono_contacto || null]
-          );
-          tripulacionCreada.push(tripulante);
-        }
-      }
-
-      return { asignacion, tripulacionCreada };
-    });
+    const resultado = await TurnoModel.crearAsignacionConTripulacion(
+      turnoId,
+      tipo,
+      { unidad_id, ruta_id, km_inicio, km_final, sentido, acciones, combustible_inicial, combustible_asignado, hora_salida, hora_entrada_estimada },
+      Array.isArray(tripulacion) ? tripulacion : []
+    );
 
     return res.status(201).json({
       message: 'Asignación creada exitosamente',
       asignacion: resultado.asignacion,
-      tripulacion: resultado.tripulacionCreada
+      tripulacion: resultado.tripulacionCreada,
     });
   } catch (error: any) {
     console.error('Error en createAsignacion:', error);
-
-    // Manejar errores de constraint
-    if (error.code === '23505') { // Unique violation
-      return res.status(409).json({
-        error: 'La unidad ya tiene una asignación para este turno'
-      });
+    if (error.code === '23505') return res.status(409).json({ error: 'La unidad ya tiene una asignación para este turno' });
+    if (error.code === '23514') return res.status(400).json({ error: `Valor inválido: ${error.message}` });
+    if (error.message?.startsWith('INACTIVO:')) {
+      const motivo = error.message.split(':')[2] || 'Desconocido';
+      return res.status(409).json({ error: `No se puede asignar la tripulación. Uno de los usuarios está inactivo por: ${motivo}` });
     }
-
-    // Manejar errores de check constraint (como rol_tripulacion inválido)
-    if (error.code === '23514') {
-      return res.status(400).json({
-        error: `Valor inválido: ${error.message}`
-      });
-    }
-
-    // Manejar error de inactividad de tripulante
-    if (error.message && error.message.startsWith('INACTIVO:')) {
-      const parts = error.message.split(':');
-      // parts = ['INACTIVO', 'usuario_id', 'Nombre del motivo']
-      const motivo = parts.length > 2 ? parts[2] : 'Desconocido';
-      return res.status(409).json({
-        error: `No se puede asignar la tripulación. Uno de los usuarios está inactivo por: ${motivo}`
-      });
-    }
-
-    // Manejar errores personalizados del trigger
-    if (error.code === 'P0001') {
-      return res.status(400).json({
-        error: error.message
-      });
-    }
-
+    if (error.code === 'P0001') return res.status(400).json({ error: error.message });
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
-// POST /api/turnos/marcar-salida - Marcar salida de turno
 export async function marcarSalida(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
-
-    // Obtener asignación del usuario para hoy
-    const miAsignacion = await TurnoModel.getMiAsignacionHoy(req.user.userId);
-
-    if (!miAsignacion) {
-      return res.status(404).json({
-        error: 'No tienes asignación para hoy'
-      });
-    }
+    const miAsignacion = await TurnoModel.getMiAsignacionHoy(req.user!.userId);
+    if (!miAsignacion) return res.status(404).json({ error: 'No tienes asignación para hoy' });
 
     const asignacion = await TurnoModel.marcarSalida(miAsignacion.asignacion_id);
-
-    return res.json({
-      message: 'Salida registrada exitosamente',
-      asignacion,
-      hora_salida_real: asignacion.hora_salida_real
-    });
+    return res.json({ message: 'Salida registrada exitosamente', asignacion, hora_salida_real: asignacion.hora_salida_real });
   } catch (error) {
     console.error('Error en marcarSalida:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
-// POST /api/turnos/marcar-entrada - Marcar entrada de turno
 export async function marcarEntrada(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
-
     const { combustible_final, observaciones_finales } = req.body;
 
-    const miAsignacion = await TurnoModel.getMiAsignacionHoy(req.user.userId);
+    const miAsignacion = await TurnoModel.getMiAsignacionHoy(req.user!.userId);
+    if (!miAsignacion) return res.status(404).json({ error: 'No tienes asignación para hoy' });
 
-    if (!miAsignacion) {
-      return res.status(404).json({
-        error: 'No tienes asignación para hoy'
-      });
-    }
-
-    const asignacion = await TurnoModel.marcarEntrada(miAsignacion.asignacion_id, {
-      combustible_final,
-      observaciones_finales
-    });
-
+    const asignacion = await TurnoModel.marcarEntrada(miAsignacion.asignacion_id, { combustible_final, observaciones_finales });
     return res.json({
       message: 'Entrada registrada exitosamente. Turno finalizado.',
       asignacion,
@@ -351,9 +156,8 @@ export async function marcarEntrada(req: Request, res: Response) {
         hora_entrada: asignacion.hora_entrada_real,
         km_recorridos: asignacion.km_recorridos,
         combustible_usado: asignacion.combustible_inicial && combustible_final
-          ? (asignacion.combustible_inicial - combustible_final).toFixed(2)
-          : null
-      }
+          ? (asignacion.combustible_inicial - combustible_final).toFixed(2) : null,
+      },
     });
   } catch (error) {
     console.error('Error en marcarEntrada:', error);
@@ -361,250 +165,138 @@ export async function marcarEntrada(req: Request, res: Response) {
   }
 }
 
-// POST /api/reportes-horarios - Crear reporte horario (ultra-simplificado)
 export async function createReporteHorario(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
-
     const { km_actual, sentido_actual, latitud, longitud, novedad } = req.body;
+    if (!km_actual) return res.status(400).json({ error: 'km_actual es requerido' });
 
-    if (!km_actual) {
-      return res.status(400).json({ error: 'km_actual es requerido' });
-    }
-
-    // Obtener asignación del usuario para hoy
-    const miAsignacion = await TurnoModel.getMiAsignacionHoy(req.user.userId);
-
-    if (!miAsignacion) {
-      return res.status(404).json({
-        error: 'No tienes asignación para hoy. No puedes crear reportes horarios.'
-      });
-    }
+    const miAsignacion = await TurnoModel.getMiAsignacionHoy(req.user!.userId);
+    if (!miAsignacion) return res.status(404).json({ error: 'No tienes asignación para hoy. No puedes crear reportes horarios.' });
 
     const reporte = await TurnoModel.createReporteHorario({
       asignacion_id: miAsignacion.asignacion_id,
-      km_actual,
-      sentido_actual,
-      latitud,
-      longitud,
+      km_actual, sentido_actual, latitud, longitud,
       novedad: novedad || 'Sin novedad',
-      reportado_por: req.user.userId
+      reportado_por: req.user!.userId,
     });
 
-    return res.status(201).json({
-      message: 'Reporte horario registrado exitosamente',
-      reporte
-    });
+    return res.status(201).json({ message: 'Reporte horario registrado exitosamente', reporte });
   } catch (error) {
     console.error('Error en createReporteHorario:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
-// GET /api/reportes-horarios/:asignacionId - Obtener reportes de una asignación
 export async function getReportesHorarios(req: Request, res: Response) {
   try {
-    const { asignacionId } = req.params;
+    const asignacionId = normalizeId(req.params.asignacionId);
+    if (!asignacionId) return res.status(400).json({ error: 'asignacionId inválido' });
 
-    const reportes = await TurnoModel.getReportesHorarios(parseInt(asignacionId));
-
-    return res.json({
-      reportes,
-      total: reportes.length
-    });
+    const reportes = await TurnoModel.getReportesHorarios(asignacionId);
+    return res.json({ reportes, total: reportes.length });
   } catch (error) {
     console.error('Error en getReportesHorarios:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
-// POST /api/turnos/cambiar-ruta - Cambiar ruta activa de mi unidad
 export async function cambiarRutaActiva(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
+    const nuevaRutaId = normalizeId(req.body.nueva_ruta_id);
+    if (!nuevaRutaId) return res.status(400).json({ error: 'nueva_ruta_id es requerido' });
 
-    const { nueva_ruta_id } = req.body;
+    const miAsignacion = await TurnoModel.getMiAsignacionHoy(req.user!.userId);
+    if (!miAsignacion) return res.status(404).json({ error: 'No tienes asignación para hoy' });
 
-    if (!nueva_ruta_id) {
-      return res.status(400).json({ error: 'nueva_ruta_id es requerido' });
-    }
-
-    // Obtener asignación del usuario para hoy
-    const miAsignacion = await TurnoModel.getMiAsignacionHoy(req.user.userId);
-
-    if (!miAsignacion) {
-      return res.status(404).json({
-        error: 'No tienes asignación para hoy'
-      });
-    }
-
-    const asignacion = await TurnoModel.cambiarRutaActiva(
-      miAsignacion.asignacion_id,
-      parseInt(nueva_ruta_id)
-    );
-
-    return res.json({
-      message: 'Ruta activa actualizada exitosamente',
-      asignacion
-    });
+    const asignacion = await TurnoModel.cambiarRutaActiva(miAsignacion.asignacion_id, nuevaRutaId);
+    return res.json({ message: 'Ruta activa actualizada exitosamente', asignacion });
   } catch (error) {
     console.error('Error en cambiarRutaActiva:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
-// POST /api/turnos/registrar-combustible - Registrar combustible actual de mi unidad
 export async function registrarCombustible(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
-
     const { nivel_fraccion, nivel_decimal, tipo, observaciones } = req.body;
 
-    if (!nivel_fraccion) {
-      return res.status(400).json({ error: 'El nivel de combustible es requerido (nivel_fraccion)' });
-    }
-
+    if (!nivel_fraccion) return res.status(400).json({ error: 'El nivel de combustible es requerido (nivel_fraccion)' });
     if (!tipo || !['INICIAL', 'ACTUAL', 'FINAL'].includes(tipo)) {
-      return res.status(400).json({
-        error: 'El tipo es requerido y debe ser INICIAL, ACTUAL o FINAL'
-      });
+      return res.status(400).json({ error: 'El tipo es requerido y debe ser INICIAL, ACTUAL o FINAL' });
     }
 
-    // Obtener asignación del usuario para hoy
-    const miAsignacion = await TurnoModel.getMiAsignacionHoy(req.user.userId);
+    const miAsignacion = await TurnoModel.getMiAsignacionHoy(req.user!.userId);
+    if (!miAsignacion) return res.status(404).json({ error: 'No tienes asignación para hoy' });
 
-    if (!miAsignacion) {
-      return res.status(404).json({
-        error: 'No tienes asignación para hoy'
-      });
-    }
-
-    // Registrar el combustible
     const registro = await TurnoModel.registrarCombustible({
       asignacion_id: miAsignacion.asignacion_id,
       nivel_fraccion,
       nivel_decimal: parseFloat(nivel_decimal) || 0,
       tipo,
       observaciones,
-      registrado_por: req.user.userId
+      registrado_por: req.user!.userId,
     });
 
-    return res.status(201).json({
-      message: 'Combustible registrado exitosamente',
-      registro
-    });
+    return res.status(201).json({ message: 'Combustible registrado exitosamente', registro });
   } catch (error) {
     console.error('Error en registrarCombustible:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
-// PUT /api/turnos/asignaciones/:id - Actualizar asignación (solo si no ha salido)
 export async function updateAsignacion(req: Request, res: Response) {
   try {
-    const { id: asignacionId } = req.params;
-    const {
-      ruta_id,
-      km_inicio,
-      km_final,
-      sentido,
-      acciones,
-      hora_salida,
-      hora_entrada_estimada,
-      tripulacion
-    } = req.body;
+    const asignacionId = normalizeId(req.params.id);
+    if (!asignacionId) return res.status(400).json({ error: 'asignacionId inválido' });
 
-    // Obtener asignación con info de sede
-    const asignacion = await db.oneOrNone(`
-      SELECT au.*, t.sede_id, u.codigo as unidad_codigo
-      FROM asignacion_unidad au
-      JOIN turno t ON au.turno_id = t.id
-      JOIN unidad u ON au.unidad_id = u.id
-      WHERE au.id = $1
-    `, [parseInt(asignacionId)]);
+    const asignacion = await TurnoModel.getAsignacionConSede(asignacionId);
+    if (!asignacion) return res.status(404).json({ error: 'Asignación no encontrada' });
 
-    if (!asignacion) {
-      return res.status(404).json({ error: 'Asignación no encontrada' });
-    }
-
-    // Validar que el usuario puede editar (misma sede o puede ver todas)
-    const userSedeId = req.user?.sede;
-    const puedeVerTodas = req.user?.puede_ver_todas_sedes;
-
+    const userSedeId = req.user!.sede;
+    const puedeVerTodas = req.user!.puede_ver_todas_sedes;
     if (!puedeVerTodas && userSedeId && asignacion.sede_id && asignacion.sede_id !== userSedeId) {
-      return res.status(403).json({
-        error: 'No tienes permiso para editar asignaciones de otra sede'
-      });
+      return res.status(403).json({ error: 'No tienes permiso para editar asignaciones de otra sede' });
     }
 
     if (asignacion.hora_salida_real) {
       return res.status(400).json({
         error: 'No se puede modificar una asignación que ya ha salido',
-        message: 'La unidad ya registró su salida. Solo se pueden editar asignaciones pendientes.'
+        message: 'La unidad ya registró su salida. Solo se pueden editar asignaciones pendientes.',
       });
     }
 
-    // Verificar si hay salida_unidad activa para esta unidad
-    const salidaActiva = await db.oneOrNone(`
-      SELECT id FROM salida_unidad
-      WHERE unidad_id = $1 AND estado = 'EN_SALIDA'
-    `, [asignacion.unidad_id]);
-
+    const salidaActiva = await TurnoModel.getSalidaActivaPorUnidad(asignacion.unidad_id);
     if (salidaActiva) {
       return res.status(400).json({
         error: 'No se puede modificar una asignación con salida activa',
-        message: `La unidad ${asignacion.unidad_codigo} tiene una salida en curso. Debe finalizar la jornada primero.`
+        message: `La unidad ${asignacion.unidad_codigo} tiene una salida en curso. Debe finalizar la jornada primero.`,
       });
     }
 
-    // NOTA: Se ha eliminado la restricción estricta por fecha.
-
-    // Actualizar asignación
-    const asignacionActualizada = await TurnoModel.updateAsignacion(parseInt(asignacionId), {
-      ruta_id,
-      km_inicio,
-      km_final,
-      sentido,
-      acciones,
-      hora_salida,
-      hora_entrada_estimada
+    const { ruta_id, km_inicio, km_final, sentido, acciones, hora_salida, hora_entrada_estimada, tripulacion } = req.body;
+    const asignacionActualizada = await TurnoModel.updateAsignacion(asignacionId, {
+      ruta_id, km_inicio, km_final, sentido, acciones, hora_salida, hora_entrada_estimada,
     });
 
-    // Actualizar tripulación si se proporcionó
-    let tripulacionActualizada = [];
-    if (tripulacion && Array.isArray(tripulacion)) {
-      // Eliminar tripulación actual
-      await TurnoModel.deleteTripulacion(parseInt(asignacionId));
+    let tripulacionActualizada: any[] = [];
+    if (Array.isArray(tripulacion) && tripulacion.length > 0) {
+      await TurnoModel.deleteTripulacion(asignacionId);
 
-      // Ordenar para que PILOTO sea primero
-      const tripulacionOrdenada = [...tripulacion].sort((a: any, b: any) => {
-        const orden: Record<string, number> = { 'PILOTO': 1, 'COPILOTO': 2, 'ACOMPANANTE': 3 };
+      const ordenada = [...tripulacion].sort((a: any, b: any) => {
+        const orden: Record<string, number> = { PILOTO: 1, COPILOTO: 2, ACOMPANANTE: 3 };
         return (orden[a.rol_tripulacion] || 4) - (orden[b.rol_tripulacion] || 4);
       });
 
-      // Determinar comandante automáticamente si no se especificó
-      let comandanteAsignado = tripulacionOrdenada.some((m: any) => m.es_comandante);
-
-      // Agregar nueva tripulación
-      for (let i = 0; i < tripulacionOrdenada.length; i++) {
-        const miembro = tripulacionOrdenada[i];
+      let comandanteAsignado = ordenada.some((m: any) => m.es_comandante);
+      for (let i = 0; i < ordenada.length; i++) {
+        const miembro = ordenada[i];
         let esComandante = miembro.es_comandante || false;
-        if (!comandanteAsignado && i === 0) {
-          esComandante = true;
-          comandanteAsignado = true;
-        }
-
+        if (!comandanteAsignado && i === 0) { esComandante = true; comandanteAsignado = true; }
         const t = await TurnoModel.addTripulacion({
-          asignacion_id: parseInt(asignacionId),
+          asignacion_id: asignacionId,
           usuario_id: miembro.usuario_id,
           rol_tripulacion: miembro.rol_tripulacion,
-          es_comandante: esComandante
+          es_comandante: esComandante,
         });
         tripulacionActualizada.push(t);
       }
@@ -613,7 +305,7 @@ export async function updateAsignacion(req: Request, res: Response) {
     return res.json({
       message: 'Asignación actualizada exitosamente',
       asignacion: asignacionActualizada,
-      tripulacion: tripulacionActualizada.length > 0 ? tripulacionActualizada : undefined
+      tripulacion: tripulacionActualizada.length > 0 ? tripulacionActualizada : undefined,
     });
   } catch (error) {
     console.error('Error en updateAsignacion:', error);
@@ -621,99 +313,56 @@ export async function updateAsignacion(req: Request, res: Response) {
   }
 }
 
-// DELETE /api/turnos/asignaciones/:id - Eliminar asignación (solo si no ha salido)
-// Query param: ?forzar=true para cerrar salida activa y eliminar
 export async function deleteAsignacion(req: Request, res: Response) {
   try {
-    const { id: asignacionId } = req.params;
+    const asignacionId = normalizeId(req.params.id);
+    if (!asignacionId) return res.status(400).json({ error: 'asignacionId inválido' });
+
     const forzar = req.query.forzar === 'true';
 
-    // Obtener asignación con info de sede
-    const asignacion = await db.oneOrNone(`
-      SELECT au.*, t.sede_id, u.codigo as unidad_codigo
-      FROM asignacion_unidad au
-      JOIN turno t ON au.turno_id = t.id
-      JOIN unidad u ON au.unidad_id = u.id
-      WHERE au.id = $1
-    `, [parseInt(asignacionId)]);
+    const asignacion = await TurnoModel.getAsignacionConSede(asignacionId);
+    if (!asignacion) return res.status(404).json({ error: 'Asignación no encontrada' });
 
-    if (!asignacion) {
-      return res.status(404).json({ error: 'Asignación no encontrada' });
-    }
-
-    // Validar que el usuario puede eliminar (misma sede o puede ver todas)
-    const userSedeId = req.user?.sede;
-    const puedeVerTodas = req.user?.puede_ver_todas_sedes;
-
+    const userSedeId = req.user!.sede;
+    const puedeVerTodas = req.user!.puede_ver_todas_sedes;
     if (!puedeVerTodas && userSedeId && asignacion.sede_id && asignacion.sede_id !== userSedeId) {
-      return res.status(403).json({
-        error: 'No tienes permiso para eliminar asignaciones de otra sede'
-      });
+      return res.status(403).json({ error: 'No tienes permiso para eliminar asignaciones de otra sede' });
     }
 
-    // Comprobación de rol para forzar
-    if (forzar) {
-      // El user mencionó "super_Admin" y user 19109.
-      const isSuperAdmin = req.user?.rol === 'SUPER_ADMIN' || req.user?.userId === 19109;
-      if (!isSuperAdmin) {
-        return res.status(403).json({
-          error: 'No tiene permisos para forzar la eliminación. Contacte al Super Administrador.'
-        });
-      }
+    if (forzar && req.user!.rol !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'No tiene permisos para forzar la eliminación. Contacte al Super Administrador.' });
     }
 
     if (asignacion.hora_salida_real && !forzar) {
       return res.status(400).json({
         error: 'No se puede eliminar una asignación que ya ha salido',
-        message: 'La unidad ya registró su salida. Solo el Super Admin puede forzar esta acción.'
+        message: 'La unidad ya registró su salida. Solo el Super Admin puede forzar esta acción.',
       });
     }
 
-    // Verificar si hay salida_unidad activa para esta unidad
-    const salidaActiva = await db.oneOrNone(`
-      SELECT id, fecha_hora_salida FROM salida_unidad
-      WHERE unidad_id = $1 AND estado = 'EN_SALIDA'
-    `, [asignacion.unidad_id]);
+    const salidaActiva = await TurnoModel.getSalidaActivaPorUnidad(asignacion.unidad_id);
 
-    // SOLO bloquear si la asignación está ACTIVA (hora_salida_real)
-    // Si es pendiente, permitimos borrar aunque la unidad tenga estado sucio (zombie exit),
-    // para poder limpiar el plan.
     if (salidaActiva && !forzar && asignacion.hora_salida_real) {
       return res.status(400).json({
         error: 'No se puede eliminar una asignación con salida activa',
         message: `La unidad ${asignacion.unidad_codigo} tiene una salida en curso desde ${salidaActiva.fecha_hora_salida}.`,
-        salida_id: salidaActiva.id
+        salida_id: salidaActiva.id,
       });
     }
 
-    // Si forzar=true y hay salida activa, cerrarla primero
     if (salidaActiva && forzar) {
-      await db.none(`
-        UPDATE salida_unidad
-        SET estado = 'CANCELADA',
-            fecha_hora_regreso = NOW(),
-            observaciones_regreso = 'Cerrada forzosamente al eliminar asignación'
-        WHERE id = $1
-      `, [salidaActiva.id]);
-      console.log(`Salida ${salidaActiva.id} cerrada forzosamente`);
+      await TurnoModel.cerrarSalidaForzada(salidaActiva.id);
     }
 
-    // Eliminar asignación (la tripulación se elimina por cascade)
-    await TurnoModel.deleteAsignacion(parseInt(asignacionId));
-
-    // Limpiar turno si quedó vacío
-    await db.none(`
-      DELETE FROM turno t
-      WHERE NOT EXISTS (SELECT 1 FROM asignacion_unidad au WHERE au.turno_id = t.id)
-      AND t.id = $1
-    `, [asignacion.turno_id]);
+    await TurnoModel.deleteAsignacion(asignacionId);
+    await TurnoModel.limpiarTurnoVacio(asignacion.turno_id);
 
     return res.json({
       message: salidaActiva && forzar
         ? 'Asignación eliminada y salida cerrada exitosamente'
         : 'Asignación eliminada exitosamente',
-      asignacion_id: parseInt(asignacionId),
-      salida_cerrada: salidaActiva && forzar ? salidaActiva.id : null
+      asignacion_id: asignacionId,
+      salida_cerrada: salidaActiva && forzar ? salidaActiva.id : null,
     });
   } catch (error) {
     console.error('Error en deleteAsignacion:', error);
@@ -721,53 +370,35 @@ export async function deleteAsignacion(req: Request, res: Response) {
   }
 }
 
-// POST /api/turnos/:turnoId/liberar-nomina - Liberar nómina (cambiar borradores a liberadas)
-// Body opcional: { asignacion_ids: number[] } para publicación selectiva
 export async function liberarNomina(req: Request, res: Response) {
   try {
-    const { turnoId } = req.params;
-    const userSedeId = req.user?.sede;
-    const userRol = req.user?.rol;
+    const turnoId = normalizeId(req.params.turnoId);
+    if (!turnoId) return res.status(400).json({ error: 'turnoId inválido' });
+
+    const userSedeId = req.user!.sede;
+    const userRol = req.user!.rol;
     const { asignacion_ids } = req.body as { asignacion_ids?: number[] };
 
-    // Solo ENCARGADO_NOMINAS, OPERACIONES, ADMIN y SUPER_ADMIN pueden liberar nómina
-    if (!['ENCARGADO_NOMINAS', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN'].includes(userRol || '')) {
+    if (!['ENCARGADO_NOMINAS', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN'].includes(userRol)) {
       return res.status(403).json({ error: 'No tienes permisos para liberar nómina' });
     }
 
-    // Si no se especifican IDs, verificar que haya borradores disponibles
     if (!asignacion_ids || asignacion_ids.length === 0) {
-      const countBorradores = await TurnoModel.countBorradores(parseInt(turnoId), userSedeId);
-      if (countBorradores === 0) {
-        return res.status(400).json({
-          error: 'No hay asignaciones en borrador para liberar',
-          count: 0
-        });
-      }
+      const countBorradores = await TurnoModel.countBorradores(turnoId, userSedeId);
+      if (countBorradores === 0) return res.status(400).json({ error: 'No hay asignaciones en borrador para liberar', count: 0 });
     }
 
-    // Liberar nómina (selectiva si se pasan IDs, total si no)
     const { count: liberadas, codigos } = await TurnoModel.liberarNomina(
-      parseInt(turnoId),
+      turnoId,
       userSedeId,
       asignacion_ids && asignacion_ids.length > 0 ? asignacion_ids : undefined
     );
 
     if (liberadas === 0) {
-      return res.status(400).json({
-        error: 'No se liberó ninguna asignación. Verifique que estén en borrador.',
-        count: 0
-      });
+      return res.status(400).json({ error: 'No se liberó ninguna asignación. Verifique que estén en borrador.', count: 0 });
     }
 
-    // TODO: Enviar notificaciones push a brigadas asignados
-
-    return res.json({
-      message: `${liberadas} asignación(es) liberada(s) exitosamente`,
-      count: liberadas,
-      codigos,
-      turno_id: parseInt(turnoId)
-    });
+    return res.json({ message: `${liberadas} asignación(es) liberada(s) exitosamente`, count: liberadas, codigos, turno_id: turnoId });
   } catch (error) {
     console.error('Error en liberarNomina:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });

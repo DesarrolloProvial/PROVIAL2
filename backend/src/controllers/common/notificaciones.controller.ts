@@ -1,37 +1,18 @@
 import { Request, Response } from 'express';
-import { db } from '../../config/database';
+import { NotificacionModel } from '../../models/common/notificacion.model';
 import { PushNotificationService } from '../../services/common/firebase.service';
-
-// ============================================
-// CONTROLADOR DE NOTIFICACIONES
-// ============================================
+import { normalizeId } from '../../utils/db.utils';
 
 export const NotificacionesController = {
-  /**
-   * Registrar token de dispositivo
-   * POST /api/notificaciones/registrar-token
-   */
   async registrarToken(req: Request, res: Response) {
     try {
-      const usuarioId = (req as any).user.userId;
+      const usuarioId = req.user!.userId;
       const { push_token, plataforma, modelo_dispositivo, version_app } = req.body;
 
-      if (!push_token || !plataforma) {
-        return res.status(400).json({ error: 'push_token y plataforma son requeridos' });
-      }
+      if (!push_token || !plataforma) return res.status(400).json({ error: 'push_token y plataforma son requeridos' });
+      if (!['ios', 'android', 'web'].includes(plataforma)) return res.status(400).json({ error: 'plataforma debe ser ios, android o web' });
 
-      if (!['ios', 'android', 'web'].includes(plataforma)) {
-        return res.status(400).json({ error: 'plataforma debe ser ios, android o web' });
-      }
-
-      await PushNotificationService.registrarToken(
-        usuarioId,
-        push_token,
-        plataforma,
-        modelo_dispositivo,
-        version_app
-      );
-
+      await PushNotificationService.registrarToken(usuarioId, push_token, plataforma, modelo_dispositivo, version_app);
       res.json({ message: 'Token registrado correctamente' });
     } catch (error) {
       console.error('Error registrando token:', error);
@@ -39,20 +20,12 @@ export const NotificacionesController = {
     }
   },
 
-  /**
-   * Desactivar token (logout)
-   * POST /api/notificaciones/desactivar-token
-   */
   async desactivarToken(req: Request, res: Response) {
     try {
       const { push_token } = req.body;
-
-      if (!push_token) {
-        return res.status(400).json({ error: 'push_token es requerido' });
-      }
+      if (!push_token) return res.status(400).json({ error: 'push_token es requerido' });
 
       await PushNotificationService.desactivarToken(push_token);
-
       res.json({ message: 'Token desactivado' });
     } catch (error) {
       console.error('Error desactivando token:', error);
@@ -60,59 +33,34 @@ export const NotificacionesController = {
     }
   },
 
-  /**
-   * Obtener mis notificaciones
-   * GET /api/notificaciones
-   */
   async listar(req: Request, res: Response) {
     try {
-      const usuarioId = (req as any).user.userId;
-      const { solo_no_leidas, limite = 50, offset = 0 } = req.query;
+      const usuarioId = req.user!.userId;
+      const soloNoLeidas = req.query.solo_no_leidas === 'true';
+      const limiteRaw = parseInt(req.query.limite as string, 10);
+      const offsetRaw = parseInt(req.query.offset as string, 10);
+      const limite = isNaN(limiteRaw) ? 50 : Math.min(limiteRaw, 200);
+      const offset = isNaN(offsetRaw) ? 0 : offsetRaw;
 
-      let query = `
-        SELECT id, tipo, titulo, mensaje, datos, leida, created_at
-        FROM notificacion
-        WHERE usuario_id = $1
-      `;
+      const [notificaciones, no_leidas] = await Promise.all([
+        NotificacionModel.listar(usuarioId, soloNoLeidas, limite, offset),
+        NotificacionModel.conteoNoLeidas(usuarioId),
+      ]);
 
-      const params: any[] = [usuarioId];
-
-      if (solo_no_leidas === 'true') {
-        query += ` AND leida = FALSE`;
-      }
-
-      query += ` ORDER BY created_at DESC LIMIT $2 OFFSET $3`;
-      params.push(limite, offset);
-
-      const notificaciones = await db.any(query, params);
-
-      // Contar no leidas
-      const countResult = await db.one(`
-        SELECT COUNT(*) as total FROM notificacion
-        WHERE usuario_id = $1 AND leida = FALSE
-      `, [usuarioId]);
-
-      res.json({
-        notificaciones,
-        no_leidas: parseInt(countResult.total),
-      });
+      res.json({ notificaciones, no_leidas });
     } catch (error) {
       console.error('Error listando notificaciones:', error);
       res.status(500).json({ error: 'Error al listar notificaciones' });
     }
   },
 
-  /**
-   * Marcar notificacion como leida
-   * POST /api/notificaciones/:id/leer
-   */
   async marcarLeida(req: Request, res: Response) {
     try {
-      const usuarioId = (req as any).user.userId;
-      const notificacionId = parseInt(req.params.id);
+      const usuarioId = req.user!.userId;
+      const notificacionId = normalizeId(req.params.id);
+      if (!notificacionId) return res.status(400).json({ error: 'ID inválido' });
 
       await PushNotificationService.marcarLeida(notificacionId, usuarioId);
-
       res.json({ message: 'Notificacion marcada como leida' });
     } catch (error) {
       console.error('Error marcando leida:', error);
@@ -120,20 +68,9 @@ export const NotificacionesController = {
     }
   },
 
-  /**
-   * Marcar todas como leidas
-   * POST /api/notificaciones/leer-todas
-   */
   async marcarTodasLeidas(req: Request, res: Response) {
     try {
-      const usuarioId = (req as any).user.userId;
-
-      await db.none(`
-        UPDATE notificacion
-        SET leida = TRUE
-        WHERE usuario_id = $1 AND leida = FALSE
-      `, [usuarioId]);
-
+      await NotificacionModel.marcarTodasLeidas(req.user!.userId);
       res.json({ message: 'Todas las notificaciones marcadas como leidas' });
     } catch (error) {
       console.error('Error marcando todas leidas:', error);
@@ -141,52 +78,28 @@ export const NotificacionesController = {
     }
   },
 
-  /**
-   * Obtener conteo de no leidas (para badge)
-   * GET /api/notificaciones/conteo
-   */
   async conteoNoLeidas(req: Request, res: Response) {
     try {
-      const usuarioId = (req as any).user.userId;
-
-      const result = await db.one(`
-        SELECT COUNT(*) as total FROM notificacion
-        WHERE usuario_id = $1 AND leida = FALSE
-      `, [usuarioId]);
-
-      res.json({ no_leidas: parseInt(result.total) });
+      const no_leidas = await NotificacionModel.conteoNoLeidas(req.user!.userId);
+      res.json({ no_leidas });
     } catch (error) {
       console.error('Error contando no leidas:', error);
-      res.status(500).json({ error: 'Error al contar' });
+      res.status(500).json({ error: 'Error al contar notificaciones' });
     }
   },
 
-  /**
-   * Enviar notificacion de prueba (solo admin)
-   * POST /api/notificaciones/prueba
-   */
   async enviarPrueba(req: Request, res: Response) {
     try {
       const { usuario_id, titulo, mensaje } = req.body;
-
       if (!usuario_id || !titulo || !mensaje) {
         return res.status(400).json({ error: 'usuario_id, titulo y mensaje son requeridos' });
       }
 
-      const enviada = await PushNotificationService.enviarAUsuario({
-        usuarioId: usuario_id,
-        tipo: 'PRUEBA',
-        titulo,
-        mensaje,
-      });
-
-      res.json({
-        message: enviada ? 'Notificacion enviada' : 'Usuario sin dispositivos registrados',
-        enviada,
-      });
+      const enviada = await PushNotificationService.enviarAUsuario({ usuarioId: usuario_id, tipo: 'PRUEBA', titulo, mensaje });
+      res.json({ message: enviada ? 'Notificacion enviada' : 'Usuario sin dispositivos registrados', enviada });
     } catch (error) {
       console.error('Error enviando prueba:', error);
-      res.status(500).json({ error: 'Error al enviar' });
+      res.status(500).json({ error: 'Error al enviar notificación' });
     }
   },
 };

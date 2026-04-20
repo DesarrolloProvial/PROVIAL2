@@ -155,5 +155,15 @@ export const UsuarioModel = {
        WHERE username = $1`,
       [username, passwordHash]
     );
-  }
+  },
+
+  async getSedeByUserId(userId: number): Promise<{ mi_sede_id: number; mi_sede_codigo: string; mi_sede_nombre: string } | null> {
+    return db.oneOrNone(
+      `SELECT u.sede_id AS mi_sede_id, s.codigo AS mi_sede_codigo, s.nombre AS mi_sede_nombre
+       FROM usuario u
+       JOIN sede s ON u.sede_id = s.id
+       WHERE u.id = $1`,
+      [userId]
+    );
+  },
 };

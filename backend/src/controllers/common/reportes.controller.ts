@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { ReportesService } from '../../services/common/reportes.service';
+import { normalizeId } from '../../utils/db.utils';
 
 // ============================================
 // CONTROLADOR DE REPORTES
@@ -22,7 +23,7 @@ export const ReportesController = {
       res.json({ tipos });
     } catch (error: any) {
       console.error('Error obteniendo tipos de reportes:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: 'Error al procesar la solicitud' });
     }
   },
 
@@ -32,7 +33,7 @@ export const ReportesController = {
    */
   async inspecciones360PDF(req: Request, res: Response) {
     try {
-      const unidadId = parseInt(req.params.unidadId);
+      const unidadId = normalizeId(req.params.unidadId) ?? 0;
       const { fecha_inicio, fecha_fin } = req.query;
 
       // Validar fechas
@@ -59,7 +60,7 @@ export const ReportesController = {
       stream.pipe(res);
     } catch (error: any) {
       console.error('Error generando reporte PDF:', error);
-      res.status(500).json({ error: error.message || 'Error al generar reporte' });
+      res.status(500).json({ error: 'Error al generar reporte' });
     }
   },
 
@@ -69,7 +70,7 @@ export const ReportesController = {
    */
   async inspecciones360Excel(req: Request, res: Response) {
     try {
-      const unidadId = parseInt(req.params.unidadId);
+      const unidadId = normalizeId(req.params.unidadId) ?? 0;
       const { fecha_inicio, fecha_fin } = req.query;
 
       const fechaInicio = fecha_inicio
@@ -99,7 +100,7 @@ export const ReportesController = {
       res.end();
     } catch (error: any) {
       console.error('Error generando reporte Excel:', error);
-      res.status(500).json({ error: error.message || 'Error al generar reporte' });
+      res.status(500).json({ error: 'Error al generar reporte' });
     }
   },
 
@@ -136,7 +137,7 @@ export const ReportesController = {
       stream.pipe(res);
     } catch (error: any) {
       console.error('Error generando reporte PDF brigadas:', error);
-      res.status(500).json({ error: error.message || 'Error al generar reporte' });
+      res.status(500).json({ error: 'Error al generar reporte' });
     }
   },
 
@@ -177,7 +178,7 @@ export const ReportesController = {
       res.end();
     } catch (error: any) {
       console.error('Error generando reporte Excel brigadas:', error);
-      res.status(500).json({ error: error.message || 'Error al generar reporte' });
+      res.status(500).json({ error: 'Error al generar reporte' });
     }
   },
 };

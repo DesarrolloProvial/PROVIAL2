@@ -472,6 +472,120 @@ export const TurnoModel = {
     return { count: result.rowCount, codigos };
   },
 
+  async getAsignacionesPendientes(sedeId: number): Promise<any[]> {
+    return db.any(
+      `SELECT * FROM v_asignaciones_pendientes
+       WHERE sede_id = $1
+         AND (salida_estado IS NULL OR salida_estado != 'FINALIZADA')
+       ORDER BY fecha, hora_salida`,
+      [sedeId]
+    );
+  },
+
+  async findTurnoExistente(fecha: string, sedeId: number | null): Promise<any | null> {
+    return db.oneOrNone(
+      `SELECT * FROM turno
+       WHERE fecha = $1 AND (sede_id = $2 OR ($2 IS NULL AND sede_id IS NULL))`,
+      [fecha, sedeId]
+    );
+  },
+
+  async crearAsignacionConTripulacion(
+    turnoId: number,
+    tipo: string,
+    data: Record<string, any>,
+    tripulacion: Array<{ usuario_id: number; rol_tripulacion: string; es_comandante?: boolean; telefono_contacto?: string }>
+  ): Promise<{ asignacion: any; tripulacionCreada: any[] }> {
+    return db.tx(async (t) => {
+      const asignacion = await t.one(
+        `INSERT INTO asignacion_unidad
+         (turno_id, tipo_asignacion, unidad_id, ruta_id, km_inicio, km_final, sentido, acciones,
+          combustible_inicial, combustible_asignado, hora_salida, hora_entrada_estimada)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         RETURNING *`,
+        [turnoId, tipo, data.unidad_id, data.ruta_id, data.km_inicio, data.km_final,
+          data.sentido, data.acciones, data.combustible_inicial, data.combustible_asignado,
+          data.hora_salida, data.hora_entrada_estimada]
+      );
+
+      const tripulacionCreada: any[] = [];
+      if (tripulacion.length > 0) {
+        const ordenada = [...tripulacion].sort((a: any, b: any) => {
+          const orden: Record<string, number> = { PILOTO: 1, COPILOTO: 2, ACOMPANANTE: 3 };
+          return (orden[a.rol_tripulacion] || 4) - (orden[b.rol_tripulacion] || 4);
+        });
+
+        let comandanteAsignado = ordenada.some((m) => m.es_comandante);
+
+        for (let i = 0; i < ordenada.length; i++) {
+          const miembro = ordenada[i];
+
+          const inactividad = await t.oneOrNone(
+            `SELECT * FROM get_motivo_inactividad_actual($1)`,
+            [miembro.usuario_id]
+          );
+          if (inactividad?.codigo) {
+            throw new Error(`INACTIVO:${miembro.usuario_id}:${inactividad.nombre}`);
+          }
+
+          let esComandante = miembro.es_comandante || false;
+          if (!comandanteAsignado && i === 0) {
+            esComandante = true;
+            comandanteAsignado = true;
+          }
+
+          const tripulante = await t.one(
+            `INSERT INTO tripulacion_turno (asignacion_id, usuario_id, rol_tripulacion, es_comandante, telefono_contacto)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING *`,
+            [asignacion.id, miembro.usuario_id, miembro.rol_tripulacion, esComandante, miembro.telefono_contacto || null]
+          );
+          tripulacionCreada.push(tripulante);
+        }
+      }
+
+      return { asignacion, tripulacionCreada };
+    });
+  },
+
+  async getAsignacionConSede(id: number): Promise<any | null> {
+    return db.oneOrNone(
+      `SELECT au.*, t.sede_id, u.codigo AS unidad_codigo
+       FROM asignacion_unidad au
+       JOIN turno t  ON au.turno_id  = t.id
+       JOIN unidad u ON au.unidad_id = u.id
+       WHERE au.id = $1`,
+      [id]
+    );
+  },
+
+  async getSalidaActivaPorUnidad(unidadId: number): Promise<any | null> {
+    return db.oneOrNone(
+      `SELECT id, fecha_hora_salida FROM salida_unidad WHERE unidad_id = $1 AND estado = 'EN_SALIDA'`,
+      [unidadId]
+    );
+  },
+
+  async cerrarSalidaForzada(salidaId: number): Promise<void> {
+    await db.none(
+      `UPDATE salida_unidad
+       SET estado = 'CANCELADA',
+           fecha_hora_regreso = NOW(),
+           observaciones_regreso = 'Cerrada forzosamente al eliminar asignación'
+       WHERE id = $1`,
+      [salidaId]
+    );
+  },
+
+  async limpiarTurnoVacio(turnoId: number): Promise<void> {
+    await db.none(
+      `DELETE FROM turno t
+       WHERE NOT EXISTS (SELECT 1 FROM asignacion_unidad au WHERE au.turno_id = t.id)
+         AND t.id = $1`,
+      [turnoId]
+    );
+  },
+
   // Contar asignaciones en borrador
   async countBorradores(turnoId: number, sedeId?: number): Promise<number> {
     let query = `
