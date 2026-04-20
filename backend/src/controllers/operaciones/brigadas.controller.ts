@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import { db } from '../../config/database';
+import { cache } from '../../config/redis';
+import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 
 // GET /api/brigadas - Listar todas las brigadas (usuarios con rol BRIGADA)
 export async function listarBrigadas(req: Request, res: Response) {
@@ -275,8 +278,20 @@ export async function desactivarBrigada(req: Request, res: Response) {
       });
     }
 
-    // Desactivar usuario
-    await db.none('UPDATE usuario SET activo = false WHERE id = $1', [id]);
+    // Nuke de sesiones: Si te vas (vacación o despido), te sacamos de todas tus sesiones activas
+    await cache.invalidatePattern(`refresh_token:${id}:*`);
+
+    // Destrucción criptográfica: Si el motivo NO tiene fecha de fin (Baja Definitiva), encriptamos una llave aleatoria para destruir tu acceso para siempre.
+    if (!motivo.requiere_fecha_fin) {
+      const randomClave = crypto.randomBytes(24).toString('hex');
+      const salt = await bcrypt.genSalt(10);
+      const randomHash = await bcrypt.hash(randomClave, salt);
+      
+      await db.none('UPDATE usuario SET activo = false, password_hash = $2 WHERE id = $1', [id, randomHash]);
+    } else {
+      // Desactivar usuario solamente (vacaciones, descanso, etc.)
+      await db.none('UPDATE usuario SET activo = false WHERE id = $1', [id]);
+    }
 
     // Registrar motivo de inactividad
     await db.none(`
