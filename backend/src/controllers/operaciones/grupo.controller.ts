@@ -1,5 +1,39 @@
 import { Request, Response } from 'express';
 import { GrupoModel } from '../../models/operaciones/grupo.model';
+import { db } from '../../config/database';
+
+// ========================================
+// UTILIDADES INTERNAS
+// ========================================
+
+/** Parsea un ID de string, retorna null si no es un entero positivo válido */
+function normalizeId(value: any): number | null {
+  const n = parseInt(value, 10);
+  return !isNaN(n) && n > 0 ? n : null;
+}
+
+/** Parsea una fecha de string, retorna null si es inválida */
+function parseDate(value: any): Date | null {
+  if (!value) return null;
+  const d = new Date(value as string);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/** Verifica que el usuario objetivo pertenezca a la misma sede del operador (o que sea ADMIN) */
+async function verificarJurisdiccionSede(
+  targetUserId: number,
+  operadorRole: string,
+  operadorSedeId: number | undefined
+): Promise<boolean> {
+  if (operadorRole === 'ADMIN' || operadorRole === 'SUPER_ADMIN') return true;
+  if (!operadorSedeId) return false;
+
+  const target = await db.oneOrNone<{ sede_id: number }>(
+    'SELECT sede_id FROM usuario WHERE id = $1',
+    [targetUserId]
+  );
+  return target?.sede_id === operadorSedeId;
+}
 
 // ========================================
 // OBTENER ESTADO DE GRUPOS HOY
@@ -8,7 +42,6 @@ import { GrupoModel } from '../../models/operaciones/grupo.model';
 export async function getEstadoGruposHoy(_req: Request, res: Response) {
   try {
     const estadoGrupos = await GrupoModel.getEstadoGruposHoy();
-
     return res.json({
       fecha: new Date().toISOString().split('T')[0],
       grupos: estadoGrupos,
@@ -25,12 +58,12 @@ export async function getEstadoGruposHoy(_req: Request, res: Response) {
 
 export async function getEstadoGrupo(req: Request, res: Response) {
   try {
-    const { grupo } = req.params;
-    const { fecha } = req.query;
+    const grupoId = normalizeId(req.params.grupo);
+    if (!grupoId) return res.status(400).json({ error: 'ID de grupo inválido' });
 
-    const fechaConsulta = fecha ? new Date(fecha as string) : new Date();
+    const fechaConsulta = parseDate(req.query.fecha) ?? new Date();
 
-    const estadoGrupo = await GrupoModel.getEstadoGrupo(parseInt(grupo, 10), fechaConsulta);
+    const estadoGrupo = await GrupoModel.getEstadoGrupo(grupoId, fechaConsulta);
 
     if (!estadoGrupo) {
       return res.status(404).json({
@@ -51,25 +84,22 @@ export async function getEstadoGrupo(req: Request, res: Response) {
 
 export async function getCalendarioGrupo(req: Request, res: Response) {
   try {
-    const { grupo } = req.params;
-    const { fecha_inicio, fecha_fin } = req.query;
+    const grupoId = normalizeId(req.params.grupo);
+    if (!grupoId) return res.status(400).json({ error: 'ID de grupo inválido' });
 
-    if (!fecha_inicio || !fecha_fin) {
-      return res.status(400).json({
-        error: 'Se requieren fecha_inicio y fecha_fin',
-      });
+    const fechaInicio = parseDate(req.query.fecha_inicio);
+    const fechaFin = parseDate(req.query.fecha_fin);
+
+    if (!fechaInicio || !fechaFin) {
+      return res.status(400).json({ error: 'Se requieren fecha_inicio y fecha_fin válidas' });
     }
 
-    const calendario = await GrupoModel.getCalendarioGrupo(
-      parseInt(grupo, 10),
-      new Date(fecha_inicio as string),
-      new Date(fecha_fin as string)
-    );
+    const calendario = await GrupoModel.getCalendarioGrupo(grupoId, fechaInicio, fechaFin);
 
     return res.json({
-      grupo: parseInt(grupo, 10),
-      fecha_inicio,
-      fecha_fin,
+      grupo: grupoId,
+      fecha_inicio: req.query.fecha_inicio,
+      fecha_fin: req.query.fecha_fin,
       calendario,
     });
   } catch (error) {
@@ -84,53 +114,38 @@ export async function getCalendarioGrupo(req: Request, res: Response) {
 
 export async function setEstadoGrupo(req: Request, res: Response) {
   try {
-    const { grupo } = req.params;
+    const grupoId = normalizeId(req.params.grupo);
+    if (!grupoId) return res.status(400).json({ error: 'ID de grupo inválido' });
+
     const { fecha_inicio, fecha_fin, estado, observaciones } = req.body;
 
     if (!fecha_inicio || !estado) {
-      return res.status(400).json({
-        error: 'fecha_inicio y estado son requeridos',
-      });
+      return res.status(400).json({ error: 'fecha_inicio y estado son requeridos' });
     }
 
-    // Si no se envía fecha_fin, se asume que es solo para fecha_inicio
-    const fin = fecha_fin ? new Date(fecha_fin) : new Date(fecha_inicio);
-    const inicio = new Date(fecha_inicio);
+    const inicio = parseDate(fecha_inicio);
+    const fin = fecha_fin ? parseDate(fecha_fin) : parseDate(fecha_inicio);
 
-    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
-      return res.status(400).json({
-        error: 'Fechas inválidas',
-      });
+    if (!inicio || !fin) {
+      return res.status(400).json({ error: 'Fechas inválidas' });
     }
 
     if (estado !== 'TRABAJO' && estado !== 'DESCANSO') {
-      return res.status(400).json({
-        error: 'El estado debe ser TRABAJO o DESCANSO',
-      });
+      return res.status(400).json({ error: 'El estado debe ser TRABAJO o DESCANSO' });
     }
 
-    await GrupoModel.setEstadoGrupoRango(
-      parseInt(grupo, 10),
-      inicio,
-      fin,
-      estado,
-      observaciones
-    );
+    await GrupoModel.setEstadoGrupoRango(grupoId, inicio, fin, estado, observaciones);
 
     return res.json({
       message: 'Estado del grupo actualizado exitosamente',
-      grupo: parseInt(grupo, 10),
+      grupo: grupoId,
       fecha_inicio: inicio.toISOString().split('T')[0],
       fecha_fin: fin.toISOString().split('T')[0],
       estado,
     });
   } catch (error: any) {
     console.error('Error en setEstadoGrupo:', error);
-    console.error('Stack:', error.stack);
-    return res.status(500).json({
-      error: 'Error interno del servidor',
-      details: error.message
-    });
+    return res.status(500).json({ error: 'Error interno del servidor', details: error.message });
   }
 }
 
@@ -150,14 +165,15 @@ export async function generarCalendario(_req: Request, res: Response) {
 
 export async function updateCalendario(req: Request, res: Response) {
   try {
-    const { grupo, fecha } = req.params;
+    const grupoId = normalizeId(req.params.grupo);
+    if (!grupoId) return res.status(400).json({ error: 'ID de grupo inválido' });
+
+    const fecha = parseDate(req.params.fecha);
+    if (!fecha) return res.status(400).json({ error: 'Fecha inválida' });
+
     const { estado, observaciones } = req.body;
 
-    const calendarioActualizado = await GrupoModel.updateCalendario(
-      parseInt(grupo, 10),
-      new Date(fecha),
-      { estado, observaciones }
-    );
+    const calendarioActualizado = await GrupoModel.updateCalendario(grupoId, fecha, { estado, observaciones });
 
     return res.json({
       message: 'Entrada de calendario actualizada',
@@ -175,10 +191,10 @@ export async function updateCalendario(req: Request, res: Response) {
 
 export async function verificarAccesoApp(req: Request, res: Response) {
   try {
-    const { usuario_id } = req.params;
+    const usuarioId = normalizeId(req.params.usuario_id);
+    if (!usuarioId) return res.status(400).json({ error: 'ID de usuario inválido' });
 
-    const resultado = await GrupoModel.verificarAccesoApp(parseInt(usuario_id, 10));
-
+    const resultado = await GrupoModel.verificarAccesoApp(usuarioId);
     return res.json(resultado);
   } catch (error) {
     console.error('Error en verificarAccesoApp:', error);
@@ -192,10 +208,7 @@ export async function verificarAccesoApp(req: Request, res: Response) {
 
 export async function verificarMiAcceso(req: Request, res: Response) {
   try {
-    const userId = req.user!.userId;
-
-    const resultado = await GrupoModel.verificarAccesoApp(userId);
-
+    const resultado = await GrupoModel.verificarAccesoApp(req.user!.userId);
     return res.json(resultado);
   } catch (error) {
     console.error('Error en verificarMiAcceso:', error);
@@ -210,11 +223,7 @@ export async function verificarMiAcceso(req: Request, res: Response) {
 export async function getBrigadasActivas(_req: Request, res: Response) {
   try {
     const brigadas = await GrupoModel.getBrigadasActivas();
-
-    return res.json({
-      total: brigadas.length,
-      brigadas,
-    });
+    return res.json({ total: brigadas.length, brigadas });
   } catch (error) {
     console.error('Error en getBrigadasActivas:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -227,15 +236,11 @@ export async function getBrigadasActivas(_req: Request, res: Response) {
 
 export async function getBrigadasPorGrupo(req: Request, res: Response) {
   try {
-    const { grupo } = req.params;
+    const grupoId = normalizeId(req.params.grupo);
+    if (!grupoId) return res.status(400).json({ error: 'ID de grupo inválido' });
 
-    const brigadas = await GrupoModel.getBrigadasPorGrupo(parseInt(grupo, 10));
-
-    return res.json({
-      grupo: parseInt(grupo, 10),
-      total: brigadas.length,
-      brigadas,
-    });
+    const brigadas = await GrupoModel.getBrigadasPorGrupo(grupoId);
+    return res.json({ grupo: grupoId, total: brigadas.length, brigadas });
   } catch (error) {
     console.error('Error en getBrigadasPorGrupo:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -248,26 +253,28 @@ export async function getBrigadasPorGrupo(req: Request, res: Response) {
 
 export async function toggleAccesoIndividual(req: Request, res: Response) {
   try {
-    const { usuario_id } = req.params;
+    const usuarioId = normalizeId(req.params.usuario_id);
+    if (!usuarioId) return res.status(400).json({ error: 'ID de usuario inválido' });
+
     const { acceso_app_activo, motivo } = req.body;
 
-    if (motivo === undefined || motivo === null || motivo.trim() === '') {
-      return res.status(400).json({
-        error: 'El motivo es requerido para cambiar el acceso',
-      });
+    if (!motivo || motivo.trim() === '') {
+      return res.status(400).json({ error: 'El motivo es requerido para cambiar el acceso' });
     }
 
-    const userId = req.user!.userId;
+    // Verificar jurisdicción: operador solo puede modificar su propia sede
+    const operador = req.user!;
+    const tieneJurisdiccion = await verificarJurisdiccionSede(usuarioId, operador.rol, operador.sede);
+    if (!tieneJurisdiccion) {
+      return res.status(403).json({ error: 'No tiene permiso para modificar usuarios de otra sede' });
+    }
 
     const usuarioActualizado = await GrupoModel.toggleAccesoIndividual(
-      parseInt(usuario_id, 10),
+      usuarioId,
       acceso_app_activo,
       motivo,
-      userId
+      operador.userId
     );
-
-    // TODO: Registrar en auditoría via función registrar_cambio
-    // Este cambio será registrado automáticamente por triggers
 
     return res.json({
       message: acceso_app_activo ? 'Acceso activado' : 'Acceso suspendido',
@@ -276,11 +283,8 @@ export async function toggleAccesoIndividual(req: Request, res: Response) {
   } catch (error: any) {
     console.error('Error en toggleAccesoIndividual:', error);
 
-    // Si es error de validación del trigger
-    if (error.message && error.message.includes('tiene asignación activa')) {
-      return res.status(400).json({
-        error: error.message,
-      });
+    if (error.message?.includes('tiene asignación activa')) {
+      return res.status(400).json({ error: error.message });
     }
 
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -293,7 +297,9 @@ export async function toggleAccesoIndividual(req: Request, res: Response) {
 
 export async function actualizarGrupoBrigada(req: Request, res: Response) {
   try {
-    const { usuario_id } = req.params;
+    const usuarioId = normalizeId(req.params.usuario_id);
+    if (!usuarioId) return res.status(400).json({ error: 'ID de usuario inválido' });
+
     const { nuevo_grupo, fecha_inicio_ciclo, motivo } = req.body;
 
     if (!nuevo_grupo || !fecha_inicio_ciclo || !motivo) {
@@ -302,20 +308,28 @@ export async function actualizarGrupoBrigada(req: Request, res: Response) {
       });
     }
 
-    const userId = req.user!.userId;
+    const fechaCiclo = parseDate(fecha_inicio_ciclo);
+    if (!fechaCiclo) return res.status(400).json({ error: 'fecha_inicio_ciclo inválida' });
+
+    const nuevoGrupoId = normalizeId(nuevo_grupo);
+    if (!nuevoGrupoId) return res.status(400).json({ error: 'nuevo_grupo inválido' });
+
+    // Verificar jurisdicción: operador solo puede modificar su propia sede
+    const operador = req.user!;
+    const tieneJurisdiccion = await verificarJurisdiccionSede(usuarioId, operador.rol, operador.sede);
+    if (!tieneJurisdiccion) {
+      return res.status(403).json({ error: 'No tiene permiso para cambiar el grupo de usuarios de otra sede' });
+    }
 
     const usuarioActualizado = await GrupoModel.actualizarGrupoBrigada(
-      parseInt(usuario_id, 10),
-      parseInt(nuevo_grupo, 10),
-      new Date(fecha_inicio_ciclo),
+      usuarioId,
+      nuevoGrupoId,
+      fechaCiclo,
       motivo,
-      userId
+      operador.userId
     );
 
-    return res.json({
-      message: 'Grupo actualizado exitosamente',
-      usuario: usuarioActualizado,
-    });
+    return res.json({ message: 'Grupo actualizado exitosamente', usuario: usuarioActualizado });
   } catch (error) {
     console.error('Error en actualizarGrupoBrigada:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -328,10 +342,17 @@ export async function actualizarGrupoBrigada(req: Request, res: Response) {
 
 export async function toggleExentoGrupos(req: Request, res: Response) {
   try {
-    const { usuario_id } = req.params;
+    const usuarioId = normalizeId(req.params.usuario_id);
+    if (!usuarioId) return res.status(400).json({ error: 'ID de usuario inválido' });
+
     const { exento } = req.body;
 
-    const usuarioActualizado = await GrupoModel.toggleExentoGrupos(parseInt(usuario_id, 10), exento);
+    // Solo ADMIN puede marcar exenciones
+    if (req.user!.rol !== 'ADMIN' && req.user!.rol !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Solo los administradores pueden gestionar exenciones de grupos' });
+    }
+
+    const usuarioActualizado = await GrupoModel.toggleExentoGrupos(usuarioId, exento);
 
     return res.json({
       message: exento ? 'Usuario marcado como exento de grupos' : 'Exención de grupos removida',
