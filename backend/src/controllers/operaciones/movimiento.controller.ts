@@ -1,5 +1,29 @@
 import { Request, Response } from 'express';
-import { MovimientoModel } from '../../models/operaciones/movimiento.model';
+import { MovimientoModel, TipoMovimiento } from '../../models/operaciones/movimiento.model';
+import { db } from '../../config/database';
+
+const TIPOS_MOVIMIENTO: TipoMovimiento[] = [
+  'CAMBIO_UNIDAD', 'PRESTAMO', 'DIVISION_FUERZA', 'RELEVO', 'RETIRO', 'APOYO_TEMPORAL',
+];
+
+function normalizeId(value: any): number | null {
+  const n = parseInt(value, 10);
+  return !isNaN(n) && n > 0 ? n : null;
+}
+
+/** Verifica que la asignacion de destino pertenezca a un turno activo (no finalizado/cancelado) */
+async function validarAsignacionDestino(asignacionId: number): Promise<boolean> {
+  const result = await db.oneOrNone(
+    `SELECT au.id
+     FROM asignacion_unidad au
+     JOIN turno t ON au.turno_id = t.id
+     WHERE au.id = $1
+       AND t.estado NOT IN ('FINALIZADO', 'CANCELADO')
+       AND t.publicado = true`,
+    [asignacionId]
+  );
+  return result !== null;
+}
 
 // ========================================
 // CREAR MOVIMIENTO
@@ -16,28 +40,50 @@ export async function createMovimiento(req: Request, res: Response) {
       observaciones,
     } = req.body;
 
-    if (!usuario_id || !tipo_movimiento) {
+    const usuarioId = normalizeId(usuario_id);
+    if (!usuarioId) {
+      return res.status(400).json({ error: 'usuario_id inválido' });
+    }
+
+    if (!tipo_movimiento || !TIPOS_MOVIMIENTO.includes(tipo_movimiento)) {
       return res.status(400).json({
-        error: 'usuario_id y tipo_movimiento son requeridos',
+        error: `tipo_movimiento inválido. Debe ser uno de: ${TIPOS_MOVIMIENTO.join(', ')}`,
       });
     }
 
-    // Validar que al menos uno de los dos (origen o destino) esté presente
-    if (!origen_asignacion_id && !destino_asignacion_id) {
+    const origenId = origen_asignacion_id ? normalizeId(origen_asignacion_id) : null;
+    const destinoId = destino_asignacion_id ? normalizeId(destino_asignacion_id) : null;
+
+    if (origen_asignacion_id && !origenId) {
+      return res.status(400).json({ error: 'origen_asignacion_id inválido' });
+    }
+    if (destino_asignacion_id && !destinoId) {
+      return res.status(400).json({ error: 'destino_asignacion_id inválido' });
+    }
+
+    if (!origenId && !destinoId) {
       return res.status(400).json({
         error: 'Se requiere al menos origen_asignacion_id o destino_asignacion_id',
       });
     }
 
-    const userId = req.user!.userId;
+    // Validar que la asignación de destino sea activa
+    if (destinoId) {
+      const destinoValido = await validarAsignacionDestino(destinoId);
+      if (!destinoValido) {
+        return res.status(400).json({
+          error: 'La asignación de destino no existe, no está publicada, o su turno ya finalizó',
+        });
+      }
+    }
 
     const movimiento = await MovimientoModel.create({
-      usuario_id: parseInt(usuario_id, 10),
-      origen_asignacion_id: origen_asignacion_id ? parseInt(origen_asignacion_id, 10) : undefined,
-      destino_asignacion_id: destino_asignacion_id ? parseInt(destino_asignacion_id, 10) : undefined,
+      usuario_id: usuarioId,
+      origen_asignacion_id: origenId ?? undefined,
+      destino_asignacion_id: destinoId ?? undefined,
       tipo_movimiento,
       motivo,
-      aprobado_por: userId,
+      aprobado_por: req.user!.userId,
       observaciones,
     });
 
@@ -57,9 +103,10 @@ export async function createMovimiento(req: Request, res: Response) {
 
 export async function getMovimiento(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
 
-    const movimiento = await MovimientoModel.getById(parseInt(id, 10));
+    const movimiento = await MovimientoModel.getById(id);
 
     if (!movimiento) {
       return res.status(404).json({ error: 'Movimiento no encontrado' });
@@ -78,15 +125,21 @@ export async function getMovimiento(req: Request, res: Response) {
 
 export async function finalizarMovimiento(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
     const { observaciones_finales } = req.body;
 
-    const movimiento = await MovimientoModel.finalizar(parseInt(id, 10), observaciones_finales);
+    // Verificar que existe y no está ya finalizado
+    const existente = await MovimientoModel.getById(id);
+    if (!existente) return res.status(404).json({ error: 'Movimiento no encontrado' });
+    if (existente.hora_fin !== null) {
+      return res.status(400).json({ error: 'El movimiento ya fue finalizado' });
+    }
 
-    return res.json({
-      message: 'Movimiento finalizado',
-      movimiento,
-    });
+    const movimiento = await MovimientoModel.finalizar(id, observaciones_finales);
+
+    return res.json({ message: 'Movimiento finalizado', movimiento });
   } catch (error) {
     console.error('Error en finalizarMovimiento:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -99,14 +152,12 @@ export async function finalizarMovimiento(req: Request, res: Response) {
 
 export async function getMovimientosActivos(req: Request, res: Response) {
   try {
-    const { usuario_id } = req.params;
+    const usuarioId = normalizeId(req.params.usuario_id);
+    if (!usuarioId) return res.status(400).json({ error: 'ID de usuario inválido' });
 
-    const movimientos = await MovimientoModel.getActivos(parseInt(usuario_id, 10));
+    const movimientos = await MovimientoModel.getActivos(usuarioId);
 
-    return res.json({
-      total: movimientos.length,
-      movimientos,
-    });
+    return res.json({ total: movimientos.length, movimientos });
   } catch (error) {
     console.error('Error en getMovimientosActivos:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -119,14 +170,9 @@ export async function getMovimientosActivos(req: Request, res: Response) {
 
 export async function getMisMovimientosActivos(req: Request, res: Response) {
   try {
-    const userId = req.user!.userId;
+    const movimientos = await MovimientoModel.getActivos(req.user!.userId);
 
-    const movimientos = await MovimientoModel.getActivos(userId);
-
-    return res.json({
-      total: movimientos.length,
-      movimientos,
-    });
+    return res.json({ total: movimientos.length, movimientos });
   } catch (error) {
     console.error('Error en getMisMovimientosActivos:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -151,21 +197,26 @@ export async function getHistorialMovimientos(req: Request, res: Response) {
 
     const filters: any = {};
 
-    if (usuario_id) filters.usuario_id = parseInt(usuario_id as string, 10);
-    if (tipo_movimiento) filters.tipo_movimiento = tipo_movimiento;
+    if (usuario_id) {
+      const uid = normalizeId(usuario_id as string);
+      if (!uid) return res.status(400).json({ error: 'usuario_id inválido' });
+      filters.usuario_id = uid;
+    }
+    if (tipo_movimiento) {
+      if (!TIPOS_MOVIMIENTO.includes(tipo_movimiento as TipoMovimiento)) {
+        return res.status(400).json({ error: 'tipo_movimiento inválido' });
+      }
+      filters.tipo_movimiento = tipo_movimiento;
+    }
     if (fecha_desde) filters.fecha_desde = new Date(fecha_desde as string);
     if (fecha_hasta) filters.fecha_hasta = new Date(fecha_hasta as string);
     if (solo_activos === 'true') filters.solo_activos = true;
-    if (limit) filters.limit = parseInt(limit as string, 10);
-    if (offset) filters.offset = parseInt(offset as string, 10);
+    if (limit) filters.limit = Math.min(parseInt(limit as string, 10) || 100, 500);
+    if (offset) filters.offset = parseInt(offset as string, 10) || 0;
 
     const movimientos = await MovimientoModel.getHistorial(filters);
 
-    return res.json({
-      total: movimientos.length,
-      movimientos,
-      filters,
-    });
+    return res.json({ total: movimientos.length, movimientos, filters });
   } catch (error) {
     console.error('Error en getHistorialMovimientos:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -180,7 +231,6 @@ export async function getComposicionUnidades(_req: Request, res: Response) {
   try {
     const composicion = await MovimientoModel.getComposicionUnidades();
 
-    // Agrupar por unidad
     const unidadesMap = new Map();
 
     for (const item of composicion) {
@@ -206,10 +256,7 @@ export async function getComposicionUnidades(_req: Request, res: Response) {
 
     const unidades = Array.from(unidadesMap.values());
 
-    return res.json({
-      total_unidades: unidades.length,
-      unidades,
-    });
+    return res.json({ total_unidades: unidades.length, unidades });
   } catch (error) {
     console.error('Error en getComposicionUnidades:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -222,12 +269,13 @@ export async function getComposicionUnidades(_req: Request, res: Response) {
 
 export async function getComposicionUnidad(req: Request, res: Response) {
   try {
-    const { unidad_id } = req.params;
+    const unidadId = normalizeId(req.params.unidad_id);
+    if (!unidadId) return res.status(400).json({ error: 'ID de unidad inválido' });
 
-    const composicion = await MovimientoModel.getComposicionUnidad(parseInt(unidad_id, 10));
+    const composicion = await MovimientoModel.getComposicionUnidad(unidadId);
 
     return res.json({
-      unidad_id: parseInt(unidad_id, 10),
+      unidad_id: unidadId,
       total_tripulacion: composicion.length,
       tripulacion: composicion,
     });
@@ -243,21 +291,15 @@ export async function getComposicionUnidad(req: Request, res: Response) {
 
 export async function updateMovimiento(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
     const { motivo, observaciones } = req.body;
 
-    const userId = req.user!.userId;
+    // Solo se pueden editar motivo/observaciones — aprobado_por nunca cambia
+    const movimiento = await MovimientoModel.update(id, { motivo, observaciones });
 
-    const movimiento = await MovimientoModel.update(parseInt(id, 10), {
-      motivo,
-      observaciones,
-      aprobado_por: userId,
-    });
-
-    return res.json({
-      message: 'Movimiento actualizado',
-      movimiento,
-    });
+    return res.json({ message: 'Movimiento actualizado', movimiento });
   } catch (error) {
     console.error('Error en updateMovimiento:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -270,13 +312,18 @@ export async function updateMovimiento(req: Request, res: Response) {
 
 export async function deleteMovimiento(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
 
-    await MovimientoModel.delete(parseInt(id, 10));
+    const existente = await MovimientoModel.getById(id);
+    if (!existente) return res.status(404).json({ error: 'Movimiento no encontrado' });
+    if (existente.hora_fin !== null) {
+      return res.status(400).json({ error: 'No se puede eliminar un movimiento ya finalizado' });
+    }
 
-    return res.json({
-      message: 'Movimiento eliminado (solo si no había sido finalizado)',
-    });
+    await MovimientoModel.delete(id);
+
+    return res.json({ message: 'Movimiento eliminado' });
   } catch (error) {
     console.error('Error en deleteMovimiento:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });

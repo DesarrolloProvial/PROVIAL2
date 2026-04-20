@@ -214,7 +214,6 @@ export const MovimientoModel = {
     data: {
       motivo?: string;
       observaciones?: string;
-      aprobado_por?: number;
     }
   ): Promise<MovimientoBrigada> {
     const setClauses: string[] = ['updated_at = NOW()'];
@@ -229,11 +228,6 @@ export const MovimientoModel = {
     if (data.observaciones !== undefined) {
       setClauses.push(`observaciones = $${paramIndex++}`);
       params.push(data.observaciones);
-    }
-
-    if (data.aprobado_por !== undefined) {
-      setClauses.push(`aprobado_por = $${paramIndex++}`);
-      params.push(data.aprobado_por);
     }
 
     params.push(id);
