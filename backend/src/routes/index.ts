@@ -42,6 +42,7 @@ import dispositivoRoutes from './admin/dispositivo.routes';
 import reparacionesRoutes from './transportes/reparaciones.routes';
 import situacionesPersistentesRoutes from './cop/situacionPersistente.routes';
 import copAccesoRoutes from './cop/acceso.routes';
+import reasignacionTransporteRoutes from './transportes/reasignacionTransporte.routes';
 
 const router = Router();
 
@@ -172,5 +173,8 @@ router.use('/situaciones-persistentes', situacionesPersistentesRoutes);
 
 // Gestión de acceso COP (brigadas activas, suspensión individual, delegaciones)
 router.use('/cop/acceso', copAccesoRoutes);
+
+// Reasignaciones inter-sede de unidades vehiculares (Transportes)
+router.use('/transportes/reasignaciones', reasignacionTransporteRoutes);
 
 export default router;
