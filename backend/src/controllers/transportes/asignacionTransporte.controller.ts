@@ -1,17 +1,16 @@
 import { Request, Response } from 'express';
 import { AsignacionTransporteModel } from '../../models/transportes/asignacionTransporte.model';
+import { normalizeId } from '../../utils/db.utils';
+import { JWTPayload } from '../../utils/jwt';
+
+function puedeVerTodasSedes(user: JWTPayload): boolean {
+  return ['ADMIN', 'SUPER_ADMIN', 'ADMIN_TRANSPORTES'].includes(user.rol) || !!user.puede_ver_todas_sedes;
+}
 
 export async function getBorradoresPendientes(req: Request, res: Response) {
   try {
-    const userRole = (req.user as any).rol;
-    const userSedeId = parseInt((req.user as any).sedeId, 10);
-
-    // ADMIN o SUPER_ADMIN ven todas las sedes. TRANSPORTES ve su propia sede.
-    const isAdmin = ['ADMIN', 'SUPER_ADMIN', 'ADMIN_TRANSPORTES'].includes(userRole);
-    const sedeFiltro = isAdmin ? undefined : userSedeId;
-
+    const sedeFiltro = puedeVerTodasSedes(req.user!) ? undefined : req.user!.sede;
     const borradores = await AsignacionTransporteModel.getBorradoresPendientes(sedeFiltro);
-
     res.json(borradores);
   } catch (error: any) {
     console.error('Error en getBorradoresPendientes:', error);
@@ -21,14 +20,8 @@ export async function getBorradoresPendientes(req: Request, res: Response) {
 
 export async function getUnidadesDisponibles(req: Request, res: Response) {
   try {
-    const userRole = (req.user as any).rol;
-    const userSedeId = parseInt((req.user as any).sedeId, 10);
-
-    const isAdmin = ['ADMIN', 'SUPER_ADMIN', 'ADMIN_TRANSPORTES'].includes(userRole);
-    const sedeFiltro = isAdmin ? undefined : userSedeId;
-
+    const sedeFiltro = puedeVerTodasSedes(req.user!) ? undefined : req.user!.sede;
     const unidades = await AsignacionTransporteModel.getUnidadesDisponibles(sedeFiltro);
-
     res.json(unidades);
   } catch (error: any) {
     console.error('Error en getUnidadesDisponibles:', error);
@@ -38,12 +31,11 @@ export async function getUnidadesDisponibles(req: Request, res: Response) {
 
 export async function asignarUnidad(req: Request, res: Response) {
   try {
-    const asignacionId = parseInt(req.params.asignacionId, 10);
-    const { unidadId } = req.body;
+    const asignacionId = normalizeId(req.params.asignacionId);
+    const unidadId = normalizeId(req.body.unidadId);
 
-    if (!asignacionId || !unidadId) {
-      return res.status(400).json({ error: 'Se requiere ID de asignación y de unidad' });
-    }
+    if (!asignacionId) return res.status(400).json({ error: 'asignacionId inválido' });
+    if (!unidadId) return res.status(400).json({ error: 'unidadId inválido' });
 
     await AsignacionTransporteModel.asignarUnidad(asignacionId, unidadId);
 
