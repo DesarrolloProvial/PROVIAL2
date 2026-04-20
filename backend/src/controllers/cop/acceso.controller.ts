@@ -1,11 +1,7 @@
 import { Request, Response } from 'express';
 import { GrupoModel } from '../../models/operaciones/grupo.model';
 import { db } from '../../config/database';
-
-function normalizeId(value: any): number | null {
-  const n = parseInt(value, 10);
-  return !isNaN(n) && n > 0 ? n : null;
-}
+import { normalizeId } from '../../utils/db.utils';
 
 async function verificarJurisdiccionSede(
   targetUserId: number,

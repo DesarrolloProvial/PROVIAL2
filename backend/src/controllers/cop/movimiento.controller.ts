@@ -1,15 +1,11 @@
 import { Request, Response } from 'express';
 import { MovimientoModel, TipoMovimiento } from '../../models/operaciones/movimiento.model';
 import { db } from '../../config/database';
+import { normalizeId } from '../../utils/db.utils';
 
 const TIPOS_MOVIMIENTO: TipoMovimiento[] = [
   'CAMBIO_UNIDAD', 'PRESTAMO', 'DIVISION_FUERZA', 'RELEVO', 'RETIRO', 'APOYO_TEMPORAL',
 ];
-
-function normalizeId(value: any): number | null {
-  const n = parseInt(value, 10);
-  return !isNaN(n) && n > 0 ? n : null;
-}
 
 /** Verifica que la asignacion de destino pertenezca a un turno activo (no finalizado/cancelado) */
 async function validarAsignacionDestino(asignacionId: number): Promise<boolean> {

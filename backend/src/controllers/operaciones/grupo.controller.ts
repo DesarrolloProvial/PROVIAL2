@@ -1,16 +1,7 @@
 import { Request, Response } from 'express';
 import { GrupoModel } from '../../models/operaciones/grupo.model';
 import { db } from '../../config/database';
-
-// ========================================
-// UTILIDADES INTERNAS
-// ========================================
-
-/** Parsea un ID de string, retorna null si no es un entero positivo válido */
-function normalizeId(value: any): number | null {
-  const n = parseInt(value, 10);
-  return !isNaN(n) && n > 0 ? n : null;
-}
+import { normalizeId } from '../../utils/db.utils';
 
 /** Parsea una fecha de string, retorna null si es inválida */
 function parseDate(value: any): Date | null {

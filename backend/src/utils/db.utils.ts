@@ -5,14 +5,14 @@
 import { db } from '../config/database';
 
 /**
- * Convierte cualquier valor a number | null.
- * Descarta: '', null, undefined y NaN.
- * Usado para normalizar IDs numéricos provenientes del body HTTP.
+ * Convierte cualquier valor a un entero positivo | null.
+ * Descarta: '', null, undefined, NaN, 0 y negativos.
+ * Usado para normalizar IDs (PKs) provenientes de params/body HTTP.
  */
 export function normalizeId(val: unknown): number | null {
   if (val === '' || val === null || val === undefined) return null;
-  const num = Number(val);
-  return Number.isFinite(num) ? num : null;
+  const num = parseInt(String(val), 10);
+  return Number.isFinite(num) && num > 0 ? num : null;
 }
 
 /**
