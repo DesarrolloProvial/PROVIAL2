@@ -4,7 +4,7 @@ import turnoRoutes from './common/turno.routes';
 // import incidenteRoutes from './incidente.routes'; // OBSOLETO: Tabla incidente eliminada en migración 105
 import situacionesRoutes from './cop/situaciones.routes';
 import gruposRoutes from './operaciones/grupos.routes';
-import movimientosRoutes from './operaciones/movimientos.routes';
+import movimientosRoutes from './cop/movimiento.routes';
 import auditoriaRoutes from './admin/auditoria.routes';
 import geografiaRoutes from './common/geografia.routes';
 import salidaRoutes from './cop/salida.routes';
