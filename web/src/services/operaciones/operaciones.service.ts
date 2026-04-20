@@ -56,11 +56,9 @@ export interface DisponibilidadRecursos {
 
 export interface DashboardData {
   resumen: DisponibilidadRecursos;
-  brigadas_necesitan_descanso: number;
   unidades_bajo_combustible: number;
   disponibilidad: DisponibilidadRecursos[];
   alertas: {
-    brigadasDescanso: EstadisticasBrigada[];
     unidadesCombustible: EstadisticasUnidad[];
   };
 }

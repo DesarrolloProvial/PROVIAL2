@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { turnosService } from '../../services/common/turnos.service';
 import { useNavigate } from 'react-router-dom';
 import {
-  Users, Truck, AlertTriangle, Fuel, Calendar,
+  Users, Truck, Fuel, Calendar,
   CheckCircle, MapPin, Clock, Edit2, Trash2,
   Navigation, EyeOff, Navigation2,
 } from 'lucide-react';
@@ -344,47 +344,23 @@ export default function DashboardView({ data, turnoHoy }: DashboardViewProps) {
       </div>
 
       {/* ── Alertas ──────────────────────────────────────────────────────── */}
-      {(data.brigadas_necesitan_descanso > 0 || data.unidades_bajo_combustible > 0) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {data.brigadas_necesitan_descanso > 0 && (
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-5">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/40 rounded-lg">
-                  <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-yellow-900 dark:text-yellow-300 text-sm">
-                    {data.brigadas_necesitan_descanso} brigadas necesitan descanso
-                  </h3>
-                  {data.alertas.brigadasDescanso.map((b: any) => (
-                    <p key={b.usuario_id} className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
-                      <span className="font-medium">{b.nombre_completo}</span> ({b.chapa}) — hace {b.dias_desde_ultimo_turno} días
-                    </p>
-                  ))}
-                </div>
-              </div>
+      {data.unidades_bajo_combustible > 0 && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-5">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-lg">
+              <Fuel className="w-4 h-4 text-red-600 dark:text-red-400" />
             </div>
-          )}
-
-          {data.unidades_bajo_combustible > 0 && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-5">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-lg">
-                  <Fuel className="w-4 h-4 text-red-600 dark:text-red-400" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-red-900 dark:text-red-300 text-sm">
-                    {data.unidades_bajo_combustible} unidades con bajo combustible
-                  </h3>
-                  {data.alertas.unidadesCombustible.map((u: any) => (
-                    <p key={u.unidad_id} className="text-xs text-red-700 dark:text-red-400 mt-1">
-                      <span className="font-medium">{u.unidad_codigo}</span> — {u.nivel_combustible ?? (u.combustible_actual != null ? `${Math.round(Number(u.combustible_actual) * 100)}%` : 'sin datos')}
-                    </p>
-                  ))}
-                </div>
-              </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-red-900 dark:text-red-300 text-sm">
+                {data.unidades_bajo_combustible} unidades con bajo combustible
+              </h3>
+              {data.alertas.unidadesCombustible.map((u: any) => (
+                <p key={u.unidad_id} className="text-xs text-red-700 dark:text-red-400 mt-1">
+                  <span className="font-medium">{u.unidad_codigo}</span> — {u.nivel_combustible ?? (u.combustible_actual != null ? `${Math.round(Number(u.combustible_actual) * 100)}%` : 'sin datos')}
+                </p>
+              ))}
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -452,7 +428,7 @@ export default function DashboardView({ data, turnoHoy }: DashboardViewProps) {
       )}
 
       {/* Todo en orden */}
-      {data.brigadas_necesitan_descanso === 0 && data.unidades_bajo_combustible === 0 && (
+      {data.unidades_bajo_combustible === 0 && (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
           <div className="flex items-center gap-3">
             <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />

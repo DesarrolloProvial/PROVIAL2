@@ -1,6 +1,12 @@
 import { Request, Response } from 'express';
 import { OperacionesModel } from '../../models/operaciones/operaciones.model';
 import { db } from '../../config/database';
+import { normalizeId } from '../../utils/db.utils';
+import { JWTPayload } from '../../utils/jwt';
+
+function puedeVerTodasSedes(user: JWTPayload): boolean {
+  return !!(user.puede_ver_todas_sedes || user.rol === 'SUPER_ADMIN' || user.rol === 'ADMIN');
+}
 
 // ========================================
 // DASHBOARD DE OPERACIONES
@@ -8,18 +14,12 @@ import { db } from '../../config/database';
 
 export async function getDashboardOperaciones(req: Request, res: Response) {
   try {
-    const userSedeId = req.user!.sede; // Cada operaciones ve solo su sede
+    const sedeId = puedeVerTodasSedes(req.user!) ? undefined : req.user!.sede;
 
-    // Obtener disponibilidad de recursos
-    const disponibilidad = await OperacionesModel.getDisponibilidadRecursos(userSedeId);
+    const disponibilidad = await OperacionesModel.getDisponibilidadRecursos(sedeId);
+    const brigadas = await OperacionesModel.getEstadisticasBrigadas(sedeId);
+    const unidades = await OperacionesModel.getEstadisticasUnidades(sedeId);
 
-    // Obtener estadísticas de brigadas
-    const brigadas = await OperacionesModel.getEstadisticasBrigadas(userSedeId);
-
-    // Obtener estadísticas de unidades
-    const unidades = await OperacionesModel.getEstadisticasUnidades(userSedeId);
-
-    // Resumen general
     const resumen = disponibilidad[0] || {
       total_brigadas_activas: 0,
       brigadas_en_turno_hoy: 0,
@@ -29,12 +29,6 @@ export async function getDashboardOperaciones(req: Request, res: Response) {
       unidades_disponibles_hoy: 0,
     };
 
-    // Brigadas que necesitan descanso (salieron hace menos de 2 días)
-    const brigadasNecesitanDescanso = brigadas.filter(
-      (b) => b.dias_desde_ultimo_turno !== null && b.dias_desde_ultimo_turno < 2
-    );
-
-    // Unidades con poco combustible (menos de 1/4 de tanque)
     const unidadesBajoCombustible = unidades.filter(
       (u) => u.combustible_actual !== null && u.combustible_actual < 0.25
     );
@@ -43,11 +37,9 @@ export async function getDashboardOperaciones(req: Request, res: Response) {
       success: true,
       data: {
         resumen,
-        brigadas_necesitan_descanso: brigadasNecesitanDescanso.length,
         unidades_bajo_combustible: unidadesBajoCombustible.length,
         disponibilidad,
         alertas: {
-          brigadasDescanso: brigadasNecesitanDescanso.slice(0, 5),
           unidadesCombustible: unidadesBajoCombustible.slice(0, 5),
         },
       },
@@ -68,8 +60,8 @@ export async function getDashboardOperaciones(req: Request, res: Response) {
 
 export async function getEstadisticasBrigadas(req: Request, res: Response) {
   try {
-    const userSedeId = req.user!.sede;
-    const brigadas = await OperacionesModel.getEstadisticasBrigadas(userSedeId);
+    const sedeId = puedeVerTodasSedes(req.user!) ? undefined : req.user!.sede;
+    const brigadas = await OperacionesModel.getEstadisticasBrigadas(sedeId);
 
     return res.json({
       success: true,
@@ -88,8 +80,8 @@ export async function getEstadisticasBrigadas(req: Request, res: Response) {
 
 export async function getEstadisticasBrigada(req: Request, res: Response) {
   try {
-    const { id } = req.params;
-    const usuarioId = parseInt(id, 10);
+    const usuarioId = normalizeId(req.params.id);
+    if (!usuarioId) return res.status(400).json({ success: false, message: 'ID inválido' });
 
     const estadisticas = await OperacionesModel.getEstadisticasBrigada(usuarioId);
 
@@ -100,8 +92,7 @@ export async function getEstadisticasBrigada(req: Request, res: Response) {
       });
     }
 
-    // Verificar que pertenece a la sede del usuario
-    if (estadisticas.sede_id !== req.user!.sede) {
+    if (!puedeVerTodasSedes(req.user!) && estadisticas.sede_id !== req.user!.sede) {
       return res.status(403).json({
         success: false,
         message: 'No tiene permiso para ver esta brigada',
@@ -128,8 +119,8 @@ export async function getEstadisticasBrigada(req: Request, res: Response) {
 
 export async function getEstadisticasUnidades(req: Request, res: Response) {
   try {
-    const userSedeId = req.user!.puede_ver_todas_sedes ? undefined : req.user!.sede;
-    const unidades = await OperacionesModel.getEstadisticasUnidades(userSedeId);
+    const sedeId = puedeVerTodasSedes(req.user!) ? undefined : req.user!.sede;
+    const unidades = await OperacionesModel.getEstadisticasUnidades(sedeId);
 
     return res.json({
       success: true,
@@ -148,8 +139,8 @@ export async function getEstadisticasUnidades(req: Request, res: Response) {
 
 export async function getEstadisticasUnidad(req: Request, res: Response) {
   try {
-    const { id } = req.params;
-    const unidadId = parseInt(id, 10);
+    const unidadId = normalizeId(req.params.id);
+    if (!unidadId) return res.status(400).json({ success: false, message: 'ID inválido' });
 
     const estadisticas = await OperacionesModel.getEstadisticasUnidad(unidadId);
 
@@ -160,8 +151,7 @@ export async function getEstadisticasUnidad(req: Request, res: Response) {
       });
     }
 
-    // Verificar que pertenece a la sede del usuario
-    if (estadisticas.sede_id !== req.user!.sede) {
+    if (!puedeVerTodasSedes(req.user!) && estadisticas.sede_id !== req.user!.sede) {
       return res.status(403).json({
         success: false,
         message: 'No tiene permiso para ver esta unidad',
@@ -189,7 +179,7 @@ export async function getEstadisticasUnidad(req: Request, res: Response) {
 export async function getBrigadasDisponibles(req: Request, res: Response) {
   try {
     const { fecha } = req.query;
-    const userSedeId = req.user!.sede;
+    const sedeId = puedeVerTodasSedes(req.user!) ? undefined : req.user!.sede;
 
     if (!fecha) {
       return res.status(400).json({
@@ -200,7 +190,7 @@ export async function getBrigadasDisponibles(req: Request, res: Response) {
 
     const brigadas = await OperacionesModel.getBrigadasDisponibles(
       fecha as string,
-      userSedeId
+      sedeId
     );
 
     return res.json({
@@ -222,7 +212,7 @@ export async function getBrigadasDisponibles(req: Request, res: Response) {
 export async function getUnidadesDisponibles(req: Request, res: Response) {
   try {
     const { fecha } = req.query;
-    const userSedeId = req.user!.sede;
+    const sedeId = puedeVerTodasSedes(req.user!) ? undefined : req.user!.sede;
 
     if (!fecha) {
       return res.status(400).json({
@@ -233,7 +223,7 @@ export async function getUnidadesDisponibles(req: Request, res: Response) {
 
     const unidades = await OperacionesModel.getUnidadesDisponibles(
       fecha as string,
-      userSedeId
+      sedeId
     );
 
     return res.json({
@@ -380,11 +370,12 @@ export async function registrarCombustible(req: Request, res: Response) {
 
 export async function getHistorialCombustible(req: Request, res: Response) {
   try {
-    const { id } = req.params; // unidad_id
     const { limit = '50' } = req.query;
 
-    const unidadId = parseInt(id, 10);
-    const limitNum = parseInt(limit as string, 10);
+    const unidadId = normalizeId(req.params.id);
+    if (!unidadId) return res.status(400).json({ success: false, message: 'ID de unidad inválido' });
+
+    const limitNum = Math.min(parseInt(limit as string, 10) || 50, 200);
 
     const historial = await OperacionesModel.getHistorialCombustible(unidadId, limitNum);
 
@@ -414,8 +405,7 @@ export async function getCombustibleTendencia(req: Request, res: Response) {
     const userSedeId = req.user!.sede;
     const diasNum = Math.min(parseInt(dias as string, 10) || 30, 90);
 
-    const puedeVerTodas = req.user!.puede_ver_todas_sedes;
-    const sedeFilter = puedeVerTodas ? null : (sede_id ? parseInt(sede_id as string, 10) : userSedeId);
+    const sedeFilter = puedeVerTodasSedes(req.user!) ? null : (sede_id ? parseInt(sede_id as string, 10) : userSedeId);
 
     const tendencia = await db.any(
       `SELECT
@@ -524,7 +514,9 @@ export async function registrarAbastecimiento(req: Request, res: Response) {
 
 export async function getAbastecimientosPorUnidad(req: Request, res: Response) {
   try {
-    const unidadId = parseInt(req.params.unidadId, 10);
+    const unidadId = normalizeId(req.params.unidadId);
+    if (!unidadId) return res.status(400).json({ success: false, message: 'ID de unidad inválido' });
+
     const limit = Math.min(parseInt((req.query.limit as string) || '30', 10), 100);
 
     const registros = await db.any(
