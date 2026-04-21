@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { NotificacionModel } from '../../models/common/notificacion.model';
-import { PushNotificationService } from '../../services/common/firebase.service';
+import { FirebaseService } from '../../services/common/firebase.service';
 import { normalizeId } from '../../utils/db.utils';
 
 export const NotificacionesController = {
@@ -12,7 +12,7 @@ export const NotificacionesController = {
       if (!push_token || !plataforma) return res.status(400).json({ error: 'push_token y plataforma son requeridos' });
       if (!['ios', 'android', 'web'].includes(plataforma)) return res.status(400).json({ error: 'plataforma debe ser ios, android o web' });
 
-      await PushNotificationService.registrarToken(usuarioId, push_token, plataforma, modelo_dispositivo, version_app);
+      await NotificacionModel.registrarToken(usuarioId, push_token, plataforma, modelo_dispositivo, version_app);
       res.json({ message: 'Token registrado correctamente' });
     } catch (error) {
       console.error('Error registrando token:', error);
@@ -25,7 +25,7 @@ export const NotificacionesController = {
       const { push_token } = req.body;
       if (!push_token) return res.status(400).json({ error: 'push_token es requerido' });
 
-      await PushNotificationService.desactivarToken(push_token);
+      await NotificacionModel.desactivarToken(push_token);
       res.json({ message: 'Token desactivado' });
     } catch (error) {
       console.error('Error desactivando token:', error);
@@ -60,7 +60,7 @@ export const NotificacionesController = {
       const notificacionId = normalizeId(req.params.id);
       if (!notificacionId) return res.status(400).json({ error: 'ID inválido' });
 
-      await PushNotificationService.marcarLeida(notificacionId, usuarioId);
+      await NotificacionModel.marcarLeida(notificacionId, usuarioId);
       res.json({ message: 'Notificacion marcada como leida' });
     } catch (error) {
       console.error('Error marcando leida:', error);
@@ -95,7 +95,7 @@ export const NotificacionesController = {
         return res.status(400).json({ error: 'usuario_id, titulo y mensaje son requeridos' });
       }
 
-      const enviada = await PushNotificationService.enviarAUsuario({ usuarioId: usuario_id, tipo: 'PRUEBA', titulo, mensaje });
+      const enviada = await FirebaseService.enviarAUsuario({ usuarioId: usuario_id, tipo: 'PRUEBA', titulo, mensaje });
       res.json({ message: enviada ? 'Notificacion enviada' : 'Usuario sin dispositivos registrados', enviada });
     } catch (error) {
       console.error('Error enviando prueba:', error);

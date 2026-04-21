@@ -60,10 +60,11 @@ export function initSocketService(httpServer: HTTPServer): SocketIOServer {
     const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
 
     if (!token) {
-      console.log(`🔌 [Socket] Conexión sin token: ${socket.id}`);
-      // Permitir conexión sin autenticación para desarrollo
-      socket.data.user = { rol: 'GUEST', userId: null, sede: null };
-      return next();
+      if (config.env === 'development') {
+        socket.data.user = { rol: 'GUEST', userId: null, sede: null };
+        return next();
+      }
+      return next(new Error('No autorizado'));
     }
 
     try {
@@ -74,11 +75,12 @@ export function initSocketService(httpServer: HTTPServer): SocketIOServer {
         sede: decoded.sede,
       };
       next();
-    } catch (error) {
-      console.log(`🔌 [Socket] Token inválido: ${socket.id}`);
-      // Permitir conexión pero sin datos de usuario
-      socket.data.user = { rol: 'GUEST', userId: null, sede: null };
-      next();
+    } catch {
+      if (config.env === 'development') {
+        socket.data.user = { rol: 'GUEST', userId: null, sede: null };
+        return next();
+      }
+      return next(new Error('Token inválido'));
     }
   });
 
