@@ -59,13 +59,7 @@ export function initSocketService(httpServer: HTTPServer): SocketIOServer {
   io.use((socket, next) => {
     const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
 
-    if (!token) {
-      if (config.env === 'development') {
-        socket.data.user = { rol: 'GUEST', userId: null, sede: null };
-        return next();
-      }
-      return next(new Error('No autorizado'));
-    }
+    if (!token) return next(new Error('No autorizado'));
 
     try {
       const decoded = jwt.verify(token, config.jwt.secret) as any;
@@ -76,10 +70,6 @@ export function initSocketService(httpServer: HTTPServer): SocketIOServer {
       };
       next();
     } catch {
-      if (config.env === 'development') {
-        socket.data.user = { rol: 'GUEST', userId: null, sede: null };
-        return next();
-      }
       return next(new Error('Token inválido'));
     }
   });
