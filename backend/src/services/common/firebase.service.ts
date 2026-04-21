@@ -82,7 +82,7 @@ export const FirebaseService = {
   // ── Envío por usuario / usuarios ──────────────────────────────────────
 
   async enviarAUsuario(data: NotificacionData): Promise<boolean> {
-    if (!data.usuarioId) return false;
+    if (data.usuarioId == null) return false;
     const tokens = await NotificacionModel.obtenerTokensUsuario(data.usuarioId);
     if (tokens.length === 0) {
       await NotificacionModel.guardarNotificacion(data as GuardarNotificacionData, false, 'Usuario sin dispositivos registrados');
