@@ -356,57 +356,6 @@ export const PushNotificationService = {
   },
 
   /**
-   * Notificar solicitud de aprobacion a tripulacion
-   */
-  async notificarAprobacionRequerida(
-    salidaId: number,
-    tipo: 'CONFIRMAR_PRESENCIA' | 'APROBAR_FIN_JORNADA' | 'APROBAR_360',
-    aprobacionId: number,
-    iniciadoPorNombre: string,
-    excluirUsuarioId?: number
-  ): Promise<void> {
-    const titulos: Record<string, string> = {
-      'CONFIRMAR_PRESENCIA': 'Confirmar Presencia',
-      'APROBAR_FIN_JORNADA': 'Aprobar Fin de Jornada',
-      'APROBAR_360': 'Aprobar Inspeccion 360',
-    };
-
-    const mensajes: Record<string, string> = {
-      'CONFIRMAR_PRESENCIA': `${iniciadoPorNombre} solicita confirmar tu presencia antes de iniciar la salida`,
-      'APROBAR_FIN_JORNADA': `${iniciadoPorNombre} solicita aprobar el fin de jornada`,
-      'APROBAR_360': `${iniciadoPorNombre} solicita aprobar la inspeccion 360`,
-    };
-
-    await this.enviarATripulacion(
-      salidaId,
-      'APROBACION_REQUERIDA',
-      titulos[tipo],
-      mensajes[tipo],
-      { aprobacionId, tipoAprobacion: tipo },
-      excluirUsuarioId
-    );
-  },
-
-  /**
-   * Notificar resultado de aprobacion
-   */
-  async notificarAprobacionResultado(
-    salidaId: number,
-    completada: boolean,
-    tipo: string
-  ): Promise<void> {
-    await this.enviarATripulacion(
-      salidaId,
-      'APROBACION_COMPLETADA',
-      completada ? 'Aprobacion Completada' : 'Aprobacion Rechazada',
-      completada
-        ? `La ${tipo.toLowerCase().replace('_', ' ')} fue aprobada por toda la tripulacion`
-        : `La ${tipo.toLowerCase().replace('_', ' ')} fue rechazada`,
-      { completada, tipo }
-    );
-  },
-
-  /**
    * Notificar salida autorizada
    */
   async notificarSalidaAutorizada(
