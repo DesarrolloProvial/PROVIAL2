@@ -3,7 +3,13 @@ import * as admin from 'firebase-admin';
 let firebaseInitialized = false;
 
 export function initializeFirebase(): void {
+  // Si ya hay una app inicializada (e.g. hot-reload o entorno compartido), reusar
+  if (admin.apps.length > 0) {
+    firebaseInitialized = true;
+    return;
+  }
   if (firebaseInitialized) return;
+
   try {
     const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
       ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)

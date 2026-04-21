@@ -1,7 +1,7 @@
 import { db } from '../../config/database';
 
-interface GuardarNotificacionData {
-  usuarioId: number;
+export interface GuardarNotificacionData {
+  usuarioId?: number | null;
   tipo: string;
   titulo: string;
   mensaje: string;
@@ -93,7 +93,7 @@ export const NotificacionModel = {
         INSERT INTO notificacion (usuario_id, tipo, titulo, mensaje, datos, enviada, error)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
       `, [
-        data.usuarioId || null,
+        data.usuarioId ?? null,
         data.tipo,
         data.titulo,
         data.mensaje,

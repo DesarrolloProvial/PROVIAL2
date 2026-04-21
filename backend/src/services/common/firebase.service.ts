@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin';
-import { NotificacionModel } from '../../models/common/notificacion.model';
+import { NotificacionModel, GuardarNotificacionData } from '../../models/common/notificacion.model';
 import {
   initializeFirebase,
   isFirebaseReady,
@@ -10,67 +10,82 @@ import {
   sendToTopic,
 } from './firebasePush.client';
 
-// Inicializar Firebase al cargar el módulo
 initializeFirebase();
 
 interface NotificacionData {
-  usuarioId: number;
+  usuarioId?: number | null;
   tipo: string;
   titulo: string;
   mensaje: string;
   datos?: Record<string, any>;
 }
 
+// Helper interno: solo envía a FCM y desactiva tokens inválidos. No guarda historial.
+async function _sendFCM(tokens: string[], data: NotificacionData): Promise<boolean> {
+  if (!isFirebaseReady() || tokens.length === 0) return false;
+
+  const messages: admin.messaging.Message[] = tokens.map(token => ({
+    token,
+    notification: { title: data.titulo, body: data.mensaje },
+    data: normalizeDataPayload(data.datos, data.tipo),
+    android: {
+      priority: 'high' as const,
+      notification: { channelId: 'provial_default', icon: 'ic_notification', color: '#1e3a5f' },
+    },
+    apns: { payload: { aps: { sound: 'default', badge: 1 } } },
+  }));
+
+  try {
+    const response = await sendEach(messages);
+
+    // Desactivar tokens inválidos — await para capturar errores
+    const tokensInvalidos = response.responses
+      .map((resp, idx) => (!resp.success && resp.error && isInvalidToken(resp.error.code) ? tokens[idx] : null))
+      .filter((t): t is string => Boolean(t));
+
+    await Promise.all(tokensInvalidos.map(t => NotificacionModel.desactivarToken(t)));
+
+    return response.successCount > 0;
+  } catch (error) {
+    console.error('Error enviando FCM:', error);
+    return false;
+  }
+}
+
 export const FirebaseService = {
-  // ── Envío a tokens FCM ────────────────────────────────────────────────
+  // ── Envío a tokens FCM (con historial único) ──────────────────────────
 
   async enviarATokens(tokens: string[], data: NotificacionData): Promise<boolean> {
     if (!isFirebaseReady() || tokens.length === 0) {
-      await NotificacionModel.guardarNotificacion(data, false, 'Firebase no inicializado o sin tokens');
+      await NotificacionModel.guardarNotificacion(
+        data as GuardarNotificacionData,
+        false,
+        'Firebase no inicializado o sin tokens',
+      );
       return false;
     }
 
     try {
-      const messages: admin.messaging.Message[] = tokens.map(token => ({
-        token,
-        notification: { title: data.titulo, body: data.mensaje },
-        data: normalizeDataPayload(data.datos, data.tipo),
-        android: {
-          priority: 'high' as const,
-          notification: { channelId: 'provial_default', icon: 'ic_notification', color: '#1e3a5f' },
-        },
-        apns: { payload: { aps: { sound: 'default', badge: 1 } } },
-      }));
-
-      const response = await sendEach(messages);
-
-      // Desactivar tokens inválidos
-      response.responses.forEach((resp, idx) => {
-        if (!resp.success && resp.error && isInvalidToken(resp.error.code)) {
-          NotificacionModel.desactivarToken(tokens[idx]);
-        }
-      });
-
-      const exito = response.successCount > 0;
+      const ok = await _sendFCM(tokens, data);
       await NotificacionModel.guardarNotificacion(
-        data,
-        exito,
-        exito ? null : `Fallidos: ${response.failureCount}`,
+        data as GuardarNotificacionData,
+        ok,
+        ok ? null : 'Error al enviar FCM',
       );
-      return exito;
-    } catch (error: any) {
-      console.error('Error enviando FCM:', error);
-      await NotificacionModel.guardarNotificacion(data, false, 'Error interno FCM');
+      return ok;
+    } catch (error) {
+      await NotificacionModel.guardarNotificacion(data as GuardarNotificacionData, false, 'Error interno FCM');
       return false;
     }
   },
 
-  // ── Envío por usuario / usuarios / tripulación / rol ─────────────────
+  // ── Envío por usuario / usuarios ──────────────────────────────────────
 
   async enviarAUsuario(data: NotificacionData): Promise<boolean> {
+    if (!data.usuarioId) return false;
     const tokens = await NotificacionModel.obtenerTokensUsuario(data.usuarioId);
     if (tokens.length === 0) {
-      await NotificacionModel.guardarNotificacion(data, false, 'Usuario sin dispositivos registrados');
+      await NotificacionModel.guardarNotificacion(data as GuardarNotificacionData, false, 'Usuario sin dispositivos registrados');
       return false;
     }
     return this.enviarATokens(tokens, data);
@@ -93,6 +108,8 @@ export const FirebaseService = {
     return { exitosos, fallidos };
   },
 
+  // ── Envío a tripulación (historial por cada usuario) ──────────────────
+
   async enviarATripulacion(
     salidaId: number,
     tipo: string,
@@ -104,11 +121,25 @@ export const FirebaseService = {
     if (tripulacion.length === 0) return { exitosos: 0, fallidos: 0 };
 
     const tokens = tripulacion.map(t => t.fcmToken);
-    const ok = await this.enviarATokens(tokens, { usuarioId: 0, tipo, titulo, mensaje, datos });
+    const ok = await _sendFCM(tokens, { tipo, titulo, mensaje, datos });
+
+    // Guardar historial por cada usuario de la tripulación
+    await Promise.all(
+      tripulacion.map(t =>
+        NotificacionModel.guardarNotificacion(
+          { usuarioId: t.usuarioId, tipo, titulo, mensaje, datos },
+          ok,
+          ok ? null : 'Error FCM',
+        ),
+      ),
+    );
+
     return ok
       ? { exitosos: tripulacion.length, fallidos: 0 }
       : { exitosos: 0, fallidos: tripulacion.length };
   },
+
+  // ── Envío por rol ─────────────────────────────────────────────────────
 
   async enviarARol(
     rol: string,
@@ -129,12 +160,7 @@ export const FirebaseService = {
 
   // ── Notificaciones de negocio ─────────────────────────────────────────
 
-  async notificarAsignacion(
-    usuarioId: number,
-    unidadCodigo: string,
-    fecha: string,
-    turno: string,
-  ): Promise<boolean> {
+  async notificarAsignacion(usuarioId: number, unidadCodigo: string, fecha: string, turno: string): Promise<boolean> {
     return this.enviarAUsuario({
       usuarioId,
       tipo: 'ASIGNACION',
@@ -187,11 +213,7 @@ export const FirebaseService = {
     });
   },
 
-  async notificarBajoCombustible(
-    usuarioIds: number[],
-    unidadCodigo: string,
-    nivelActual: number,
-  ): Promise<void> {
+  async notificarBajoCombustible(usuarioIds: number[], unidadCodigo: string, nivelActual: number): Promise<void> {
     await this.enviarAUsuarios(
       usuarioIds,
       'ALERTA_COMBUSTIBLE',
