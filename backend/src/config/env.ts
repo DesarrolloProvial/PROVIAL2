@@ -56,8 +56,8 @@ export const config = {
 
   // JWT
   jwt: {
-    secret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
+    secret: process.env.JWT_SECRET || '',
+    refreshSecret: process.env.JWT_REFRESH_SECRET || '',
     expiresIn: process.env.JWT_EXPIRES_IN || '24h',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
@@ -96,12 +96,9 @@ function validateConfig() {
     requiredEnvVars.push('DATABASE_URL', 'REDIS_URL');
   }
 
-  const missing = requiredEnvVars.filter(varName => {
-    const value = process.env[varName];
-    return !value || value === 'dev-secret-change-in-production';
-  });
+  const missing = requiredEnvVars.filter(varName => !process.env[varName]);
 
-  if (missing.length > 0 && config.env === 'production') {
+  if (missing.length > 0) {
     throw new Error(`❌ Variables de entorno faltantes: ${missing.join(', ')}`);
   }
 }
