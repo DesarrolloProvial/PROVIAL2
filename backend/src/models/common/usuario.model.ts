@@ -125,21 +125,6 @@ export const UsuarioModel = {
     );
   },
 
-  // Actualizar usuario
-  async update(id: number, data: Partial<CreateUsuarioDTO>): Promise<Usuario> {
-    const fields = Object.keys(data)
-      .map((key, idx) => `${key} = $${idx + 2}`)
-      .join(', ');
-    const values = [id, ...Object.values(data)];
-
-    return db.one(
-      `UPDATE usuario SET ${fields}, updated_at = NOW()
-       WHERE id = $1
-       RETURNING *`,
-      values
-    );
-  },
-
   async checkResetEnabled(username: string): Promise<boolean> {
     const result = await db.oneOrNone<{ reset_password_enabled: boolean }>(
       `SELECT reset_password_enabled FROM usuario WHERE username = $1`,

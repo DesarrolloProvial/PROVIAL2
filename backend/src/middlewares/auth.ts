@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, JWTPayload } from '../utils/jwt';
+import { normalizeId } from '../utils/db.utils';
 
 // Extender Request para incluir user
 declare global {
@@ -43,10 +44,7 @@ export function authorize(...allowedRoles: string[]) {
     }
 
     if (!allowedRoles.includes(req.user.rol)) {
-      return res.status(403).json({
-        error: 'Acceso denegado',
-        mensaje: `Esta acción requiere uno de los siguientes roles: ${allowedRoles.join(', ')}`,
-      });
+      return res.status(403).json({ error: 'No tiene permisos para realizar esta acción' });
     }
 
     return next();
@@ -61,14 +59,17 @@ export async function canEditSituacion(req: Request, res: Response, next: NextFu
       return res.status(401).json({ error: 'No autorizado' });
     }
 
-    const { id } = req.params;
+    const situacionId = normalizeId(req.params.id);
+    if (!situacionId) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
 
     // Importar dinámicamente para evitar dependencias circulares
     const { SituacionModel } = await import('../models/cop/situacion.model');
     const { TurnoModel } = await import('../models/common/turno.model');
 
     // Obtener la situación
-    const situacion = await SituacionModel.getById(parseInt(id, 10));
+    const situacion = await SituacionModel.getById(situacionId);
 
     if (!situacion) {
       return res.status(404).json({ error: 'Situación no encontrada' });

@@ -268,8 +268,9 @@ export async function cambiarPassword(req: Request, res: Response) {
     const newHash = await bcrypt.hash(nueva_password, salt);
 
     await UsuarioModel.resetPassword(usuario.username, newHash);
+    await cache.invalidatePattern(`refresh_token:${usuario.id}:*`);
 
-    return res.json({ success: true, message: 'Contraseña actualizada exitosamente' });
+    return res.json({ success: true, message: 'Contraseña actualizada exitosamente. Vuelva a iniciar sesión.' });
   } catch (error) {
     console.error('Error en cambiarPassword:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -300,8 +301,12 @@ export async function resetPassword(req: Request, res: Response) {
       return res.status(400).json({ error: 'Username y password son requeridos' });
     }
 
-    const enabled = await UsuarioModel.checkResetEnabled(username);
-    if (!enabled) {
+    const usuario = await UsuarioModel.findByUsername(username);
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    if (!usuario.reset_password_enabled) {
       return res.status(403).json({ error: 'El reseteo de contraseña no está habilitado para este usuario' });
     }
 
@@ -309,6 +314,7 @@ export async function resetPassword(req: Request, res: Response) {
     const passwordHash = await bcrypt.hash(password, salt);
 
     await UsuarioModel.resetPassword(username, passwordHash);
+    await cache.invalidatePattern(`refresh_token:${usuario.id}:*`);
 
     return res.json({ success: true, message: 'Contraseña actualizada correctamente' });
   } catch (error) {
