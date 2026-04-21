@@ -1,453 +1,328 @@
 import { Request, Response } from 'express';
 import { AccidentologiaModel } from '../../models/accidentologia/accidentologia.model';
-
-// ============================================
-// CONTROLADOR DE ACCIDENTOLOGÍA
-// ============================================
+import { normalizeId } from '../../utils/db.utils';
 
 export const AccidentologiaController = {
-  /**
-   * Crear hoja de accidentología
-   * POST /api/accidentologia
-   */
   async crear(req: Request, res: Response) {
     try {
-      const usuarioId = (req as any).user.userId;
+      const usuarioId = req.user!.userId;
       const data = req.body;
 
       if (!data.situacion_id || !data.tipo_accidente) {
-        return res.status(400).json({
-          error: 'situacion_id y tipo_accidente son requeridos'
-        });
+        return res.status(400).json({ error: 'situacion_id y tipo_accidente son requeridos' });
       }
 
-      // Verificar que no exista ya una hoja para esta situación
       const existente = await AccidentologiaModel.obtenerPorSituacion(data.situacion_id);
       if (existente) {
-        return res.status(400).json({
-          error: 'Ya existe una hoja de accidentología para esta situación',
-          hoja_id: existente.id
-        });
+        return res.status(400).json({ error: 'Ya existe una hoja de accidentología para esta situación', hoja_id: existente.id });
       }
 
-      const id = await AccidentologiaModel.crear({
-        ...data,
-        elaborado_por: usuarioId
-      });
-
-      res.status(201).json({
-        message: 'Hoja de accidentología creada',
-        id
-      });
+      const id = await AccidentologiaModel.crear({ ...data, elaborado_por: usuarioId });
+      return res.status(201).json({ message: 'Hoja de accidentología creada', id });
     } catch (error) {
       console.error('Error creando hoja:', error);
-      res.status(500).json({ error: 'Error al crear hoja de accidentología' });
+      return res.status(500).json({ error: 'Error al crear hoja de accidentología' });
     }
   },
 
-  /**
-   * Actualizar hoja de accidentología
-   * PUT /api/accidentologia/:id
-   */
   async actualizar(req: Request, res: Response) {
     try {
-      const id = parseInt(req.params.id);
-      const data = req.body;
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
 
       const hoja = await AccidentologiaModel.obtenerPorId(id);
-      if (!hoja) {
-        return res.status(404).json({ error: 'Hoja no encontrada' });
-      }
+      if (!hoja) return res.status(404).json({ error: 'Hoja no encontrada' });
 
-      await AccidentologiaModel.actualizar(id, data);
-
-      res.json({ message: 'Hoja actualizada correctamente' });
+      await AccidentologiaModel.actualizar(id, req.body);
+      return res.json({ message: 'Hoja actualizada correctamente' });
     } catch (error) {
       console.error('Error actualizando hoja:', error);
-      res.status(500).json({ error: 'Error al actualizar hoja' });
+      return res.status(500).json({ error: 'Error al actualizar hoja' });
     }
   },
 
-  /**
-   * Obtener hoja por ID (completa con vehículos y personas)
-   * GET /api/accidentologia/:id
-   */
   async obtenerPorId(req: Request, res: Response) {
     try {
-      const id = parseInt(req.params.id);
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+
       const hoja = await AccidentologiaModel.obtenerHojaCompleta(id);
+      if (!hoja) return res.status(404).json({ error: 'Hoja no encontrada' });
 
-      if (!hoja) {
-        return res.status(404).json({ error: 'Hoja no encontrada' });
-      }
-
-      res.json(hoja);
+      return res.json(hoja);
     } catch (error) {
       console.error('Error obteniendo hoja:', error);
-      res.status(500).json({ error: 'Error al obtener hoja' });
+      return res.status(500).json({ error: 'Error al obtener hoja' });
     }
   },
 
-  /**
-   * Obtener hoja por situación
-   * GET /api/accidentologia/situacion/:situacionId
-   */
   async obtenerPorSituacion(req: Request, res: Response) {
     try {
-      const situacionId = parseInt(req.params.situacionId);
-      const hoja = await AccidentologiaModel.obtenerPorSituacion(situacionId);
+      const situacionId = normalizeId(req.params.situacionId);
+      if (!situacionId) return res.status(400).json({ error: 'ID inválido' });
 
-      if (!hoja) {
-        return res.json(null);
-      }
+      const hoja = await AccidentologiaModel.obtenerPorSituacion(situacionId);
+      if (!hoja) return res.json(null);
 
       const completa = await AccidentologiaModel.obtenerHojaCompleta(hoja.id);
-      res.json(completa);
+      return res.json(completa);
     } catch (error) {
       console.error('Error obteniendo hoja:', error);
-      res.status(500).json({ error: 'Error al obtener hoja' });
+      return res.status(500).json({ error: 'Error al obtener hoja' });
     }
   },
 
-  /**
-   * Listar hojas de accidentología
-   * GET /api/accidentologia
-   */
   async listar(req: Request, res: Response) {
     try {
       const { tipo_accidente, estado, fecha_desde, fecha_hasta, limit, offset } = req.query;
+      const limitRaw = parseInt(limit as string, 10);
+      const offsetRaw = parseInt(offset as string, 10);
 
       const hojas = await AccidentologiaModel.listar({
         tipo_accidente: tipo_accidente as string,
         estado: estado as string,
         fecha_desde: fecha_desde as string,
         fecha_hasta: fecha_hasta as string,
-        limit: limit ? parseInt(limit as string) : 50,
-        offset: offset ? parseInt(offset as string) : 0
+        limit: isNaN(limitRaw) ? 50 : limitRaw,
+        offset: isNaN(offsetRaw) ? 0 : offsetRaw,
       });
 
-      res.json(hojas);
+      return res.json(hojas);
     } catch (error) {
       console.error('Error listando hojas:', error);
-      res.status(500).json({ error: 'Error al listar hojas' });
+      return res.status(500).json({ error: 'Error al listar hojas' });
     }
   },
 
-  /**
-   * Cambiar estado de la hoja
-   * PUT /api/accidentologia/:id/estado
-   */
   async cambiarEstado(req: Request, res: Response) {
     try {
-      const id = parseInt(req.params.id);
-      const usuarioId = (req as any).user.userId;
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+
+      const usuarioId = req.user!.userId;
       const { estado } = req.body;
 
       const estadosValidos = ['BORRADOR', 'COMPLETO', 'REVISADO', 'ENVIADO'];
       if (!estadosValidos.includes(estado)) {
-        return res.status(400).json({
-          error: `Estado inválido. Valores permitidos: ${estadosValidos.join(', ')}`
-        });
+        return res.status(400).json({ error: `Estado inválido. Valores permitidos: ${estadosValidos.join(', ')}` });
       }
 
       await AccidentologiaModel.cambiarEstado(id, estado, usuarioId);
-
-      res.json({ message: 'Estado actualizado' });
+      return res.json({ message: 'Estado actualizado' });
     } catch (error) {
       console.error('Error cambiando estado:', error);
-      res.status(500).json({ error: 'Error al cambiar estado' });
+      return res.status(500).json({ error: 'Error al cambiar estado' });
     }
   },
 
-  // ============================================
-  // VEHÍCULOS
-  // ============================================
-
-  /**
-   * Agregar vehículo
-   * POST /api/accidentologia/:id/vehiculos
-   */
   async agregarVehiculo(req: Request, res: Response) {
     try {
-      const hojaId = parseInt(req.params.id);
-      const data = req.body;
+      const hojaId = normalizeId(req.params.id);
+      if (!hojaId) return res.status(400).json({ error: 'ID inválido' });
 
-      if (!data.tipo_vehiculo || !data.numero_vehiculo) {
-        return res.status(400).json({
-          error: 'tipo_vehiculo y numero_vehiculo son requeridos'
-        });
+      const { tipo_vehiculo, numero_vehiculo } = req.body;
+      if (!tipo_vehiculo || !numero_vehiculo) {
+        return res.status(400).json({ error: 'tipo_vehiculo y numero_vehiculo son requeridos' });
       }
 
-      const vehiculoId = await AccidentologiaModel.agregarVehiculo({
-        ...data,
-        hoja_accidentologia_id: hojaId
-      });
-
-      res.status(201).json({
-        message: 'Vehículo agregado',
-        id: vehiculoId
-      });
+      const vehiculoId = await AccidentologiaModel.agregarVehiculo({ ...req.body, hoja_accidentologia_id: hojaId });
+      return res.status(201).json({ message: 'Vehículo agregado', id: vehiculoId });
     } catch (error) {
       console.error('Error agregando vehículo:', error);
-      res.status(500).json({ error: 'Error al agregar vehículo' });
+      return res.status(500).json({ error: 'Error al agregar vehículo' });
     }
   },
 
-  /**
-   * Actualizar vehículo
-   * PUT /api/accidentologia/vehiculos/:vehiculoId
-   */
   async actualizarVehiculo(req: Request, res: Response) {
     try {
-      const vehiculoId = parseInt(req.params.vehiculoId);
-      await AccidentologiaModel.actualizarVehiculo(vehiculoId, req.body);
+      const vehiculoId = normalizeId(req.params.vehiculoId);
+      if (!vehiculoId) return res.status(400).json({ error: 'ID inválido' });
 
-      res.json({ message: 'Vehículo actualizado' });
+      await AccidentologiaModel.actualizarVehiculo(vehiculoId, req.body);
+      return res.json({ message: 'Vehículo actualizado' });
     } catch (error) {
       console.error('Error actualizando vehículo:', error);
-      res.status(500).json({ error: 'Error al actualizar vehículo' });
+      return res.status(500).json({ error: 'Error al actualizar vehículo' });
     }
   },
 
-  /**
-   * Eliminar vehículo
-   * DELETE /api/accidentologia/vehiculos/:vehiculoId
-   */
   async eliminarVehiculo(req: Request, res: Response) {
     try {
-      const vehiculoId = parseInt(req.params.vehiculoId);
-      await AccidentologiaModel.eliminarVehiculo(vehiculoId);
+      const vehiculoId = normalizeId(req.params.vehiculoId);
+      if (!vehiculoId) return res.status(400).json({ error: 'ID inválido' });
 
-      res.json({ message: 'Vehículo eliminado' });
+      await AccidentologiaModel.eliminarVehiculo(vehiculoId);
+      return res.json({ message: 'Vehículo eliminado' });
     } catch (error) {
       console.error('Error eliminando vehículo:', error);
-      res.status(500).json({ error: 'Error al eliminar vehículo' });
+      return res.status(500).json({ error: 'Error al eliminar vehículo' });
     }
   },
 
-  /**
-   * Obtener vehículos de una hoja
-   * GET /api/accidentologia/:id/vehiculos
-   */
   async listarVehiculos(req: Request, res: Response) {
     try {
-      const hojaId = parseInt(req.params.id);
-      const vehiculos = await AccidentologiaModel.obtenerVehiculos(hojaId);
+      const hojaId = normalizeId(req.params.id);
+      if (!hojaId) return res.status(400).json({ error: 'ID inválido' });
 
-      res.json(vehiculos);
+      const vehiculos = await AccidentologiaModel.obtenerVehiculos(hojaId);
+      return res.json(vehiculos);
     } catch (error) {
       console.error('Error listando vehículos:', error);
-      res.status(500).json({ error: 'Error al listar vehículos' });
+      return res.status(500).json({ error: 'Error al listar vehículos' });
     }
   },
 
-  // ============================================
-  // PERSONAS
-  // ============================================
-
-  /**
-   * Agregar persona afectada
-   * POST /api/accidentologia/:id/personas
-   */
   async agregarPersona(req: Request, res: Response) {
     try {
-      const hojaId = parseInt(req.params.id);
-      const data = req.body;
+      const hojaId = normalizeId(req.params.id);
+      if (!hojaId) return res.status(400).json({ error: 'ID inválido' });
 
-      if (!data.tipo_persona || !data.estado) {
-        return res.status(400).json({
-          error: 'tipo_persona y estado son requeridos'
-        });
+      const { tipo_persona, estado } = req.body;
+      if (!tipo_persona || !estado) {
+        return res.status(400).json({ error: 'tipo_persona y estado son requeridos' });
       }
 
-      const personaId = await AccidentologiaModel.agregarPersona({
-        ...data,
-        hoja_accidentologia_id: hojaId
-      });
-
-      res.status(201).json({
-        message: 'Persona agregada',
-        id: personaId
-      });
+      const personaId = await AccidentologiaModel.agregarPersona({ ...req.body, hoja_accidentologia_id: hojaId });
+      return res.status(201).json({ message: 'Persona agregada', id: personaId });
     } catch (error) {
       console.error('Error agregando persona:', error);
-      res.status(500).json({ error: 'Error al agregar persona' });
+      return res.status(500).json({ error: 'Error al agregar persona' });
     }
   },
 
-  /**
-   * Actualizar persona
-   * PUT /api/accidentologia/personas/:personaId
-   */
   async actualizarPersona(req: Request, res: Response) {
     try {
-      const personaId = parseInt(req.params.personaId);
-      await AccidentologiaModel.actualizarPersona(personaId, req.body);
+      const personaId = normalizeId(req.params.personaId);
+      if (!personaId) return res.status(400).json({ error: 'ID inválido' });
 
-      res.json({ message: 'Persona actualizada' });
+      await AccidentologiaModel.actualizarPersona(personaId, req.body);
+      return res.json({ message: 'Persona actualizada' });
     } catch (error) {
       console.error('Error actualizando persona:', error);
-      res.status(500).json({ error: 'Error al actualizar persona' });
+      return res.status(500).json({ error: 'Error al actualizar persona' });
     }
   },
 
-  /**
-   * Eliminar persona
-   * DELETE /api/accidentologia/personas/:personaId
-   */
   async eliminarPersona(req: Request, res: Response) {
     try {
-      const personaId = parseInt(req.params.personaId);
-      await AccidentologiaModel.eliminarPersona(personaId);
+      const personaId = normalizeId(req.params.personaId);
+      if (!personaId) return res.status(400).json({ error: 'ID inválido' });
 
-      res.json({ message: 'Persona eliminada' });
+      await AccidentologiaModel.eliminarPersona(personaId);
+      return res.json({ message: 'Persona eliminada' });
     } catch (error) {
       console.error('Error eliminando persona:', error);
-      res.status(500).json({ error: 'Error al eliminar persona' });
+      return res.status(500).json({ error: 'Error al eliminar persona' });
     }
   },
 
-  /**
-   * Obtener personas de una hoja
-   * GET /api/accidentologia/:id/personas
-   */
   async listarPersonas(req: Request, res: Response) {
     try {
-      const hojaId = parseInt(req.params.id);
-      const personas = await AccidentologiaModel.obtenerPersonas(hojaId);
+      const hojaId = normalizeId(req.params.id);
+      if (!hojaId) return res.status(400).json({ error: 'ID inválido' });
 
-      res.json(personas);
+      const personas = await AccidentologiaModel.obtenerPersonas(hojaId);
+      return res.json(personas);
     } catch (error) {
       console.error('Error listando personas:', error);
-      res.status(500).json({ error: 'Error al listar personas' });
+      return res.status(500).json({ error: 'Error al listar personas' });
     }
   },
 
-  // ============================================
-  // ESTADÍSTICAS
-  // ============================================
-
-  /**
-   * Obtener estadísticas de accidentología
-   * GET /api/accidentologia/estadisticas
-   */
   async estadisticas(req: Request, res: Response) {
     try {
-      const { fecha_desde, fecha_hasta, sede_id } = req.query;
-
+      const { fecha_desde, fecha_hasta } = req.query;
       const stats = await AccidentologiaModel.obtenerEstadisticas({
         fecha_desde: fecha_desde as string,
         fecha_hasta: fecha_hasta as string,
-        sede_id: sede_id ? parseInt(sede_id as string) : undefined
+        sede_id: normalizeId(req.query.sede_id as string) ?? undefined,
       });
-
-      res.json(stats);
+      return res.json(stats);
     } catch (error) {
       console.error('Error obteniendo estadísticas:', error);
-      res.status(500).json({ error: 'Error al obtener estadísticas' });
+      return res.status(500).json({ error: 'Error al obtener estadísticas' });
     }
   },
 
-  /**
-   * Obtener tipos de accidente (para dropdowns)
-   * GET /api/accidentologia/tipos
-   */
   async tiposAccidente(_req: Request, res: Response) {
-    try {
-      res.json({
-        tipos_accidente: [
-          { value: 'COLISION_FRONTAL', label: 'Colisión Frontal' },
-          { value: 'COLISION_LATERAL', label: 'Colisión Lateral' },
-          { value: 'COLISION_TRASERA', label: 'Colisión Trasera' },
-          { value: 'VOLCADURA', label: 'Volcadura' },
-          { value: 'ATROPELLO', label: 'Atropello' },
-          { value: 'CAIDA_DE_MOTO', label: 'Caída de Moto' },
-          { value: 'SALIDA_DE_CARRIL', label: 'Salida de Carril' },
-          { value: 'CHOQUE_OBJETO_FIJO', label: 'Choque con Objeto Fijo' },
-          { value: 'MULTIPLE', label: 'Múltiple' },
-          { value: 'OTRO', label: 'Otro' }
-        ],
-        tipos_vehiculo: [
-          { value: 'AUTOMOVIL', label: 'Automóvil' },
-          { value: 'PICKUP', label: 'Pickup' },
-          { value: 'CAMION', label: 'Camión' },
-          { value: 'BUS', label: 'Bus' },
-          { value: 'MOTOCICLETA', label: 'Motocicleta' },
-          { value: 'BICICLETA', label: 'Bicicleta' },
-          { value: 'PEATON', label: 'Peatón' },
-          { value: 'TRAILER', label: 'Trailer' },
-          { value: 'MAQUINARIA', label: 'Maquinaria' },
-          { value: 'OTRO', label: 'Otro' }
-        ],
-        estados_persona: [
-          { value: 'ILESO', label: 'Ileso' },
-          { value: 'HERIDO_LEVE', label: 'Herido Leve' },
-          { value: 'HERIDO_MODERADO', label: 'Herido Moderado' },
-          { value: 'HERIDO_GRAVE', label: 'Herido Grave' },
-          { value: 'FALLECIDO', label: 'Fallecido' }
-        ],
-        tipos_lesion: [
-          { value: 'NINGUNA', label: 'Ninguna' },
-          { value: 'CONTUSIONES', label: 'Contusiones' },
-          { value: 'LACERACIONES', label: 'Laceraciones' },
-          { value: 'FRACTURAS', label: 'Fracturas' },
-          { value: 'TRAUMA_CRANEAL', label: 'Trauma Craneal' },
-          { value: 'TRAUMA_TORACICO', label: 'Trauma Torácico' },
-          { value: 'TRAUMA_ABDOMINAL', label: 'Trauma Abdominal' },
-          { value: 'QUEMADURAS', label: 'Quemaduras' },
-          { value: 'AMPUTACION', label: 'Amputación' },
-          { value: 'MULTIPLE', label: 'Múltiple' },
-          { value: 'OTRO', label: 'Otro' }
-        ]
-      });
-    } catch (error) {
-      console.error('Error obteniendo tipos:', error);
-      res.status(500).json({ error: 'Error al obtener tipos' });
-    }
+    res.json({
+      tipos_accidente: [
+        { value: 'COLISION_FRONTAL', label: 'Colisión Frontal' },
+        { value: 'COLISION_LATERAL', label: 'Colisión Lateral' },
+        { value: 'COLISION_TRASERA', label: 'Colisión Trasera' },
+        { value: 'VOLCADURA', label: 'Volcadura' },
+        { value: 'ATROPELLO', label: 'Atropello' },
+        { value: 'CAIDA_DE_MOTO', label: 'Caída de Moto' },
+        { value: 'SALIDA_DE_CARRIL', label: 'Salida de Carril' },
+        { value: 'CHOQUE_OBJETO_FIJO', label: 'Choque con Objeto Fijo' },
+        { value: 'MULTIPLE', label: 'Múltiple' },
+        { value: 'OTRO', label: 'Otro' },
+      ],
+      tipos_vehiculo: [
+        { value: 'AUTOMOVIL', label: 'Automóvil' },
+        { value: 'PICKUP', label: 'Pickup' },
+        { value: 'CAMION', label: 'Camión' },
+        { value: 'BUS', label: 'Bus' },
+        { value: 'MOTOCICLETA', label: 'Motocicleta' },
+        { value: 'BICICLETA', label: 'Bicicleta' },
+        { value: 'PEATON', label: 'Peatón' },
+        { value: 'TRAILER', label: 'Trailer' },
+        { value: 'MAQUINARIA', label: 'Maquinaria' },
+        { value: 'OTRO', label: 'Otro' },
+      ],
+      estados_persona: [
+        { value: 'ILESO', label: 'Ileso' },
+        { value: 'HERIDO_LEVE', label: 'Herido Leve' },
+        { value: 'HERIDO_MODERADO', label: 'Herido Moderado' },
+        { value: 'HERIDO_GRAVE', label: 'Herido Grave' },
+        { value: 'FALLECIDO', label: 'Fallecido' },
+      ],
+      tipos_lesion: [
+        { value: 'NINGUNA', label: 'Ninguna' },
+        { value: 'CONTUSIONES', label: 'Contusiones' },
+        { value: 'LACERACIONES', label: 'Laceraciones' },
+        { value: 'FRACTURAS', label: 'Fracturas' },
+        { value: 'TRAUMA_CRANEAL', label: 'Trauma Craneal' },
+        { value: 'TRAUMA_TORACICO', label: 'Trauma Torácico' },
+        { value: 'TRAUMA_ABDOMINAL', label: 'Trauma Abdominal' },
+        { value: 'QUEMADURAS', label: 'Quemaduras' },
+        { value: 'AMPUTACION', label: 'Amputación' },
+        { value: 'MULTIPLE', label: 'Múltiple' },
+        { value: 'OTRO', label: 'Otro' },
+      ],
+    });
   },
 
-  /**
-   * Obtener datos completos de accidentología para PDF/reporte
-   * GET /api/accidentologia/completo/:incidenteId
-   */
   async obtenerCompleto(req: Request, res: Response) {
     try {
-      const incidenteId = parseInt(req.params.incidenteId);
+      const incidenteId = normalizeId(req.params.incidenteId);
+      if (!incidenteId) return res.status(400).json({ error: 'ID inválido' });
+
       const data = await AccidentologiaModel.obtenerCompleto(incidenteId);
+      if (!data) return res.status(404).json({ error: 'No se encontró información de accidentología para este incidente' });
 
-      if (!data) {
-        return res.status(404).json({
-          error: 'No se encontró información de accidentología para este incidente'
-        });
-      }
-
-      res.json(data);
+      return res.json(data);
     } catch (error) {
       console.error('Error obteniendo datos completos:', error);
-      res.status(500).json({ error: 'Error al obtener datos completos' });
+      return res.status(500).json({ error: 'Error al obtener datos completos' });
     }
   },
 
-  /**
-   * Obtener hoja por incidente_id
-   * GET /api/accidentologia/incidente/:incidenteId
-   */
   async obtenerPorIncidente(req: Request, res: Response) {
     try {
-      const incidenteId = parseInt(req.params.incidenteId);
-      const hoja = await AccidentologiaModel.obtenerPorIncidente(incidenteId);
+      const incidenteId = normalizeId(req.params.incidenteId);
+      if (!incidenteId) return res.status(400).json({ error: 'ID inválido' });
 
-      if (!hoja) {
-        return res.json(null);
-      }
+      const hoja = await AccidentologiaModel.obtenerPorIncidente(incidenteId);
+      if (!hoja) return res.json(null);
 
       const completa = await AccidentologiaModel.obtenerHojaCompleta(hoja.id);
-      res.json(completa);
+      return res.json(completa);
     } catch (error) {
       console.error('Error obteniendo hoja por incidente:', error);
-      res.status(500).json({ error: 'Error al obtener hoja' });
+      return res.status(500).json({ error: 'Error al obtener hoja' });
     }
-  }
+  },
 };
 
 export default AccidentologiaController;
