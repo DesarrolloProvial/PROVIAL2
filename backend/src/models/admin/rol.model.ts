@@ -53,6 +53,6 @@ export const RolModel = {
   },
 
   async eliminar(id: number): Promise<void> {
-    return db.none('DELETE FROM rol WHERE id = $1', [id]);
+    await db.none('DELETE FROM rol WHERE id = $1', [id]);
   },
 };

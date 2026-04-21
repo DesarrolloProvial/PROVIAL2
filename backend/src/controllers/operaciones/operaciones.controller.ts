@@ -17,7 +17,6 @@ export async function getDashboardOperaciones(req: Request, res: Response) {
     const sedeId = puedeVerTodasSedes(req.user!) ? undefined : req.user!.sede;
 
     const disponibilidad = await OperacionesModel.getDisponibilidadRecursos(sedeId);
-    const brigadas = await OperacionesModel.getEstadisticasBrigadas(sedeId);
     const unidades = await OperacionesModel.getEstadisticasUnidades(sedeId);
 
     const resumen = disponibilidad[0] || {

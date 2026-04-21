@@ -2,11 +2,6 @@ import { Request, Response } from 'express';
 import { UnidadModel } from '../../models/transportes/unidad.model';
 import { TurnoModel } from '../../models/common/turno.model';
 import { normalizeId } from '../../utils/db.utils';
-import { JWTPayload } from '../../utils/jwt';
-
-function puedeVerTodasSedes(user: JWTPayload): boolean {
-  return !!(user.puede_ver_todas_sedes || user.rol === 'SUPER_ADMIN' || user.rol === 'ADMIN');
-}
 
 export async function listarUnidades(req: Request, res: Response) {
   try {

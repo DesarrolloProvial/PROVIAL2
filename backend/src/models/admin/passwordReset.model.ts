@@ -26,7 +26,7 @@ export const PasswordResetModel = {
   },
 
   async deshabilitarReset(usuarioId: number): Promise<void> {
-    return db.none(`
+    await db.none(`
       UPDATE usuario SET
         password_reset_required = FALSE,
         password_reset_by = NULL,

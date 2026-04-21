@@ -1,5 +1,4 @@
 import { db } from '../../config/database';
-import { JWTPayload } from '../../utils/jwt';
 
 export interface CreateReparacionData {
   unidad_id: number;
