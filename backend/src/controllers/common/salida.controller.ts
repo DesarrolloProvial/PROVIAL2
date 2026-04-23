@@ -567,7 +567,8 @@ export async function editarDatosSalida(req: Request, res: Response) {
  */
 export async function getBitacoraUnidad(req: Request, res: Response) {
   try {
-    const unidadId = parseInt(req.params.unidadId, 10);
+    const unidadId = normalizeId(req.params.unidadId);
+    if (!unidadId) return res.status(400).json({ error: 'ID inválido' });
     const limit = Math.min(parseInt(req.query.limit as string) || 30, 100);
     const fechaDesde = req.query.fecha_desde as string | undefined;
 

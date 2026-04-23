@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { SituacionModel } from '../../models/cop/situacion.model';
 import { ActividadModel } from '../../models/cop/actividad.model';
 import { db } from '../../config/database';
+import { normalizeId } from '../../utils/db.utils';
 
 // ========================================
 // LISTADOS
@@ -153,7 +154,9 @@ export async function getMapaSituaciones(_req: Request, res: Response) {
 
 export async function getBitacoraUnidad(req: Request, res: Response) {
   try {
-    const list = await SituacionModel.getBitacoraUnidad(parseInt(req.params.unidad_id), req.query);
+    const unidadId = normalizeId(req.params.unidad_id);
+    if (!unidadId) return res.status(400).json({ error: 'ID inválido' });
+    const list = await SituacionModel.getBitacoraUnidad(unidadId, req.query);
     return res.json({ bitacora: list });
   } catch (error) {
     console.error('Error en getBitacoraUnidad:', error);

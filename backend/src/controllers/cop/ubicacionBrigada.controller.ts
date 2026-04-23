@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { UbicacionBrigadaModel } from '../../models/cop/ubicacionBrigada.model';
 import { db } from '../../config/database';
+import { normalizeId } from '../../utils/db.utils';
 
 // ========================================
 // UBICACIÓN DE BRIGADAS
@@ -51,17 +52,14 @@ export const getAllUbicaciones = async (_req: Request, res: Response) => {
  */
 export const getUbicacionesByUnidad = async (req: Request, res: Response) => {
   try {
-    const unidadId = parseInt(req.params.unidadId);
-
-    if (isNaN(unidadId)) {
-      return res.status(400).json({ error: 'unidadId inválido' });
-    }
+    const unidadId = normalizeId(req.params.unidadId);
+    if (!unidadId) return res.status(400).json({ error: 'ID inválido' });
 
     const ubicaciones = await UbicacionBrigadaModel.getUbicacionesByUnidad(unidadId);
     res.json(ubicaciones);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error obteniendo ubicaciones de unidad:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -420,11 +418,8 @@ export const getMisPermisos = async (req: Request, res: Response) => {
  */
 export const getBrigadasParaPrestamo = async (req: Request, res: Response) => {
   try {
-    const unidadId = parseInt(req.params.unidadId);
-
-    if (isNaN(unidadId)) {
-      return res.status(400).json({ error: 'unidadId inválido' });
-    }
+    const unidadId = normalizeId(req.params.unidadId);
+    if (!unidadId) return res.status(400).json({ error: 'ID inválido' });
 
     // Brigadas que están CON_UNIDAD en esta unidad
     const brigadas = await db.manyOrNone(`
