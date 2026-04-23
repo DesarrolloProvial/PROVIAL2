@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { UbicacionBrigadaModel } from '../../models/cop/ubicacionBrigada.model';
-import { db } from '../../config/database';
 import { normalizeId } from '../../utils/db.utils';
 
 // ========================================
@@ -421,29 +420,11 @@ export const getBrigadasParaPrestamo = async (req: Request, res: Response) => {
     const unidadId = normalizeId(req.params.unidadId);
     if (!unidadId) return res.status(400).json({ error: 'ID inválido' });
 
-    // Brigadas que están CON_UNIDAD en esta unidad
-    const brigadas = await db.manyOrNone(`
-      SELECT
-        ub.usuario_id,
-        u.nombre_completo,
-        u.username,
-        ub.estado,
-        ub.unidad_actual_id,
-        un.codigo as unidad_codigo,
-        ub.inicio_ubicacion
-      FROM ubicacion_brigada ub
-      JOIN usuario u ON ub.usuario_id = u.id
-      JOIN unidad un ON ub.unidad_actual_id = un.id
-      WHERE ub.unidad_actual_id = $1
-        AND ub.fin_ubicacion IS NULL
-        AND ub.estado = 'CON_UNIDAD'
-      ORDER BY u.nombre_completo
-    `, [unidadId]);
-
+    const brigadas = await UbicacionBrigadaModel.getBrigadasParaPrestamo(unidadId);
     res.json(brigadas);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error obteniendo brigadas para préstamo:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -452,31 +433,11 @@ export const getBrigadasParaPrestamo = async (req: Request, res: Response) => {
  */
 export const getBrigadasPrestados = async (_req: Request, res: Response) => {
   try {
-    const brigadas = await db.manyOrNone(`
-      SELECT
-        ub.usuario_id,
-        u.nombre_completo,
-        u.username,
-        ub.estado,
-        ub.unidad_actual_id,
-        ua.codigo as unidad_actual_codigo,
-        ub.unidad_origen_id,
-        uo.codigo as unidad_origen_codigo,
-        ub.inicio_ubicacion,
-        ub.motivo
-      FROM ubicacion_brigada ub
-      JOIN usuario u ON ub.usuario_id = u.id
-      LEFT JOIN unidad ua ON ub.unidad_actual_id = ua.id
-      LEFT JOIN unidad uo ON ub.unidad_origen_id = uo.id
-      WHERE ub.fin_ubicacion IS NULL
-        AND ub.estado = 'PRESTADO'
-      ORDER BY ub.inicio_ubicacion DESC
-    `);
-
+    const brigadas = await UbicacionBrigadaModel.getBrigadasPrestados();
     res.json(brigadas);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error obteniendo brigadas prestados:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -485,35 +446,10 @@ export const getBrigadasPrestados = async (_req: Request, res: Response) => {
  */
 export const getBrigadasEnPuntoFijo = async (_req: Request, res: Response) => {
   try {
-    const brigadas = await db.manyOrNone(`
-      SELECT
-        ub.usuario_id,
-        u.nombre_completo,
-        u.username,
-        ub.estado,
-        ub.unidad_origen_id,
-        uo.codigo as unidad_origen_codigo,
-        ub.punto_fijo_km,
-        ub.punto_fijo_sentido,
-        r.codigo as punto_fijo_ruta_codigo,
-        ub.punto_fijo_descripcion,
-        ub.situacion_persistente_id,
-        sp.titulo as situacion_persistente_titulo,
-        ub.inicio_ubicacion,
-        ub.motivo
-      FROM ubicacion_brigada ub
-      JOIN usuario u ON ub.usuario_id = u.id
-      LEFT JOIN unidad uo ON ub.unidad_origen_id = uo.id
-      LEFT JOIN ruta r ON ub.punto_fijo_ruta_id = r.id
-      LEFT JOIN situacion sp ON ub.situacion_persistente_id = sp.id AND sp.persistente = true
-      WHERE ub.fin_ubicacion IS NULL
-        AND ub.estado = 'EN_PUNTO_FIJO'
-      ORDER BY ub.inicio_ubicacion DESC
-    `);
-
+    const brigadas = await UbicacionBrigadaModel.getBrigadasEnPuntoFijo();
     res.json(brigadas);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error obteniendo brigadas en punto fijo:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };

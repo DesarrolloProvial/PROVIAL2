@@ -521,4 +521,76 @@ export const UbicacionBrigadaModel = {
         return { unidad_id: null, puede_crear: false };
     }
   },
+
+  async getBrigadasParaPrestamo(unidadId: number): Promise<any[]> {
+    return db.any(
+      `SELECT
+         ub.usuario_id,
+         u.nombre_completo,
+         u.username,
+         ub.estado,
+         ub.unidad_actual_id,
+         un.codigo AS unidad_codigo,
+         ub.inicio_ubicacion
+       FROM ubicacion_brigada ub
+       JOIN usuario u ON ub.usuario_id = u.id
+       JOIN unidad un ON ub.unidad_actual_id = un.id
+       WHERE ub.unidad_actual_id = $1
+         AND ub.fin_ubicacion IS NULL
+         AND ub.estado = 'CON_UNIDAD'
+       ORDER BY u.nombre_completo`,
+      [unidadId],
+    );
+  },
+
+  async getBrigadasPrestados(): Promise<any[]> {
+    return db.any(
+      `SELECT
+         ub.usuario_id,
+         u.nombre_completo,
+         u.username,
+         ub.estado,
+         ub.unidad_actual_id,
+         ua.codigo AS unidad_actual_codigo,
+         ub.unidad_origen_id,
+         uo.codigo AS unidad_origen_codigo,
+         ub.inicio_ubicacion,
+         ub.motivo
+       FROM ubicacion_brigada ub
+       JOIN usuario u ON ub.usuario_id = u.id
+       LEFT JOIN unidad ua ON ub.unidad_actual_id = ua.id
+       LEFT JOIN unidad uo ON ub.unidad_origen_id = uo.id
+       WHERE ub.fin_ubicacion IS NULL
+         AND ub.estado = 'PRESTADO'
+       ORDER BY ub.inicio_ubicacion DESC`,
+    );
+  },
+
+  async getBrigadasEnPuntoFijo(): Promise<any[]> {
+    return db.any(
+      `SELECT
+         ub.usuario_id,
+         u.nombre_completo,
+         u.username,
+         ub.estado,
+         ub.unidad_origen_id,
+         uo.codigo AS unidad_origen_codigo,
+         ub.punto_fijo_km,
+         ub.punto_fijo_sentido,
+         r.codigo AS punto_fijo_ruta_codigo,
+         ub.punto_fijo_descripcion,
+         ub.situacion_persistente_id,
+         sp.titulo AS situacion_persistente_titulo,
+         ub.inicio_ubicacion,
+         ub.motivo
+       FROM ubicacion_brigada ub
+       JOIN usuario u ON ub.usuario_id = u.id
+       LEFT JOIN unidad uo ON ub.unidad_origen_id = uo.id
+       LEFT JOIN ruta r ON ub.punto_fijo_ruta_id = r.id
+       LEFT JOIN situacion sp ON ub.situacion_persistente_id = sp.id AND sp.persistente = true
+       WHERE ub.fin_ubicacion IS NULL
+         AND ub.estado = 'EN_PUNTO_FIJO'
+       ORDER BY ub.inicio_ubicacion DESC`,
+    );
+  },
 };

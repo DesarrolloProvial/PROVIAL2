@@ -572,65 +572,7 @@ export async function getBitacoraUnidad(req: Request, res: Response) {
     const limit = Math.min(parseInt(req.query.limit as string) || 30, 100);
     const fechaDesde = req.query.fecha_desde as string | undefined;
 
-    const rows = await db.any(
-      `SELECT
-         s.id,
-         s.unidad_id,
-         u.codigo                                      AS unidad_codigo,
-         u.tipo_unidad,
-         r.codigo                                      AS ruta_codigo,
-         r.nombre                                      AS ruta_nombre,
-         s.fecha_hora_salida,
-         s.fecha_hora_regreso,
-         s.estado,
-         s.km_inicial,
-         s.km_final,
-         s.km_recorridos,
-         s.combustible_inicial,
-         s.combustible_final,
-         s.tripulacion,
-         s.observaciones_salida,
-         s.observaciones_regreso,
-         COALESCE(
-           (SELECT json_agg(json_build_object(
-               'id',          sit.id,
-               'tipo_macro',  sit.tipo_situacion,
-               'tipo_nombre', cts.nombre,
-               'km',          sit.km,
-               'sentido',     sit.sentido,
-               'observaciones', sit.observaciones,
-               'created_at',  sit.created_at,
-               'cerrado_at',  sit.cerrado_at
-             ) ORDER BY sit.created_at)
-            FROM situacion sit
-            LEFT JOIN catalogo_tipo_situacion cts ON sit.tipo_situacion_id = cts.id
-            WHERE sit.salida_unidad_id = s.id
-           ), '[]'::json)                             AS situaciones,
-         COALESCE(
-           (SELECT json_agg(json_build_object(
-               'id',          a.id,
-               'tipo_nombre', cts2.nombre,
-               'km',          a.km,
-               'sentido',     a.sentido,
-               'observaciones', a.observaciones,
-               'estado',      a.estado,
-               'created_at',  a.created_at,
-               'closed_at',   a.closed_at
-             ) ORDER BY a.created_at)
-            FROM actividad a
-            LEFT JOIN catalogo_tipo_situacion cts2 ON a.tipo_actividad_id = cts2.id
-            WHERE a.salida_unidad_id = s.id
-           ), '[]'::json)                             AS actividades
-       FROM salida_unidad s
-       JOIN unidad u ON s.unidad_id = u.id
-       LEFT JOIN ruta r ON s.ruta_inicial_id = r.id
-       WHERE s.unidad_id = $1
-         AND ($3::date IS NULL OR s.fecha_hora_salida >= $3::date)
-       ORDER BY s.fecha_hora_salida DESC
-       LIMIT $2`,
-      [unidadId, limit, fechaDesde ?? null],
-    );
-
+    const rows = await SalidaModel.getBitacoraUnidad(unidadId, limit, fechaDesde);
     return res.json({ success: true, unidad_id: unidadId, count: rows.length, data: rows });
   } catch (error) {
     console.error('Error en getBitacoraUnidad:', error);
