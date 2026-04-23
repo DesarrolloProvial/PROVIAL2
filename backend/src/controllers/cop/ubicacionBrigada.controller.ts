@@ -11,25 +11,17 @@ import { normalizeId } from '../../utils/db.utils';
  */
 export const getMiUbicacion = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Usuario no autenticado' });
-    }
-
+    const userId = req.user!.userId;
     const ubicacion = await UbicacionBrigadaModel.getUbicacionActual(userId);
 
     if (!ubicacion) {
-      return res.status(404).json({
-        error: 'Sin ubicación activa',
-        message: 'No tienes una ubicación activa. Inicia un turno primero.'
-      });
+      return res.status(404).json({ error: 'Sin ubicación activa' });
     }
 
     res.json(ubicacion);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error obteniendo ubicación:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -40,9 +32,9 @@ export const getAllUbicaciones = async (_req: Request, res: Response) => {
   try {
     const ubicaciones = await UbicacionBrigadaModel.getAllUbicacionesActivas();
     res.json(ubicaciones);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error obteniendo ubicaciones:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -72,19 +64,11 @@ export const getUbicacionesByUnidad = async (req: Request, res: Response) => {
  */
 export const prestarBrigada = async (req: Request, res: Response) => {
   try {
-    const ejecutadoPor = req.user?.userId;
-    const rol = req.user?.rol;
+    const ejecutadoPor = req.user!.userId;
+    const rol = req.user!.rol;
 
-    if (!ejecutadoPor) {
-      return res.status(401).json({ error: 'Usuario no autenticado' });
-    }
-
-    // Solo COP puede prestar brigadas
     if (rol !== 'COP' && rol !== 'ADMIN') {
-      return res.status(403).json({
-        error: 'Sin permisos',
-        message: 'Solo el COP puede realizar préstamos de brigadas'
-      });
+      return res.status(403).json({ error: 'No tiene permisos para realizar esta acción' });
     }
 
     const {
@@ -122,9 +106,9 @@ export const prestarBrigada = async (req: Request, res: Response) => {
       message: 'Brigada prestado exitosamente',
       ubicacion: resultado
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error prestando brigada:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -133,18 +117,11 @@ export const prestarBrigada = async (req: Request, res: Response) => {
  */
 export const retornarDePrestamo = async (req: Request, res: Response) => {
   try {
-    const ejecutadoPor = req.user?.userId;
-    const rol = req.user?.rol;
-
-    if (!ejecutadoPor) {
-      return res.status(401).json({ error: 'Usuario no autenticado' });
-    }
+    const ejecutadoPor = req.user!.userId;
+    const rol = req.user!.rol;
 
     if (rol !== 'COP' && rol !== 'ADMIN') {
-      return res.status(403).json({
-        error: 'Sin permisos',
-        message: 'Solo el COP puede retornar brigadas de préstamo'
-      });
+      return res.status(403).json({ error: 'No tiene permisos para realizar esta acción' });
     }
 
     const { usuario_id, motivo, km, ruta_id, latitud, longitud } = req.body;
@@ -170,9 +147,9 @@ export const retornarDePrestamo = async (req: Request, res: Response) => {
       message: 'Brigada retornado a unidad original',
       ubicacion: resultado
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error retornando brigada:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -185,18 +162,11 @@ export const retornarDePrestamo = async (req: Request, res: Response) => {
  */
 export const dividirFuerza = async (req: Request, res: Response) => {
   try {
-    const ejecutadoPor = req.user?.userId;
-    const rol = req.user?.rol;
-
-    if (!ejecutadoPor) {
-      return res.status(401).json({ error: 'Usuario no autenticado' });
-    }
+    const ejecutadoPor = req.user!.userId;
+    const rol = req.user!.rol;
 
     if (rol !== 'COP' && rol !== 'ADMIN') {
-      return res.status(403).json({
-        error: 'Sin permisos',
-        message: 'Solo el COP puede dividir fuerzas'
-      });
+      return res.status(403).json({ error: 'No tiene permisos para realizar esta acción' });
     }
 
     const {
@@ -235,9 +205,9 @@ export const dividirFuerza = async (req: Request, res: Response) => {
       message: 'División de fuerza registrada',
       ubicacion: resultado
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error dividiendo fuerza:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -246,18 +216,11 @@ export const dividirFuerza = async (req: Request, res: Response) => {
  */
 export const reunirConUnidad = async (req: Request, res: Response) => {
   try {
-    const ejecutadoPor = req.user?.userId;
-    const rol = req.user?.rol;
-
-    if (!ejecutadoPor) {
-      return res.status(401).json({ error: 'Usuario no autenticado' });
-    }
+    const ejecutadoPor = req.user!.userId;
+    const rol = req.user!.rol;
 
     if (rol !== 'COP' && rol !== 'ADMIN') {
-      return res.status(403).json({
-        error: 'Sin permisos',
-        message: 'Solo el COP puede reunir fuerzas'
-      });
+      return res.status(403).json({ error: 'No tiene permisos para realizar esta acción' });
     }
 
     const {
@@ -294,9 +257,9 @@ export const reunirConUnidad = async (req: Request, res: Response) => {
       message: 'Brigada reunido con unidad',
       ubicacion: resultado
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error reuniendo brigada:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -309,18 +272,11 @@ export const reunirConUnidad = async (req: Request, res: Response) => {
  */
 export const cambiarUnidadCompleta = async (req: Request, res: Response) => {
   try {
-    const ejecutadoPor = req.user?.userId;
-    const rol = req.user?.rol;
-
-    if (!ejecutadoPor) {
-      return res.status(401).json({ error: 'Usuario no autenticado' });
-    }
+    const ejecutadoPor = req.user!.userId;
+    const rol = req.user!.rol;
 
     if (rol !== 'COP' && rol !== 'ADMIN') {
-      return res.status(403).json({
-        error: 'Sin permisos',
-        message: 'Solo el COP puede cambiar unidades completas'
-      });
+      return res.status(403).json({ error: 'No tiene permisos para realizar esta acción' });
     }
 
     const {
@@ -370,9 +326,9 @@ export const cambiarUnidadCompleta = async (req: Request, res: Response) => {
       message: `${resultados.length} brigadas cambiados de unidad`,
       ubicaciones: resultados
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error cambiando unidad completa:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -385,14 +341,11 @@ export const cambiarUnidadCompleta = async (req: Request, res: Response) => {
  */
 export const getMisPermisos = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Usuario no autenticado' });
-    }
-
-    const permisos = await UbicacionBrigadaModel.getUnidadPermisos(userId);
-    const ubicacion = await UbicacionBrigadaModel.getUbicacionActual(userId);
+    const userId = req.user!.userId;
+    const [permisos, ubicacion] = await Promise.all([
+      UbicacionBrigadaModel.getUnidadPermisos(userId),
+      UbicacionBrigadaModel.getUbicacionActual(userId),
+    ]);
 
     res.json({
       ...permisos,
@@ -400,11 +353,11 @@ export const getMisPermisos = async (req: Request, res: Response) => {
       unidad_origen_id: ubicacion?.unidad_origen_id || null,
       unidad_origen_codigo: ubicacion?.unidad_origen_codigo || null,
       unidad_actual_codigo: ubicacion?.unidad_actual_codigo || null,
-      situacion_persistente_id: ubicacion?.situacion_persistente_id || null
+      situacion_persistente_id: ubicacion?.situacion_persistente_id || null,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error obteniendo permisos:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
