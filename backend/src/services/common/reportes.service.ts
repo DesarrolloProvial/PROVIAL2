@@ -46,7 +46,7 @@ export const ReportesService = {
 
     if (!unidad) throw new Error('Unidad no encontrada');
 
-    const inspecciones = await db.query(`
+    const inspecciones = await db.any(`
       SELECT
         i.id,
         i.fecha_realizacion,
@@ -188,7 +188,7 @@ export const ReportesService = {
 
     if (!unidad) throw new Error('Unidad no encontrada');
 
-    const inspecciones = await db.query(`
+    const inspecciones = await db.any(`
       SELECT
         i.id,
         i.fecha_realizacion,
