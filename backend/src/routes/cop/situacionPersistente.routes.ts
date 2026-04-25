@@ -5,7 +5,6 @@ import {
   getSituacionesPersistentes,
   getSituacionesPersistentesActivas,
   getSituacionPersistente,
-  crearCompleta,
   actualizarSituacionPersistente,
   pausarSituacion,
   reactivarSituacion,
@@ -38,13 +37,6 @@ router.post(
   '/promover/:situacionId',
   authorize('COP', 'OPERACIONES', 'ADMIN'),
   promover
-);
-
-// ── Crear completa (COP crea directamente sin situación origen) ─────────────
-router.post(
-  '/completa',
-  authorize('COP', 'OPERACIONES', 'ADMIN'),
-  crearCompleta
 );
 
 // ── Listado general ─────────────────────────────────────────────────────────
