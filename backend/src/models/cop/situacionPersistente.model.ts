@@ -81,7 +81,7 @@ export const SituacionPersistenteModel = {
   async listar(filtros: {
     estado?: string;
     tipo?: string;
-    ruta_id?: string;
+    ruta_id?: number;
     importancia?: string;
   }): Promise<any[]> {
     const { estado, tipo, ruta_id, importancia } = filtros;
@@ -91,7 +91,7 @@ export const SituacionPersistenteModel = {
 
     if (estado)      { where += ` AND s.estado = $${idx++}`;           params.push(estado); }
     if (tipo)        { where += ` AND s.tipo_situacion = $${idx++}`;   params.push(tipo); }
-    if (ruta_id)     { where += ` AND s.ruta_id = $${idx++}`;          params.push(normalizeId(ruta_id)); }
+    if (ruta_id)     { where += ` AND s.ruta_id = $${idx++}`;          params.push(ruta_id); }
     if (importancia) { where += ` AND s.importancia = $${idx++}`;      params.push(importancia); }
 
     return db.any(`${SELECT_PERSISTENTE} ${where} ORDER BY s.created_at DESC`, params);
@@ -204,7 +204,7 @@ export const SituacionPersistenteModel = {
 
   // ── Actualizaciones (timeline jsonb) ──────────────────────────────────────
 
-  async getObservaciones(id: number): Promise<{ id: number; observaciones: any[] } | null> {
+  async getObservaciones(id: number): Promise<{ id: number; observaciones: any[] | null } | null> {
     return db.oneOrNone(
       'SELECT id, observaciones FROM situacion WHERE id = $1 AND persistente = true',
       [id],

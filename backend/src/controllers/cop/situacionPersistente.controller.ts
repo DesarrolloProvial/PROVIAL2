@@ -45,8 +45,15 @@ export async function getTiposEmergencia(_req: Request, res: Response) {
 
 export async function getSituacionesPersistentes(req: Request, res: Response) {
   try {
-    const { estado, tipo, ruta_id, importancia } = req.query as Record<string, string>;
-    const rows = await SituacionPersistenteModel.listar({ estado, tipo, ruta_id, importancia });
+    const { estado, tipo, importancia } = req.query as Record<string, string>;
+    const rutaIdRaw = req.query.ruta_id as string | undefined;
+    let rutaId: number | undefined;
+    if (rutaIdRaw) {
+      const parsed = normalizeId(rutaIdRaw);
+      if (!parsed) return res.status(400).json({ error: 'ruta_id inválido' });
+      rutaId = parsed;
+    }
+    const rows = await SituacionPersistenteModel.listar({ estado, tipo, ruta_id: rutaId, importancia });
     return res.json(rows);
   } catch (error) {
     console.error('getSituacionesPersistentes:', error);
