@@ -10,10 +10,7 @@
 import { Request, Response } from 'express';
 import { normalizeId } from '../../utils/db.utils';
 import { SituacionPersistenteModel } from '../../models/cop/situacionPersistente.model';
-import {
-  emitSituacionNueva,
-  emitSituacionActualizada,
-} from '../../services/common/socket.service';
+import { emitSituacionActualizada } from '../../services/common/socket.service';
 
 // ────────────────────────────────────────────────────────────────────────────
 // CATÁLOGOS

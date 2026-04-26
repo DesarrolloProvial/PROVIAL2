@@ -105,10 +105,10 @@ export const ReportesService = {
         y += 30;
 
         // Resumen
-        const total = inspecciones.rows.length;
-        const aprobadas = inspecciones.rows.filter((i: any) => i.estado === 'APROBADA').length;
-        const rechazadas = inspecciones.rows.filter((i: any) => i.estado === 'RECHAZADA').length;
-        const pendientes = inspecciones.rows.filter((i: any) => i.estado === 'PENDIENTE').length;
+        const total = inspecciones.length;
+        const aprobadas = inspecciones.filter((i: any) => i.estado === 'APROBADA').length;
+        const rechazadas = inspecciones.filter((i: any) => i.estado === 'RECHAZADA').length;
+        const pendientes = inspecciones.filter((i: any) => i.estado === 'PENDIENTE').length;
 
         doc.fontSize(12).fillColor(COLORS.primary).text('Resumen', 50, y);
         y += 20;
@@ -134,7 +134,7 @@ export const ReportesService = {
         y += 25;
 
         // Filas
-        for (const insp of inspecciones.rows) {
+        for (const insp of inspecciones) {
           if (y > doc.page.height - 80) {
             doc.addPage();
             y = 50;
@@ -237,7 +237,7 @@ export const ReportesService = {
     });
 
     // Datos
-    for (const insp of inspecciones.rows) {
+    for (const insp of inspecciones) {
       sheet.addRow([
         insp.id,
         new Date(insp.fecha_realizacion).toLocaleDateString('es-GT'),

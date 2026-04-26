@@ -3,7 +3,7 @@ import { SalidaModel } from '../../models/common/salida.model';
 import { TurnoModel } from '../../models/common/turno.model';
 import { normalizeId, parseIndicador } from '../../utils/db.utils';
 import { resolveContextoActivo } from '../../utils/operaciones.utils';
-import { emitUnidadCambioEstado, UnidadEvent } from '../../services/common/socket.service';
+import { emitUnidadCambioEstado } from '../../services/common/socket.service';
 
 // ========================================
 // SALIDAS
@@ -114,7 +114,7 @@ export async function iniciarSalida(req: Request, res: Response) {
     const indicador = parseIndicador(combustible_fraccion ?? combustible_inicial);
     const rutaId = normalizeId(ruta_inicial_id) ?? rutaInicialId;
 
-    const salidaId = await SalidaModel.iniciarSalidaBrigada({
+    const { salidaId, inspeccionId } = await SalidaModel.iniciarSalidaBrigada({
       unidad_id:         unidadId,
       ruta_id:           rutaId ?? null,
       km_inicial:        normalizeId(km_inicial) ?? null,
@@ -139,15 +139,14 @@ export async function iniciarSalida(req: Request, res: Response) {
 
     if (salida) {
       const s = salida as any;
-      const evento: UnidadEvent = {
+      emitUnidadCambioEstado({
         unidad_id: unidadId,
         unidad_codigo: s.unidad_codigo || `U-${unidadId}`,
         estado: 'EN_SALIDA',
         sede_id: s.sede_id,
         ruta_id: rutaId || undefined,
         ultima_situacion: 'SALIDA_INICIADA',
-      };
-      emitUnidadCambioEstado(evento);
+      });
     }
 
     return res.status(201).json({
@@ -159,7 +158,7 @@ export async function iniciarSalida(req: Request, res: Response) {
         fecha: asignacionTurno.fecha,
         ruta: asignacionTurno.ruta_codigo,
       },
-      inspeccion_asociada: inspeccionAprobada?.id ?? null,
+      inspeccion_asociada: inspeccionId,
       instruccion: 'Ahora debes registrar SALIDA_SEDE como primera situación',
     });
   } catch (error) {

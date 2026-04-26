@@ -581,7 +581,7 @@ export const SalidaModel = {
     km_inicial?: number | null;
     indicador?: number | null;
     observaciones_salida?: string | null;
-  }): Promise<number> {
+  }): Promise<{ salidaId: number; inspeccionId: number | null }> {
     const inspeccionAprobada = await db.oneOrNone<{ id: number }>(
       `SELECT id FROM inspeccion_360
        WHERE unidad_id = $1
@@ -593,7 +593,7 @@ export const SalidaModel = {
       [data.unidad_id],
     );
 
-    return db.tx(async (conn) => {
+    const salidaId = await db.tx(async (conn) => {
       const { salida_id } = await conn.one<{ salida_id: number }>(
         `SELECT iniciar_salida_unidad($1, $2, $3, $4, $5) AS salida_id`,
         [data.unidad_id, data.ruta_id ?? null, data.km_inicial ?? null, data.indicador ?? null, data.observaciones_salida ?? null],
@@ -608,6 +608,8 @@ export const SalidaModel = {
 
       return salida_id;
     });
+
+    return { salidaId, inspeccionId: inspeccionAprobada?.id ?? null };
   },
 
   async iniciarSalidaCOPCompleto(data: {
