@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { SituacionModel } from '../../models/cop/situacion.model';
+import { SituacionModel, SituacionUpdateData } from '../../models/cop/situacion.model';
 import { SituacionDetalleModel } from '../../models/cop/situacionDetalle.model';
 import { MultimediaModel } from '../../models/common/multimedia.model';
 import { SalidaModel } from '../../models/common/salida.model';
@@ -425,7 +425,7 @@ export async function updateSituacion(req: Request, res: Response) {
       if (!ok) muniIdFinal = null;
     }
 
-    const updateData: any = {
+    const campos: SituacionUpdateData = {
       actualizado_por: userId,
       km, sentido, latitud, longitud, area,
       tipo_pavimento: material_via || tipo_pavimento,
@@ -442,59 +442,15 @@ export async function updateSituacion(req: Request, res: Response) {
       municipio_id: muniIdFinal,
     };
 
-    // ── Todas las escrituras en una única transacción ───────────────────────
-    await db.tx(async t => {
-      // 1. Update campos principales
-      await SituacionModel.update(situacionId, updateData, t);
+    const vehiculosData = vehiculos_involucrados || vehiculos;
 
-      // 2. Vehículos: delete-all + reinsert atómico
-      const vehiculosData = vehiculos_involucrados || vehiculos;
-      if (Array.isArray(vehiculosData)) {
-        await t.none('DELETE FROM situacion_vehiculo WHERE situacion_id = $1', [situacionId]);
-        for (const v of vehiculosData) {
-          await SituacionDetalleModel.addVehiculo(situacionId, v, t);
-        }
-      }
-
-      // 3. Autoridades: delete-all + reinsert atómico
-      if (Array.isArray(autoridadesData) && autoridadesData.length > 0) {
-        await t.none('DELETE FROM autoridad WHERE situacion_id = $1', [situacionId]);
-        for (const a of autoridadesData) {
-          const tipo = typeof a === 'string' ? a : (a.tipo || a);
-          await SituacionDetalleModel.addAutoridad(situacionId, { tipo }, t);
-        }
-      }
-
-      // 4. Grúas del primer vehículo
-      if (Array.isArray(gruasData) && gruasData.length > 0) {
-        const primerSv = await t.oneOrNone(
-          'SELECT id FROM situacion_vehiculo WHERE situacion_id = $1 LIMIT 1',
-          [situacionId]
-        );
-        if (primerSv) {
-          await t.none('DELETE FROM vehiculo_grua WHERE situacion_vehiculo_id = $1', [primerSv.id]);
-          for (const g of gruasData) {
-            await SituacionDetalleModel.addGrua(primerSv.id, g, t);
-          }
-        }
-      }
-
-      // 5. Ajustadores del primer vehículo
-      if (Array.isArray(ajustadoresData) && ajustadoresData.length > 0) {
-        const primerSv = await t.oneOrNone(
-          'SELECT id FROM situacion_vehiculo WHERE situacion_id = $1 LIMIT 1',
-          [situacionId]
-        );
-        if (primerSv) {
-          await t.none('DELETE FROM vehiculo_aseguradora WHERE situacion_vehiculo_id = $1', [primerSv.id]);
-          for (const a of ajustadoresData) {
-            await SituacionDetalleModel.addAjustador(primerSv.id, a, t);
-          }
-        }
-      }
+    const full = await SituacionModel.actualizarCompleta(situacionId, {
+      campos,
+      vehiculos:   Array.isArray(vehiculosData)                              ? vehiculosData   : undefined,
+      autoridades: Array.isArray(autoridadesData) && autoridadesData.length  ? autoridadesData : undefined,
+      gruas:       Array.isArray(gruasData)       && gruasData.length        ? gruasData       : undefined,
+      ajustadores: Array.isArray(ajustadoresData) && ajustadoresData.length  ? ajustadoresData : undefined,
     });
-
-    const full = await SituacionModel.getById(situacionId);
     if (full) emitSituacionActualizada(full as any);
 
     // Log en salida_evento (no bloquea si falla)

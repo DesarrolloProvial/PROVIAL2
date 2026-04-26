@@ -1,4 +1,5 @@
 import { db } from '../../config/database';
+import { SituacionDetalleModel } from './situacionDetalle.model';
 
 // ========================================
 // INTERFACES
@@ -101,6 +102,40 @@ export interface Situacion {
   updated_at: Date;
   creado_por: number;
   actualizado_por?: number | null;
+}
+
+export interface SituacionUpdateData {
+  actualizado_por: number;
+  km?: number | null;
+  sentido?: string | null;
+  latitud?: number | null;
+  longitud?: number | null;
+  area?: string | null;
+  tipo_pavimento?: string | null;
+  clima?: string | null;
+  carga_vehicular?: string | null;
+  danios_materiales?: boolean;
+  danios_infraestructura?: boolean;
+  danios_descripcion?: string | null;
+  obstruccion_data?: any;
+  tipo_situacion_id?: number | null;
+  heridos?: number;
+  fallecidos?: number;
+  causa_probable?: string | null;
+  causa_especificar?: string | null;
+  iluminacion?: string | null;
+  senalizacion?: string | null;
+  visibilidad?: string | null;
+  via_estado?: string | null;
+  ilesos?: number;
+  heridos_leves?: number;
+  heridos_graves?: number;
+  trasladados?: number;
+  fugados?: number;
+  acuerdo_involucrados?: boolean | null;
+  acuerdo_detalle?: string | null;
+  departamento_id?: number | null;
+  municipio_id?: number | null;
 }
 
 export interface SituacionCompleta extends Situacion {
@@ -933,6 +968,69 @@ export const SituacionModel = {
       LEFT JOIN catalogo_tipo_situacion tsc ON s.tipo_situacion_id = tsc.id
       WHERE s.id = $1
     `, [situacionId]);
+  },
+
+  async actualizarCompleta(
+    situacionId: number,
+    data: {
+      campos: SituacionUpdateData;
+      vehiculos?: any[];
+      autoridades?: any[];
+      gruas?: any[];
+      ajustadores?: any[];
+    }
+  ): Promise<any | null> {
+    await db.tx(async t => {
+      // 1. Update campos principales
+      await this.update(situacionId, data.campos as any, t);
+
+      // 2. Refresh vehículos: delete-all + reinsert atómico
+      if (Array.isArray(data.vehiculos)) {
+        await t.none('DELETE FROM situacion_vehiculo WHERE situacion_id = $1', [situacionId]);
+        for (const v of data.vehiculos) {
+          await SituacionDetalleModel.addVehiculo(situacionId, v, t);
+        }
+      }
+
+      // 3. Refresh autoridades: delete-all + reinsert atómico
+      if (Array.isArray(data.autoridades) && data.autoridades.length > 0) {
+        await t.none('DELETE FROM autoridad WHERE situacion_id = $1', [situacionId]);
+        for (const a of data.autoridades) {
+          const tipo = typeof a === 'string' ? a : (a.tipo || a);
+          await SituacionDetalleModel.addAutoridad(situacionId, { tipo }, t);
+        }
+      }
+
+      // 4+5. Refresh grúas y ajustadores — un solo SELECT del primer sv
+      const necesitaGruas      = Array.isArray(data.gruas)      && data.gruas.length      > 0;
+      const necesitaAjustadores= Array.isArray(data.ajustadores) && data.ajustadores.length > 0;
+
+      if (necesitaGruas || necesitaAjustadores) {
+        const primerSv = await t.oneOrNone(
+          'SELECT id FROM situacion_vehiculo WHERE situacion_id = $1 LIMIT 1',
+          [situacionId]
+        );
+
+        if (primerSv) {
+          if (necesitaGruas) {
+            await t.none('DELETE FROM vehiculo_grua WHERE situacion_vehiculo_id = $1', [primerSv.id]);
+            for (const g of data.gruas!) {
+              await SituacionDetalleModel.addGrua(primerSv.id, g, t);
+            }
+          }
+
+          if (necesitaAjustadores) {
+            await t.none('DELETE FROM vehiculo_aseguradora WHERE situacion_vehiculo_id = $1', [primerSv.id]);
+            for (const a of data.ajustadores!) {
+              await SituacionDetalleModel.addAjustador(primerSv.id, a, t);
+            }
+          }
+        }
+      }
+    });
+
+    // getById fuera del tx — lectura limpia post-commit
+    return this.getById(situacionId);
   },
 };
 
