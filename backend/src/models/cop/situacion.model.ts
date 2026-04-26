@@ -745,7 +745,6 @@ export const SituacionModel = {
       actualizado_por,
       fecha_hora_finalizacion: new Date()
     } as any);
-    // Append obs to JSONB observaciones timeline (plain string is not valid JSONB)
     if (obs) {
       const entry = JSON.stringify([{
         hora: new Intl.DateTimeFormat('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', timeZone: 'America/Guatemala' }).format(new Date()),
@@ -758,6 +757,121 @@ export const SituacionModel = {
       );
     }
     return result;
-  }
+  },
+
+  async listarActivas(unidadId?: number): Promise<any[]> {
+    const params: any[] = [];
+    let where = `WHERE s.estado = 'ACTIVA'`;
+    if (unidadId) {
+      where += ` AND s.unidad_id = $1`;
+      params.push(unidadId);
+    }
+    return db.manyOrNone(
+      `SELECT s.*, u.codigo as unidad_codigo, r.codigo as ruta_codigo
+       FROM situacion s
+       LEFT JOIN unidad u ON s.unidad_id = u.id
+       LEFT JOIN ruta r ON s.ruta_id = r.id
+       ${where}
+       ORDER BY s.created_at DESC`,
+      params
+    );
+  },
+
+  async agregarObservacion(id: number, entrada: string): Promise<any> {
+    return db.one(
+      `UPDATE situacion
+       SET observaciones = COALESCE(observaciones, '[]'::jsonb) || $1::jsonb,
+           updated_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [entrada, id],
+    );
+  },
+
+  async eliminar(id: number): Promise<boolean> {
+    const result = await db.result('DELETE FROM situacion WHERE id = $1', [id]);
+    return result.rowCount > 0;
+  },
+
+  async getHeatmap(dias: number, tipo?: string): Promise<any[]> {
+    return db.manyOrNone(
+      `SELECT latitud, longitud,
+              CASE tipo_situacion
+                WHEN 'INCIDENTE'  THEN 3
+                WHEN 'EMERGENCIA' THEN 2
+                ELSE 1
+              END AS peso
+       FROM situacion
+       WHERE latitud IS NOT NULL AND longitud IS NOT NULL
+         AND created_at > NOW() - ($1 || ' days')::INTERVAL
+         ${tipo ? `AND tipo_situacion = $2` : ''}
+       LIMIT 2000`,
+      tipo ? [dias, tipo] : [dias]
+    );
+  },
+
+  async getCatalogo(): Promise<any[]> {
+    const tipos = await db.manyOrNone(`
+      SELECT id, categoria, nombre, icono, color, formulario_tipo
+      FROM catalogo_tipo_situacion
+      WHERE activo = true
+        AND categoria NOT IN ('HECHO_TRANSITO', 'ASISTENCIA', 'EMERGENCIA')
+      ORDER BY categoria, nombre
+    `);
+
+    const categoriaNombres: Record<string, string> = {
+      OPERATIVO:     'Operativo',
+      APOYO:         'Apoyo',
+      ADMINISTRATIVO:'Administrativo',
+    };
+
+    const categoriasMap = new Map<string, any>();
+    for (const tipo of tipos) {
+      if (!categoriasMap.has(tipo.categoria)) {
+        categoriasMap.set(tipo.categoria, {
+          id:     tipo.categoria,
+          codigo: tipo.categoria,
+          nombre: categoriaNombres[tipo.categoria] || tipo.categoria,
+          tipos:  [],
+        });
+      }
+      categoriasMap.get(tipo.categoria).tipos.push({
+        id:             tipo.id,
+        nombre:         tipo.nombre,
+        icono:          tipo.icono,
+        color:          tipo.color,
+        formulario_tipo:tipo.formulario_tipo,
+      });
+    }
+
+    return Array.from(categoriasMap.values());
+  },
+
+  async getCatalogosAuxiliares(): Promise<any> {
+    const [tipos_hecho, tipos_asistencia, tipos_emergencia, tipos_vehiculo, marcas_vehiculo, etnias] =
+      await Promise.all([
+        db.manyOrNone("SELECT id, nombre, icono, color FROM catalogo_tipo_situacion WHERE categoria = 'HECHO_TRANSITO' AND activo = true ORDER BY nombre"),
+        db.manyOrNone("SELECT id, nombre, icono, color FROM catalogo_tipo_situacion WHERE categoria = 'ASISTENCIA'     AND activo = true ORDER BY nombre"),
+        db.manyOrNone("SELECT id, nombre, icono, color FROM catalogo_tipo_situacion WHERE categoria = 'EMERGENCIA'     AND activo = true ORDER BY nombre"),
+        db.manyOrNone("SELECT id, nombre FROM tipo_vehiculo ORDER BY nombre"),
+        db.manyOrNone("SELECT id, nombre FROM marca_vehiculo ORDER BY nombre"),
+        db.manyOrNone("SELECT id, nombre FROM etnia WHERE activo = true ORDER BY nombre"),
+      ]);
+
+    let dispositivos_seguridad: any[] = [];
+    let causas_hecho: any[] = [];
+    try {
+      dispositivos_seguridad = await db.manyOrNone("SELECT id, nombre FROM dispositivo_seguridad ORDER BY nombre");
+    } catch { console.warn('dispositivo_seguridad table not found, skipping'); }
+    try {
+      causas_hecho = await db.manyOrNone("SELECT id, nombre FROM causa_hecho_transito WHERE activo = true ORDER BY nombre");
+    } catch { console.warn('causa_hecho_transito table not found, skipping'); }
+
+    return {
+      tipos_hecho, tipos_asistencia, tipos_emergencia,
+      tipos_vehiculo, marcas_vehiculo, etnias,
+      dispositivos_seguridad, causas_hecho,
+    };
+  },
 };
 

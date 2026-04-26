@@ -21,22 +21,13 @@ export async function listSituaciones(req: Request, res: Response) {
 export async function listSituacionesActivas(req: Request, res: Response) {
   try {
     const { unidad_id } = req.query;
-    let query = `
-      SELECT s.*, u.codigo as unidad_codigo, r.codigo as ruta_codigo
-      FROM situacion s
-      LEFT JOIN unidad u ON s.unidad_id = u.id
-      LEFT JOIN ruta r ON s.ruta_id = r.id
-      WHERE s.estado = 'ACTIVA'
-    `;
-    const params: any[] = [];
+    let uid: number | undefined;
     if (unidad_id) {
-      const uid = normalizeId(unidad_id as string);
-      if (!uid) return res.status(400).json({ error: 'unidad_id inválido' });
-      query += ` AND s.unidad_id = $1`;
-      params.push(uid);
+      const parsed = normalizeId(unidad_id as string);
+      if (!parsed) return res.status(400).json({ error: 'unidad_id inválido' });
+      uid = parsed;
     }
-    query += ` ORDER BY s.created_at DESC`;
-    const activas = await db.manyOrNone(query, params);
+    const activas = await SituacionModel.listarActivas(uid);
     return res.json({ situaciones: activas });
   } catch (error) {
     console.error('listSituacionesActivas:', error);
@@ -175,22 +166,7 @@ export async function getHeatmapData(req: Request, res: Response) {
   try {
     const dias = Math.min(parseInt(req.query.dias as string) || 30, 365);
     const tipo = req.query.tipo as string | undefined;
-
-    const points = await db.manyOrNone(
-      `SELECT latitud, longitud,
-              CASE tipo_situacion
-                WHEN 'INCIDENTE'  THEN 3
-                WHEN 'EMERGENCIA' THEN 2
-                ELSE 1
-              END AS peso
-       FROM situacion
-       WHERE latitud IS NOT NULL AND longitud IS NOT NULL
-         AND created_at > NOW() - ($1 || ' days')::INTERVAL
-         ${tipo ? `AND tipo_situacion = $2` : ''}
-       LIMIT 2000`,
-      tipo ? [dias, tipo] : [dias]
-    );
-
+    const points = await SituacionModel.getHeatmap(dias, tipo);
     return res.json({ points });
   } catch (error) {
     console.error('getHeatmapData:', error);
@@ -231,40 +207,7 @@ export async function getTiposSituacion(_req: Request, res: Response) {
 
 export async function getCatalogo(_req: Request, res: Response) {
   try {
-    const tipos = await db.manyOrNone(`
-      SELECT id, categoria, nombre, icono, color, formulario_tipo
-      FROM catalogo_tipo_situacion
-      WHERE activo = true
-        AND categoria NOT IN ('HECHO_TRANSITO', 'ASISTENCIA', 'EMERGENCIA')
-      ORDER BY categoria, nombre
-    `);
-
-    const categoriaNombres: Record<string, string> = {
-      OPERATIVO:     'Operativo',
-      APOYO:         'Apoyo',
-      ADMINISTRATIVO:'Administrativo',
-    };
-
-    const categoriasMap = new Map<string, any>();
-    for (const tipo of tipos) {
-      if (!categoriasMap.has(tipo.categoria)) {
-        categoriasMap.set(tipo.categoria, {
-          id:     tipo.categoria,
-          codigo: tipo.categoria,
-          nombre: categoriaNombres[tipo.categoria] || tipo.categoria,
-          tipos:  [],
-        });
-      }
-      categoriasMap.get(tipo.categoria).tipos.push({
-        id:             tipo.id,
-        nombre:         tipo.nombre,
-        icono:          tipo.icono,
-        color:          tipo.color,
-        formulario_tipo:tipo.formulario_tipo,
-      });
-    }
-
-    return res.json(Array.from(categoriasMap.values()));
+    return res.json(await SituacionModel.getCatalogo());
   } catch (error) {
     console.error('getCatalogo:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -273,30 +216,7 @@ export async function getCatalogo(_req: Request, res: Response) {
 
 export async function getCatalogosAuxiliares(_req: Request, res: Response) {
   try {
-    const [tipos_hecho, tipos_asistencia, tipos_emergencia, tipos_vehiculo, marcas_vehiculo, etnias] =
-      await Promise.all([
-        db.manyOrNone("SELECT id, nombre, icono, color FROM catalogo_tipo_situacion WHERE categoria = 'HECHO_TRANSITO' AND activo = true ORDER BY nombre"),
-        db.manyOrNone("SELECT id, nombre, icono, color FROM catalogo_tipo_situacion WHERE categoria = 'ASISTENCIA'     AND activo = true ORDER BY nombre"),
-        db.manyOrNone("SELECT id, nombre, icono, color FROM catalogo_tipo_situacion WHERE categoria = 'EMERGENCIA'     AND activo = true ORDER BY nombre"),
-        db.manyOrNone("SELECT id, nombre FROM tipo_vehiculo ORDER BY nombre"),
-        db.manyOrNone("SELECT id, nombre FROM marca_vehiculo ORDER BY nombre"),
-        db.manyOrNone("SELECT id, nombre FROM etnia WHERE activo = true ORDER BY nombre"),
-      ]);
-
-    let dispositivos_seguridad: any[] = [];
-    let causas_hecho: any[] = [];
-    try {
-      dispositivos_seguridad = await db.manyOrNone("SELECT id, nombre FROM dispositivo_seguridad ORDER BY nombre");
-    } catch { console.warn('dispositivo_seguridad table not found, skipping'); }
-    try {
-      causas_hecho = await db.manyOrNone("SELECT id, nombre FROM causa_hecho_transito WHERE activo = true ORDER BY nombre");
-    } catch { console.warn('causa_hecho_transito table not found, skipping'); }
-
-    return res.json({
-      tipos_hecho, tipos_asistencia, tipos_emergencia,
-      tipos_vehiculo, marcas_vehiculo, etnias,
-      dispositivos_seguridad, causas_hecho,
-    });
+    return res.json(await SituacionModel.getCatalogosAuxiliares());
   } catch (error) {
     console.error('getCatalogosAuxiliares:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });

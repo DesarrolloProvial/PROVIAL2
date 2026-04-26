@@ -553,8 +553,9 @@ export async function deleteSituacion(req: Request, res: Response) {
     const id = normalizeId(req.params.id);
     if (!id) return res.status(400).json({ error: 'ID inválido' });
 
-    await db.none('DELETE FROM situacion WHERE id = $1', [id]);
-    return res.json({ message: 'Situación eliminada' });
+    const ok = await SituacionModel.eliminar(id);
+    if (!ok) return res.status(404).json({ error: 'Situación no encontrada' });
+    return res.status(204).send();
   } catch (error) {
     console.error('deleteSituacion:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -651,12 +652,7 @@ export async function addObservacion(req: Request, res: Response) {
 
     const nuevoMensaje = await buildObservacionEntry(userId, observacion, hora_local);
 
-    const situacionModificada = await db.one(
-      `UPDATE situacion
-       SET observaciones = COALESCE(observaciones, '[]'::jsonb) || $1::jsonb, updated_at = NOW()
-       WHERE id = $2 RETURNING *`,
-      [nuevoMensaje, id],
-    );
+    const situacionModificada = await SituacionModel.agregarObservacion(id, nuevoMensaje);
 
     emitSituacionActualizada(situacionModificada as any);
 
