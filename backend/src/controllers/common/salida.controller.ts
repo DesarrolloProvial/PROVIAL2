@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { SalidaModel } from '../../models/common/salida.model';
 import { TurnoModel } from '../../models/common/turno.model';
-import { db } from '../../config/database';
 import { normalizeId, parseIndicador } from '../../utils/db.utils';
 import { resolveContextoActivo } from '../../utils/operaciones.utils';
 import { emitUnidadCambioEstado, UnidadEvent } from '../../services/common/socket.service';
@@ -115,33 +114,12 @@ export async function iniciarSalida(req: Request, res: Response) {
     const indicador = parseIndicador(combustible_fraccion ?? combustible_inicial);
     const rutaId = normalizeId(ruta_inicial_id) ?? rutaInicialId;
 
-    // Buscar inspección 360 aprobada y reciente (no bloquea si no existe)
-    const inspeccionAprobada = await db.oneOrNone<{ id: number }>(
-      `SELECT id FROM inspeccion_360
-       WHERE unidad_id = $1
-         AND estado = 'APROBADA'
-         AND salida_id IS NULL
-         AND fecha_aprobacion > NOW() - INTERVAL '24 hours'
-       ORDER BY fecha_aprobacion DESC
-       LIMIT 1`,
-      [unidadId],
-    );
-
-    // Transacción: crear salida + vincular inspección
-    const salidaId = await db.tx(async (conn) => {
-      const { salida_id } = await conn.one<{ salida_id: number }>(
-        `SELECT iniciar_salida_unidad($1, $2, $3, $4, $5) AS salida_id`,
-        [unidadId, rutaId, normalizeId(km_inicial), indicador, observaciones_salida || null],
-      );
-
-      if (inspeccionAprobada) {
-        await conn.none(
-          `UPDATE inspeccion_360 SET salida_id = $1 WHERE id = $2`,
-          [salida_id, inspeccionAprobada.id],
-        );
-      }
-
-      return salida_id;
+    const salidaId = await SalidaModel.iniciarSalidaBrigada({
+      unidad_id:         unidadId,
+      ruta_id:           rutaId ?? null,
+      km_inicial:        normalizeId(km_inicial) ?? null,
+      indicador,
+      observaciones_salida: observaciones_salida || null,
     });
 
     // Actualizar turno (no fatal si falla)
@@ -184,11 +162,8 @@ export async function iniciarSalida(req: Request, res: Response) {
       inspeccion_asociada: inspeccionAprobada?.id ?? null,
       instruccion: 'Ahora debes registrar SALIDA_SEDE como primera situación',
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error en iniciarSalida:', error);
-    if (error.message?.includes('ya tiene una salida activa')) {
-      return res.status(409).json({ error: 'La unidad ya tiene una salida activa' });
-    }
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -211,42 +186,32 @@ export async function iniciarSalidaCOP(req: Request, res: Response) {
 
     if (!unidad_id) return res.status(400).json({ error: 'unidad_id es requerido' });
 
-    const salidaActiva = await db.oneOrNone<{ id: number }>(
-      `SELECT id FROM salida_unidad WHERE unidad_id = $1 AND estado = 'EN_SALIDA'`,
-      [unidad_id],
-    );
-    if (salidaActiva) {
-      return res.status(409).json({ error: 'La unidad ya tiene una salida activa', salida_id: salidaActiva.id });
-    }
-
-    const estadoUnidad = await db.oneOrNone<{ disponible_transportes: boolean; instrucciones_transportes: string | null }>(
-      `SELECT disponible_transportes, instrucciones_transportes FROM unidad WHERE id = $1`,
-      [unidad_id],
-    );
-    const forzadaNoDisponible = estadoUnidad?.disponible_transportes === false;
+    const unidadId = normalizeId(unidad_id);
+    if (!unidadId) return res.status(400).json({ error: 'unidad_id inválido' });
 
     const indicador = parseIndicador(combustible_fraccion ?? combustible_inicial);
 
-    const salidaId = await SalidaModel.iniciarSalida({
-      unidad_id,
-      ruta_inicial_id: normalizeId(ruta_inicial_id) ?? undefined,
-      km_inicial: normalizeId(km_inicial) ?? undefined,
-      combustible_inicial: indicador ?? undefined,
-      observaciones_salida,
+    const resultado = await SalidaModel.iniciarSalidaCOPCompleto({
+      unidad_id:         unidadId,
+      ruta_inicial_id:   normalizeId(ruta_inicial_id) ?? null,
+      km_inicial:        normalizeId(km_inicial) ?? null,
+      indicador,
+      observaciones_salida: observaciones_salida ?? null,
+      tripulacion:       Array.isArray(tripulacion) ? tripulacion : null,
+      userId:            req.user!.userId,
     });
 
-    const tieneTripulacion = Array.isArray(tripulacion) && tripulacion.length > 0;
-    await db.none(
-      `UPDATE salida_unidad SET origen = 'COP_EMERGENCIA', tripulacion = $1 WHERE id = $2`,
-      [tieneTripulacion ? JSON.stringify(tripulacion) : null, salidaId],
-    );
+    if ('conflict' in resultado) {
+      return res.status(409).json({ error: 'La unidad ya tiene una salida activa' });
+    }
 
+    const { salidaId } = resultado;
     const salida = await SalidaModel.getSalidaById(salidaId);
     if (salida) {
       const s = salida as any;
       emitUnidadCambioEstado({
-        unidad_id,
-        unidad_codigo: s.unidad_codigo || `U-${unidad_id}`,
+        unidad_id: unidadId,
+        unidad_codigo: s.unidad_codigo || `U-${unidadId}`,
         estado: 'EN_SALIDA',
         sede_id: s.sede_id,
         ruta_id: normalizeId(ruta_inicial_id) || undefined,
@@ -254,29 +219,9 @@ export async function iniciarSalidaCOP(req: Request, res: Response) {
       });
     }
 
-    const descEvento = [
-      tieneTripulacion
-        ? `Salida iniciada desde COP con ${tripulacion.length} integrante(s)`
-        : 'Salida iniciada desde COP',
-      forzadaNoDisponible
-        ? `[FORZADA: unidad marcada no disponible por Transportes — "${estadoUnidad!.instrucciones_transportes || 'sin motivo'}"]`
-        : null,
-    ].filter(Boolean).join(' ');
-
-    await db.none(
-      `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_new, realizado_por)
-       VALUES ($1, 'INICIO_COP', $2, $3, $4)`,
-      [salidaId, descEvento,
-       JSON.stringify({ unidad_id, ruta_inicial_id: normalizeId(ruta_inicial_id), tripulacion: tripulacion || null, forzada_no_disponible: forzadaNoDisponible }),
-       req.user!.userId],
-    );
-
     return res.status(201).json({ message: 'Salida iniciada desde COP', salida_id: salidaId, salida });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error en iniciarSalidaCOP:', error);
-    if (error.message?.includes('ya tiene una salida activa')) {
-      return res.status(409).json({ error: 'La unidad ya tiene una salida activa' });
-    }
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

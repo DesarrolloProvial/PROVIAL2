@@ -575,6 +575,93 @@ export const SalidaModel = {
     );
   },
 
+  async iniciarSalidaBrigada(data: {
+    unidad_id: number;
+    ruta_id?: number | null;
+    km_inicial?: number | null;
+    indicador?: number | null;
+    observaciones_salida?: string | null;
+  }): Promise<number> {
+    const inspeccionAprobada = await db.oneOrNone<{ id: number }>(
+      `SELECT id FROM inspeccion_360
+       WHERE unidad_id = $1
+         AND estado = 'APROBADA'
+         AND salida_id IS NULL
+         AND fecha_aprobacion > NOW() - INTERVAL '24 hours'
+       ORDER BY fecha_aprobacion DESC
+       LIMIT 1`,
+      [data.unidad_id],
+    );
+
+    return db.tx(async (conn) => {
+      const { salida_id } = await conn.one<{ salida_id: number }>(
+        `SELECT iniciar_salida_unidad($1, $2, $3, $4, $5) AS salida_id`,
+        [data.unidad_id, data.ruta_id ?? null, data.km_inicial ?? null, data.indicador ?? null, data.observaciones_salida ?? null],
+      );
+
+      if (inspeccionAprobada) {
+        await conn.none(
+          `UPDATE inspeccion_360 SET salida_id = $1 WHERE id = $2`,
+          [salida_id, inspeccionAprobada.id],
+        );
+      }
+
+      return salida_id;
+    });
+  },
+
+  async iniciarSalidaCOPCompleto(data: {
+    unidad_id: number;
+    ruta_inicial_id?: number | null;
+    km_inicial?: number | null;
+    indicador?: number | null;
+    observaciones_salida?: string | null;
+    tripulacion?: any[] | null;
+    userId: number;
+  }): Promise<{ salidaId: number; forzadaNoDisponible: boolean; instrucciones: string | null } | { conflict: true }> {
+    const salidaActiva = await db.oneOrNone<{ id: number }>(
+      `SELECT id FROM salida_unidad WHERE unidad_id = $1 AND estado = 'EN_SALIDA'`,
+      [data.unidad_id],
+    );
+    if (salidaActiva) return { conflict: true };
+
+    const estadoUnidad = await db.oneOrNone<{ disponible_transportes: boolean; instrucciones_transportes: string | null }>(
+      `SELECT disponible_transportes, instrucciones_transportes FROM unidad WHERE id = $1`,
+      [data.unidad_id],
+    );
+    const forzadaNoDisponible = estadoUnidad?.disponible_transportes === false;
+
+    const salidaId: number = await db.one(
+      `SELECT iniciar_salida_unidad($1, $2, $3, $4, $5) AS salida_id`,
+      [data.unidad_id, data.ruta_inicial_id ?? null, data.km_inicial ?? null, data.indicador ?? null, data.observaciones_salida ?? null],
+    ).then((r) => r.salida_id);
+
+    const tieneTripulacion = Array.isArray(data.tripulacion) && data.tripulacion.length > 0;
+    await db.none(
+      `UPDATE salida_unidad SET origen = 'COP_EMERGENCIA', tripulacion = $1 WHERE id = $2`,
+      [tieneTripulacion ? JSON.stringify(data.tripulacion) : null, salidaId],
+    );
+
+    const descEvento = [
+      tieneTripulacion
+        ? `Salida iniciada desde COP con ${data.tripulacion!.length} integrante(s)`
+        : 'Salida iniciada desde COP',
+      forzadaNoDisponible
+        ? `[FORZADA: unidad marcada no disponible por Transportes — "${estadoUnidad!.instrucciones_transportes || 'sin motivo'}"]`
+        : null,
+    ].filter(Boolean).join(' ');
+
+    await db.none(
+      `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_new, realizado_por)
+       VALUES ($1, 'INICIO_COP', $2, $3, $4)`,
+      [salidaId, descEvento,
+       JSON.stringify({ unidad_id: data.unidad_id, ruta_inicial_id: data.ruta_inicial_id, tripulacion: data.tripulacion ?? null, forzada_no_disponible: forzadaNoDisponible }),
+       data.userId],
+    );
+
+    return { salidaId, forzadaNoDisponible, instrucciones: estadoUnidad?.instrucciones_transportes ?? null };
+  },
+
   async finalizarSalidaCOP(salidaId: number, data: {
     km_final?: number | null;
     indicador?: number | null;
