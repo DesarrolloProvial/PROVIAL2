@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { SituacionModel } from '../../models/cop/situacion.model';
 import { ActividadModel } from '../../models/cop/actividad.model';
-import { db } from '../../config/database';
 import { normalizeId } from '../../utils/db.utils';
 
 // ========================================
@@ -49,26 +48,14 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
     // 2. Turno activo de hoy
     if (!unidadId) {
       try {
-        const tt = await db.oneOrNone(
-          `SELECT au.unidad_id FROM tripulacion_turno tt
-           JOIN asignacion_unidad au ON tt.asignacion_id = au.id
-           JOIN turno t ON au.turno_id = t.id
-           WHERE tt.usuario_id = $1 AND t.fecha = CURRENT_DATE
-           ORDER BY tt.created_at DESC LIMIT 1`,
-          [userId]
-        );
-        if (tt) unidadId = tt.unidad_id;
+        unidadId = await SituacionModel.getUnidadIdDesdeTurno(userId);
       } catch { /* silencioso */ }
     }
 
     // 3. Fallback: última situación del usuario
     if (!unidadId) {
       try {
-        const s = await db.oneOrNone(
-          'SELECT unidad_id FROM situacion WHERE creado_por = $1 ORDER BY created_at DESC LIMIT 1',
-          [userId]
-        );
-        if (s) unidadId = s.unidad_id;
+        unidadId = await SituacionModel.getUnidadIdDesdeUltimaSituacion(userId);
       } catch { /* silencioso */ }
     }
 
@@ -79,37 +66,13 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
     // Buscar situación activa desde cache situacion_actual
     let situacionActiva: any = null;
     try {
-      const cache = await db.oneOrNone(
-        "SELECT situacion_id FROM situacion_actual WHERE unidad_id = $1 AND estado = 'ACTIVA'",
-        [unidadId]
-      );
-      if (cache?.situacion_id) {
-        situacionActiva = list.find((s: any) => s.id === cache.situacion_id) || null;
+      const situacionIdActiva = await SituacionModel.getSituacionIdActiva(unidadId);
+      if (situacionIdActiva) {
+        situacionActiva = list.find((s: any) => s.id === situacionIdActiva) || null;
 
         // Situación activa de otro día (no está en la lista de hoy)
         if (!situacionActiva) {
-          situacionActiva = await db.oneOrNone(`
-            SELECT s.*,
-              r.codigo as ruta_codigo, r.nombre as ruta_nombre,
-              tsc.nombre as tipo_situacion_nombre, tsc.categoria as tipo_situacion_categoria,
-              s.tipo_pavimento as material_via,
-              COALESCE(
-                (SELECT json_agg(json_build_object(
-                  'id', sm.id, 'tipo', sm.tipo, 'orden', sm.orden,
-                  'url', sm.url_original, 'thumbnail', sm.url_thumbnail,
-                  'infografia_numero', sm.infografia_numero,
-                  'infografia_titulo', sm.infografia_titulo
-                ) ORDER BY sm.infografia_numero, sm.tipo, sm.orden)
-                FROM situacion_multimedia sm WHERE sm.situacion_id = s.id),
-                '[]'
-              ) as multimedia,
-              (SELECT COUNT(*) FROM situacion_multimedia WHERE situacion_id = s.id AND tipo = 'FOTO') as total_fotos,
-              (SELECT COUNT(*) FROM situacion_multimedia WHERE situacion_id = s.id AND tipo = 'VIDEO') as total_videos
-            FROM situacion s
-            LEFT JOIN ruta r ON s.ruta_id = r.id
-            LEFT JOIN catalogo_tipo_situacion tsc ON s.tipo_situacion_id = tsc.id
-            WHERE s.id = $1
-          `, [cache.situacion_id]);
+          situacionActiva = await SituacionModel.getSituacionConMultimedia(situacionIdActiva);
         }
       }
     } catch (e) {

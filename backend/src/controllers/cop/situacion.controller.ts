@@ -672,11 +672,7 @@ export async function marcarPersistente(req: Request, res: Response) {
     const id = normalizeId(req.params.id);
     if (!id) return res.status(400).json({ error: 'ID inválido' });
 
-    const situacion = await db.oneOrNone(
-      `UPDATE situacion SET persistente = true, updated_at = NOW()
-       WHERE id = $1 RETURNING *`,
-      [id]
-    );
+    const situacion = await SituacionModel.marcarPersistente(id);
 
     if (!situacion) return res.status(404).json({ error: 'Situación no encontrada' });
 

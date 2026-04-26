@@ -873,5 +873,66 @@ export const SituacionModel = {
       dispositivos_seguridad, causas_hecho,
     };
   },
+
+  async marcarPersistente(id: number): Promise<any | null> {
+    return db.oneOrNone(
+      `UPDATE situacion SET persistente = true, updated_at = NOW()
+       WHERE id = $1 RETURNING *`,
+      [id]
+    );
+  },
+
+  async getUnidadIdDesdeTurno(userId: number): Promise<number | null> {
+    const row = await db.oneOrNone(
+      `SELECT au.unidad_id FROM tripulacion_turno tt
+       JOIN asignacion_unidad au ON tt.asignacion_id = au.id
+       JOIN turno t ON au.turno_id = t.id
+       WHERE tt.usuario_id = $1 AND t.fecha = CURRENT_DATE
+       ORDER BY tt.created_at DESC LIMIT 1`,
+      [userId]
+    );
+    return row?.unidad_id ?? null;
+  },
+
+  async getUnidadIdDesdeUltimaSituacion(userId: number): Promise<number | null> {
+    const row = await db.oneOrNone(
+      'SELECT unidad_id FROM situacion WHERE creado_por = $1 ORDER BY created_at DESC LIMIT 1',
+      [userId]
+    );
+    return row?.unidad_id ?? null;
+  },
+
+  async getSituacionIdActiva(unidadId: number): Promise<number | null> {
+    const row = await db.oneOrNone(
+      "SELECT situacion_id FROM situacion_actual WHERE unidad_id = $1 AND estado = 'ACTIVA'",
+      [unidadId]
+    );
+    return row?.situacion_id ?? null;
+  },
+
+  async getSituacionConMultimedia(situacionId: number): Promise<any | null> {
+    return db.oneOrNone(`
+      SELECT s.*,
+        r.codigo as ruta_codigo, r.nombre as ruta_nombre,
+        tsc.nombre as tipo_situacion_nombre, tsc.categoria as tipo_situacion_categoria,
+        s.tipo_pavimento as material_via,
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+            'id', sm.id, 'tipo', sm.tipo, 'orden', sm.orden,
+            'url', sm.url_original, 'thumbnail', sm.url_thumbnail,
+            'infografia_numero', sm.infografia_numero,
+            'infografia_titulo', sm.infografia_titulo
+          ) ORDER BY sm.infografia_numero, sm.tipo, sm.orden)
+          FROM situacion_multimedia sm WHERE sm.situacion_id = s.id),
+          '[]'
+        ) as multimedia,
+        (SELECT COUNT(*) FROM situacion_multimedia WHERE situacion_id = s.id AND tipo = 'FOTO') as total_fotos,
+        (SELECT COUNT(*) FROM situacion_multimedia WHERE situacion_id = s.id AND tipo = 'VIDEO') as total_videos
+      FROM situacion s
+      LEFT JOIN ruta r ON s.ruta_id = r.id
+      LEFT JOIN catalogo_tipo_situacion tsc ON s.tipo_situacion_id = tsc.id
+      WHERE s.id = $1
+    `, [situacionId]);
+  },
 };
 
