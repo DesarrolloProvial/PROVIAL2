@@ -12,9 +12,9 @@ export async function listSituaciones(req: Request, res: Response) {
   try {
     const list = await SituacionModel.list(req.query);
     return res.json({ situaciones: list, count: list.length });
-  } catch (error: any) {
-    console.error('Error listSituaciones:', error);
-    return res.status(500).json({ error: error.message || 'Error interno' });
+  } catch (error) {
+    console.error('listSituaciones:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -30,15 +30,17 @@ export async function listSituacionesActivas(req: Request, res: Response) {
     `;
     const params: any[] = [];
     if (unidad_id) {
+      const uid = normalizeId(unidad_id as string);
+      if (!uid) return res.status(400).json({ error: 'unidad_id inválido' });
       query += ` AND s.unidad_id = $1`;
-      params.push(parseInt(unidad_id as string));
+      params.push(uid);
     }
     query += ` ORDER BY s.created_at DESC`;
     const activas = await db.manyOrNone(query, params);
     return res.json({ situaciones: activas });
-  } catch (error: any) {
-    console.error('Error listSituacionesActivas:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error('listSituacionesActivas:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -47,100 +49,105 @@ export async function listSituacionesActivas(req: Request, res: Response) {
 // ========================================
 
 export async function getMiUnidadHoy(req: Request, res: Response) {
-  const userId = req.user!.userId;
-
-  // 1. Query param directo (móvil puede enviarlo)
-  let unidadId: number | null = req.query.unidad_id ? Number(req.query.unidad_id) : null;
-
-  // 2. Turno activo de hoy
-  if (!unidadId) {
-    try {
-      const tt = await db.oneOrNone(
-        `SELECT au.unidad_id FROM tripulacion_turno tt
-         JOIN asignacion_unidad au ON tt.asignacion_id = au.id
-         JOIN turno t ON au.turno_id = t.id
-         WHERE tt.usuario_id = $1 AND t.fecha = CURRENT_DATE
-         ORDER BY tt.created_at DESC LIMIT 1`,
-        [userId]
-      );
-      if (tt) unidadId = tt.unidad_id;
-    } catch { /* silencioso */ }
-  }
-
-  // 3. Fallback: última situación del usuario
-  if (!unidadId) {
-    try {
-      const s = await db.oneOrNone(
-        'SELECT unidad_id FROM situacion WHERE creado_por = $1 ORDER BY created_at DESC LIMIT 1',
-        [userId]
-      );
-      if (s) unidadId = s.unidad_id;
-    } catch { /* silencioso */ }
-  }
-
-  if (!unidadId) return res.json({ situaciones: [], situacion_activa: null });
-
-  const list = await SituacionModel.getMiUnidadHoy(unidadId);
-
-  // Buscar situación activa desde cache situacion_actual
-  let situacionActiva: any = null;
   try {
-    const cache = await db.oneOrNone(
-      "SELECT situacion_id FROM situacion_actual WHERE unidad_id = $1 AND estado = 'ACTIVA'",
-      [unidadId]
-    );
-    if (cache?.situacion_id) {
-      situacionActiva = list.find((s: any) => s.id === cache.situacion_id) || null;
+    const userId = req.user!.userId;
 
-      // Situación activa de otro día (no está en la lista de hoy)
-      if (!situacionActiva) {
-        situacionActiva = await db.oneOrNone(`
-          SELECT s.*,
-            r.codigo as ruta_codigo, r.nombre as ruta_nombre,
-            tsc.nombre as tipo_situacion_nombre, tsc.categoria as tipo_situacion_categoria,
-            s.tipo_pavimento as material_via,
-            COALESCE(
-              (SELECT json_agg(json_build_object(
-                'id', sm.id, 'tipo', sm.tipo, 'orden', sm.orden,
-                'url', sm.url_original, 'thumbnail', sm.url_thumbnail,
-                'infografia_numero', sm.infografia_numero,
-                'infografia_titulo', sm.infografia_titulo
-              ) ORDER BY sm.infografia_numero, sm.tipo, sm.orden)
-              FROM situacion_multimedia sm WHERE sm.situacion_id = s.id),
-              '[]'
-            ) as multimedia,
-            (SELECT COUNT(*) FROM situacion_multimedia WHERE situacion_id = s.id AND tipo = 'FOTO') as total_fotos,
-            (SELECT COUNT(*) FROM situacion_multimedia WHERE situacion_id = s.id AND tipo = 'VIDEO') as total_videos
-          FROM situacion s
-          LEFT JOIN ruta r ON s.ruta_id = r.id
-          LEFT JOIN catalogo_tipo_situacion tsc ON s.tipo_situacion_id = tsc.id
-          WHERE s.id = $1
-        `, [cache.situacion_id]);
-      }
+    // 1. Query param directo (móvil puede enviarlo)
+    let unidadId: number | null = normalizeId(req.query.unidad_id as string);
+
+    // 2. Turno activo de hoy
+    if (!unidadId) {
+      try {
+        const tt = await db.oneOrNone(
+          `SELECT au.unidad_id FROM tripulacion_turno tt
+           JOIN asignacion_unidad au ON tt.asignacion_id = au.id
+           JOIN turno t ON au.turno_id = t.id
+           WHERE tt.usuario_id = $1 AND t.fecha = CURRENT_DATE
+           ORDER BY tt.created_at DESC LIMIT 1`,
+          [userId]
+        );
+        if (tt) unidadId = tt.unidad_id;
+      } catch { /* silencioso */ }
     }
-  } catch (e: any) {
-    console.warn('[getMiUnidadHoy] Error buscando situacion activa:', e.message);
-  }
 
-  if (!situacionActiva) {
-    situacionActiva = list.find((s: any) => s.estado === 'ACTIVA') || null;
-  }
+    // 3. Fallback: última situación del usuario
+    if (!unidadId) {
+      try {
+        const s = await db.oneOrNone(
+          'SELECT unidad_id FROM situacion WHERE creado_por = $1 ORDER BY created_at DESC LIMIT 1',
+          [userId]
+        );
+        if (s) unidadId = s.unidad_id;
+      } catch { /* silencioso */ }
+    }
 
-  let actividadActiva: any = null;
-  let actividadesHoy: any[] = [];
-  try {
-    actividadesHoy  = await ActividadModel.getByUnidadHoy(unidadId);
-    actividadActiva = actividadesHoy.find((a: any) => a.estado === 'ACTIVA') || null;
-  } catch (e: any) {
-    console.warn('[getMiUnidadHoy] Error buscando actividades:', e.message);
-  }
+    if (!unidadId) return res.json({ situaciones: [], situacion_activa: null });
 
-  return res.json({
-    situaciones:     list,
-    situacion_activa:situacionActiva,
-    actividades:     actividadesHoy,
-    actividad_activa:actividadActiva,
-  });
+    const list = await SituacionModel.getMiUnidadHoy(unidadId);
+
+    // Buscar situación activa desde cache situacion_actual
+    let situacionActiva: any = null;
+    try {
+      const cache = await db.oneOrNone(
+        "SELECT situacion_id FROM situacion_actual WHERE unidad_id = $1 AND estado = 'ACTIVA'",
+        [unidadId]
+      );
+      if (cache?.situacion_id) {
+        situacionActiva = list.find((s: any) => s.id === cache.situacion_id) || null;
+
+        // Situación activa de otro día (no está en la lista de hoy)
+        if (!situacionActiva) {
+          situacionActiva = await db.oneOrNone(`
+            SELECT s.*,
+              r.codigo as ruta_codigo, r.nombre as ruta_nombre,
+              tsc.nombre as tipo_situacion_nombre, tsc.categoria as tipo_situacion_categoria,
+              s.tipo_pavimento as material_via,
+              COALESCE(
+                (SELECT json_agg(json_build_object(
+                  'id', sm.id, 'tipo', sm.tipo, 'orden', sm.orden,
+                  'url', sm.url_original, 'thumbnail', sm.url_thumbnail,
+                  'infografia_numero', sm.infografia_numero,
+                  'infografia_titulo', sm.infografia_titulo
+                ) ORDER BY sm.infografia_numero, sm.tipo, sm.orden)
+                FROM situacion_multimedia sm WHERE sm.situacion_id = s.id),
+                '[]'
+              ) as multimedia,
+              (SELECT COUNT(*) FROM situacion_multimedia WHERE situacion_id = s.id AND tipo = 'FOTO') as total_fotos,
+              (SELECT COUNT(*) FROM situacion_multimedia WHERE situacion_id = s.id AND tipo = 'VIDEO') as total_videos
+            FROM situacion s
+            LEFT JOIN ruta r ON s.ruta_id = r.id
+            LEFT JOIN catalogo_tipo_situacion tsc ON s.tipo_situacion_id = tsc.id
+            WHERE s.id = $1
+          `, [cache.situacion_id]);
+        }
+      }
+    } catch (e) {
+      console.warn('[getMiUnidadHoy] Error buscando situacion activa:', e);
+    }
+
+    if (!situacionActiva) {
+      situacionActiva = list.find((s: any) => s.estado === 'ACTIVA') || null;
+    }
+
+    let actividadActiva: any = null;
+    let actividadesHoy: any[] = [];
+    try {
+      actividadesHoy  = await ActividadModel.getByUnidadHoy(unidadId);
+      actividadActiva = actividadesHoy.find((a: any) => a.estado === 'ACTIVA') || null;
+    } catch (e) {
+      console.warn('[getMiUnidadHoy] Error buscando actividades:', e);
+    }
+
+    return res.json({
+      situaciones:     list,
+      situacion_activa:situacionActiva,
+      actividades:     actividadesHoy,
+      actividad_activa:actividadActiva,
+    });
+  } catch (error) {
+    console.error('getMiUnidadHoy:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
 }
 
 // ========================================
@@ -185,9 +192,9 @@ export async function getHeatmapData(req: Request, res: Response) {
     );
 
     return res.json({ points });
-  } catch (err) {
-    console.error('Error heatmap:', err);
-    return res.status(500).json({ error: 'Error interno' });
+  } catch (error) {
+    console.error('getHeatmapData:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -195,9 +202,9 @@ export async function getResumenUnidades(_req: Request, res: Response) {
   try {
     const resumen = await SituacionModel.getResumen();
     return res.json({ resumen });
-  } catch (error: any) {
-    console.error('Error getResumenUnidades:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error('getResumenUnidades:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -258,9 +265,9 @@ export async function getCatalogo(_req: Request, res: Response) {
     }
 
     return res.json(Array.from(categoriasMap.values()));
-  } catch (error: any) {
-    console.error('Error getCatalogo:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error('getCatalogo:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -290,8 +297,8 @@ export async function getCatalogosAuxiliares(_req: Request, res: Response) {
       tipos_vehiculo, marcas_vehiculo, etnias,
       dispositivos_seguridad, causas_hecho,
     });
-  } catch (error: any) {
-    console.error('Error getCatalogosAuxiliares:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error('getCatalogosAuxiliares:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

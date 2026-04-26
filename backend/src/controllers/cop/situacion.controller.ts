@@ -322,9 +322,9 @@ export async function createSituacion(req: Request, res: Response) {
     if (full) emitSituacionNueva(full as any);
     return res.status(201).json({ message: 'Situación creada', situacion: full });
 
-  } catch (error: any) {
-    console.error('❌ [CREATE ERROR]:', error);
-    return res.status(500).json({ error: 'Internal Error', detail: error.message });
+  } catch (error) {
+    console.error('createSituacion:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -342,7 +342,9 @@ export async function getSituacion(req: Request, res: Response) {
       if (!s) return res.status(404).json({ error: 'No encontrada' });
       situacionId = s.id;
     } else {
-      situacionId = parseInt(id, 10);
+      const parsed = normalizeId(id);
+      if (!parsed) return res.status(400).json({ error: 'ID inválido' });
+      situacionId = parsed;
     }
 
     const situacion = await SituacionModel.getById(situacionId);
@@ -386,9 +388,9 @@ export async function getSituacion(req: Request, res: Response) {
 
 export async function updateSituacion(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const situacionId = normalizeId(req.params.id);
+    if (!situacionId) return res.status(400).json({ error: 'ID inválido' });
     const userId = req.user!.userId;
-    const situacionId = parseInt(id, 10);
 
     const {
       km, sentido, latitud, longitud,
@@ -508,9 +510,9 @@ export async function updateSituacion(req: Request, res: Response) {
 
     return res.json({ message: 'Actualizado', situacion: full });
 
-  } catch (error: any) {
-    console.error('Error update:', error);
-    return res.status(500).json({ error: error.message || 'Error interno' });
+  } catch (error) {
+    console.error('updateSituacion:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -520,11 +522,13 @@ export async function updateSituacion(req: Request, res: Response) {
 
 export async function cerrarSituacion(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
     const { observaciones } = req.body;
     const userId = req.user!.userId;
 
-    const situacion = await SituacionModel.cerrar(parseInt(id), userId, observaciones);
+    const situacion = await SituacionModel.cerrar(id, userId, observaciones);
     emitSituacionCerrada(situacion as any);
 
     const sit = situacion as any;
@@ -533,36 +537,41 @@ export async function cerrarSituacion(req: Request, res: Response) {
         `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_new, realizado_por)
          VALUES ($1, 'CIERRE_SITUACION', $2, $3, $4)`,
         [sit.salida_unidad_id, `Situación #${id} cerrada`,
-         JSON.stringify({ situacion_id: parseInt(id), observaciones: observaciones || null }), userId]
+         JSON.stringify({ situacion_id: id, observaciones: observaciones || null }), userId]
       ).catch(() => {});
     }
 
     return res.json({ message: 'Situación cerrada', situacion });
-  } catch (error: any) {
-    console.error('Error cerrarSituacion:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error('cerrarSituacion:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
 export async function deleteSituacion(req: Request, res: Response) {
   try {
-    await db.none('DELETE FROM situacion WHERE id = $1', [req.params.id]);
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
+    await db.none('DELETE FROM situacion WHERE id = $1', [id]);
     return res.json({ message: 'Situación eliminada' });
-  } catch (error: any) {
-    console.error('Error deleteSituacion:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error('deleteSituacion:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
 export async function cambiarTipoSituacion(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
     const { nuevo_tipo } = req.body;
-    const situacion = await SituacionModel.update(parseInt(id), { tipo_situacion: nuevo_tipo } as any);
+    const situacion = await SituacionModel.update(id, { tipo_situacion: nuevo_tipo } as any);
     return res.json({ message: 'Tipo cambiado', situacion });
-  } catch (error: any) {
-    console.error('Error cambiarTipoSituacion:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error('cambiarTipoSituacion:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -572,13 +581,15 @@ export async function cambiarTipoSituacion(req: Request, res: Response) {
 
 export async function createDetalle(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
     const { tipo_detalle, datos } = req.body;
-    const detalle = await SituacionDetalleModel.createByTipo(parseInt(id), tipo_detalle, datos);
+    const detalle = await SituacionDetalleModel.createByTipo(id, tipo_detalle, datos);
     return res.status(201).json({ detalle });
-  } catch (error: any) {
-    console.error('Error createDetalle:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error('createDetalle:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -596,25 +607,29 @@ export async function getDetalles(req: Request, res: Response) {
 
 export async function updateDetalle(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
     const { tipo_detalle, datos } = req.body;
-    const detalle = await SituacionDetalleModel.createByTipo(parseInt(id), tipo_detalle || 'VEHICULO', datos);
+    const detalle = await SituacionDetalleModel.createByTipo(id, tipo_detalle || 'VEHICULO', datos);
     return res.json({ detalle });
-  } catch (error: any) {
-    console.error('Error updateDetalle:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error('updateDetalle:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
 export async function deleteDetalle(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
     const { tipo_detalle } = req.query;
-    await SituacionDetalleModel.deleteByTipo((tipo_detalle as string) || 'VEHICULO', parseInt(id));
+    await SituacionDetalleModel.deleteByTipo((tipo_detalle as string) || 'VEHICULO', id);
     return res.json({ message: 'Detalle eliminado' });
-  } catch (error: any) {
-    console.error('Error deleteDetalle:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error('deleteDetalle:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -624,7 +639,9 @@ export async function deleteDetalle(req: Request, res: Response) {
 
 export async function addObservacion(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
     const { observacion, hora_local } = req.body;
     const userId = req.user!.userId;
 
@@ -644,9 +661,9 @@ export async function addObservacion(req: Request, res: Response) {
     emitSituacionActualizada(situacionModificada as any);
 
     return res.status(200).json({ message: 'Observación agregada al timeline', situacion: situacionModificada });
-  } catch (error: any) {
-    console.error('Error addObservacion:', error);
-    return res.status(500).json({ error: error.message || 'Error interno al agregar observación' });
+  } catch (error) {
+    console.error('addObservacion (situacion):', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -670,8 +687,8 @@ export async function marcarPersistente(req: Request, res: Response) {
     emitSituacionActualizada(situacion);
 
     return res.status(200).json({ situacion });
-  } catch (error: any) {
-    console.error('Error marcarPersistente:', error);
+  } catch (error) {
+    console.error('marcarPersistente:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
