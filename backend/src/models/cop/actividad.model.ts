@@ -290,4 +290,14 @@ export const ActividadModel = {
       WHERE unidad_id = $1 AND estado = 'ACTIVA'
     `, [unidadId]);
   },
+
+  async agregarObservacion(id: number, entrada: string): Promise<any> {
+    return db.one(
+      `UPDATE actividad
+       SET observaciones = COALESCE(observaciones, '[]'::jsonb) || $1::jsonb
+       WHERE id = $2
+       RETURNING *`,
+      [entrada, id],
+    );
+  },
 };

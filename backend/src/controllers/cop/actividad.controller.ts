@@ -3,7 +3,7 @@ import { ActividadModel } from '../../models/cop/actividad.model';
 import { db } from '../../config/database';
 import { emitToAll } from '../../services/common/socket.service';
 import { resolveContextoActivo } from '../../utils/operaciones.utils';
-import { buildObservacionEntry } from '../../utils/db.utils';
+import { buildObservacionEntry, normalizeId } from '../../utils/db.utils';
 
 // ========================================
 // LISTAR ACTIVIDADES
@@ -13,9 +13,9 @@ export async function listActividades(req: Request, res: Response) {
   try {
     const list = await ActividadModel.list(req.query);
     return res.json({ actividades: list, count: list.length });
-  } catch (error: any) {
-    console.error('Error listActividades:', error);
-    return res.status(500).json({ error: error.message || 'Error interno' });
+  } catch (error) {
+    console.error('listActividades:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -26,7 +26,7 @@ export async function listActividades(req: Request, res: Response) {
 export async function createActividad(req: Request, res: Response) {
   try {
     const {
-      id: codigo_actividad, // Código determinista del mobile
+      id: codigo_actividad,
       tipo_actividad_id,
       unidad_id,
       salida_unidad_id,
@@ -47,7 +47,6 @@ export async function createActividad(req: Request, res: Response) {
       return res.status(400).json({ error: 'tipo_actividad_id es requerido' });
     }
 
-    // Idempotencia: si ya existe con ese código, retornar la existente
     if (codigo_actividad) {
       const existente = await ActividadModel.findByCodigoActividad(codigo_actividad);
       if (existente) {
@@ -56,11 +55,10 @@ export async function createActividad(req: Request, res: Response) {
       }
     }
 
-    // Resolver contexto operativo antes de la transacción
     const ctx = await resolveContextoActivo(userId, {
-      unidad_id:        unidad_id        ? Number(unidad_id)        : null,
-      salida_unidad_id: salida_unidad_id ? Number(salida_unidad_id) : null,
-      ruta_id:          ruta_id          ? Number(ruta_id)          : null,
+      unidad_id:        normalizeId(unidad_id),
+      salida_unidad_id: normalizeId(salida_unidad_id),
+      ruta_id:          normalizeId(ruta_id),
     });
 
     if (!ctx.unidad_id) {
@@ -70,21 +68,17 @@ export async function createActividad(req: Request, res: Response) {
       });
     }
 
-    const unidadId = ctx.unidad_id; // narrowed: non-null from here on
+    const unidadId = ctx.unidad_id;
 
-    // Transacción: cerrar estado anterior y crear la nueva actividad de forma atómica
-    const actividadCreada = await db.tx(async t => {
-      // 1. Cerrar actividades activas previas de esta unidad
+    const actividadCreada = await db.tx(async (t: any) => {
       await ActividadModel.cerrarActivasDeUnidad(unidadId, t);
 
-      // 2. Cerrar situaciones activas previas (una unidad solo puede tener una cosa activa)
       await t.none(
         `UPDATE situacion SET estado = 'CERRADA', updated_at = NOW()
          WHERE unidad_id = $1 AND estado = 'ACTIVA'`,
         [unidadId],
       );
 
-      // 3. Crear la actividad
       return ActividadModel.create({
         tipo_actividad_id,
         unidad_id:        unidadId,
@@ -107,9 +101,9 @@ export async function createActividad(req: Request, res: Response) {
     emitToAll('actividad:nueva', actividadCompleta);
 
     return res.status(201).json({ message: 'Actividad creada', actividad: actividadCompleta });
-  } catch (error: any) {
-    console.error('Error createActividad:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error('createActividad:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -119,20 +113,22 @@ export async function createActividad(req: Request, res: Response) {
 
 export async function updateActividad(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
     const { km, sentido, ruta_id, latitud, longitud, observaciones, datos } = req.body;
 
-    const actividadActual = await ActividadModel.getById(parseInt(id));
+    const actividadActual = await ActividadModel.getById(id);
     if (!actividadActual) return res.status(404).json({ error: 'Actividad no encontrada' });
 
-    const actividadCompleta = await ActividadModel.update(parseInt(id), {
+    const actividadCompleta = await ActividadModel.update(id, {
       km, sentido, ruta_id, latitud, longitud, observaciones, datos,
     });
 
     return res.json({ actividad: actividadCompleta });
-  } catch (error: any) {
-    console.error('Error updateActividad:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error('updateActividad:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -142,16 +138,18 @@ export async function updateActividad(req: Request, res: Response) {
 
 export async function cerrarActividad(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
     const userId = req.user!.userId;
 
-    const actividad = await ActividadModel.cerrar(parseInt(id), userId);
+    const actividad = await ActividadModel.cerrar(id, userId);
     emitToAll('actividad:cerrada', actividad);
 
     return res.json({ message: 'Actividad cerrada', actividad });
-  } catch (error: any) {
-    console.error('Error cerrarActividad:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error('cerrarActividad:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -161,17 +159,16 @@ export async function cerrarActividad(req: Request, res: Response) {
 
 export async function getActividad(req: Request, res: Response) {
   try {
-    const { id } = req.params;
-    const actividad = await ActividadModel.getById(parseInt(id));
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
 
-    if (!actividad) {
-      return res.status(404).json({ error: 'Actividad no encontrada' });
-    }
+    const actividad = await ActividadModel.getById(id);
+    if (!actividad) return res.status(404).json({ error: 'Actividad no encontrada' });
 
     return res.json({ actividad });
-  } catch (error: any) {
-    console.error('Error getActividad:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error('getActividad:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -181,8 +178,8 @@ export async function getActividad(req: Request, res: Response) {
 
 export async function getMiUnidadHoy(req: Request, res: Response) {
   try {
-    const userId  = req.user!.userId;
-    const rawId   = req.query.unidad_id ? Number(req.query.unidad_id) : null;
+    const userId = req.user!.userId;
+    const rawId  = normalizeId(req.query.unidad_id as string | undefined);
 
     const ctx = await resolveContextoActivo(userId, { unidad_id: rawId });
 
@@ -190,13 +187,13 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
       return res.json({ actividades: [], actividad_activa: null });
     }
 
-    const actividades    = await ActividadModel.getByUnidadHoy(ctx.unidad_id);
+    const actividades      = await ActividadModel.getByUnidadHoy(ctx.unidad_id);
     const actividad_activa = actividades.find(a => a.estado === 'ACTIVA') || null;
 
     return res.json({ actividades, actividad_activa });
-  } catch (error: any) {
-    console.error('Error getMiUnidadHoy actividades:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error('getMiUnidadHoy:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -206,7 +203,9 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
 
 export async function addObservacion(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+
     const { observacion, hora_local } = req.body;
     const userId = req.user!.userId;
 
@@ -215,14 +214,7 @@ export async function addObservacion(req: Request, res: Response) {
     }
 
     const nuevoMensaje = await buildObservacionEntry(userId, observacion, hora_local);
-
-    const actividadModificada = await db.one(
-      `UPDATE actividad
-       SET observaciones = COALESCE(observaciones, '[]'::jsonb) || $1::jsonb
-       WHERE id = $2
-       RETURNING *`,
-      [nuevoMensaje, id],
-    );
+    const actividadModificada = await ActividadModel.agregarObservacion(id, nuevoMensaje);
 
     emitToAll('actividad:actualizada', actividadModificada);
 
@@ -230,8 +222,8 @@ export async function addObservacion(req: Request, res: Response) {
       message:   'Observación agregada al timeline',
       actividad: actividadModificada,
     });
-  } catch (error: any) {
-    console.error('Error addObservacion (actividad):', error);
-    return res.status(500).json({ error: error.message || 'Error interno al agregar observación' });
+  } catch (error) {
+    console.error('addObservacion (actividad):', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
