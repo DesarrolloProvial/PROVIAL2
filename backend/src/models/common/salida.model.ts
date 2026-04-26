@@ -1,4 +1,5 @@
 import { db } from '../../config/database';
+import { ActividadModel } from '../cop/actividad.model';
 
 // ========================================
 // INTERFACES
@@ -572,6 +573,46 @@ export const SalidaModel = {
        ORDER BY rol_nombre, nombre_completo`,
       [sedeId]
     );
+  },
+
+  async finalizarSalidaCOP(salidaId: number, data: {
+    km_final?: number | null;
+    indicador?: number | null;
+    observaciones_regreso?: string | null;
+    userId: number;
+  }): Promise<{ unidad_id: number } | null> {
+    const salidaInfo = await db.oneOrNone<{ unidad_id: number }>(
+      `SELECT unidad_id FROM salida_unidad WHERE id = $1 AND estado = 'EN_SALIDA'`,
+      [salidaId],
+    );
+    if (!salidaInfo) return null;
+
+    await db.tx(async (conn) => {
+      await ActividadModel.cerrarActivasDeUnidad(salidaInfo.unidad_id, conn);
+      await conn.none(
+        `UPDATE actividad SET salida_unidad_id = NULL WHERE salida_unidad_id = $1`,
+        [salidaId],
+      );
+
+      const { success } = await conn.one<{ success: boolean }>(
+        `SELECT finalizar_salida_unidad($1, $2, $3, $4, $5) AS success`,
+        [salidaId, data.km_final ?? null, data.indicador ?? null, data.observaciones_regreso ?? null, data.userId],
+      );
+      if (!success) throw new Error('finalizar_salida_unidad retornó false');
+
+      await conn.none(
+        `UPDATE situacion_actual
+         SET situacion_id = NULL, tipo_situacion = NULL, estado = NULL,
+             latitud = NULL, longitud = NULL, km = NULL, sentido = NULL,
+             ruta_id = NULL, ruta_codigo = NULL, situacion_created_at = NULL,
+             actividad_id = NULL, actividad_tipo_nombre = NULL, actividad_estado = NULL,
+             actividad_created_at = NULL, icono = NULL, updated_at = NOW()
+         WHERE unidad_id = $1`,
+        [salidaInfo.unidad_id],
+      );
+    });
+
+    return salidaInfo;
   },
 
   async getSalidaActivaDeUnidad(unidadId: number): Promise<{ id: number } | null> {

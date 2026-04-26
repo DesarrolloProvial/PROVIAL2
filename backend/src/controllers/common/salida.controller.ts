@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { SalidaModel } from '../../models/common/salida.model';
 import { TurnoModel } from '../../models/common/turno.model';
-import { ActividadModel } from '../../models/cop/actividad.model';
 import { db } from '../../config/database';
 import { normalizeId, parseIndicador } from '../../utils/db.utils';
 import { resolveContextoActivo } from '../../utils/operaciones.utils';
@@ -294,45 +293,15 @@ export async function finalizarSalida(req: Request, res: Response) {
 
     const { km_final, combustible_final, combustible_fraccion, observaciones_regreso } = req.body;
     const userId = req.user!.userId;
-
     const indicador = parseIndicador(combustible_fraccion ?? combustible_final);
 
-    // Obtener unidad_id antes del tx para limpiar situacion_actual
-    const salidaInfo = await db.oneOrNone<{ unidad_id: number }>(
-      `SELECT unidad_id FROM salida_unidad WHERE id = $1 AND estado = 'EN_SALIDA'`,
-      [id],
-    );
-    if (!salidaInfo) {
-      return res.status(404).json({ error: 'Salida no encontrada o ya finalizada' });
-    }
-
-    await db.tx(async (conn) => {
-      // Cerrar actividades activas
-      await ActividadModel.cerrarActivasDeUnidad(salidaInfo.unidad_id, conn);
-      await conn.none(
-        `UPDATE actividad SET salida_unidad_id = NULL WHERE salida_unidad_id = $1`,
-        [id],
-      );
-
-      // Finalizar la salida
-      const { success } = await conn.one<{ success: boolean }>(
-        `SELECT finalizar_salida_unidad($1, $2, $3, $4, $5) AS success`,
-        [id, normalizeId(km_final), indicador, observaciones_regreso || null, userId],
-      );
-      if (!success) throw new Error('finalizar_salida_unidad retornó false');
-
-      // Limpiar situacion_actual
-      await conn.none(
-        `UPDATE situacion_actual
-         SET situacion_id = NULL, tipo_situacion = NULL, estado = NULL,
-             latitud = NULL, longitud = NULL, km = NULL, sentido = NULL,
-             ruta_id = NULL, ruta_codigo = NULL, situacion_created_at = NULL,
-             actividad_id = NULL, actividad_tipo_nombre = NULL, actividad_estado = NULL,
-             actividad_created_at = NULL, icono = NULL, updated_at = NOW()
-         WHERE unidad_id = $1`,
-        [salidaInfo.unidad_id],
-      );
+    const salidaInfo = await SalidaModel.finalizarSalidaCOP(id, {
+      km_final:            normalizeId(km_final),
+      indicador,
+      observaciones_regreso: observaciones_regreso || null,
+      userId,
     });
+    if (!salidaInfo) return res.status(404).json({ error: 'Salida no encontrada o ya finalizada' });
 
     const salida = await SalidaModel.getSalidaById(id);
     if (salida) {
