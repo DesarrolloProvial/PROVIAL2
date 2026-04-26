@@ -585,59 +585,13 @@ export async function getBitacoraUnidad(req: Request, res: Response) {
  */
 export async function getBitacoraDia(req: Request, res: Response) {
   try {
-    const { fecha, sede_id } = req.query;
+    const { fecha } = req.query;
     if (!fecha) return res.status(400).json({ error: 'fecha es requerida (YYYY-MM-DD)' });
 
-    const rows = await db.any(
-      `SELECT
-         s.id              AS salida_id,
-         s.unidad_id,
-         u.codigo          AS unidad_codigo,
-         u.tipo_unidad,
-         u.sede_id,
-         sede.nombre       AS sede_nombre,
-         r.codigo          AS ruta_codigo,
-         r.nombre          AS ruta_nombre,
-         s.fecha_hora_salida,
-         s.fecha_hora_regreso,
-         s.estado,
-         s.km_inicial,
-         s.km_final,
-         s.km_recorridos,
-         s.combustible_inicial,
-         s.combustible_final,
-         s.tripulacion,
-         s.observaciones_salida,
-         s.observaciones_regreso,
-         fin.nombre_completo                       AS finalizado_por_nombre,
-         COUNT(DISTINCT sit.id)::int               AS total_situaciones,
-         COUNT(DISTINCT act.id)::int               AS total_actividades,
-         COUNT(DISTINCT ev.id)::int                AS total_eventos,
-         COALESCE(
-           (SELECT json_agg(json_build_object(
-               'tipo', sit2.tipo_situacion,
-               'tipo_nombre', cts.nombre
-             ) ORDER BY sit2.created_at)
-            FROM situacion sit2
-            LEFT JOIN catalogo_tipo_situacion cts ON sit2.tipo_situacion_id = cts.id
-            WHERE sit2.salida_unidad_id = s.id
-           ), '[]'::json)                          AS situaciones_resumen
-       FROM salida_unidad s
-       JOIN unidad u    ON s.unidad_id = u.id
-       JOIN sede        ON u.sede_id = sede.id
-       LEFT JOIN ruta r ON s.ruta_inicial_id = r.id
-       LEFT JOIN usuario fin ON s.finalizada_por = fin.id
-       LEFT JOIN situacion sit ON sit.salida_unidad_id = s.id
-       LEFT JOIN actividad act ON act.salida_unidad_id = s.id
-       LEFT JOIN salida_evento ev ON ev.salida_id = s.id
-       WHERE DATE(s.fecha_hora_salida AT TIME ZONE 'America/Guatemala') = $1::date
-         AND ($2::integer IS NULL OR u.sede_id = $2)
-       GROUP BY s.id, u.codigo, u.tipo_unidad, u.sede_id, sede.nombre,
-                r.codigo, r.nombre, fin.nombre_completo
-       ORDER BY u.codigo, s.fecha_hora_salida`,
-      [fecha, sede_id ? parseInt(sede_id as string) : null],
-    );
+    const sedeId = req.query.sede_id ? normalizeId(req.query.sede_id as string) : undefined;
+    if (req.query.sede_id && !sedeId) return res.status(400).json({ error: 'sede_id inválido' });
 
+    const rows = await SalidaModel.getBitacoraDia(fecha as string, sedeId ?? undefined);
     return res.json({ success: true, fecha, total: rows.length, salidas: rows });
   } catch (error) {
     console.error('Error en getBitacoraDia:', error);
@@ -654,170 +608,10 @@ export async function getBitacoraTimeline(req: Request, res: Response) {
     const salidaId = normalizeId(req.params.salidaId);
     if (!salidaId) return res.status(400).json({ error: 'salidaId inválido' });
 
-    const salida = await db.oneOrNone(
-      `SELECT s.*, u.codigo AS unidad_codigo, u.tipo_unidad,
-              r.codigo AS ruta_codigo, r.nombre AS ruta_nombre,
-              fin.nombre_completo AS finalizado_por_nombre
-       FROM salida_unidad s
-       JOIN unidad u ON s.unidad_id = u.id
-       LEFT JOIN ruta r ON s.ruta_inicial_id = r.id
-       LEFT JOIN usuario fin ON s.finalizada_por = fin.id
-       WHERE s.id = $1`,
-      [salidaId],
-    );
-    if (!salida) return res.status(404).json({ error: 'Salida no encontrada' });
+    const resultado = await SalidaModel.getBitacoraTimeline(salidaId);
+    if (!resultado) return res.status(404).json({ error: 'Salida no encontrada' });
 
-    const eventos = await db.any(
-      `-- SITUACIONES
-       SELECT
-         'SITUACION'          AS tipo,
-         sit.id               AS ref_id,
-         sit.created_at       AS ts,
-         json_build_object(
-           'id',              sit.id,
-           'codigo',          sit.codigo_situacion,
-           'tipo_macro',      sit.tipo_situacion,
-           'tipo_nombre',     cts.nombre,
-           'estado',          sit.estado,
-           'km',              sit.km,
-           'sentido',         sit.sentido,
-           'area',            sit.area,
-           'referencia',      COALESCE(sit.referencia_ubicacion, sit.direccion_detallada),
-           'departamento',    dep.nombre,
-           'municipio',       mun.nombre,
-           'latitud',         sit.latitud,
-           'longitud',        sit.longitud,
-           'observaciones',   sit.observaciones,
-           'causa_probable',  sit.causa_probable,
-           'causa_especificar', sit.causa_especificar,
-           'hora_aviso',      sit.fecha_hora_aviso,
-           'hora_llegada',    sit.fecha_hora_llegada,
-           'hora_cierre',     sit.fecha_hora_finalizacion,
-           'heridos',         sit.heridos,
-           'heridos_leves',   sit.heridos_leves,
-           'heridos_graves',  sit.heridos_graves,
-           'fallecidos',      sit.fallecidos,
-           'ilesos',          sit.ilesos,
-           'trasladados',     sit.trasladados,
-           'fugados',         sit.fugados,
-           'danios_materiales',      sit.danios_materiales,
-           'danios_infraestructura', sit.danios_infraestructura,
-           'danios_descripcion',     sit.danios_descripcion,
-           'clima',           sit.clima,
-           'carga_vehicular', sit.carga_vehicular,
-           'tipo_pavimento',  sit.tipo_pavimento,
-           'iluminacion',     sit.iluminacion,
-           'senalizacion',    sit.senalizacion,
-           'visibilidad',     sit.visibilidad,
-           'via_estado',      sit.via_estado,
-           'acuerdo_involucrados', sit.acuerdo_involucrados,
-           'acuerdo_detalle',      sit.acuerdo_detalle,
-           'reportado_por_nombre',   sit.reportado_por_nombre,
-           'reportado_por_telefono', sit.reportado_por_telefono,
-           'numero_boleta',          sit.numero_boleta,
-           'codigo_boleta',          sit.codigo_boleta,
-           'obstruccion_data',  sit.obstruccion_data,
-           'creado_por_nombre',  u_cre.nombre_completo,
-           'cerrado_por_nombre', u_cer.nombre_completo,
-           'vehiculos', COALESCE(
-             (SELECT json_agg(json_build_object(
-                 'placa',          v.placa,
-                 'marca',          mv.nombre,
-                 'color',          v.color,
-                 'piloto',         COALESCE(sv.datos_piloto->>'nombre', p.nombre),
-                 'licencia',       COALESCE(sv.datos_piloto->>'licencia', p.licencia_numero::text),
-                 'estado_piloto',  sv.estado_piloto,
-                 'heridos',        sv.heridos_en_vehiculo,
-                 'fallecidos',     sv.fallecidos_en_vehiculo,
-                 'danos',          sv.danos_estimados,
-                 'sancion',        sv.sancion
-               ) ORDER BY sv.id)
-              FROM situacion_vehiculo sv
-              JOIN vehiculo v ON sv.vehiculo_id = v.id
-              LEFT JOIN marca_vehiculo mv ON v.marca_id = mv.id
-              LEFT JOIN piloto p ON sv.piloto_id = p.id
-              WHERE sv.situacion_id = sit.id
-             ), '[]'::json),
-           'fotos', COALESCE(
-             (SELECT json_agg(json_build_object(
-                 'id',        sm.id,
-                 'tipo',      sm.tipo,
-                 'url',       sm.url_original,
-                 'thumbnail', sm.url_thumbnail,
-                 'titulo',    sm.infografia_titulo,
-                 'subido_por', usm.nombre_completo
-               ) ORDER BY sm.infografia_numero, sm.orden, sm.created_at)
-              FROM situacion_multimedia sm
-              LEFT JOIN usuario usm ON sm.subido_por = usm.id
-              WHERE sm.situacion_id = sit.id
-             ), '[]'::json)
-         ) AS datos
-       FROM situacion sit
-       LEFT JOIN catalogo_tipo_situacion cts ON sit.tipo_situacion_id = cts.id
-       LEFT JOIN usuario u_cre ON sit.creado_por = u_cre.id
-       LEFT JOIN usuario u_cer ON sit.actualizado_por = u_cer.id
-       LEFT JOIN departamento dep ON sit.departamento_id = dep.id
-       LEFT JOIN municipio mun ON sit.municipio_id = mun.id
-       WHERE sit.salida_unidad_id = $1
-
-       UNION ALL
-
-       -- ACTIVIDADES
-       SELECT
-         'ACTIVIDAD'          AS tipo,
-         act.id               AS ref_id,
-         act.created_at       AS ts,
-         json_build_object(
-           'id',              act.id,
-           'codigo',          act.codigo_actividad,
-           'tipo_nombre',     cts2.nombre,
-           'km',              act.km,
-           'sentido',         act.sentido,
-           'observaciones',   act.observaciones,
-           'estado',          act.estado,
-           'datos',           act.datos,
-           'closed_at',       act.closed_at,
-           'creado_por_nombre', u2.nombre_completo,
-           'fotos', COALESCE(
-             (SELECT json_agg(json_build_object(
-                 'id',        sm.id,
-                 'tipo',      sm.tipo,
-                 'url',       sm.url_original,
-                 'thumbnail', sm.url_thumbnail,
-                 'titulo',    sm.infografia_titulo
-               ) ORDER BY sm.infografia_numero, sm.orden, sm.created_at)
-              FROM situacion_multimedia sm
-              WHERE sm.actividad_id = act.id
-             ), '[]'::json)
-         ) AS datos
-       FROM actividad act
-       LEFT JOIN catalogo_tipo_situacion cts2 ON act.tipo_actividad_id = cts2.id
-       LEFT JOIN usuario u2 ON act.creado_por = u2.id
-       WHERE act.salida_unidad_id = $1
-
-       UNION ALL
-
-       -- EVENTOS (ediciones, cambio ruta, inicio COP, etc.)
-       SELECT
-         'EVENTO'             AS tipo,
-         ev.id                AS ref_id,
-         ev.created_at        AS ts,
-         json_build_object(
-           'id',              ev.id,
-           'tipo_evento',     ev.tipo,
-           'descripcion',     ev.descripcion,
-           'datos_ant',       ev.datos_ant,
-           'datos_new',       ev.datos_new,
-           'realizado_por',   uev.nombre_completo
-         ) AS datos
-       FROM salida_evento ev
-       LEFT JOIN usuario uev ON ev.realizado_por = uev.id
-       WHERE ev.salida_id = $1
-
-       ORDER BY ts ASC`,
-      [salidaId],
-    );
-
+    const { salida, timeline } = resultado;
     return res.json({
       success: true,
       salida: {
@@ -840,7 +634,7 @@ export async function getBitacoraTimeline(req: Request, res: Response) {
         observaciones_regreso: salida.observaciones_regreso,
         finalizado_por_nombre: salida.finalizado_por_nombre,
       },
-      timeline: eventos,
+      timeline,
     });
   } catch (error) {
     console.error('Error en getBitacoraTimeline:', error);
