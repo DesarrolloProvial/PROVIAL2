@@ -574,6 +574,104 @@ export const SalidaModel = {
     );
   },
 
+  async getSalidaActivaDeUnidad(unidadId: number): Promise<{ id: number } | null> {
+    return db.oneOrNone(
+      `SELECT id FROM salida_unidad WHERE unidad_id = $1 AND estado = 'EN_SALIDA'`,
+      [unidadId],
+    );
+  },
+
+  async registrarCambioRuta(salidaId: number, rutaId: number, userId: number): Promise<any | null> {
+    const antes = await db.oneOrNone<{ ruta_inicial_id: number | null; ruta_codigo: string | null }>(
+      `SELECT su.ruta_inicial_id, r.codigo AS ruta_codigo
+       FROM salida_unidad su LEFT JOIN ruta r ON su.ruta_inicial_id = r.id
+       WHERE su.id = $1`,
+      [salidaId],
+    );
+
+    const updated = await db.result(
+      `UPDATE salida_unidad SET ruta_inicial_id = $2 WHERE id = $1 AND estado = 'EN_SALIDA'`,
+      [salidaId, rutaId],
+    );
+    if (updated.rowCount === 0) return null;
+
+    const nuevaRuta = await db.oneOrNone<{ codigo: string }>('SELECT codigo FROM ruta WHERE id = $1', [rutaId]);
+
+    await db.none(
+      `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_ant, datos_new, realizado_por)
+       VALUES ($1, 'CAMBIO_RUTA', $2, $3, $4, $5)`,
+      [salidaId,
+       `Ruta cambiada: ${antes?.ruta_codigo ?? 'sin ruta'} → ${nuevaRuta?.codigo ?? rutaId}`,
+       JSON.stringify({ ruta_id: antes?.ruta_inicial_id }),
+       JSON.stringify({ ruta_id: rutaId }),
+       userId],
+    );
+
+    await db.none(
+      `UPDATE situacion_actual sa
+       SET ruta_id = $1, ruta_codigo = $2, updated_at = NOW()
+       FROM salida_unidad su
+       WHERE su.id = $3 AND sa.unidad_id = su.unidad_id`,
+      [rutaId, nuevaRuta?.codigo ?? null, salidaId],
+    );
+
+    return db.oneOrNone('SELECT * FROM salida_unidad WHERE id = $1', [salidaId]);
+  },
+
+  async editarDatosSalida(salidaId: number, campos: {
+    km_inicial?: number | null;
+    combustible?: number | null;
+  }, userId: number): Promise<any | null> {
+    const sets: string[] = ['updated_at = NOW()'];
+    const params: Record<string, unknown> = { id: salidaId };
+
+    if (campos.km_inicial !== undefined) {
+      sets.push('km_inicial = $/km_inicial/');
+      params.km_inicial = campos.km_inicial;
+    }
+    if (campos.combustible !== undefined) {
+      sets.push('combustible_inicial = $/combustible/');
+      params.combustible = campos.combustible;
+    }
+
+    const antes = await db.oneOrNone<{ km_inicial: number | null; combustible_inicial: number | null }>(
+      'SELECT km_inicial, combustible_inicial FROM salida_unidad WHERE id = $/id/',
+      params,
+    );
+    if (!antes) return null;
+
+    await db.none(`UPDATE salida_unidad SET ${sets.join(', ')} WHERE id = $/id/`, params);
+
+    if (campos.km_inicial !== undefined) {
+      await db.none(
+        `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_ant, datos_new, realizado_por)
+         VALUES ($/id/, 'EDICION_KM', $/desc/, $/ant/, $/new/, $/userId/)`,
+        {
+          id: salidaId,
+          desc: `km_inicial editado: ${antes.km_inicial} → ${campos.km_inicial}`,
+          ant: JSON.stringify({ km_inicial: antes.km_inicial }),
+          new: JSON.stringify({ km_inicial: campos.km_inicial }),
+          userId,
+        },
+      );
+    }
+    if (campos.combustible !== undefined) {
+      await db.none(
+        `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_ant, datos_new, realizado_por)
+         VALUES ($/id/, 'EDICION_COMBUSTIBLE', $/desc/, $/ant/, $/new/, $/userId/)`,
+        {
+          id: salidaId,
+          desc: `combustible_inicial editado: ${antes.combustible_inicial} → ${campos.combustible}`,
+          ant: JSON.stringify({ combustible_inicial: antes.combustible_inicial }),
+          new: JSON.stringify({ combustible_inicial: campos.combustible }),
+          userId,
+        },
+      );
+    }
+
+    return this.getSalidaById(salidaId);
+  },
+
   async getBitacoraTimeline(salidaId: number): Promise<{ salida: any; timeline: any[] } | null> {
     const salida = await db.oneOrNone(
       `SELECT s.*, u.codigo AS unidad_codigo, u.tipo_unidad,

@@ -368,14 +368,16 @@ export async function cambiarRuta(req: Request, res: Response) {
       return res.status(400).json({ error: 'nueva_ruta_id es requerido' });
     }
 
+    const rutaId = normalizeId(nueva_ruta_id);
+    if (!rutaId) return res.status(400).json({ error: 'nueva_ruta_id inválido' });
+
     let salidaId: number;
 
     if (rol === 'COP' || rol === 'OPERACIONES' || rol === 'ADMIN' || rol === 'SUPER_ADMIN') {
       if (!unidadId) return res.status(400).json({ error: 'unidadId es requerido para tu rol' });
-      const row = await db.oneOrNone<{ id: number }>(
-        `SELECT id FROM salida_unidad WHERE unidad_id = $1 AND estado = 'EN_SALIDA'`,
-        [normalizeId(unidadId)],
-      );
+      const unidad = normalizeId(unidadId);
+      if (!unidad) return res.status(400).json({ error: 'unidadId inválido' });
+      const row = await SalidaModel.getSalidaActivaDeUnidad(unidad);
       if (!row) return res.status(404).json({ error: 'La unidad no tiene salida activa' });
       salidaId = row.id;
     } else {
@@ -386,41 +388,11 @@ export async function cambiarRuta(req: Request, res: Response) {
       salidaId = ctx.salida_id;
     }
 
-    const rutaId = normalizeId(nueva_ruta_id)!;
-
-    // Capturar ruta anterior para el evento
-    const antes = await db.oneOrNone<{ ruta_inicial_id: number | null; ruta_codigo: string | null }>(
-      `SELECT su.ruta_inicial_id, r.codigo AS ruta_codigo
-       FROM salida_unidad su LEFT JOIN ruta r ON su.ruta_inicial_id = r.id
-       WHERE su.id = $1`,
-      [salidaId],
-    );
-
-    const success = await SalidaModel.cambiarRuta(salidaId, rutaId);
-    if (!success) {
+    const salidaActualizada = await SalidaModel.registrarCambioRuta(salidaId, rutaId, userId);
+    if (!salidaActualizada) {
       return res.status(404).json({ error: 'No se pudo cambiar la ruta. La salida podría no estar activa.' });
     }
 
-    const nuevaRuta = await db.oneOrNone<{ codigo: string }>('SELECT codigo FROM ruta WHERE id = $1', [rutaId]);
-    await db.none(
-      `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_ant, datos_new, realizado_por)
-       VALUES ($1, 'CAMBIO_RUTA', $2, $3, $4, $5)`,
-      [salidaId,
-       `Ruta cambiada: ${antes?.ruta_codigo ?? 'sin ruta'} → ${nuevaRuta?.codigo ?? rutaId}`,
-       JSON.stringify({ ruta_id: antes?.ruta_inicial_id }),
-       JSON.stringify({ ruta_id: rutaId }),
-       userId],
-    );
-
-    await db.none(
-      `UPDATE situacion_actual sa
-       SET ruta_id = $1, ruta_codigo = $2, updated_at = NOW()
-       FROM salida_unidad su
-       WHERE su.id = $3 AND sa.unidad_id = su.unidad_id`,
-      [rutaId, nuevaRuta?.codigo ?? null, salidaId],
-    );
-
-    const salidaActualizada = await db.oneOrNone('SELECT * FROM salida_unidad WHERE id = $1', [salidaId]);
     return res.json({ message: 'Ruta cambiada exitosamente', salida: salidaActualizada });
   } catch (error) {
     console.error('Error en cambiarRuta:', error);
@@ -499,58 +471,17 @@ export async function editarDatosSalida(req: Request, res: Response) {
       return res.status(412).json({ error: 'No tienes salida activa', code: 'NO_CONTEXTO_OPERATIVO' });
     }
 
-    const sets: string[] = ['updated_at = NOW()'];
-    const params: Record<string, unknown> = { id: ctx.salida_id };
-
-    if (km_inicial !== undefined) {
-      sets.push('km_inicial = $/km_inicial/');
-      params.km_inicial = normalizeId(km_inicial);
-    }
-
     const indicador = parseIndicador(combustible_inicial_fraccion ?? combustible_inicial);
-    if (indicador !== null) {
-      sets.push('combustible_inicial = $/combustible/');
-      params.combustible = indicador;
-    }
 
-    // Capturar valores anteriores para auditoría
-    const antes = await db.oneOrNone<{ km_inicial: number | null; combustible_inicial: number | null }>(
-      'SELECT km_inicial, combustible_inicial FROM salida_unidad WHERE id = $/id/',
-      params,
+    const salidaActualizada = await SalidaModel.editarDatosSalida(
+      ctx.salida_id,
+      {
+        km_inicial:  km_inicial  !== undefined ? normalizeId(km_inicial) : undefined,
+        combustible: indicador   !== null      ? indicador               : undefined,
+      },
+      userId,
     );
 
-    await db.none(`UPDATE salida_unidad SET ${sets.join(', ')} WHERE id = $/id/`, params);
-
-    // Auditoría
-    if (km_inicial !== undefined && antes) {
-      await db.none(
-        `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_ant, datos_new, realizado_por)
-         VALUES ($/id/, 'EDICION_KM', $/desc/, $/ant/, $/new/, $/userId/)`,
-        {
-          id: ctx.salida_id,
-          desc: `km_inicial editado: ${antes.km_inicial} → ${km_inicial}`,
-          ant: JSON.stringify({ km_inicial: antes.km_inicial }),
-          new: JSON.stringify({ km_inicial }),
-          userId,
-        },
-      );
-    }
-    if (indicador !== null && antes) {
-      const fraccionLabel = combustible_inicial_fraccion ?? combustible_inicial;
-      await db.none(
-        `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_ant, datos_new, realizado_por)
-         VALUES ($/id/, 'EDICION_COMBUSTIBLE', $/desc/, $/ant/, $/new/, $/userId/)`,
-        {
-          id: ctx.salida_id,
-          desc: `combustible_inicial editado: ${antes.combustible_inicial} → ${fraccionLabel}`,
-          ant: JSON.stringify({ combustible_inicial: antes.combustible_inicial }),
-          new: JSON.stringify({ combustible_inicial: fraccionLabel }),
-          userId,
-        },
-      );
-    }
-
-    const salidaActualizada = await SalidaModel.getSalidaById(ctx.salida_id);
     return res.json({ message: 'Datos de salida actualizados exitosamente', salida: salidaActualizada });
   } catch (error) {
     console.error('Error en editarDatosSalida:', error);
