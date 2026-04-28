@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Controlador de Cloudinary
  * Maneja generación de signatures para signed uploads
  */
@@ -72,12 +72,9 @@ export async function getSignature(req: Request, res: Response) {
         }
       }
     });
-  } catch (error: any) {
-    console.error('[CLOUDINARY] Error generando signature:', error);
-    return res.status(500).json({
-      error: 'Error al generar signature',
-      message: error.message
-    });
+  } catch (error) {
+    console.error('[CLOUDINARY] generateSignature:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -96,7 +93,7 @@ export async function getStatus(_req: Request, res: Response) {
         ? 'Cloudinary está configurado correctamente'
         : 'Cloudinary no está configurado. Verifica las variables de entorno.'
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[CLOUDINARY] Error verificando status:', error);
     return res.status(500).json({ error: 'Error al verificar status' });
   }

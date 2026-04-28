@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Controller: Situaciones Persistentes
  *
  * Una situación persistente ES una situación (situacion.persistente = true).
@@ -216,7 +216,7 @@ export async function asignarUnidad(req: Request, res: Response) {
       req.user!.userId,
     );
     return res.status(201).json(asignacion);
-  } catch (error: any) {
+  } catch (error) {
     if (error.status === 404) return res.status(404).json({ error: 'Situación persistente no encontrada o ya finalizada' });
     if (error.status === 409) return res.status(409).json({ error: 'La unidad ya está asignada a esta situación' });
     console.error('asignarUnidad:', error);
@@ -391,7 +391,7 @@ export async function promover(req: Request, res: Response) {
 
     emitSituacionActualizada(resultado as any);
     return res.json({ situacion: resultado });
-  } catch (error: any) {
+  } catch (error) {
     if (error.status === 404) return res.status(404).json({ error: 'Situación no encontrada' });
     if (error.status === 409) return res.status(409).json({ error: 'La situación ya es persistente' });
     console.error('promover:', error);

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Controlador de Multimedia
  * Maneja subida y gestión de fotos y videos de situaciones
  */
@@ -113,7 +113,7 @@ export async function subirFoto(req: Request, res: Response) {
       },
       completitud
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error al subir foto:', error);
     return res.status(500).json({ error: 'Error al subir la foto' });
   }
@@ -192,7 +192,7 @@ export async function subirVideo(req: Request, res: Response) {
       },
       completitud
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error al subir video:', error);
     return res.status(500).json({ error: 'Error al subir el video' });
   }
@@ -210,7 +210,7 @@ export async function getMultimediaSituacion(req: Request, res: Response) {
     const videos = multimedia.filter(m => m.tipo === 'VIDEO');
 
     return res.json({ situacion_id: situacionIdNum, fotos, videos, completitud });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error al obtener multimedia:', error);
     return res.status(500).json({ error: 'Error al obtener multimedia' });
   }
@@ -226,7 +226,7 @@ export async function getResumenMultimedia(req: Request, res: Response) {
     if (ids.length === 0) return res.json({ resumen: [] });
     const resumen = await MultimediaModel.getResumenBySituaciones(ids);
     return res.json({ resumen });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error al obtener resumen:', error);
     return res.status(500).json({ error: 'Error al obtener resumen' });
   }
@@ -251,7 +251,7 @@ export async function eliminarMultimedia(req: Request, res: Response) {
 
     console.log(`[MULTIMEDIA] Archivo ${id} eliminado por usuario ${req.user!.userId}`);
     return res.json({ message: 'Archivo eliminado correctamente' });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error al eliminar multimedia:', error);
     return res.status(500).json({ error: 'Error al eliminar archivo' });
   }
@@ -350,7 +350,7 @@ export async function getGaleria(req: Request, res: Response) {
       limit: parseInt(limit as string),
       offset: parseInt(offset as string)
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error al obtener galería:', error);
     return res.status(500).json({ error: 'Error al obtener galería' });
   }
@@ -385,7 +385,7 @@ export async function getStats(req: Request, res: Response) {
         situaciones_con_multimedia: parseInt(dbStats.situaciones_con_multimedia)
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error al obtener stats:', error);
     return res.status(500).json({ error: 'Error al obtener estadísticas' });
   }
@@ -441,7 +441,7 @@ export async function guardarReferenciasCloudinary(req: Request, res: Response) 
     console.log(`[MULTIMEDIA] Batch: ${resultados.filter(r => r.success).length}/${archivos.length} guardados para situación ${situacionIdNum}`);
 
     return res.status(201).json({ message: 'Referencias procesadas', resultados, completitud });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error al guardar referencias batch:', error);
     return res.status(500).json({ error: 'Error al procesar archivos' });
   }
@@ -477,7 +477,7 @@ export async function subirFotoGenerica(req: Request, res: Response) {
       width: result.width,
       height: result.height
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error al subir foto genérica:', error);
     return res.status(500).json({ error: 'Error al subir la foto' });
   }
@@ -526,7 +526,7 @@ export async function subirFotoActividad(req: Request, res: Response) {
       message: `Foto ${ordenSiguiente} de 3 subida`,
       multimedia: { id: multimediaId, infografia_numero: infografiaNumero, orden: ordenSiguiente, url: result.url, thumbnailUrl: result.thumbnailUrl }
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error al subir foto actividad:', error);
     return res.status(500).json({ error: 'Error al subir la foto' });
   }
@@ -566,7 +566,7 @@ export async function subirVideoActividad(req: Request, res: Response) {
     });
 
     return res.status(201).json({ message: 'Video subido', multimedia: { id: multimediaId, infografia_numero: infografiaNumero, url: result.url } });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error al subir video actividad:', error);
     return res.status(500).json({ error: 'Error al subir el video' });
   }
@@ -581,7 +581,7 @@ export async function getMultimediaActividad(req: Request, res: Response) {
     const fotos = multimedia.filter(m => m.tipo === 'FOTO');
     const videos = multimedia.filter(m => m.tipo === 'VIDEO');
     return res.json({ actividad_id: actividadIdNum, fotos, videos });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error al obtener multimedia actividad:', error);
     return res.status(500).json({ error: 'Error al obtener multimedia' });
   }

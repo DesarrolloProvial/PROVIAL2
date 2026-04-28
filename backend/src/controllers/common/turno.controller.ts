@@ -114,15 +114,15 @@ export async function createAsignacion(req: Request, res: Response) {
       asignacion: resultado.asignacion,
       tripulacion: resultado.tripulacionCreada,
     });
-  } catch (error: any) {
-    console.error('Error en createAsignacion:', error);
-    if (error.code === '23505') return res.status(409).json({ error: 'La unidad ya tiene una asignación para este turno' });
-    if (error.code === '23514') return res.status(400).json({ error: `Valor inválido: ${error.message}` });
-    if (error.message?.startsWith('INACTIVO:')) {
-      const motivo = error.message.split(':')[2] || 'Desconocido';
+  } catch (error) {
+    console.error('createAsignacion:', error);
+    if ((error as any).code === '23505') return res.status(409).json({ error: 'La unidad ya tiene una asignación para este turno' });
+    if ((error as any).code === '23514') return res.status(400).json({ error: 'Valor inválido en los datos del formulario' });
+    if ((error as any).message?.startsWith('INACTIVO:')) {
+      const motivo = (error as any).message.split(':')[2] || 'Desconocido';
       return res.status(409).json({ error: `No se puede asignar la tripulación. Uno de los usuarios está inactivo por: ${motivo}` });
     }
-    if (error.code === 'P0001') return res.status(400).json({ error: error.message });
+    if ((error as any).code === 'P0001') return res.status(400).json({ error: (error as any).message });
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

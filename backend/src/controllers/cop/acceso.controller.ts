@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { GrupoModel } from '../../models/operaciones/grupo.model';
 import { db } from '../../config/database';
 import { normalizeId } from '../../utils/db.utils';
@@ -94,11 +94,11 @@ export async function toggleAccesoIndividual(req: Request, res: Response) {
       message: acceso_app_activo ? 'Acceso activado' : 'Acceso suspendido',
       usuario: usuarioActualizado,
     });
-  } catch (error: any) {
-    console.error('Error en toggleAccesoIndividual:', error);
+  } catch (error) {
+    console.error('toggleAccesoIndividual:', error);
 
-    if (error.message?.includes('tiene asignación activa')) {
-      return res.status(400).json({ error: error.message });
+    if ((error as any).message?.includes('tiene asignación activa')) {
+      return res.status(400).json({ error: (error as any).message });
     }
 
     return res.status(500).json({ error: 'Error interno del servidor' });

@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { ConflictoModel } from '../../models/common/conflicto.model';
 import { normalizeId } from '../../utils/db.utils';
 
@@ -34,7 +34,7 @@ export async function registrarConflicto(req: Request, res: Response) {
     });
 
     return res.status(201).json({ conflicto_id: conflicto.id, message: 'Conflicto registrado. El COP revisara esta situacion.' });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[CONFLICTOS] Error al registrar conflicto:', error);
     return res.status(500).json({ error: 'Error al registrar conflicto' });
   }
@@ -44,7 +44,7 @@ export async function listarConflictos(req: Request, res: Response) {
   try {
     const conflictos = await ConflictoModel.listar(req.query.estado as string | undefined);
     return res.json({ conflictos, total: conflictos.length });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[CONFLICTOS] Error al listar conflictos:', error);
     return res.status(500).json({ error: 'Error al listar conflictos' });
   }
@@ -59,7 +59,7 @@ export async function obtenerConflicto(req: Request, res: Response) {
     if (!conflicto) return res.status(404).json({ error: 'Conflicto no encontrado' });
 
     return res.json(conflicto);
-  } catch (error: any) {
+  } catch (error) {
     console.error('[CONFLICTOS] Error al obtener conflicto:', error);
     return res.status(500).json({ error: 'Error al obtener conflicto' });
   }
@@ -90,7 +90,7 @@ export async function resolverConflicto(req: Request, res: Response) {
     });
 
     return res.json({ message: 'Conflicto resuelto exitosamente', decision, conflicto_id: id });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[CONFLICTOS] Error al resolver conflicto:', error);
     return res.status(500).json({ error: 'Error al resolver conflicto' });
   }
@@ -100,7 +100,7 @@ export async function misConflictos(req: Request, res: Response) {
   try {
     const conflictos = await ConflictoModel.getMisConflictos(req.user!.userId);
     return res.json({ conflictos, total: conflictos.length });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[CONFLICTOS] Error al obtener mis conflictos:', error);
     return res.status(500).json({ error: 'Error al obtener conflictos' });
   }

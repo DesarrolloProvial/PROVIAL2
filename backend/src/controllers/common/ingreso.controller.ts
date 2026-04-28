@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { IngresoModel } from '../../models/common/ingreso.model';
 import { normalizeId, parseIndicador } from '../../utils/db.utils';
 import { resolveContextoActivo } from '../../utils/operaciones.utils';
@@ -42,9 +42,9 @@ export async function registrarIngreso(req: Request, res: Response) {
         ? 'Cuando estés listo, pulsa "Finalizar Jornada" para cerrar el día.'
         : 'Para volver a salir, registra una salida de sede.',
     });
-  } catch (error: any) {
-    console.error('Error en registrarIngreso:', error);
-    if (error.code === '23505' || error.message?.includes('ya existe un ingreso activo')) {
+  } catch (error) {
+    console.error('registrarIngreso:', error);
+    if ((error as any).code === '23505' || (error as any).message?.includes('ya existe un ingreso activo')) {
       return res.status(409).json({
         error: 'Ya tienes un ingreso activo',
         message: 'Debes registrar salida de sede antes de ingresar nuevamente',
@@ -103,7 +103,7 @@ export async function finalizarJornada(req: Request, res: Response) {
       sede_ingreso: contexto.ingreso_sede_nombre,
       sede_diferente: sedeMismatch,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error en finalizarJornada:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
