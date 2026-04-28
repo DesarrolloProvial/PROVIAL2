@@ -22,7 +22,7 @@ export async function listarUnidades(req: Request, res: Response) {
 
     res.json({ unidades, total: unidades.length });
   } catch (error) {
-    console.error('Error en listarUnidades:', error);
+    console.error('listarUnidades:', error);
     res.status(500).json({ error: 'Error al listar unidades' });
   }
 }
@@ -32,7 +32,7 @@ export async function listarTiposUnidad(_req: Request, res: Response) {
     const tipos = await UnidadModel.getTipos();
     res.json({ tipos });
   } catch (error) {
-    console.error('Error en listarTiposUnidad:', error);
+    console.error('listarTiposUnidad:', error);
     res.status(500).json({ error: 'Error al listar tipos de unidad' });
   }
 }
@@ -44,7 +44,7 @@ export async function listarUnidadesActivas(req: Request, res: Response) {
     const unidades = await UnidadModel.getActivas(sedeId);
     res.json({ unidades, total: unidades.length });
   } catch (error) {
-    console.error('Error en listarUnidadesActivas:', error);
+    console.error('listarUnidadesActivas:', error);
     res.status(500).json({ error: 'Error al listar unidades activas' });
   }
 }
@@ -59,7 +59,7 @@ export async function obtenerUnidad(req: Request, res: Response) {
 
     return res.json(unidad);
   } catch (error) {
-    console.error('Error en obtenerUnidad:', error);
+    console.error('obtenerUnidad:', error);
     return res.status(500).json({ error: 'Error al obtener unidad' });
   }
 }
@@ -88,10 +88,10 @@ export async function crearUnidad(req: Request, res: Response) {
     });
 
     return res.status(201).json({ message: 'Unidad creada exitosamente', unidad });
-  } catch (error: any) {
-    console.error('Error en crearUnidad:', error);
-    if (error.code === '23505') return res.status(409).json({ error: 'El codigo o placa ya existe' });
-    return res.status(500).json({ error: 'Error al crear unidad' });
+  } catch (error) {
+    console.error('crearUnidad:', error);
+    if ((error as any).code === '23505') return res.status(409).json({ error: 'El codigo o placa ya existe' });
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -116,7 +116,7 @@ export async function actualizarUnidad(req: Request, res: Response) {
 
     return res.json({ message: 'Unidad actualizada exitosamente', unidad: result });
   } catch (error) {
-    console.error('Error en actualizarUnidad:', error);
+    console.error('actualizarUnidad:', error);
     return res.status(500).json({ error: 'Error al actualizar unidad' });
   }
 }
@@ -132,7 +132,7 @@ export async function desactivarUnidad(req: Request, res: Response) {
     await UnidadModel.setActiva(id, false);
     return res.json({ message: 'Unidad desactivada exitosamente' });
   } catch (error) {
-    console.error('Error en desactivarUnidad:', error);
+    console.error('desactivarUnidad:', error);
     return res.status(500).json({ error: 'Error al desactivar unidad' });
   }
 }
@@ -148,7 +148,7 @@ export async function activarUnidad(req: Request, res: Response) {
     await UnidadModel.setActiva(id, true);
     return res.json({ message: 'Unidad activada exitosamente' });
   } catch (error) {
-    console.error('Error en activarUnidad:', error);
+    console.error('activarUnidad:', error);
     return res.status(500).json({ error: 'Error al activar unidad' });
   }
 }
@@ -170,7 +170,7 @@ export async function transferirUnidad(req: Request, res: Response) {
     await UnidadModel.transferir(id, nuevaSedeId);
     return res.json({ message: 'Unidad transferida exitosamente' });
   } catch (error) {
-    console.error('Error en transferirUnidad:', error);
+    console.error('transferirUnidad:', error);
     return res.status(500).json({ error: 'Error al transferir unidad' });
   }
 }
@@ -193,7 +193,7 @@ export async function eliminarUnidad(req: Request, res: Response) {
     await UnidadModel.eliminar(id);
     return res.json({ message: 'Unidad eliminada exitosamente' });
   } catch (error) {
-    console.error('Error en eliminarUnidad:', error);
+    console.error('eliminarUnidad:', error);
     return res.status(500).json({ error: 'Error al eliminar unidad' });
   }
 }
@@ -211,7 +211,7 @@ export async function obtenerUltimaAsignacion(req: Request, res: Response) {
     const tripulacion = await TurnoModel.getTripulacion(asignacion.id);
     return res.json({ asignacion, tripulacion });
   } catch (error) {
-    console.error('Error en obtenerUltimaAsignacion:', error);
+    console.error('obtenerUltimaAsignacion:', error);
     return res.status(500).json({ error: 'Error al obtener última asignación' });
   }
 }
@@ -247,9 +247,9 @@ export async function reservarNumeroSalida(req: Request, res: Response) {
       salida_id: salidaActiva.salida_id,
       valido_hasta: validoHasta.toISOString(),
     });
-  } catch (error: any) {
-    console.error('Error en reservarNumeroSalida:', error);
-    return res.status(500).json({ error: 'Error al reservar numero' });
+  } catch (error) {
+    console.error('reservarNumeroSalida:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -268,8 +268,8 @@ export async function setDisponibilidadTransportes(req: Request, res: Response) 
 
     const actualizada = await UnidadModel.setDisponibilidad(id, disponible, instrucciones ?? null);
     return res.json(actualizada);
-  } catch (error: any) {
-    console.error('Error en setDisponibilidadTransportes:', error);
-    return res.status(500).json({ error: 'Error al actualizar disponibilidad' });
+  } catch (error) {
+    console.error('setDisponibilidadTransportes:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

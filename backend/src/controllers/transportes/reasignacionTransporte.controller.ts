@@ -64,7 +64,7 @@ export async function crearReasignacionUnidad(req: Request, res: Response) {
       reasignacion,
     });
   } catch (error) {
-    console.error('Error en crearReasignacionUnidad:', error);
+    console.error('crearReasignacionUnidad:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -74,7 +74,7 @@ export async function getReasignacionesUnidad(_req: Request, res: Response) {
     const reasignaciones = await ReasignacionModel.getActivas('UNIDAD');
     return res.json({ total: reasignaciones.length, reasignaciones });
   } catch (error) {
-    console.error('Error en getReasignacionesUnidad:', error);
+    console.error('getReasignacionesUnidad:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -96,7 +96,7 @@ export async function finalizarReasignacionUnidad(req: Request, res: Response) {
     const reasignacion = await ReasignacionModel.finalizar(id);
     return res.json({ message: 'Reasignación de unidad finalizada exitosamente', reasignacion });
   } catch (error) {
-    console.error('Error en finalizarReasignacionUnidad:', error);
+    console.error('finalizarReasignacionUnidad:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -118,7 +118,7 @@ export async function cancelarReasignacionUnidad(req: Request, res: Response) {
     const reasignacion = await ReasignacionModel.cancelar(id);
     return res.json({ message: 'Reasignación de unidad cancelada', reasignacion });
   } catch (error) {
-    console.error('Error en cancelarReasignacionUnidad:', error);
+    console.error('cancelarReasignacionUnidad:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

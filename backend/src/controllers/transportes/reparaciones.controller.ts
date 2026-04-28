@@ -15,7 +15,7 @@ export async function getReparacionesPorUnidad(req: Request, res: Response) {
     const reparaciones = await ReparacionModel.getPorUnidad(unidadId);
     return res.json({ success: true, unidad_id: unidadId, count: reparaciones.length, data: reparaciones });
   } catch (error) {
-    console.error('Error en getReparacionesPorUnidad:', error);
+    console.error('getReparacionesPorUnidad:', error);
     return res.status(500).json({ success: false, message: 'Error obteniendo reparaciones' });
   }
 }
@@ -26,7 +26,7 @@ export async function getReparacionesActivas(req: Request, res: Response) {
     const reparaciones = await ReparacionModel.getActivas(sedeFiltro);
     return res.json({ success: true, count: reparaciones.length, data: reparaciones });
   } catch (error) {
-    console.error('Error en getReparacionesActivas:', error);
+    console.error('getReparacionesActivas:', error);
     return res.status(500).json({ success: false, message: 'Error obteniendo reparaciones activas' });
   }
 }
@@ -54,7 +54,7 @@ export async function crearReparacion(req: Request, res: Response) {
 
     return res.status(201).json({ success: true, message: 'Reparación registrada exitosamente', data: reparacion });
   } catch (error) {
-    console.error('Error en crearReparacion:', error);
+    console.error('crearReparacion:', error);
     return res.status(500).json({ success: false, message: 'Error creando reparación' });
   }
 }
@@ -73,7 +73,7 @@ export async function completarReparacion(req: Request, res: Response) {
     const actualizada = await ReparacionModel.completar(reparacionId, req.body.fecha_fin ?? undefined);
     return res.json({ success: true, message: 'Reparación completada', data: actualizada });
   } catch (error) {
-    console.error('Error en completarReparacion:', error);
+    console.error('completarReparacion:', error);
     return res.status(500).json({ success: false, message: 'Error completando reparación' });
   }
 }
@@ -92,7 +92,7 @@ export async function cancelarReparacion(req: Request, res: Response) {
     const actualizada = await ReparacionModel.cancelar(reparacionId);
     return res.json({ success: true, message: 'Reparación cancelada', data: actualizada });
   } catch (error) {
-    console.error('Error en cancelarReparacion:', error);
+    console.error('cancelarReparacion:', error);
     return res.status(500).json({ success: false, message: 'Error cancelando reparación' });
   }
 }
@@ -113,7 +113,7 @@ export async function getHistorialUnificado(req: Request, res: Response) {
     const data = await ReparacionModel.getHistorialUnificado(unidadId, desde, hasta, tipos);
     return res.json({ success: true, total: data.length, desde, hasta, data });
   } catch (error) {
-    console.error('Error en getHistorialUnificado:', error);
+    console.error('getHistorialUnificado:', error);
     return res.status(500).json({ success: false, message: 'Error obteniendo historial' });
   }
 }
