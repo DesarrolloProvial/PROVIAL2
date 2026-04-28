@@ -10,7 +10,7 @@ import type { CreateAsignacionProgramadaDTO } from '../../services/operaciones/a
 import type { BrigadaDisponible } from '../../services/operaciones/operaciones.service';
 import { CheckCircle, AlertCircle, Users, Truck, ArrowLeft, Plus, X, Search, Crown, Info } from 'lucide-react';
 import ThemeToggle from '../../components/common/ThemeToggle';
-import { formatLocalDate, localTomorrow } from '../../utils/dates';
+import { localTomorrow } from '../../utils/dates';
 
 export default function CrearAsignacionPage() {
   const navigate = useNavigate();
