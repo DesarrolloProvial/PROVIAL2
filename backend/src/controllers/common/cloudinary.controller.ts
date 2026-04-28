@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Controlador de Cloudinary
  * Maneja generación de signatures para signed uploads
  */

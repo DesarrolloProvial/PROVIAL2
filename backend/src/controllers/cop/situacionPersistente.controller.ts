@@ -217,8 +217,8 @@ export async function asignarUnidad(req: Request, res: Response) {
     );
     return res.status(201).json(asignacion);
   } catch (error) {
-    if (error.status === 404) return res.status(404).json({ error: 'Situación persistente no encontrada o ya finalizada' });
-    if (error.status === 409) return res.status(409).json({ error: 'La unidad ya está asignada a esta situación' });
+    if ((error as any).status === 404) return res.status(404).json({ error: 'Situación persistente no encontrada o ya finalizada' });
+    if ((error as any).status === 409) return res.status(409).json({ error: 'La unidad ya está asignada a esta situación' });
     console.error('asignarUnidad:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
@@ -392,8 +392,8 @@ export async function promover(req: Request, res: Response) {
     emitSituacionActualizada(resultado as any);
     return res.json({ situacion: resultado });
   } catch (error) {
-    if (error.status === 404) return res.status(404).json({ error: 'Situación no encontrada' });
-    if (error.status === 409) return res.status(409).json({ error: 'La situación ya es persistente' });
+    if ((error as any).status === 404) return res.status(404).json({ error: 'Situación no encontrada' });
+    if ((error as any).status === 409) return res.status(409).json({ error: 'La situación ya es persistente' });
     console.error('promover:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }

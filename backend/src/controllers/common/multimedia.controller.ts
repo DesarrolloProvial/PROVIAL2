@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Controlador de Multimedia
  * Maneja subida y gestión de fotos y videos de situaciones
  */

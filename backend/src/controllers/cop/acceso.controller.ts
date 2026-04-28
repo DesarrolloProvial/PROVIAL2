@@ -1,4 +1,4 @@
-﻿import { Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { GrupoModel } from '../../models/operaciones/grupo.model';
 import { db } from '../../config/database';
 import { normalizeId } from '../../utils/db.utils';
