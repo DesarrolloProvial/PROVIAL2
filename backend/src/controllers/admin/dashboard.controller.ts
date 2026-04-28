@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { DashboardService } from '../../services/admin/dashboard.service';
 import { normalizeId } from '../../utils/db.utils';
 
@@ -12,7 +12,7 @@ export const DashboardController = {
 
       const dashboard = await DashboardService.obtenerDashboardCompleto(dias, sedeFilter);
       res.json(dashboard);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error obteniendo dashboard:', error);
       res.status(500).json({ error: 'Error al obtener dashboard' });
     }
@@ -23,7 +23,7 @@ export const DashboardController = {
       const sedeId = (normalizeId(req.query.sede_id as string) ?? req.user?.sede) as number | undefined;
       const resumen = await DashboardService.obtenerResumenGeneral(sedeId);
       res.json(resumen);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error obteniendo resumen:', error);
       res.status(500).json({ error: 'Error al obtener resumen' });
     }
@@ -37,7 +37,7 @@ export const DashboardController = {
 
       const datos = await DashboardService.obtenerSituacionesPorTipo(dias, sedeId);
       res.json(datos);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error obteniendo situaciones por tipo:', error);
       res.status(500).json({ error: 'Error al obtener situaciones por tipo' });
     }
@@ -51,7 +51,7 @@ export const DashboardController = {
 
       const datos = await DashboardService.obtenerSituacionesPorDia(dias, sedeId);
       res.json(datos);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error obteniendo situaciones por día:', error);
       res.status(500).json({ error: 'Error al obtener situaciones por día' });
     }
@@ -62,7 +62,7 @@ export const DashboardController = {
       const sedeId = (normalizeId(req.query.sede_id as string) ?? (req.user?.puede_ver_todas_sedes ? undefined : req.user?.sede)) as number | undefined;
       const datos = await DashboardService.obtenerEstadoUnidades(sedeId);
       res.json(datos);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error obteniendo estado unidades:', error);
       res.status(500).json({ error: 'Error al obtener estado de unidades' });
     }
@@ -76,7 +76,7 @@ export const DashboardController = {
 
       const datos = await DashboardService.obtenerSituacionesPorHora(dias, sedeId);
       res.json(datos);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error obteniendo situaciones por hora:', error);
       res.status(500).json({ error: 'Error al obtener situaciones por hora' });
     }
@@ -90,7 +90,7 @@ export const DashboardController = {
 
       const datos = await DashboardService.obtenerSituacionesPorDepartamento(dias, sedeId);
       res.json(datos);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error obteniendo situaciones por departamento:', error);
       res.status(500).json({ error: 'Error al obtener situaciones por departamento' });
     }
@@ -101,7 +101,7 @@ export const DashboardController = {
       const sedeId = (normalizeId(req.query.sede_id as string) ?? (req.user?.puede_ver_todas_sedes ? undefined : req.user?.sede)) as number | undefined;
       const datos = await DashboardService.obtenerComparativaMensual(sedeId);
       res.json(datos);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error obteniendo comparativa:', error);
       res.status(500).json({ error: 'Error al obtener comparativa mensual' });
     }
@@ -117,7 +117,7 @@ export const DashboardController = {
 
       const datos = await DashboardService.obtenerRendimientoBrigadas(dias, sedeId, limit);
       res.json(datos);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error obteniendo rendimiento brigadas:', error);
       res.status(500).json({ error: 'Error al obtener rendimiento de brigadas' });
     }
@@ -131,7 +131,7 @@ export const DashboardController = {
         DashboardService.obtenerEstadoUnidades(sedeId),
       ]);
       res.json({ ...resumen, unidades: estadoUnidades });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error obteniendo estadísticas:', error);
       res.status(500).json({ error: 'Error al obtener estadísticas' });
     }
@@ -145,7 +145,7 @@ export const DashboardController = {
         situaciones_recientes: situaciones,
         total_semana: situaciones.reduce((acc, s) => acc + s.total, 0)
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error obteniendo actividad reciente:', error);
       res.status(500).json({ error: 'Error al obtener actividad reciente' });
     }
@@ -162,7 +162,7 @@ export const DashboardController = {
       ]);
 
       res.json({ sede_id: sedeId, resumen, comparativa });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error obteniendo métricas sede:', error);
       res.status(500).json({ error: 'Error al obtener métricas de sede' });
     }

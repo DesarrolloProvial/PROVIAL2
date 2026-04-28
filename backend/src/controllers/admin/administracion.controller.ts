@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { AdministracionModel } from '../../models/admin/administracion.model';
 import { esSuperAdmin, puedeVerTodosDepartamentos } from '../../middlewares/superAdmin';
 import { normalizeId } from '../../utils/db.utils';
@@ -35,9 +35,9 @@ export async function createDepartamento(req: Request, res: Response) {
     });
 
     res.status(201).json({ success: true, id, message: 'Departamento creado correctamente' });
-  } catch (error: any) {
-    console.error('Error al crear departamento:', error);
-    if (error.code === '23505') return res.status(400).json({ error: 'Ya existe un departamento con ese codigo' });
+  } catch (error) {
+    console.error('createDepartamento:', error);
+    if ((error as any).code === '23505') return res.status(400).json({ error: 'Ya existe un departamento con ese codigo' });
     res.status(500).json({ error: 'Error al crear departamento' });
   }
 }
@@ -65,9 +65,9 @@ export async function updateDepartamento(req: Request, res: Response) {
     });
 
     res.json({ success: true, message: 'Departamento actualizado correctamente' });
-  } catch (error: any) {
-    console.error('Error al actualizar departamento:', error);
-    if (error.code === '23505') return res.status(400).json({ error: 'Ya existe un departamento con ese codigo' });
+  } catch (error) {
+    console.error('updateDepartamento:', error);
+    if ((error as any).code === '23505') return res.status(400).json({ error: 'Ya existe un departamento con ese codigo' });
     res.status(500).json({ error: 'Error al actualizar departamento' });
   }
 }
@@ -141,10 +141,10 @@ export async function createSede(req: Request, res: Response) {
     });
 
     res.status(201).json({ success: true, id, message: 'Sede creada correctamente' });
-  } catch (error: any) {
-    console.error('Error al crear sede:', error);
-    if (error.code === '23505') {
-      if (error.constraint === 'idx_una_sede_central') return res.status(400).json({ error: 'Ya existe una sede central definida' });
+  } catch (error) {
+    console.error('createSede:', error);
+    if ((error as any).code === '23505') {
+      if ((error as any).constraint === 'idx_una_sede_central') return res.status(400).json({ error: 'Ya existe una sede central definida' });
       return res.status(400).json({ error: 'Ya existe una sede con ese codigo' });
     }
     res.status(500).json({ error: 'Error al crear sede' });
@@ -174,10 +174,10 @@ export async function updateSede(req: Request, res: Response) {
     });
 
     res.json({ success: true, message: 'Sede actualizada correctamente' });
-  } catch (error: any) {
-    console.error('Error al actualizar sede:', error);
-    if (error.code === '23505') {
-      if (error.constraint === 'idx_una_sede_central') return res.status(400).json({ error: 'Ya existe una sede central definida' });
+  } catch (error) {
+    console.error('updateSede:', error);
+    if ((error as any).code === '23505') {
+      if ((error as any).constraint === 'idx_una_sede_central') return res.status(400).json({ error: 'Ya existe una sede central definida' });
       return res.status(400).json({ error: 'Ya existe una sede con ese codigo' });
     }
     res.status(500).json({ error: 'Error al actualizar sede' });
@@ -329,9 +329,8 @@ export async function asignarEncargado(req: Request, res: Response) {
     const nuevoEncargado = await AdministracionModel.getEncargadoPorSedeGrupo(sede_id, grupo);
     res.json({ success: true, message: 'Encargado asignado correctamente', asignacion_id: asignacionId, encargado: nuevoEncargado });
   } catch (error) {
-    console.error('Error al asignar encargado:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-    res.status(500).json({ error: 'Error al asignar encargado', message: errorMessage });
+    console.error('asignarEncargado:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 

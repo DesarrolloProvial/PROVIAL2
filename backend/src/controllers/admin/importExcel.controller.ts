@@ -55,12 +55,9 @@ export async function importarExcel(req: Request, res: Response) {
       dryRun,
       result,
     });
-  } catch (error: any) {
-    console.error('❌ [IMPORT] Error:', error.message);
-    return res.status(500).json({
-      error: 'Error en importacion',
-      detail: error.message,
-    });
+  } catch (error) {
+    console.error('[IMPORT] importarExcel:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 

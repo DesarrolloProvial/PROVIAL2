@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { ComunicacionSocialModel } from '../../models/comunicacion/comunicacionSocial.model';
 import { EstadisticasService } from '../../services/accidentologia/estadisticas.service';
 import { normalizeId } from '../../utils/db.utils';
@@ -55,10 +55,10 @@ export const ComunicacionSocialController = {
       await ComunicacionSocialModel.actualizarPlantilla(id, req.body);
 
       return res.json({ message: 'Plantilla actualizada' });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error actualizando plantilla:', error);
-      if (error.message?.includes('predefinida')) {
-        return res.status(400).json({ error: error.message });
+      if ((error as any).message?.includes('predefinida')) {
+        return res.status(400).json({ error: (error as any).message });
       }
       return res.status(500).json({ error: 'Error al actualizar plantilla' });
     }
@@ -72,10 +72,10 @@ export const ComunicacionSocialController = {
       await ComunicacionSocialModel.eliminarPlantilla(id);
 
       return res.json({ message: 'Plantilla eliminada' });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error eliminando plantilla:', error);
-      if (error.message?.includes('predefinida')) {
-        return res.status(400).json({ error: error.message });
+      if ((error as any).message?.includes('predefinida')) {
+        return res.status(400).json({ error: (error as any).message });
       }
       return res.status(500).json({ error: 'Error al eliminar plantilla' });
     }
