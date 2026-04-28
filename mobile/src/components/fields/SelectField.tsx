@@ -9,7 +9,10 @@
  */
 
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View, Text, StyleSheet, ActivityIndicator,
+  Platform, Modal, TouchableOpacity, SafeAreaView,
+} from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useTheme } from '../../core/theme';
 import { FieldOption } from '../../core/FormBuilder/types';
@@ -45,6 +48,7 @@ export default function SelectField({
     const theme = useTheme();
     const [resolvedOptions, setResolvedOptions] = useState<FieldOption[]>([]);
     const [loading, setLoading] = useState(typeof options === 'string');
+    const [iosVisible, setIosVisible] = useState(false);
 
     // Guardar el valor que viene del form para protegerlo del Picker
     const preservedValueRef = useRef<any>(value);
@@ -136,57 +140,126 @@ export default function SelectField({
             </Text>
 
             {/* Picker o Loading */}
-            <View style={[
-                styles.pickerContainer,
-                {
-                    backgroundColor: disabled ? theme.components.input.disabledBackgroundColor : theme.components.input.backgroundColor,
-                    borderColor: error ? theme.components.input.errorBorderColor : theme.components.input.borderColor,
-                    borderWidth: theme.components.input.borderWidth,
-                    borderRadius: theme.components.input.borderRadius,
-                }
-            ]}>
-                {loading ? (
-                    // NO montar el Picker mientras carga opciones - evita que borre el valor
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="small" color={theme.colors.primary} />
-                        <Text style={[styles.loadingText, { color: theme.colors.text.secondary }]}>
-                            Cargando opciones...
-                        </Text>
-                    </View>
-                ) : (
-                    <Picker
-                        selectedValue={value}
-                        onValueChange={(v) => {
-                            // Si el Picker intenta poner null pero tenemos un valor preservado
-                            // que coincide con una opción, restaurar en vez de borrar
-                            if (v === null && preservedValueRef.current != null && preservedValueRef.current !== '') {
-                                const match = resolvedOptions.some(o => String(o.value) === String(preservedValueRef.current));
-                                if (match) {
-                                    onChange(preservedValueRef.current);
-                                    return;
-                                }
-                            }
-                            onChange(v);
-                            // Actualizar el ref si el usuario selecciona algo válido
-                            if (v !== null && v !== undefined && v !== '') {
-                                preservedValueRef.current = v;
-                            }
-                        }}
-                        enabled={!disabled}
-                        style={styles.picker}
+            {Platform.OS === 'ios' ? (
+                // iOS: trigger button + Modal con picker completo
+                <>
+                    <TouchableOpacity
+                        style={[
+                            styles.iosTrigger,
+                            {
+                                backgroundColor: disabled ? theme.components.input.disabledBackgroundColor : theme.components.input.backgroundColor,
+                                borderColor: error ? theme.components.input.errorBorderColor : theme.components.input.borderColor,
+                                borderWidth: theme.components.input.borderWidth,
+                                borderRadius: theme.components.input.borderRadius,
+                            },
+                        ]}
+                        onPress={() => { if (!disabled && !loading) setIosVisible(true); }}
+                        activeOpacity={disabled ? 1 : 0.7}
                     >
-                        <Picker.Item label={placeholder} value={null} color={theme.components.input.placeholderColor} />
-                        {resolvedOptions.map(option => (
-                            <Picker.Item
-                                key={String(option.value)}
-                                label={option.label}
-                                value={option.value}
-                                enabled={!option.disabled}
-                            />
-                        ))}
-                    </Picker>
-                )}
-            </View>
+                        {loading ? (
+                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                        ) : (
+                            <Text style={[
+                                styles.iosTriggerText,
+                                (value === null || value === undefined || value === '') && styles.iosPlaceholder,
+                                { color: disabled ? theme.colors.text.secondary : theme.colors.text.primary },
+                            ]}>
+                                {resolvedOptions.find(o => String(o.value) === String(value))?.label ?? placeholder}
+                            </Text>
+                        )}
+                        <Text style={styles.iosChevron}>▾</Text>
+                    </TouchableOpacity>
+
+                    <Modal
+                        visible={iosVisible}
+                        transparent
+                        animationType="slide"
+                        onRequestClose={() => setIosVisible(false)}
+                    >
+                        <TouchableOpacity
+                            style={styles.iosOverlay}
+                            activeOpacity={1}
+                            onPress={() => setIosVisible(false)}
+                        />
+                        <SafeAreaView style={styles.iosSheet}>
+                            <View style={styles.iosSheetHeader}>
+                                <TouchableOpacity onPress={() => setIosVisible(false)}>
+                                    <Text style={styles.iosDone}>Listo</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <Picker
+                                selectedValue={value}
+                                onValueChange={(v) => {
+                                    if (v === null && preservedValueRef.current != null && preservedValueRef.current !== '') {
+                                        const match = resolvedOptions.some(o => String(o.value) === String(preservedValueRef.current));
+                                        if (match) { onChange(preservedValueRef.current); return; }
+                                    }
+                                    onChange(v);
+                                    if (v !== null && v !== undefined && v !== '') {
+                                        preservedValueRef.current = v;
+                                    }
+                                }}
+                            >
+                                <Picker.Item label={placeholder} value={null} color={theme.components.input.placeholderColor} />
+                                {resolvedOptions.map(option => (
+                                    <Picker.Item
+                                        key={String(option.value)}
+                                        label={option.label}
+                                        value={option.value}
+                                        enabled={!option.disabled}
+                                    />
+                                ))}
+                            </Picker>
+                        </SafeAreaView>
+                    </Modal>
+                </>
+            ) : (
+                // Android: picker inline nativo
+                <View style={[
+                    styles.pickerContainer,
+                    {
+                        backgroundColor: disabled ? theme.components.input.disabledBackgroundColor : theme.components.input.backgroundColor,
+                        borderColor: error ? theme.components.input.errorBorderColor : theme.components.input.borderColor,
+                        borderWidth: theme.components.input.borderWidth,
+                        borderRadius: theme.components.input.borderRadius,
+                    }
+                ]}>
+                    {loading ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                            <Text style={[styles.loadingText, { color: theme.colors.text.secondary }]}>
+                                Cargando opciones...
+                            </Text>
+                        </View>
+                    ) : (
+                        <Picker
+                            selectedValue={value}
+                            onValueChange={(v) => {
+                                if (v === null && preservedValueRef.current != null && preservedValueRef.current !== '') {
+                                    const match = resolvedOptions.some(o => String(o.value) === String(preservedValueRef.current));
+                                    if (match) { onChange(preservedValueRef.current); return; }
+                                }
+                                onChange(v);
+                                if (v !== null && v !== undefined && v !== '') {
+                                    preservedValueRef.current = v;
+                                }
+                            }}
+                            enabled={!disabled}
+                            style={styles.picker}
+                        >
+                            <Picker.Item label={placeholder} value={null} color={theme.components.input.placeholderColor} />
+                            {resolvedOptions.map(option => (
+                                <Picker.Item
+                                    key={String(option.value)}
+                                    label={option.label}
+                                    value={option.value}
+                                    enabled={!option.disabled}
+                                />
+                            ))}
+                        </Picker>
+                    )}
+                </View>
+            )}
 
             {/* Helper/Error Text */}
             {(error || helperText) && (
@@ -210,6 +283,8 @@ const styles = StyleSheet.create({
         marginBottom: 6,
         fontWeight: '500',
     },
+
+    // ── Android ──────────────────────────────────────────────────────────────
     pickerContainer: {
         overflow: 'hidden',
     },
@@ -226,6 +301,48 @@ const styles = StyleSheet.create({
     loadingText: {
         fontSize: 14,
     },
+
+    // ── iOS ──────────────────────────────────────────────────────────────────
+    iosTrigger: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: 48,
+        paddingHorizontal: 12,
+    },
+    iosTriggerText: {
+        fontSize: 15,
+        flex: 1,
+    },
+    iosPlaceholder: {
+        color: '#999',
+    },
+    iosChevron: {
+        fontSize: 16,
+        color: '#666',
+        marginLeft: 8,
+    },
+    iosOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.35)',
+    },
+    iosSheet: {
+        backgroundColor: '#fff',
+    },
+    iosSheetHeader: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0e0e0',
+    },
+    iosDone: {
+        fontSize: 16,
+        color: '#007AFF',
+        fontWeight: '600',
+    },
+
     helperText: {
         marginTop: 4,
     },

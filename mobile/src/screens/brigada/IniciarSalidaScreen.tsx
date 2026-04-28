@@ -17,7 +17,6 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { API_URL } from '../../constants/config';
 import FuelSelector from '../../components/FuelSelector';
-import { Picker } from '@react-native-picker/picker';
 import { turnosAPI, geografiaAPI } from '../../services/api';
 import api from '../../services/api';
 

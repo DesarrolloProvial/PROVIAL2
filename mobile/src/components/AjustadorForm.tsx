@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Controller, Control, useWatch } from 'react-hook-form';
 import { TextInput, Button, List, Text as PaperText } from 'react-native-paper';
-import { Picker } from '@react-native-picker/picker';
+import CrossPlatformPicker from './CrossPlatformPicker';
 
 interface AjustadorFormProps {
     control: Control<any>;
@@ -41,29 +41,22 @@ export const AjustadorForm: React.FC<AjustadorFormProps> = ({ control, index, on
                     {/* Selector de Vehículo Asociado */}
                     {vehiculos.length > 0 && (
                         <View style={styles.input}>
-                            <PaperText variant="labelMedium" style={{ marginBottom: 4 }}>Vehículo Atendido</PaperText>
-                            <View style={{ borderWidth: 1, borderColor: '#79747E', borderRadius: 4 }}>
-                                <Controller
-                                    control={control}
-                                    name={`ajustadores.${index}.vehiculo_index`}
-                                    render={({ field: { onChange, value } }) => (
-                                        <Picker
-                                            selectedValue={value}
-                                            onValueChange={onChange}
-                                            style={{ height: 50 }}
-                                        >
-                                            <Picker.Item label="Ninguno / General" value="" />
-                                            {vehiculos.map((v: any, idx: number) => (
-                                                <Picker.Item
-                                                    key={idx}
-                                                    label={`Vehículo ${idx + 1} - ${v.placa || 'Sin placa'} (${v.marca || 'Marca?'})`}
-                                                    value={idx.toString()}
-                                                />
-                                            ))}
-                                        </Picker>
-                                    )}
-                                />
-                            </View>
+                            <Controller
+                                control={control}
+                                name={`ajustadores.${index}.vehiculo_index`}
+                                render={({ field: { onChange, value } }) => (
+                                    <CrossPlatformPicker
+                                        label="Vehículo Atendido"
+                                        selectedValue={value ?? ''}
+                                        onValueChange={onChange}
+                                        placeholder="Ninguno / General"
+                                        options={vehiculos.map((v: any, idx: number) => ({
+                                            label: `Vehículo ${idx + 1} - ${v.placa || 'Sin placa'} (${v.marca || 'Marca?'})`,
+                                            value: idx.toString(),
+                                        }))}
+                                    />
+                                )}
+                            />
                         </View>
                     )}
 
