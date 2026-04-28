@@ -12,6 +12,7 @@ import {
 } from '../../services/operaciones/asignacionesAvanzadas.service';
 import { geografiaAPI } from '../../services/api';
 import ThemeToggle from '../../components/common/ThemeToggle';
+import { localToday } from '../../utils/dates';
 import {
   ArrowLeft,
   Plus,
@@ -48,7 +49,7 @@ export default function SituacionesFijasPage() {
     titulo: '',
     descripcion: '',
     tipo: 'REGULACION',
-    fecha_inicio: new Date().toISOString().split('T')[0],
+    fecha_inicio: localToday(),
     dias_semana: [],
     activa: true
   });
@@ -116,7 +117,7 @@ export default function SituacionesFijasPage() {
         titulo: '',
         descripcion: '',
         tipo: 'REGULACION',
-        fecha_inicio: new Date().toISOString().split('T')[0],
+        fecha_inicio: localToday(),
         dias_semana: [],
         activa: true
       });

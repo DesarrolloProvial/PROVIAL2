@@ -5,12 +5,13 @@ import { generadorService } from '../../services/operaciones/generador.service';
 import type { SugerenciaAsignacion, ParametrosGenerador } from '../../services/operaciones/generador.service';
 import { ArrowLeft, Sparkles, Users, Truck, CheckCircle, AlertCircle, Info, Settings, Shield, Home } from 'lucide-react';
 import ThemeToggle from '../../components/common/ThemeToggle';
+import { localToday } from '../../utils/dates';
 
 export default function GeneradorTurnosPage() {
   const navigate = useNavigate();
 
   // Estado del formulario de parámetros
-  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [fecha, setFecha] = useState(localToday());
   const [numUnidades, setNumUnidades] = useState(5);
   const [tripulantesPorUnidad, setTripulantesPorUnidad] = useState(3);
   const [incluirGarita, setIncluirGarita] = useState(true);

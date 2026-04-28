@@ -12,6 +12,7 @@ import api from '../../services/api';
 import ThemeToggle from '../../components/common/ThemeToggle';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
+import { localToday, localDaysAgo } from '../../utils/dates';
 
 // ─── Error Boundary ────────────────────────────────────────
 class TabErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
@@ -391,8 +392,8 @@ function PanelEstadisticas({
 }
 
 function TabEstadisticas() {
-  const hoy = new Date().toISOString().split('T')[0];
-  const hace30 = new Date(Date.now() - 30 * 24 * 3600_000).toISOString().split('T')[0];
+  const hoy = localToday();
+  const hace30 = localDaysAgo(30);
   const [desde, setDesde] = useState(hace30);
   const [hasta, setHasta] = useState(hoy);
   const [loading, setLoading] = useState(false);

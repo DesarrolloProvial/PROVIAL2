@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useDashboardSocket } from '../../hooks/useSocket';
 import ThemeToggle from '../../components/common/ThemeToggle';
+import { localToday } from '../../utils/dates';
 
 const COLORES_SEDE: Record<number, string> = {
   1: '#3B82F6', 2: '#10B981', 3: '#F59E0B', 4: '#8B5CF6',
@@ -20,7 +21,7 @@ const SEDES_NOMBRES: Record<number, string> = {
 };
 
 function todayISO() {
-  return new Date().toISOString().split('T')[0];
+  return localToday();
 }
 
 export default function COPSituacionesPage() {

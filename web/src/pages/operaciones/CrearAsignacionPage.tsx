@@ -10,6 +10,7 @@ import type { CreateAsignacionProgramadaDTO } from '../../services/operaciones/a
 import type { BrigadaDisponible } from '../../services/operaciones/operaciones.service';
 import { CheckCircle, AlertCircle, Users, Truck, ArrowLeft, Plus, X, Search, Crown, Info } from 'lucide-react';
 import ThemeToggle from '../../components/common/ThemeToggle';
+import { formatLocalDate, localTomorrow } from '../../utils/dates';
 
 export default function CrearAsignacionPage() {
   const navigate = useNavigate();
@@ -27,9 +28,7 @@ export default function CrearAsignacionPage() {
     if (asignacionEdit?.fecha) {
       return asignacionEdit.fecha.split('T')[0];
     }
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
+    return localTomorrow();
   });
   const [esComisionLarga, setEsComisionLarga] = useState(false);
   const [fechaFin, setFechaFin] = useState('');
@@ -42,7 +41,7 @@ export default function CrearAsignacionPage() {
   const [horaEntrada, setHoraEntrada] = useState(asignacionEdit?.hora_entrada_estimada || '21:00');
   const [observaciones, setObservaciones] = useState('');
   const [esReaccion, setEsReaccion] = useState(asignacionEdit?.es_reaccion || false);
-  const [tipoAsignacion, setTipoAsignacion] = useState<'PATRULLA' | 'GARITA' | 'PUESTO_CONTROL'>(
+  const [tipoAsignacion, setTipoAsignacion] = useState<'PATRULLA' | 'GARITA'>(
     asignacionEdit?.tipo_asignacion || 'PATRULLA'
   );
 
@@ -334,7 +333,7 @@ export default function CrearAsignacionPage() {
             <div className="card-body">
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Tipo de Asignación</h2>
               <div className="flex flex-wrap gap-4">
-                {['PATRULLA', 'GARITA', 'PUESTO_CONTROL'].map((tipo) => (
+                {(['PATRULLA', 'GARITA'] as const).map((tipo) => (
                   <label key={tipo} className={`cursor-pointer flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${tipoAsignacion === tipo
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                     : 'border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50'
@@ -344,13 +343,12 @@ export default function CrearAsignacionPage() {
                       name="tipoAsignacion"
                       value={tipo}
                       checked={tipoAsignacion === tipo}
-                      onChange={() => setTipoAsignacion(tipo as any)}
+                      onChange={() => setTipoAsignacion(tipo)}
                       className="text-blue-600 focus:ring-blue-500 w-4 h-4"
                     />
                     <span className="font-medium text-gray-900 dark:text-gray-100">
                       {tipo === 'PATRULLA' && 'Patrulla (Unidad Móvil)'}
                       {tipo === 'GARITA' && 'Garita (Sin Unidad)'}
-                      {tipo === 'PUESTO_CONTROL' && 'Puesto de Control'}
                     </span>
                   </label>
                 ))}

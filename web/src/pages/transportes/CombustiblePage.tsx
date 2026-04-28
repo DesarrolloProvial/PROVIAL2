@@ -9,6 +9,7 @@ import { transportesService, HistorialItem, Abastecimiento } from '../../service
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import ThemeToggle from '../../components/common/ThemeToggle';
+import { localToday, localDaysAgo } from '../../utils/dates';
 
 // ── Constantes de nivel ───────────────────────────────────────────────────────
 
@@ -139,8 +140,8 @@ export default function CombustiblePage() {
 
   const [sedeFilter, setSedeFilter] = useState<number | ''>('');
   const [historialUnidad, setHistorialUnidad] = useState<Unidad | null>(null);
-  const hoy = new Date().toISOString().split('T')[0];
-  const hace30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const hoy = localToday();
+  const hace30 = localDaysAgo(30);
   const [histDesde, setHistDesde] = useState(hace30);
   const [histHasta, setHistHasta] = useState(hoy);
   const [histTipos, setHistTipos] = useState<string[]>(['combustible', 'salidas', 'reparaciones']);
@@ -175,7 +176,7 @@ export default function CombustiblePage() {
   const [repForm, setRepForm] = useState<RepForm>({
     motivo: '',
     descripcion: '',
-    fecha_inicio: new Date().toISOString().split('T')[0],
+    fecha_inicio: localToday(),
   });
   const [repError, setRepError] = useState<string | null>(null);
   const [repSuccess, setRepSuccess] = useState(false);
@@ -400,7 +401,7 @@ export default function CombustiblePage() {
 
   function abrirReparacion(unidad: Unidad) {
     setReparacionUnidad(unidad);
-    setRepForm({ motivo: '', descripcion: '', fecha_inicio: new Date().toISOString().split('T')[0] });
+    setRepForm({ motivo: '', descripcion: '', fecha_inicio: localToday() });
     setRepError(null);
     setRepSuccess(false);
   }

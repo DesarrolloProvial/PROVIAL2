@@ -7,6 +7,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { useAuthStore } from '../../store/authStore';
 import ConfiguracionColumnas, { useConfiguracionColumnas } from '../../components/common/ConfiguracionColumnas';
 import ThemeToggle from '../../components/common/ThemeToggle';
+import { localToday } from '../../utils/dates';
 
 interface Brigada {
   id: number;
@@ -810,7 +811,7 @@ export default function BrigadasPage() {
                     type="date"
                     value={fechaFinEstimada}
                     onChange={(e) => setFechaFinEstimada(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
+                    min={localToday()}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:text-gray-100"
                   />
                 </div>
