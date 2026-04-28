@@ -21,9 +21,9 @@ export const ReportesController = {
         { codigo: 'ACCIDENTOLOGIA', nombre: 'Accidentología', formatos: ['pdf', 'excel'], descripcion: 'Análisis de accidentes' },
       ];
       res.json({ tipos });
-    } catch (error: any) {
-      console.error('Error obteniendo tipos de reportes:', error);
-      res.status(500).json({ error: 'Error al procesar la solicitud' });
+    } catch (error) {
+      console.error('obtenerTipos:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
@@ -58,9 +58,9 @@ export const ReportesController = {
       );
 
       stream.pipe(res);
-    } catch (error: any) {
-      console.error('Error generando reporte PDF:', error);
-      res.status(500).json({ error: 'Error al generar reporte' });
+    } catch (error) {
+      console.error('inspecciones360PDF:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
@@ -98,9 +98,9 @@ export const ReportesController = {
 
       await workbook.xlsx.write(res);
       res.end();
-    } catch (error: any) {
-      console.error('Error generando reporte Excel:', error);
-      res.status(500).json({ error: 'Error al generar reporte' });
+    } catch (error) {
+      console.error('inspecciones360Excel:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
@@ -112,7 +112,7 @@ export const ReportesController = {
     try {
       const { sede_id, fecha_inicio, fecha_fin } = req.query;
 
-      const sedeId = sede_id ? parseInt(sede_id as string) : null;
+      const sedeId = normalizeId(sede_id as string);
 
       const fechaInicio = fecha_inicio
         ? new Date(fecha_inicio as string)
@@ -135,9 +135,9 @@ export const ReportesController = {
       );
 
       stream.pipe(res);
-    } catch (error: any) {
-      console.error('Error generando reporte PDF brigadas:', error);
-      res.status(500).json({ error: 'Error al generar reporte' });
+    } catch (error) {
+      console.error('brigadasPDF:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
@@ -149,7 +149,7 @@ export const ReportesController = {
     try {
       const { sede_id, fecha_inicio, fecha_fin } = req.query;
 
-      const sedeId = sede_id ? parseInt(sede_id as string) : null;
+      const sedeId = normalizeId(sede_id as string);
 
       const fechaInicio = fecha_inicio
         ? new Date(fecha_inicio as string)
@@ -176,9 +176,9 @@ export const ReportesController = {
 
       await workbook.xlsx.write(res);
       res.end();
-    } catch (error: any) {
-      console.error('Error generando reporte Excel brigadas:', error);
-      res.status(500).json({ error: 'Error al generar reporte' });
+    } catch (error) {
+      console.error('brigadasExcel:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 };
