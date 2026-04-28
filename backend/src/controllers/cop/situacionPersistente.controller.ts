@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Controller: Situaciones Persistentes
  *
  * Una situación persistente ES una situación (situacion.persistente = true).
