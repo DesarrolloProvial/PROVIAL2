@@ -1,5 +1,6 @@
 import { db } from '../../config/database';
 import { SituacionDetalleModel } from './situacionDetalle.model';
+import { UbicacionBrigadaModel } from './ubicacionBrigada.model';
 
 // ========================================
 // INTERFACES
@@ -1031,6 +1032,198 @@ export const SituacionModel = {
 
     // getById fuera del tx — lectura limpia post-commit
     return this.getById(situacionId);
+  },
+
+  async resolverContextoCreacion(
+    userId: number,
+    rol: string,
+    hints: {
+      unidadId?: number | null;
+      salidaUnidadId?: number | null;
+      turnoId?: number | null;
+      asignacionId?: number | null;
+      rutaId?: number | null;
+      departamentoId?: number | null;
+      municipioId?: number | null;
+    }
+  ): Promise<{
+    unidadId: number | null;
+    rutaId: number | null;
+    salidaId: number | null;
+    turnoId: number | null;
+    asignacionId: number | null;
+    deptoId: number | null;
+    muniId: number | null;
+  }> {
+    let unidadFinal     = hints.unidadId     ?? null;
+    let turnoFinal      = hints.turnoId      ?? null;
+    let asignacionFinal = hints.asignacionId ?? null;
+    let rutaFinal       = hints.rutaId       ?? null;
+    let salidaFinal     = hints.salidaUnidadId ?? null;
+
+    // 1. Resolver desde salidaUnidadId explícito
+    if (!unidadFinal && hints.salidaUnidadId) {
+      try {
+        const sal = await db.oneOrNone(
+          'SELECT unidad_id, ruta_inicial_id FROM salida_unidad WHERE id = $1',
+          [hints.salidaUnidadId]
+        );
+        if (sal) {
+          unidadFinal = sal.unidad_id;
+          if (!rutaFinal) rutaFinal = sal.ruta_inicial_id;
+        }
+      } catch { /* silencioso */ }
+    }
+
+    // 2. Fallbacks específicos para BRIGADA
+    if (rol === 'BRIGADA' && (!unidadFinal || !rutaFinal)) {
+      // tripulacion_turno vigente
+      if (!unidadFinal || !rutaFinal) {
+        try {
+          const tt = await db.oneOrNone(`
+            SELECT a.unidad_id, a.ruta_id, a.id as asignacion_id, a.turno_id
+            FROM tripulacion_turno tc
+            JOIN asignacion_unidad a ON tc.asignacion_id = a.id
+            JOIN turno t ON a.turno_id = t.id
+            WHERE tc.usuario_id = $1
+              AND t.estado IN ('PLANIFICADO', 'ACTIVO')
+              AND t.fecha <= CURRENT_DATE
+              AND (t.fecha_fin IS NULL OR t.fecha_fin >= CURRENT_DATE)
+              AND a.hora_entrada_real IS NULL
+            ORDER BY t.fecha DESC LIMIT 1
+          `, [userId]);
+          if (tt) {
+            if (!unidadFinal)     unidadFinal     = tt.unidad_id;
+            if (!rutaFinal)       rutaFinal       = tt.ruta_id;
+            if (!turnoFinal)      turnoFinal      = tt.turno_id;
+            if (!asignacionFinal) asignacionFinal = tt.asignacion_id;
+          }
+        } catch { /* silencioso */ }
+      }
+
+      // ubicacion_brigada (préstamo a otra unidad)
+      if (!unidadFinal) {
+        try {
+          const ub = await UbicacionBrigadaModel.getUbicacionActual(userId);
+          if (ub) unidadFinal = ub.unidad_actual_id || ub.unidad_origen_id;
+        } catch { /* silencioso */ }
+      }
+    }
+
+    // 3. Resolver ruta desde asignacion_unidad
+    if (!rutaFinal && asignacionFinal) {
+      try {
+        const asig = await db.oneOrNone(
+          'SELECT ruta_id FROM asignacion_unidad WHERE id = $1',
+          [asignacionFinal]
+        );
+        if (asig) rutaFinal = asig.ruta_id;
+      } catch { /* silencioso */ }
+    }
+
+    // 4. Resolver ruta y salida desde salida activa de la unidad
+    if (unidadFinal && (!rutaFinal || !salidaFinal)) {
+      try {
+        const salidaActiva = await db.oneOrNone(
+          `SELECT id, ruta_inicial_id FROM salida_unidad
+           WHERE unidad_id = $1 AND estado = 'EN_SALIDA'
+           ORDER BY created_at DESC LIMIT 1`,
+          [unidadFinal]
+        );
+        if (salidaActiva) {
+          if (!rutaFinal    && salidaActiva.ruta_inicial_id) rutaFinal   = salidaActiva.ruta_inicial_id;
+          if (!salidaFinal)                                  salidaFinal = salidaActiva.id;
+        }
+      } catch { /* silencioso */ }
+    }
+
+    // 5. Validar FK departamento / municipio (silencioso — nullifica si no existe)
+    let deptoId = hints.departamentoId ?? null;
+    let muniId  = hints.municipioId    ?? null;
+    if (deptoId) {
+      const ok = await db.oneOrNone('SELECT id FROM departamento WHERE id = $1', [deptoId]);
+      if (!ok) { console.warn(`[resolverContextoCreacion] departamento_id ${deptoId} no encontrado`); deptoId = null; }
+    }
+    if (muniId) {
+      const ok = await db.oneOrNone('SELECT id FROM municipio WHERE id = $1', [muniId]);
+      if (!ok) { console.warn(`[resolverContextoCreacion] municipio_id ${muniId} no encontrado`); muniId = null; }
+    }
+
+    return { unidadId: unidadFinal, rutaId: rutaFinal, salidaId: salidaFinal, turnoId: turnoFinal, asignacionId: asignacionFinal, deptoId, muniId };
+  },
+
+  async getAnteriorActiva(unidadId: number): Promise<{ id: number } | null> {
+    return db.oneOrNone(
+      "SELECT id FROM situacion WHERE unidad_id = $1 AND estado = 'ACTIVA' ORDER BY created_at DESC LIMIT 1",
+      [unidadId]
+    );
+  },
+
+  async cerrarAnterior(id: number, conn: any = db): Promise<void> {
+    await conn.none(
+      `UPDATE situacion
+       SET estado = 'CERRADA', fecha_hora_finalizacion = NOW(), updated_at = NOW()
+       WHERE id = $1`,
+      [id]
+    );
+  },
+
+  async insertarCausas(situacionId: number, causas: number[], conn: any = db): Promise<void> {
+    try {
+      for (const causaId of causas) {
+        await conn.none(
+          'INSERT INTO situacion_causa (situacion_id, causa_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+          [situacionId, causaId]
+        );
+      }
+    } catch (e) {
+      console.warn('situacion_causa insert failed (table may not exist):', e);
+    }
+  },
+
+  async crearCompleta(data: {
+    situacionData: Partial<Situacion>;
+    anteriorId: number | null;
+    detalles?: { tipo_detalle: string; datos: any }[];
+    vehiculos?: any[];
+    autoridades?: any[];
+    causas?: number[];
+  }): Promise<{ nuevaId: number; anteriorId: number | null }> {
+    const { situacionData, anteriorId, detalles, vehiculos, autoridades, causas } = data;
+
+    const nuevaId: number = await db.tx(async t => {
+      if (anteriorId) {
+        await this.cerrarAnterior(anteriorId, t);
+      }
+
+      const situacion = await this.create(situacionData, t);
+
+      if (Array.isArray(detalles)) {
+        for (const d of detalles) {
+          await SituacionDetalleModel.createByTipo(situacion.id, d.tipo_detalle, d.datos, t);
+        }
+      }
+
+      if (Array.isArray(vehiculos)) {
+        for (const v of vehiculos) {
+          await SituacionDetalleModel.addVehiculo(situacion.id, v, t);
+        }
+      }
+
+      if (Array.isArray(autoridades)) {
+        for (const a of autoridades) {
+          await SituacionDetalleModel.addAutoridad(situacion.id, a, t);
+        }
+      }
+
+      if (Array.isArray(causas) && causas.length > 0) {
+        await this.insertarCausas(situacion.id, causas, t);
+      }
+
+      return situacion.id;
+    });
+
+    return { nuevaId, anteriorId };
   },
 };
 

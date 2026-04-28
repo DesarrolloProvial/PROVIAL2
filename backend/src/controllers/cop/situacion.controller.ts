@@ -3,8 +3,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { SituacionModel, SituacionUpdateData } from '../../models/cop/situacion.model';
 import { SituacionDetalleModel } from '../../models/cop/situacionDetalle.model';
 import { MultimediaModel } from '../../models/common/multimedia.model';
-import { SalidaModel } from '../../models/common/salida.model';
-import { UbicacionBrigadaModel } from '../../models/cop/ubicacionBrigada.model';
 import { db } from '../../config/database';
 import { normalizeId, buildObservacionEntry } from '../../utils/db.utils';
 import {
@@ -82,13 +80,13 @@ export async function createSituacion(req: Request, res: Response) {
     );
     const tipo_situacion_final = tipo_situacion === 'HECHO_TRANSITO' ? 'INCIDENTE' : tipo_situacion;
     const tipo_pavimento_final = tipo_pavimento ?? material_via ?? null;
-    const heridosFinal   = heridos   ?? (hay_heridos   ? (cantidad_heridos   || 1) : 0);
-    const fallecidosFinal= fallecidos ?? (hay_fallecidos ? (cantidad_fallecidos || 1) : 0);
+    const heridosFinal    = heridos    ?? (hay_heridos    ? (cantidad_heridos    || 1) : 0);
+    const fallecidosFinal = fallecidos ?? (hay_fallecidos ? (cantidad_fallecidos || 1) : 0);
 
     const userId      = req.user!.userId;
     const codigoFinal = codigo_situacion || `WEB-${uuidv4()}`;
 
-    // ── Validación de duplicados (lectura) ──────────────────────────────────
+    // ── Validación de duplicados ─────────────────────────────────────────────
     if (codigo_situacion) {
       const existente = await SituacionModel.findByCodigoSituacion(codigo_situacion);
       if (existente) {
@@ -106,223 +104,86 @@ export async function createSituacion(req: Request, res: Response) {
       }
     }
 
-    // ── Resolver Unidad / Ruta / Salida (solo lecturas) ────────────────────
-    let unidadFinal    = unidad_id;
-    let turnoFinal     = turno_id;
-    let asignacionFinal= asignacion_id;
-    let rutaFinal      = ruta_id;
-
-    if (!unidadFinal && salida_unidad_id) {
-      try {
-        const sal = await db.oneOrNone(
-          'SELECT unidad_id, ruta_inicial_id FROM salida_unidad WHERE id = $1',
-          [salida_unidad_id]
-        );
-        if (sal) {
-          unidadFinal = sal.unidad_id;
-          if (!rutaFinal) rutaFinal = sal.ruta_inicial_id;
-        }
-      } catch { /* silencioso */ }
-    }
-
-    if (req.user!.rol === 'BRIGADA' && (!unidadFinal || !rutaFinal)) {
-      // 1. brigada_unidad (tabla legacy — capturado silenciosamente si no existe)
-      try {
-        const bu = await db.oneOrNone(`
-          SELECT bu.unidad_id, s.id as salida_id, s.ruta_inicial_id
-          FROM brigada_unidad bu
-          LEFT JOIN salida_unidad s ON s.unidad_id = bu.unidad_id
-            AND s.estado = 'EN_SALIDA'
-            AND DATE(s.fecha_hora_salida) = CURRENT_DATE
-          WHERE bu.brigada_id = $1 AND bu.activo = true
-          ORDER BY bu.created_at DESC LIMIT 1
-        `, [userId]);
-        if (bu) {
-          if (!unidadFinal) unidadFinal = bu.unidad_id;
-          if (!rutaFinal)   rutaFinal   = bu.ruta_inicial_id;
-        }
-      } catch { /* silencioso */ }
-
-      // 2. tripulacion_turno
-      if (!unidadFinal || !rutaFinal) {
-        try {
-          const tt = await db.oneOrNone(`
-            SELECT a.unidad_id, a.ruta_id, a.id as asignacion_id, a.turno_id
-            FROM tripulacion_turno tc
-            JOIN asignacion_unidad a ON tc.asignacion_id = a.id
-            JOIN turno t ON a.turno_id = t.id
-            WHERE tc.usuario_id = $1
-              AND t.estado IN ('PLANIFICADO', 'ACTIVO')
-              AND (t.fecha <= CURRENT_DATE AND (t.fecha_fin IS NULL OR t.fecha_fin >= CURRENT_DATE))
-              AND a.hora_entrada_real IS NULL
-            ORDER BY t.fecha DESC LIMIT 1
-          `, [userId]);
-          if (tt) {
-            if (!unidadFinal)    unidadFinal    = tt.unidad_id;
-            if (!rutaFinal)      rutaFinal      = tt.ruta_id;
-            if (!turnoFinal)     turnoFinal     = tt.turno_id;
-            if (!asignacionFinal)asignacionFinal= tt.asignacion_id;
-          }
-        } catch { /* silencioso */ }
-      }
-
-      // 3. ubicacion_brigada (préstamo a otra unidad)
-      if (!unidadFinal) {
-        const ub = await UbicacionBrigadaModel.getUbicacionActual(userId);
-        if (ub) unidadFinal = ub.unidad_actual_id || ub.unidad_origen_id;
-      }
-    }
-
-    if (!unidadFinal) {
-      return res.status(400).json({ error: 'unidad_id requerido (o no asignado a brigada)' });
-    }
-
-    if (!rutaFinal && asignacionFinal) {
-      const asig = await db.oneOrNone('SELECT ruta_id FROM asignacion_unidad WHERE id=$1', [asignacionFinal]);
-      if (asig) rutaFinal = asig.ruta_id;
-    }
-    if (!rutaFinal) {
-      const salidaActiva = await db.oneOrNone(
-        `SELECT ruta_inicial_id FROM salida_unidad
-         WHERE unidad_id = $1 AND estado = 'EN_SALIDA'
-         ORDER BY created_at DESC LIMIT 1`,
-        [unidadFinal]
-      );
-      if (salidaActiva?.ruta_inicial_id) rutaFinal = salidaActiva.ruta_inicial_id;
-    }
-    if (!rutaFinal) {
-      return res.status(400).json({ error: 'ruta_id requerido (unidad sin ruta asignada ni salida activa con ruta)' });
-    }
-
-    // Buscar situación anterior activa (para cerrarla dentro de la tx)
-    const anterior = await db.oneOrNone(
-      "SELECT id FROM situacion WHERE unidad_id=$1 AND estado='ACTIVA' ORDER BY created_at DESC LIMIT 1",
-      [unidadFinal]
-    );
-
-    // Buscar salida activa
-    let salidaFinal = salida_unidad_id;
-    if (!salidaFinal) {
-      const sal = await SalidaModel.getMiSalidaActiva(userId);
-      if (sal) salidaFinal = sal.salida_id;
-    }
-    if (!salidaFinal && unidadFinal) {
-      const salUnidad = await db.oneOrNone(
-        `SELECT id FROM salida_unidad WHERE unidad_id = $1 AND estado = 'EN_SALIDA' ORDER BY created_at DESC LIMIT 1`,
-        [unidadFinal]
-      );
-      if (salUnidad) salidaFinal = salUnidad.id;
-    }
-
-    // Validar FK departamento / municipio
-    let deptoIdFinal = normalizeId(departamento_id);
-    let muniIdFinal  = normalizeId(municipio_id);
-    if (deptoIdFinal) {
-      const ok = await db.oneOrNone('SELECT id FROM departamento WHERE id = $1', [deptoIdFinal]);
-      if (!ok) { console.warn(`[CREATE] departamento_id ${deptoIdFinal} no encontrado`); deptoIdFinal = null; }
-    }
-    if (muniIdFinal) {
-      const ok = await db.oneOrNone('SELECT id FROM municipio WHERE id = $1', [muniIdFinal]);
-      if (!ok) { console.warn(`[CREATE] municipio_id ${muniIdFinal} no encontrado`);    muniIdFinal  = null; }
-    }
-
-    const dataToCreate = {
-      tipo_situacion: tipo_situacion_final,
-      unidad_id: unidadFinal,
-      salida_unidad_id: salidaFinal,
-      turno_id: turnoFinal,
-      asignacion_id: asignacionFinal,
-      ruta_id: rutaFinal,
-      km, sentido, latitud, longitud, observaciones,
-      creado_por: userId,
-      codigo_situacion: codigoFinal,
-      tipo_situacion_id: tipo_situacion_id_final,
-      clima, carga_vehicular,
-      departamento_id: deptoIdFinal,
-      municipio_id: muniIdFinal,
-      obstruccion_data: obstruccion,
-      area,
-      tipo_pavimento: tipo_pavimento_final,
-      heridos: heridosFinal,
-      fallecidos: fallecidosFinal,
-      danios_materiales, danios_infraestructura,
-      danios_descripcion: descripcion_danios_infra,
-      grupo: grupo ? parseInt(grupo, 10) : null,
-      fecha_hora_aviso:  new Date(),
-      fecha_hora_llegada: new Date(),
-      acuerdo_involucrados: acuerdo_involucrados ?? null,
-      acuerdo_detalle:      acuerdo_detalle      ?? null,
-      ilesos:        ilesos        ?? 0,
-      heridos_leves: heridos_leves ?? 0,
-      heridos_graves:heridos_graves ?? 0,
-      trasladados:   trasladados   ?? 0,
-      fugados:       fugados       ?? 0,
-      via_estado:     via_estado     ?? null,
-      via_topografia: via_topografia ?? null,
-      via_geometria:  via_geometria  ?? null,
-      via_peralte:    via_peralte    ?? null,
-      via_condicion:  via_condicion  ?? null,
-    };
-
-    // ── Todas las escrituras en una única transacción ───────────────────────
-    const full = await db.tx(async t => {
-      // 1. Cerrar situación anterior activa
-      if (anterior) {
-        await t.none(
-          `UPDATE situacion
-           SET estado = 'CERRADA', fecha_hora_finalizacion = NOW(), updated_at = NOW()
-           WHERE id = $1`,
-          [anterior.id]
-        );
-        emitSituacionCerrada({ id: anterior.id, estado: 'CERRADA' } as any);
-      }
-
-      // 2. Crear situación principal
-      const situacion = await SituacionModel.create(dataToCreate, t);
-
-      // 3. Detalles (formato legacy del móvil)
-      if (Array.isArray(detalles)) {
-        for (const d of detalles) {
-          await SituacionDetalleModel.createByTipo(situacion.id, d.tipo_detalle, d.datos, t);
-        }
-      }
-
-      // 4. Vehículos
-      const vehiculosList = vehiculos || vehiculos_involucrados;
-      if (Array.isArray(vehiculosList)) {
-        for (const v of vehiculosList) {
-          await SituacionDetalleModel.addVehiculo(situacion.id, v, t);
-        }
-      }
-
-      // 5. Autoridades
-      if (Array.isArray(autoridades)) {
-        for (const a of autoridades) {
-          await SituacionDetalleModel.addAutoridad(situacion.id, a, t);
-        }
-      }
-
-      // 6. Causas del hecho de tránsito
-      if (Array.isArray(causas) && causas.length > 0) {
-        try {
-          for (const causaId of causas) {
-            await t.none(
-              'INSERT INTO situacion_causa (situacion_id, causa_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-              [situacion.id, causaId]
-            );
-          }
-        } catch (e) {
-          console.warn('situacion_causa insert failed (table may not exist):', e);
-        }
-      }
-
-      return SituacionModel.getById(situacion.id);
+    // ── Resolver contexto (unidad, ruta, salida, FK geo) ────────────────────
+    const ctx = await SituacionModel.resolverContextoCreacion(userId, req.user!.rol, {
+      unidadId:       normalizeId(unidad_id),
+      salidaUnidadId: normalizeId(salida_unidad_id),
+      turnoId:        normalizeId(turno_id),
+      asignacionId:   normalizeId(asignacion_id),
+      rutaId:         normalizeId(ruta_id),
+      departamentoId: normalizeId(departamento_id),
+      municipioId:    normalizeId(municipio_id),
     });
 
-    if (full) emitSituacionNueva(full as any);
+    if (!ctx.unidadId) return res.status(400).json({ error: 'unidad_id requerido (o no asignado a brigada)' });
+    if (!ctx.rutaId)   return res.status(400).json({ error: 'ruta_id requerido (unidad sin ruta asignada ni salida activa con ruta)' });
+
+    // ── Situación anterior activa (para cerrar en el tx) ────────────────────
+    const anterior = await SituacionModel.getAnteriorActiva(ctx.unidadId);
+
+    // ── Transacción completa ─────────────────────────────────────────────────
+    const vehiculosList = vehiculos || vehiculos_involucrados;
+    const { nuevaId, anteriorId } = await SituacionModel.crearCompleta({
+      situacionData: {
+        tipo_situacion:   tipo_situacion_final,
+        unidad_id:        ctx.unidadId,
+        salida_unidad_id: ctx.salidaId,
+        turno_id:         ctx.turnoId,
+        asignacion_id:    ctx.asignacionId,
+        ruta_id:          ctx.rutaId,
+        km, sentido, latitud, longitud, observaciones,
+        creado_por:       userId,
+        codigo_situacion: codigoFinal,
+        tipo_situacion_id:tipo_situacion_id_final,
+        clima, carga_vehicular,
+        departamento_id:  ctx.deptoId,
+        municipio_id:     ctx.muniId,
+        obstruccion_data: obstruccion,
+        area,
+        tipo_pavimento:   tipo_pavimento_final,
+        heridos:          heridosFinal,
+        fallecidos:       fallecidosFinal,
+        danios_materiales, danios_infraestructura,
+        danios_descripcion: descripcion_danios_infra,
+        grupo:            grupo ? parseInt(grupo, 10) : null,
+        fecha_hora_aviso:   new Date(),
+        fecha_hora_llegada: new Date(),
+        acuerdo_involucrados: acuerdo_involucrados ?? null,
+        acuerdo_detalle:      acuerdo_detalle      ?? null,
+        ilesos:         ilesos         ?? 0,
+        heridos_leves:  heridos_leves  ?? 0,
+        heridos_graves: heridos_graves ?? 0,
+        trasladados:    trasladados    ?? 0,
+        fugados:        fugados        ?? 0,
+        via_estado:     via_estado     ?? null,
+        via_topografia: via_topografia ?? null,
+        via_geometria:  via_geometria  ?? null,
+        via_peralte:    via_peralte    ?? null,
+        via_condicion:  via_condicion  ?? null,
+      },
+      anteriorId:  anterior?.id ?? null,
+      detalles:    Array.isArray(detalles)      ? detalles      : undefined,
+      vehiculos:   Array.isArray(vehiculosList) ? vehiculosList : undefined,
+      autoridades: Array.isArray(autoridades)   ? autoridades   : undefined,
+      causas:      Array.isArray(causas) && causas.length ? causas : undefined,
+    });
+
+    // ── Post-commit: read + emits ────────────────────────────────────────────
+    const full = await SituacionModel.getById(nuevaId);
+
+    if (anteriorId) emitSituacionCerrada({ id: anteriorId, estado: 'CERRADA' } as any);
+    if (full)       emitSituacionNueva(full as any);
+
     return res.status(201).json({ message: 'Situación creada', situacion: full });
 
   } catch (error) {
+    if ((error as any).code === '23505' && req.body.id) {
+      const existente = await SituacionModel.findByCodigoSituacion(req.body.id).catch(() => null);
+      if (existente) return res.status(200).json({
+        situacion: await SituacionModel.getById(existente.id),
+        message: 'Situación ya registrada (idempotente)',
+      });
+    }
     console.error('createSituacion:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
@@ -353,15 +214,15 @@ export async function getSituacion(req: Request, res: Response) {
     let detalles: any = { vehiculos: [], autoridades: [], gruas: [], ajustadores: [] };
     try {
       detalles = await SituacionDetalleModel.getAllDetalles(situacionId);
-    } catch (e: any) {
-      console.warn('[getSituacion] Error en getAllDetalles:', e.message);
+    } catch (e) {
+      console.warn('[getSituacion] Error en getAllDetalles:', e);
     }
 
     let multimedia: any[] = [];
     try {
       multimedia = await MultimediaModel.getBySituacionId(situacionId);
-    } catch (e: any) {
-      console.warn('[getSituacion] Error en multimedia:', e.message);
+    } catch (e) {
+      console.warn('[getSituacion] Error en multimedia:', e);
     }
 
     console.log(`[getSituacion] id=${situacionId} vehiculos=${detalles.vehiculos.length} multimedia=${multimedia.length}`);
@@ -377,8 +238,8 @@ export async function getSituacion(req: Request, res: Response) {
       },
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: 'Error' });
+    console.error('getSituacion:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
