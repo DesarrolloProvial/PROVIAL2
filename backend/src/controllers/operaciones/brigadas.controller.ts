@@ -1,8 +1,9 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { db } from '../../config/database';
 import { cache } from '../../config/redis';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { normalizeId } from '../../utils/db.utils';
 
 // GET /api/brigadas - Listar todas las brigadas (usuarios con rol BRIGADA)
 export async function listarBrigadas(req: Request, res: Response) {
@@ -59,7 +60,7 @@ export async function listarBrigadas(req: Request, res: Response) {
     const brigadas = await db.manyOrNone(query, params);
     return res.json({ brigadas, total: brigadas.length });
   } catch (error) {
-    console.error('Error en listarBrigadas:', error);
+    console.error('listarBrigadas:', error);
     return res.status(500).json({ error: 'Error al listar brigadas' });
   }
 }
@@ -67,7 +68,8 @@ export async function listarBrigadas(req: Request, res: Response) {
 // GET /api/brigadas/:id - Obtener una brigada
 export async function obtenerBrigada(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
 
     const brigada = await db.oneOrNone(`
       SELECT
@@ -102,7 +104,7 @@ export async function obtenerBrigada(req: Request, res: Response) {
 
     return res.json(brigada);
   } catch (error) {
-    console.error('Error en obtenerBrigada:', error);
+    console.error('obtenerBrigada:', error);
     return res.status(500).json({ error: 'Error al obtener brigada' });
   }
 }
@@ -143,9 +145,9 @@ export async function crearBrigada(req: Request, res: Response) {
     `, [chapa, passwordHash, nombre, email, telefono, rolBrigada.id, sede_id, grupo, rol_brigada]);
 
     return res.status(201).json({ message: 'Brigada creada exitosamente', brigada });
-  } catch (error: any) {
-    console.error('Error en crearBrigada:', error);
-    if (error.code === '23505') {
+  } catch (error) {
+    console.error('crearBrigada:', error);
+    if ((error as any).code === '23505') {
       return res.status(409).json({ error: 'La chapa o email ya existe' });
     }
     return res.status(500).json({ error: 'Error al crear brigada' });
@@ -155,7 +157,8 @@ export async function crearBrigada(req: Request, res: Response) {
 // PUT /api/brigadas/:id - Actualizar brigada
 export async function actualizarBrigada(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
     const user = req.user!;
     const {
       nombre,
@@ -231,7 +234,7 @@ export async function actualizarBrigada(req: Request, res: Response) {
 
     return res.json({ message: 'Brigada actualizada exitosamente', brigada: result });
   } catch (error) {
-    console.error('Error en actualizarBrigada:', error);
+    console.error('actualizarBrigada:', error);
     return res.status(500).json({ error: 'Error al actualizar brigada' });
   }
 }
@@ -239,7 +242,8 @@ export async function actualizarBrigada(req: Request, res: Response) {
 // PUT /api/brigadas/:id/desactivar - Desactivar brigada con motivo
 export async function desactivarBrigada(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
     const { motivo_codigo, fecha_fin_estimada, observaciones } = req.body;
     const user = req.user!;
 
@@ -306,7 +310,7 @@ export async function desactivarBrigada(req: Request, res: Response) {
       fecha_fin_estimada
     });
   } catch (error) {
-    console.error('Error en desactivarBrigada:', error);
+    console.error('desactivarBrigada:', error);
     return res.status(500).json({ error: 'Error al desactivar brigada' });
   }
 }
@@ -314,7 +318,8 @@ export async function desactivarBrigada(req: Request, res: Response) {
 // PUT /api/brigadas/:id/activar - Activar brigada (cerrar periodo de inactividad)
 export async function activarBrigada(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
     const user = req.user!;
 
     const brigada = await db.oneOrNone(`
@@ -347,7 +352,7 @@ export async function activarBrigada(req: Request, res: Response) {
       brigada: brigada.nombre_completo
     });
   } catch (error) {
-    console.error('Error en activarBrigada:', error);
+    console.error('activarBrigada:', error);
     return res.status(500).json({ error: 'Error al activar brigada' });
   }
 }
@@ -355,7 +360,8 @@ export async function activarBrigada(req: Request, res: Response) {
 // PUT /api/brigadas/:id/transferir - Transferir brigada a otra sede
 export async function transferirBrigada(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
     const { nueva_sede_id } = req.body;
     const user = req.user!;
 
@@ -389,7 +395,7 @@ export async function transferirBrigada(req: Request, res: Response) {
 
     return res.json({ message: 'Brigada transferida exitosamente' });
   } catch (error) {
-    console.error('Error en transferirBrigada:', error);
+    console.error('transferirBrigada:', error);
     return res.status(500).json({ error: 'Error al transferir brigada' });
   }
 }
@@ -397,7 +403,8 @@ export async function transferirBrigada(req: Request, res: Response) {
 // DELETE /api/brigadas/:id - Eliminar brigada (solo si no tiene historial)
 export async function eliminarBrigada(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
     const user = req.user!;
 
     const brigada = await db.oneOrNone(`
@@ -442,10 +449,10 @@ export async function eliminarBrigada(req: Request, res: Response) {
     await db.none('DELETE FROM usuario WHERE id = $1', [id]);
 
     return res.json({ message: 'Brigada eliminada exitosamente', brigada: brigada.nombre_completo });
-  } catch (error: any) {
-    console.error('Error en eliminarBrigada:', error);
+  } catch (error) {
+    console.error('eliminarBrigada:', error);
     // Manejar errores de FK que no detectamos
-    if (error.code === '23503') {
+    if ((error as any).code === '23503') {
       return res.status(400).json({
         error: 'No se puede eliminar la brigada porque tiene registros asociados. Use desactivar en su lugar.'
       });
@@ -469,7 +476,7 @@ export async function getMotivosInactividad(_req: Request, res: Response) {
     `);
     return res.json({ motivos });
   } catch (error) {
-    console.error('Error en getMotivosInactividad:', error);
+    console.error('getMotivosInactividad:', error);
     return res.status(500).json({ error: 'Error al obtener motivos de inactividad' });
   }
 }
@@ -485,7 +492,7 @@ export async function getRolesDisponibles(_req: Request, res: Response) {
     `);
     return res.json({ roles });
   } catch (error) {
-    console.error('Error en getRolesDisponibles:', error);
+    console.error('getRolesDisponibles:', error);
     return res.status(500).json({ error: 'Error al obtener roles' });
   }
 }
@@ -520,7 +527,7 @@ export async function getUsuariosSistema(req: Request, res: Response) {
 
     return res.json({ usuarios, total: usuarios.length });
   } catch (error) {
-    console.error('Error en getUsuariosSistema:', error);
+    console.error('getUsuariosSistema:', error);
     return res.status(500).json({ error: 'Error al obtener usuarios del sistema' });
   }
 }
@@ -528,7 +535,8 @@ export async function getUsuariosSistema(req: Request, res: Response) {
 // GET /api/brigadas/:id/roles - Obtener roles de una brigada
 export async function getRolesBrigada(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
 
     const roles = await db.manyOrNone(`
       SELECT
@@ -549,7 +557,7 @@ export async function getRolesBrigada(req: Request, res: Response) {
 
     return res.json({ roles });
   } catch (error) {
-    console.error('Error en getRolesBrigada:', error);
+    console.error('getRolesBrigada:', error);
     return res.status(500).json({ error: 'Error al obtener roles de brigada' });
   }
 }
@@ -557,7 +565,8 @@ export async function getRolesBrigada(req: Request, res: Response) {
 // POST /api/brigadas/:id/roles - Asignar rol a brigada
 export async function asignarRolBrigada(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
     const { rol_id, sede_id, es_rol_principal } = req.body;
     const user = req.user!;
 
@@ -607,7 +616,7 @@ export async function asignarRolBrigada(req: Request, res: Response) {
       rol: rol.nombre
     });
   } catch (error) {
-    console.error('Error en asignarRolBrigada:', error);
+    console.error('asignarRolBrigada:', error);
     return res.status(500).json({ error: 'Error al asignar rol' });
   }
 }
@@ -615,7 +624,10 @@ export async function asignarRolBrigada(req: Request, res: Response) {
 // DELETE /api/brigadas/:id/roles/:rolId - Revocar rol de brigada
 export async function revocarRolBrigada(req: Request, res: Response) {
   try {
-    const { id, rolId } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
+    const rolId = normalizeId(req.params.rolId);
+    if (!rolId) return res.status(400).json({ error: 'ID de rol inválido' });
     const user = req.user!;
 
     // ENCARGADO_NOMINAS sin puede_ver_todas_sedes NO puede revocar roles
@@ -640,7 +652,7 @@ export async function revocarRolBrigada(req: Request, res: Response) {
 
     return res.json({ message: 'Rol revocado exitosamente' });
   } catch (error) {
-    console.error('Error en revocarRolBrigada:', error);
+    console.error('revocarRolBrigada:', error);
     return res.status(500).json({ error: 'Error al revocar rol' });
   }
 }
@@ -648,7 +660,8 @@ export async function revocarRolBrigada(req: Request, res: Response) {
 // GET /api/brigadas/:id/inactividad - Obtener historial de inactividad
 export async function getHistorialInactividad(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = normalizeId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
 
     const historial = await db.manyOrNone(`
       SELECT
@@ -677,7 +690,7 @@ export async function getHistorialInactividad(req: Request, res: Response) {
 
     return res.json({ historial, motivo_actual: motivoActual });
   } catch (error) {
-    console.error('Error en getHistorialInactividad:', error);
+    console.error('getHistorialInactividad:', error);
     return res.status(500).json({ error: 'Error al obtener historial de inactividad' });
   }
 }

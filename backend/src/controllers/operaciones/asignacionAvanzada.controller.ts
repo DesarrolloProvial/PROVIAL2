@@ -24,7 +24,7 @@ import { normalizeId } from '../../utils/db.utils';
 export async function getAsignacionesPorSede(req: Request, res: Response) {
   try {
     const { fecha, sedeId, incluirBorradores, mostrarPendientes } = req.query;
-    const user = (req as any).user;
+    const user = req.user!;
 
     // Determinar qué sedes puede ver el usuario
     let sedeIdNum: number | undefined;
@@ -62,9 +62,9 @@ export async function getAsignacionesPorSede(req: Request, res: Response) {
         soloLectura: user.rol === 'ENCARGADO_NOMINAS' || user.rol === 'COP'
       }
     });
-  } catch (error: any) {
-    console.error('Error en getAsignacionesPorSede:', error);
-    res.status(500).json({ error: 'Error al obtener asignaciones por sede', details: error.message });
+  } catch (error) {
+    console.error('getAsignacionesPorSede:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -81,7 +81,7 @@ export async function publicarTurno(req: Request, res: Response) {
     const turnoId = normalizeId(req.params.turnoId);
     if (!turnoId) return res.status(400).json({ error: 'ID de turno inválido' });
 
-    const userId = (req.user as any).userId;
+    const userId = req.user!.userId;
 
     const success = await AsignacionAvanzadaModel.publicarTurno(turnoId, userId);
 
@@ -92,22 +92,22 @@ export async function publicarTurno(req: Request, res: Response) {
     // TODO: Enviar notificación a brigadas asignadas
 
     res.json({ message: 'Turno (plantilla) publicado correctamente. Las patrullas ya son visibles.', publicado: true });
-  } catch (error: any) {
-    console.error('Error en publicarTurno:', error);
+  } catch (error) {
+    console.error('publicarTurno:', error);
 
-    if (error.message === 'MISSING_UNITS') {
+    if ((error as any).message === 'MISSING_UNITS') {
       return res.status(400).json({
         error: 'Incapaz de publicar turno. Existen patrullas sin unidad asignada. Transportes debe designar los vehículos pendientes antes de liberar la salida.'
       });
     }
 
-    if (error.message === 'EMPTY_TURNO') {
+    if ((error as any).message === 'EMPTY_TURNO') {
       return res.status(400).json({
         error: 'No se puede publicar un turno vacío. Debes crear al menos una asignación operativa.'
       });
     }
 
-    res.status(500).json({ error: 'Error interno al publicar turno', details: error.message });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -127,9 +127,9 @@ export async function despublicarTurno(req: Request, res: Response) {
     }
 
     res.json({ message: 'Turno vuelto a borrador', publicado: false });
-  } catch (error: any) {
-    console.error('Error en despublicarTurno:', error);
-    res.status(500).json({ error: 'Error al despublicar turno', details: error.message });
+  } catch (error) {
+    console.error('despublicarTurno:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -164,9 +164,9 @@ export async function getConfiguracionSede(req: Request, res: Response) {
     }
 
     res.json(config);
-  } catch (error: any) {
-    console.error('Error en getConfiguracionSede:', error);
-    res.status(500).json({ error: 'Error al obtener configuración', details: error.message });
+  } catch (error) {
+    console.error('getConfiguracionSede:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -178,9 +178,9 @@ export async function getAllConfiguracionesSede(_req: Request, res: Response) {
   try {
     const configs = await ConfiguracionSedeModel.getAll();
     res.json(configs);
-  } catch (error: any) {
-    console.error('Error en getAllConfiguracionesSede:', error);
-    res.status(500).json({ error: 'Error al obtener configuraciones', details: error.message });
+  } catch (error) {
+    console.error('getAllConfiguracionesSede:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -216,9 +216,9 @@ export async function updateConfiguracionSede(req: Request, res: Response) {
     });
 
     res.json(config);
-  } catch (error: any) {
-    console.error('Error en updateConfiguracionSede:', error);
-    res.status(500).json({ error: 'Error al actualizar configuración', details: error.message });
+  } catch (error) {
+    console.error('updateConfiguracionSede:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -246,9 +246,9 @@ export async function getAlertasRotacion(req: Request, res: Response) {
     );
 
     res.json(alertas);
-  } catch (error: any) {
-    console.error('Error en getAlertasRotacion:', error);
-    res.status(500).json({ error: 'Error al obtener alertas', details: error.message });
+  } catch (error) {
+    console.error('getAlertasRotacion:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -295,8 +295,8 @@ export async function updateAccionesFormato(req: Request, res: Response) {
     }
 
     res.json({ message: 'Acciones actualizadas estructuralmente', acciones_formato: JSON.parse(jsonArray) });
-  } catch (error: any) {
-    console.error('Error en updateAccionesFormato:', error);
-    res.status(500).json({ error: 'Error al actualizar acciones', details: error.message });
+  } catch (error) {
+    console.error('updateAccionesFormato:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

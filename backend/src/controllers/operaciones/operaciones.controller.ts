@@ -44,11 +44,10 @@ export async function getDashboardOperaciones(req: Request, res: Response) {
       },
     });
   } catch (error) {
-    console.error('Error en getDashboardOperaciones:', error);
+    console.error('getDashboardOperaciones:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error obteniendo dashboard de operaciones',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Error obteniendo dashboard de operaciones'
     });
   }
 }
@@ -68,11 +67,10 @@ export async function getEstadisticasBrigadas(req: Request, res: Response) {
       data: brigadas,
     });
   } catch (error) {
-    console.error('Error en getEstadisticasBrigadas:', error);
+    console.error('getEstadisticasBrigadas:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error obteniendo estadísticas de brigadas',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Error obteniendo estadísticas de brigadas'
     });
   }
 }
@@ -103,11 +101,10 @@ export async function getEstadisticasBrigada(req: Request, res: Response) {
       data: estadisticas,
     });
   } catch (error) {
-    console.error('Error en getEstadisticasBrigada:', error);
+    console.error('getEstadisticasBrigada:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error obteniendo estadísticas de brigada',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Error obteniendo estadísticas de brigada'
     });
   }
 }
@@ -127,11 +124,10 @@ export async function getEstadisticasUnidades(req: Request, res: Response) {
       data: unidades,
     });
   } catch (error) {
-    console.error('Error en getEstadisticasUnidades:', error);
+    console.error('getEstadisticasUnidades:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error obteniendo estadísticas de unidades',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Error obteniendo estadísticas de unidades'
     });
   }
 }
@@ -162,11 +158,10 @@ export async function getEstadisticasUnidad(req: Request, res: Response) {
       data: estadisticas,
     });
   } catch (error) {
-    console.error('Error en getEstadisticasUnidad:', error);
+    console.error('getEstadisticasUnidad:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error obteniendo estadísticas de unidad',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Error obteniendo estadísticas de unidad'
     });
   }
 }
@@ -199,11 +194,10 @@ export async function getBrigadasDisponibles(req: Request, res: Response) {
       data: brigadas,
     });
   } catch (error) {
-    console.error('Error en getBrigadasDisponibles:', error);
+    console.error('getBrigadasDisponibles:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error obteniendo brigadas disponibles',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Error obteniendo brigadas disponibles'
     });
   }
 }
@@ -232,11 +226,10 @@ export async function getUnidadesDisponibles(req: Request, res: Response) {
       data: unidades,
     });
   } catch (error) {
-    console.error('Error en getUnidadesDisponibles:', error);
+    console.error('getUnidadesDisponibles:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error obteniendo unidades disponibles',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Error obteniendo unidades disponibles'
     });
   }
 }
@@ -266,11 +259,10 @@ export async function validarDisponibilidadBrigada(req: Request, res: Response) 
       data: validacion,
     });
   } catch (error) {
-    console.error('Error en validarDisponibilidadBrigada:', error);
+    console.error('validarDisponibilidadBrigada:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error validando disponibilidad de brigada',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Error validando disponibilidad de brigada'
     });
   }
 }
@@ -296,11 +288,10 @@ export async function validarDisponibilidadUnidad(req: Request, res: Response) {
       data: validacion,
     });
   } catch (error) {
-    console.error('Error en validarDisponibilidadUnidad:', error);
+    console.error('validarDisponibilidadUnidad:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error validando disponibilidad de unidad',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Error validando disponibilidad de unidad'
     });
   }
 }
@@ -358,11 +349,10 @@ export async function registrarCombustible(req: Request, res: Response) {
       data: registro,
     });
   } catch (error) {
-    console.error('Error en registrarCombustible:', error);
+    console.error('registrarCombustible:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error registrando combustible',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Error registrando combustible'
     });
   }
 }
@@ -385,11 +375,10 @@ export async function getHistorialCombustible(req: Request, res: Response) {
       data: historial,
     });
   } catch (error) {
-    console.error('Error en getHistorialCombustible:', error);
+    console.error('getHistorialCombustible:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error obteniendo historial de combustible',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Error obteniendo historial de combustible'
     });
   }
 }
@@ -404,7 +393,7 @@ export async function getCombustibleTendencia(req: Request, res: Response) {
     const userSedeId = req.user!.sede;
     const diasNum = Math.min(parseInt(dias as string, 10) || 30, 90);
 
-    const sedeFilter = puedeVerTodasSedes(req.user!) ? null : (sede_id ? parseInt(sede_id as string, 10) : userSedeId);
+    const sedeFilter = puedeVerTodasSedes(req.user!) ? null : (normalizeId(sede_id as string) ?? userSedeId);
 
     const tendencia = await db.any(
       `SELECT
@@ -429,11 +418,10 @@ export async function getCombustibleTendencia(req: Request, res: Response) {
       data: tendencia,
     });
   } catch (error) {
-    console.error('Error en getCombustibleTendencia:', error);
+    console.error('getCombustibleTendencia:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error obteniendo tendencia de combustible',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Error obteniendo tendencia de combustible'
     });
   }
 }
@@ -502,11 +490,10 @@ export async function registrarAbastecimiento(req: Request, res: Response) {
       data: registro,
     });
   } catch (error) {
-    console.error('Error en registrarAbastecimiento:', error);
+    console.error('registrarAbastecimiento:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error registrando abastecimiento',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Error registrando abastecimiento'
     });
   }
 }
@@ -531,11 +518,10 @@ export async function getAbastecimientosPorUnidad(req: Request, res: Response) {
 
     return res.json({ success: true, count: registros.length, data: registros });
   } catch (error) {
-    console.error('Error en getAbastecimientosPorUnidad:', error);
+    console.error('getAbastecimientosPorUnidad:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error obteniendo abastecimientos',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Error obteniendo abastecimientos'
     });
   }
 }
@@ -602,11 +588,10 @@ export async function getAbastecimientoStats(req: Request, res: Response) {
       data: { totales, por_unidad: porUnidad, tendencia },
     });
   } catch (error) {
-    console.error('Error en getAbastecimientoStats:', error);
+    console.error('getAbastecimientoStats:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error obteniendo estadísticas de abastecimiento',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Error obteniendo estadísticas de abastecimiento'
     });
   }
 }

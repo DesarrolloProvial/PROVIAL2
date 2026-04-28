@@ -38,7 +38,7 @@ export async function getEstadoGruposHoy(_req: Request, res: Response) {
       grupos: estadoGrupos,
     });
   } catch (error) {
-    console.error('Error en getEstadoGruposHoy:', error);
+    console.error('getEstadoGruposHoy:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -64,7 +64,7 @@ export async function getEstadoGrupo(req: Request, res: Response) {
 
     return res.json({ grupo: estadoGrupo });
   } catch (error) {
-    console.error('Error en getEstadoGrupo:', error);
+    console.error('getEstadoGrupo:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -94,7 +94,7 @@ export async function getCalendarioGrupo(req: Request, res: Response) {
       calendario,
     });
   } catch (error) {
-    console.error('Error en getCalendarioGrupo:', error);
+    console.error('getCalendarioGrupo:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -134,9 +134,9 @@ export async function setEstadoGrupo(req: Request, res: Response) {
       fecha_fin: fin.toISOString().split('T')[0],
       estado,
     });
-  } catch (error: any) {
-    console.error('Error en setEstadoGrupo:', error);
-    return res.status(500).json({ error: 'Error interno del servidor', details: error.message });
+  } catch (error) {
+    console.error('setEstadoGrupo:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -171,7 +171,7 @@ export async function updateCalendario(req: Request, res: Response) {
       calendario: calendarioActualizado,
     });
   } catch (error) {
-    console.error('Error en updateCalendario:', error);
+    console.error('updateCalendario:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -188,7 +188,7 @@ export async function verificarAccesoApp(req: Request, res: Response) {
     const resultado = await GrupoModel.verificarAccesoApp(usuarioId);
     return res.json(resultado);
   } catch (error) {
-    console.error('Error en verificarAccesoApp:', error);
+    console.error('verificarAccesoApp:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -202,7 +202,7 @@ export async function verificarMiAcceso(req: Request, res: Response) {
     const resultado = await GrupoModel.verificarAccesoApp(req.user!.userId);
     return res.json(resultado);
   } catch (error) {
-    console.error('Error en verificarMiAcceso:', error);
+    console.error('verificarMiAcceso:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -216,7 +216,7 @@ export async function getBrigadasActivas(_req: Request, res: Response) {
     const brigadas = await GrupoModel.getBrigadasActivas();
     return res.json({ total: brigadas.length, brigadas });
   } catch (error) {
-    console.error('Error en getBrigadasActivas:', error);
+    console.error('getBrigadasActivas:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -233,7 +233,7 @@ export async function getBrigadasPorGrupo(req: Request, res: Response) {
     const brigadas = await GrupoModel.getBrigadasPorGrupo(grupoId);
     return res.json({ grupo: grupoId, total: brigadas.length, brigadas });
   } catch (error) {
-    console.error('Error en getBrigadasPorGrupo:', error);
+    console.error('getBrigadasPorGrupo:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -271,11 +271,11 @@ export async function toggleAccesoIndividual(req: Request, res: Response) {
       message: acceso_app_activo ? 'Acceso activado' : 'Acceso suspendido',
       usuario: usuarioActualizado,
     });
-  } catch (error: any) {
-    console.error('Error en toggleAccesoIndividual:', error);
+  } catch (error) {
+    console.error('toggleAccesoIndividual:', error);
 
-    if (error.message?.includes('tiene asignación activa')) {
-      return res.status(400).json({ error: error.message });
+    if ((error as any).message?.includes('tiene asignación activa')) {
+      return res.status(400).json({ error: (error as any).message });
     }
 
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -322,7 +322,7 @@ export async function actualizarGrupoBrigada(req: Request, res: Response) {
 
     return res.json({ message: 'Grupo actualizado exitosamente', usuario: usuarioActualizado });
   } catch (error) {
-    console.error('Error en actualizarGrupoBrigada:', error);
+    console.error('actualizarGrupoBrigada:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -350,7 +350,7 @@ export async function toggleExentoGrupos(req: Request, res: Response) {
       usuario: usuarioActualizado,
     });
   } catch (error) {
-    console.error('Error en toggleExentoGrupos:', error);
+    console.error('toggleExentoGrupos:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
