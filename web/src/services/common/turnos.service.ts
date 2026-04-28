@@ -49,7 +49,7 @@ export interface CreateTurnoDTO {
 }
 
 export interface CreateAsignacionDTO {
-  tipo_asignacion: 'PATRULLA' | 'GARITA' | 'PUESTO_CONTROL';
+  tipo_asignacion: 'PATRULLA' | 'GARITA';
   unidad_id?: number | null;
   ruta_id?: number | null;
   km_inicio?: number;

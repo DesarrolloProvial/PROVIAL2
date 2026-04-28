@@ -42,6 +42,7 @@ import reparacionesRoutes from './transportes/reparaciones.routes';
 import situacionesPersistentesRoutes from './cop/situacionPersistente.routes';
 import copAccesoRoutes from './cop/acceso.routes';
 import reasignacionTransporteRoutes from './transportes/reasignacionTransporte.routes';
+import asignacionProgramadaRoutes from './operaciones/asignacionProgramada.routes';
 
 const router = Router();
 
@@ -172,5 +173,8 @@ router.use('/cop/acceso', copAccesoRoutes);
 
 // Reasignaciones inter-sede de unidades vehiculares (Transportes)
 router.use('/transportes/reasignaciones', reasignacionTransporteRoutes);
+
+// Asignaciones programadas (Operaciones crea, Transportes asigna unidad)
+router.use('/asignaciones', asignacionProgramadaRoutes);
 
 export default router;

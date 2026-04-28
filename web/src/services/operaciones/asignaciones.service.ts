@@ -14,11 +14,14 @@ export interface TripulacionMiembro {
 }
 
 export interface CreateAsignacionProgramadaDTO {
-  unidad_id?: number | null; // Transportes lo asigna en paso posterior (D-011)
+  unidad_id?: number | null;
   fecha_programada: string; // YYYY-MM-DD
+  tipo_asignacion?: 'PATRULLA' | 'GARITA';
   ruta_id?: number | null;
   recorrido_inicio_km?: number;
   recorrido_fin_km?: number;
+  sentido?: string;
+  hora_salida?: string;
   actividades_especificas?: string;
   comandante_usuario_id: number;
   tripulacion: TripulacionMiembro[];

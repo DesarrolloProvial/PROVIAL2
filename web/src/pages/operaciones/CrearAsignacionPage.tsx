@@ -223,11 +223,15 @@ export default function CrearAsignacionPage() {
       });
     } else {
       // Modo creacion - usar sistema de asignaciones programadas
+      const esPatrulla = tipoAsignacion === 'PATRULLA' && !esReaccion;
       const asignacionData: CreateAsignacionProgramadaDTO = {
         fecha_programada: fecha,
-        ruta_id: (tipoAsignacion === 'PATRULLA' && !esReaccion) ? rutaId : null,
-        recorrido_inicio_km: (tipoAsignacion === 'PATRULLA' && kmInicio) ? parseFloat(kmInicio) : undefined,
-        recorrido_fin_km: (tipoAsignacion === 'PATRULLA' && kmFinal) ? parseFloat(kmFinal) : undefined,
+        tipo_asignacion: tipoAsignacion,
+        ruta_id: esPatrulla ? rutaId : null,
+        recorrido_inicio_km: (esPatrulla && kmInicio) ? parseFloat(kmInicio) : undefined,
+        recorrido_fin_km:    (esPatrulla && kmFinal)  ? parseFloat(kmFinal)  : undefined,
+        sentido: (esPatrulla && sentido) ? sentido : undefined,
+        hora_salida: horaSalida || undefined,
         actividades_especificas: acciones || undefined,
         comandante_usuario_id: comandante.usuario_id,
         tripulacion: tripulacion.map(t => ({
