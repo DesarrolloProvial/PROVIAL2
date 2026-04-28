@@ -12,10 +12,6 @@ export const Inspeccion360Controller = {
   // PLANTILLAS
   // ========================================
 
-  /**
-   * GET /api/inspeccion360/plantilla/:tipoUnidad
-   * Obtener plantilla activa para un tipo de unidad
-   */
   async obtenerPlantilla(req: Request, res: Response) {
     try {
       const { tipoUnidad } = req.params;
@@ -29,30 +25,22 @@ export const Inspeccion360Controller = {
       }
 
       res.json(plantilla);
-    } catch (error: any) {
-      console.error('Error al obtener plantilla 360:', error);
-      res.status(500).json({ error: 'Error al obtener plantilla' });
+    } catch (error) {
+      console.error('obtenerPlantilla:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
-  /**
-   * GET /api/inspeccion360/plantillas
-   * Obtener todas las plantillas activas
-   */
   async listarPlantillas(_req: Request, res: Response) {
     try {
       const plantillas = await Inspeccion360Model.obtenerPlantillasActivas();
       res.json({ plantillas });
-    } catch (error: any) {
-      console.error('Error al listar plantillas:', error);
-      res.status(500).json({ error: 'Error al listar plantillas' });
+    } catch (error) {
+      console.error('listarPlantillas:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
-  /**
-   * POST /api/inspeccion360/plantillas
-   * Crear nueva plantilla (solo SUPER_ADMIN)
-   */
   async crearPlantilla(req: Request, res: Response) {
     try {
       const { tipo_unidad, nombre, descripcion, secciones } = req.body;
@@ -73,23 +61,21 @@ export const Inspeccion360Controller = {
       });
 
       res.status(201).json(plantilla);
-    } catch (error: any) {
-      console.error('Error al crear plantilla:', error);
-      res.status(500).json({ error: 'Error al crear plantilla' });
+    } catch (error) {
+      console.error('crearPlantilla:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
-  /**
-   * PUT /api/inspeccion360/plantillas/:id
-   * Actualizar plantilla (crea nueva versión)
-   */
   async actualizarPlantilla(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+
       const { nombre, descripcion, secciones } = req.body;
       const userId = req.user!.userId;
 
-      const plantilla = await Inspeccion360Model.actualizarPlantilla(parseInt(id), {
+      const plantilla = await Inspeccion360Model.actualizarPlantilla(id, {
         nombre,
         descripcion,
         secciones,
@@ -97,9 +83,9 @@ export const Inspeccion360Controller = {
       });
 
       res.json(plantilla);
-    } catch (error: any) {
-      console.error('Error al actualizar plantilla:', error);
-      res.status(500).json({ error: error.message || 'Error al actualizar plantilla' });
+    } catch (error) {
+      console.error('actualizarPlantilla:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
@@ -107,10 +93,6 @@ export const Inspeccion360Controller = {
   // INSPECCIONES
   // ========================================
 
-  /**
-   * POST /api/inspeccion360
-   * Crear nueva inspección 360
-   */
   async crearInspeccion(req: Request, res: Response) {
     try {
       const {
@@ -121,17 +103,9 @@ export const Inspeccion360Controller = {
         firma_inspector,
         fotos,
         salida_id,
-        danos // Nuevo: array de daños reportados
+        danos
       } = req.body;
       const userId = req.user!.userId;
-
-      console.log('Creando inspección 360:', {
-        userId,
-        unidad_id,
-        plantilla_id,
-        total_respuestas: respuestas?.length,
-        total_danos: danos?.length || 0
-      });
 
       if (!unidad_id || !plantilla_id || !respuestas) {
         return res.status(400).json({
@@ -139,22 +113,21 @@ export const Inspeccion360Controller = {
         });
       }
 
-      // Validar que exista la plantilla
-      const plantilla = await Inspeccion360Model.obtenerPlantillaPorId(Number(plantilla_id));
+      const unidadIdFinal = normalizeId(unidad_id);
+      const plantillaIdFinal = normalizeId(plantilla_id);
+      if (!unidadIdFinal)    return res.status(400).json({ error: 'unidad_id inválido' });
+      if (!plantillaIdFinal) return res.status(400).json({ error: 'plantilla_id inválido' });
+      const salidaIdFinal = normalizeId(salida_id) ?? undefined;
+
+      const plantilla = await Inspeccion360Model.obtenerPlantillaPorId(plantillaIdFinal);
       if (!plantilla) {
         return res.status(404).json({ error: 'Plantilla no encontrada' });
       }
 
-      const unidadIdInt = parseInt(String(unidad_id), 10);
-      const plantillaIdInt = parseInt(String(plantilla_id), 10);
-      const salidaIdInt = salida_id ? parseInt(String(salida_id), 10) : undefined;
-
-      // Procesar daños: extraer fotos y agregar metadata a respuestas
       let fotosFinales = fotos || [];
       let respuestasFinales = [...(respuestas || [])];
 
       if (danos && Array.isArray(danos) && danos.length > 0) {
-        // Extraer todas las fotos de daños
         danos.forEach((dano: any) => {
           if (dano.fotos && Array.isArray(dano.fotos)) {
             dano.fotos.forEach((fotoUrl: string) => {
@@ -165,7 +138,6 @@ export const Inspeccion360Controller = {
           }
         });
 
-        // Agregar los daños como una respuesta especial para preservar la metadata
         respuestasFinales.push({
           codigo: 'DANOS_REPORTADOS',
           valor: danos.length,
@@ -175,24 +147,20 @@ export const Inspeccion360Controller = {
         console.log(`[INSPECCION360] Procesados ${danos.length} daños con ${fotosFinales.length} fotos`);
       }
 
-      // Verificar si ya existe una inspección pendiente para esta unidad hoy
-      const existePendiente = await Inspeccion360Model.obtenerInspeccionPendienteUnidad(unidadIdInt);
+      const existePendiente = await Inspeccion360Model.obtenerInspeccionPendienteUnidad(unidadIdFinal);
       if (existePendiente) {
-        console.warn('Ya existe inspección pendiente:', existePendiente.id);
         return res.status(400).json({
           error: 'Ya existe una inspección pendiente para esta unidad',
           inspeccion_id: existePendiente.id
         });
       }
 
-      // Verificar si el usuario es comandante de la unidad (auto-aprobación)
-      const esComandante = await Inspeccion360Model.esComandante(userId, unidadIdInt);
-      console.log('Verificación comandante:', { userId, unidadId: unidadIdInt, esComandante });
+      const esComandante = await Inspeccion360Model.esComandante(userId, unidadIdFinal);
 
       const inspeccion = await Inspeccion360Model.crearInspeccion({
-        salida_id: salidaIdInt,
-        unidad_id: unidadIdInt,
-        plantilla_id: plantillaIdInt,
+        salida_id: salidaIdFinal,
+        unidad_id: unidadIdFinal,
+        plantilla_id: plantillaIdFinal,
         realizado_por: userId,
         respuestas: respuestasFinales,
         observaciones_inspector,
@@ -200,103 +168,86 @@ export const Inspeccion360Controller = {
         fotos: fotosFinales.length > 0 ? fotosFinales : undefined
       });
 
-      console.log('Inspección creada en BD:', inspeccion.id);
-
-      // Si el usuario es comandante, auto-aprobar
       if (esComandante) {
-        console.log('Auto-aprobando inspección:', inspeccion.id);
         await Inspeccion360Model.aprobarInspeccion(
           inspeccion.id,
           userId,
-          firma_inspector, // Usar la misma firma
+          firma_inspector,
           'Auto-aprobada (realizada por comandante)'
         );
         (inspeccion as any).estado = 'APROBADA';
         (inspeccion as any).mensaje = 'Inspección aprobada automáticamente (comandante)';
-      } else {
-        console.log('Inspección pendiente de aprobación');
       }
 
       res.status(201).json(inspeccion);
-    } catch (error: any) {
-      console.error('Error al crear inspección:', error);
-      res.status(500).json({ error: 'Error al crear inspección', details: error.message });
+    } catch (error) {
+      console.error('crearInspeccion:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
-  /**
-   * GET /api/inspeccion360/:id
-   * Obtener inspección por ID
-   */
   async obtenerInspeccion(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
 
-      const inspeccion = await Inspeccion360Model.obtenerInspeccionPorId(parseInt(id));
+      const inspeccion = await Inspeccion360Model.obtenerInspeccionPorId(id);
 
       if (!inspeccion) {
         return res.status(404).json({ error: 'Inspección no encontrada' });
       }
 
       res.json(inspeccion);
-    } catch (error: any) {
-      console.error('Error al obtener inspección:', error);
-      res.status(500).json({ error: 'Error al obtener inspección' });
+    } catch (error) {
+      console.error('obtenerInspeccion:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
-  /**
-   * GET /api/inspeccion360/salida/:salidaId
-   * Obtener inspección de una salida
-   */
   async obtenerInspeccionDeSalida(req: Request, res: Response) {
     try {
-      const { salidaId } = req.params;
+      const salidaId = normalizeId(req.params.salidaId);
+      if (!salidaId) return res.status(400).json({ error: 'ID inválido' });
 
-      const inspeccion = await Inspeccion360Model.obtenerInspeccionPorSalida(parseInt(salidaId));
+      const inspeccion = await Inspeccion360Model.obtenerInspeccionPorSalida(salidaId);
 
       if (!inspeccion) {
         return res.status(404).json({ error: 'No hay inspección para esta salida' });
       }
 
       res.json(inspeccion);
-    } catch (error: any) {
-      console.error('Error al obtener inspección de salida:', error);
-      res.status(500).json({ error: 'Error al obtener inspección' });
+    } catch (error) {
+      console.error('obtenerInspeccionDeSalida:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
-  /**
-   * GET /api/inspeccion360/unidad/:unidadId/pendiente
-   * Obtener inspección pendiente de una unidad
-   */
   async obtenerInspeccionPendiente(req: Request, res: Response) {
     try {
-      const { unidadId } = req.params;
+      const unidadId = normalizeId(req.params.unidadId);
+      if (!unidadId) return res.status(400).json({ error: 'ID inválido' });
 
-      const inspeccion = await Inspeccion360Model.obtenerInspeccionPendienteUnidad(parseInt(unidadId));
+      const inspeccion = await Inspeccion360Model.obtenerInspeccionPendienteUnidad(unidadId);
 
       if (!inspeccion) {
         return res.status(404).json({ error: 'No hay inspección pendiente' });
       }
 
       res.json(inspeccion);
-    } catch (error: any) {
-      console.error('Error al obtener inspección pendiente:', error);
-      res.status(500).json({ error: 'Error al obtener inspección' });
+    } catch (error) {
+      console.error('obtenerInspeccionPendiente:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
-  /**
-   * PUT /api/inspeccion360/:id
-   * Actualizar inspección (solo si está pendiente)
-   */
   async actualizarInspeccion(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+
       const { respuestas, observaciones_inspector, firma_inspector, fotos } = req.body;
 
-      const inspeccion = await Inspeccion360Model.actualizarInspeccion(parseInt(id), {
+      const inspeccion = await Inspeccion360Model.actualizarInspeccion(id, {
         respuestas,
         observaciones_inspector,
         firma_inspector,
@@ -310,47 +261,38 @@ export const Inspeccion360Controller = {
       }
 
       res.json(inspeccion);
-    } catch (error: any) {
-      console.error('Error al actualizar inspección:', error);
-      res.status(500).json({ error: 'Error al actualizar inspección' });
+    } catch (error) {
+      console.error('actualizarInspeccion:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
-  /**
-   * PUT /api/inspeccion360/:id/aprobar
-   * Aprobar inspección (solo comandante)
-   */
   async aprobarInspeccion(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+
       const { firma, observaciones } = req.body;
       const userId = req.user!.userId;
 
-      const resultado = await Inspeccion360Model.aprobarInspeccion(
-        parseInt(id),
-        userId,
-        firma,
-        observaciones
-      );
+      const resultado = await Inspeccion360Model.aprobarInspeccion(id, userId, firma, observaciones);
 
       if (!resultado.success) {
         return res.status(400).json({ error: resultado.mensaje });
       }
 
       res.json({ mensaje: resultado.mensaje });
-    } catch (error: any) {
-      console.error('Error al aprobar inspección:', error);
-      res.status(500).json({ error: 'Error al aprobar inspección' });
+    } catch (error) {
+      console.error('aprobarInspeccion:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
-  /**
-   * PUT /api/inspeccion360/:id/rechazar
-   * Rechazar inspección (solo comandante)
-   */
   async rechazarInspeccion(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+
       const { motivo } = req.body;
       const userId = req.user!.userId;
 
@@ -358,33 +300,24 @@ export const Inspeccion360Controller = {
         return res.status(400).json({ error: 'Debe proporcionar un motivo de rechazo' });
       }
 
-      const resultado = await Inspeccion360Model.rechazarInspeccion(
-        parseInt(id),
-        userId,
-        motivo
-      );
+      const resultado = await Inspeccion360Model.rechazarInspeccion(id, userId, motivo);
 
       if (!resultado.success) {
         return res.status(400).json({ error: resultado.mensaje });
       }
 
       res.json({ mensaje: resultado.mensaje });
-    } catch (error: any) {
-      console.error('Error al rechazar inspección:', error);
-      res.status(500).json({ error: 'Error al rechazar inspección' });
+    } catch (error) {
+      console.error('rechazarInspeccion:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
-  /**
-   * GET /api/inspeccion360/pendientes
-   * Obtener inspecciones pendientes de aprobación
-   */
   async listarPendientes(req: Request, res: Response) {
     try {
       const userId = req.user!.userId;
       const userRol = req.user!.rol;
 
-      // Si es admin, ver todas. Si no, solo las suyas como comandante
       const comandanteId = ['SUPER_ADMIN', 'ADMIN', 'OPERACIONES', 'TRANSPORTES'].includes(userRol ?? '')
         ? undefined
         : userId;
@@ -392,30 +325,25 @@ export const Inspeccion360Controller = {
       const inspecciones = await Inspeccion360Model.obtenerInspeccionesPendientes(comandanteId);
 
       res.json({ inspecciones });
-    } catch (error: any) {
-      console.error('Error al listar pendientes:', error);
-      res.status(500).json({ error: 'Error al listar inspecciones pendientes' });
+    } catch (error) {
+      console.error('listarPendientes:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
-  /**
-   * GET /api/inspeccion360/historial/:unidadId
-   * Obtener historial de inspecciones de una unidad
-   */
   async obtenerHistorial(req: Request, res: Response) {
     try {
-      const { unidadId } = req.params;
+      const unidadId = normalizeId(req.params.unidadId);
+      if (!unidadId) return res.status(400).json({ error: 'ID inválido' });
+
       const limit = parseInt(req.query.limit as string) || 20;
 
-      const historial = await Inspeccion360Model.obtenerHistorialUnidad(
-        parseInt(unidadId),
-        limit
-      );
+      const historial = await Inspeccion360Model.obtenerHistorialUnidad(unidadId, limit);
 
       res.json({ historial });
-    } catch (error: any) {
-      console.error('Error al obtener historial:', error);
-      res.status(500).json({ error: 'Error al obtener historial' });
+    } catch (error) {
+      console.error('obtenerHistorial:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
@@ -423,44 +351,36 @@ export const Inspeccion360Controller = {
   // COMANDANTE
   // ========================================
 
-  /**
-   * GET /api/inspeccion360/comandante/:unidadId
-   * Obtener comandante de una unidad
-   */
   async obtenerComandante(req: Request, res: Response) {
     try {
-      const { unidadId } = req.params;
+      const unidadId = normalizeId(req.params.unidadId);
+      if (!unidadId) return res.status(400).json({ error: 'ID inválido' });
 
-      const comandante = await Inspeccion360Model.obtenerComandante(parseInt(unidadId));
+      const comandante = await Inspeccion360Model.obtenerComandante(unidadId);
 
       if (!comandante) {
         return res.status(404).json({ error: 'La unidad no tiene comandante asignado' });
       }
 
       res.json(comandante);
-    } catch (error: any) {
-      console.error('Error al obtener comandante:', error);
-      res.status(500).json({ error: 'Error al obtener comandante' });
+    } catch (error) {
+      console.error('obtenerComandante:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
-  /**
-   * PUT /api/inspeccion360/comandante/:unidadId
-   * Establecer comandante de una unidad
-   */
   async establecerComandante(req: Request, res: Response) {
     try {
-      const { unidadId } = req.params;
+      const unidadId = normalizeId(req.params.unidadId);
+      if (!unidadId) return res.status(400).json({ error: 'ID inválido' });
+
       const { comandante_id } = req.body;
 
       if (!comandante_id) {
         return res.status(400).json({ error: 'Debe proporcionar comandante_id' });
       }
 
-      const success = await Inspeccion360Model.establecerComandante(
-        parseInt(unidadId),
-        comandante_id
-      );
+      const success = await Inspeccion360Model.establecerComandante(unidadId, comandante_id);
 
       if (!success) {
         return res.status(400).json({
@@ -469,27 +389,22 @@ export const Inspeccion360Controller = {
       }
 
       res.json({ mensaje: 'Comandante establecido correctamente' });
-    } catch (error: any) {
-      console.error('Error al establecer comandante:', error);
-      res.status(500).json({ error: 'Error al establecer comandante' });
+    } catch (error) {
+      console.error('establecerComandante:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
-  /**
-   * GET /api/inspeccion360/verificar-unidad/:unidadId
-   * Verificar estado de inspección 360 de una unidad
-   */
   async verificarUnidad(req: Request, res: Response) {
     try {
-      const { unidadId } = req.params;
+      const unidadId = normalizeId(req.params.unidadId);
+      if (!unidadId) return res.status(400).json({ error: 'ID de unidad inválido' });
+
       const userId = req.user!.userId;
 
-      const unidadIdNum = normalizeId(unidadId);
-      if (!unidadIdNum) return res.status(400).json({ error: 'ID de unidad inválido' });
-
       const [inspeccion, esComandante] = await Promise.all([
-        Inspeccion360Model.obtenerEstadoInspeccionDia(unidadIdNum),
-        Inspeccion360Model.esComandante(userId, unidadIdNum),
+        Inspeccion360Model.obtenerEstadoInspeccionDia(unidadId),
+        Inspeccion360Model.esComandante(userId, unidadId),
       ]);
 
       if (!inspeccion) {
@@ -511,26 +426,23 @@ export const Inspeccion360Controller = {
           motivo_rechazo: inspeccion.motivo_rechazo
         }
       });
-    } catch (error: any) {
-      console.error('Error al verificar unidad:', error);
-      res.status(500).json({ error: 'Error al verificar estado de inspección' });
+    } catch (error) {
+      console.error('verificarUnidad:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
-  /**
-   * GET /api/inspeccion360/verificar-salida/:salidaId
-   * Verificar si una salida puede iniciar (tiene 360 aprobada)
-   */
   async verificarSalida(req: Request, res: Response) {
     try {
-      const { salidaId } = req.params;
+      const salidaId = normalizeId(req.params.salidaId);
+      if (!salidaId) return res.status(400).json({ error: 'ID inválido' });
 
-      const resultado = await Inspeccion360Model.puedeIniciarSalida(parseInt(salidaId));
+      const resultado = await Inspeccion360Model.puedeIniciarSalida(salidaId);
 
       res.json(resultado);
-    } catch (error: any) {
-      console.error('Error al verificar salida:', error);
-      res.status(500).json({ error: 'Error al verificar salida' });
+    } catch (error) {
+      console.error('verificarSalida:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
@@ -538,10 +450,6 @@ export const Inspeccion360Controller = {
   // ESTADÍSTICAS
   // ========================================
 
-  /**
-   * GET /api/inspeccion360/estadisticas
-   * Obtener estadísticas de inspecciones
-   */
   async obtenerEstadisticas(req: Request, res: Response) {
     try {
       const { fecha_inicio, fecha_fin } = req.query;
@@ -552,9 +460,9 @@ export const Inspeccion360Controller = {
       const estadisticas = await Inspeccion360Model.obtenerEstadisticas(fechaInicio, fechaFin);
 
       res.json(estadisticas);
-    } catch (error: any) {
-      console.error('Error al obtener estadísticas:', error);
-      res.status(500).json({ error: 'Error al obtener estadísticas' });
+    } catch (error) {
+      console.error('obtenerEstadisticas:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
@@ -562,30 +470,22 @@ export const Inspeccion360Controller = {
   // PDF
   // ========================================
 
-  /**
-   * GET /api/inspeccion360/:id/pdf
-   * Generar y descargar PDF de una inspección
-   */
   async generarPDF(req: Request, res: Response) {
     try {
-      const { id } = req.params;
-      const inspeccionId = parseInt(id);
+      const id = normalizeId(req.params.id);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
 
-      // Obtener la inspección con todos los datos necesarios
-      const inspeccion = await Inspeccion360Model.obtenerInspeccionPorId(inspeccionId);
-
+      const inspeccion = await Inspeccion360Model.obtenerInspeccionPorId(id);
       if (!inspeccion) {
         return res.status(404).json({ error: 'Inspección no encontrada' });
       }
 
-      // Obtener la plantilla
       const plantilla = await Inspeccion360Model.obtenerPlantillaPorId(inspeccion.plantilla_id);
-
       if (!plantilla) {
         return res.status(404).json({ error: 'Plantilla no encontrada' });
       }
 
-      const datosPDF = await Inspeccion360Model.obtenerDatosParaPDF(inspeccionId);
+      const datosPDF = await Inspeccion360Model.obtenerDatosParaPDF(id);
       if (!datosPDF) return res.status(404).json({ error: 'Inspección no encontrada' });
       const { unidad, inspector, comandante } = datosPDF;
 
@@ -597,38 +497,30 @@ export const Inspeccion360Controller = {
         comandante
       );
 
-      // Generar PDF
       const pdfStream = await PDF360Service.generarPDF(pdfData);
 
-      // Configurar headers para descarga
       const filename = `inspeccion_360_${unidad.codigo}_${new Date().toISOString().split('T')[0]}.pdf`;
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 
-      // Enviar el PDF
       pdfStream.pipe(res);
-    } catch (error: any) {
-      console.error('Error al generar PDF:', error);
-      res.status(500).json({ error: 'Error al generar PDF' });
+    } catch (error) {
+      console.error('generarPDF:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   },
 
-  /**
-   * GET /api/inspeccion360/historial/:unidadId/pdfs
-   * Listar PDFs disponibles de una unidad (últimos N días)
-   * Params: dias (default 30, max 90), limite (default 50, max 100)
-   */
   async listarPDFsUnidad(req: Request, res: Response) {
     try {
-      const unidadIdNum = normalizeId(req.params.unidadId);
-      if (!unidadIdNum) return res.status(400).json({ error: 'ID de unidad inválido' });
+      const unidadId = normalizeId(req.params.unidadId);
+      if (!unidadId) return res.status(400).json({ error: 'ID de unidad inválido' });
 
       const diasRaw = parseInt(req.query.dias as string, 10);
       const limiteRaw = parseInt(req.query.limite as string, 10);
       const dias = Math.min(isNaN(diasRaw) ? 30 : diasRaw, 90);
       const limite = Math.min(isNaN(limiteRaw) ? 50 : limiteRaw, 100);
 
-      const inspecciones = await Inspeccion360Model.listarParaPDFs(unidadIdNum, dias, limite);
+      const inspecciones = await Inspeccion360Model.listarParaPDFs(unidadId, dias, limite);
 
       res.json({
         inspecciones: inspecciones.map(i => ({
@@ -645,9 +537,9 @@ export const Inspeccion360Controller = {
           total_encontrados: inspecciones.length
         }
       });
-    } catch (error: any) {
-      console.error('Error al listar PDFs:', error);
-      res.status(500).json({ error: 'Error al listar PDFs' });
+    } catch (error) {
+      console.error('listarPDFsUnidad:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
   }
 };
