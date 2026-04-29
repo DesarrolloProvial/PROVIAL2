@@ -149,11 +149,9 @@ export const asignacionesAvanzadasAPI = {
     return response.data as RespuestaAsignacionesPorSede;
   },
 
-  // Liberar nómina — acepta lista opcional de asignacion_ids para publicación selectiva
-  publicarTurno: async (turnoId: number, asignacionIds?: number[]) => {
-    return api.post(`/turnos/${turnoId}/liberar-nomina`, {
-      asignacion_ids: asignacionIds && asignacionIds.length > 0 ? asignacionIds : undefined,
-    });
+  // Publicar turno — valida que todas las patrullas tengan unidad asignada (MISSING_UNITS)
+  publicarTurno: async (turnoId: number) => {
+    return api.post(`/asignaciones-avanzadas/turno/${turnoId}/publicar`);
   },
 
   // Despublicar turno (volver a borrador) - Deprecated, mantener por compatibilidad

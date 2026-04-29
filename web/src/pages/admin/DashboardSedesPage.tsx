@@ -53,7 +53,7 @@ export default function DashboardSedesPage() {
   }>({ visible: false, sede: null, seleccionadas: new Set() });
 
   // Banner de confirmación tras publicar
-  const [banner, setBanner] = useState<{ codigos: string[]; sedeName: string } | null>(null);
+  const [banner, setBanner] = useState<{ codigos: string[]; sedeName: string; message?: string } | null>(null);
 
   // Modal para avisos
   const [modalAviso, setModalAviso] = useState<{
@@ -71,21 +71,19 @@ export default function DashboardSedesPage() {
 
   // Mutations
   const publicarMutation = useMutation({
-    mutationFn: ({ turnoId, asignacionIds }: { turnoId: number; asignacionIds: number[] }) =>
-      asignacionesAvanzadasAPI.publicarTurno(turnoId, asignacionIds),
-    onSuccess: (resp, _variables) => {
+    mutationFn: ({ turnoId }: { turnoId: number; asignacionIds?: number[] }) =>
+      asignacionesAvanzadasAPI.publicarTurno(turnoId),
+    onSuccess: (_resp, _variables) => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones-por-sede'] });
-      const codigos: string[] = resp.data?.codigos ?? [];
       const sedeName = modalPublicar.sede?.sede_nombre ?? '';
-      if (codigos.length > 0) {
-        setBanner({ codigos, sedeName });
-        setTimeout(() => setBanner(null), 6000);
-      }
+      setBanner({ codigos: [], sedeName, message: `Turno publicado correctamente para ${sedeName}` });
+      setTimeout(() => setBanner(null), 5000);
       setModalPublicar({ visible: false, sede: null, seleccionadas: new Set() });
     },
     onError: (error: any) => {
-      console.error('Error al publicar nómina:', error.response?.data?.error || error.message);
-      alert(error.response?.data?.error || 'Error al publicar nómina');
+      const msg = error.response?.data?.error || 'Error al publicar turno';
+      console.error('publicarTurno:', msg);
+      alert(msg);
     }
   });
 
@@ -241,8 +239,9 @@ export default function DashboardSedesPage() {
           <div className="flex items-center gap-2">
             <Send className="w-4 h-4 shrink-0" />
             <span className="font-medium">
-              Publicadas en {banner.sedeName}:&nbsp;
-              <span className="font-bold">{banner.codigos.join(', ')}</span>
+              {banner.message ?? (
+                <>Publicadas en {banner.sedeName}:&nbsp;<span className="font-bold">{banner.codigos.join(', ')}</span></>
+              )}
             </span>
           </div>
           <button onClick={() => setBanner(null)} className="p-1 hover:bg-green-700 rounded">
