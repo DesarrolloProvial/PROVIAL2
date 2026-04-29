@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
-import { ArrowLeft, Truck, Users, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import {
+  ArrowLeft, Truck, Users, CheckCircle, AlertCircle, RefreshCw,
+  MapPin, Clock, ChevronRight, Milestone, Navigation
+} from 'lucide-react';
 import ThemeToggle from '../../components/common/ThemeToggle';
 
 interface Tripulante {
@@ -10,11 +13,13 @@ interface Tripulante {
   rol: string;
   nombre: string;
   chapa: string;
+  es_comandante: boolean;
 }
 
 interface Borrador {
   id: number;
   turno_id: number;
+  tipo_asignacion: string;
   fecha_turno: string;
   estado_turno: string;
   sede_codigo: string;
@@ -24,6 +29,10 @@ interface Borrador {
   km_inicio: number | null;
   km_final: number | null;
   sentido: string | null;
+  hora_salida: string | null;
+  acciones: string | null;
+  acciones_formato: string | null;
+  estado_nomina: string | null;
   tripulacion: Tripulante[] | null;
 }
 
@@ -50,13 +59,18 @@ export default function AsignacionesPage() {
     },
   });
 
-  const { data: unidades = [], isLoading: loadingUnidades } = useQuery<Unidad[]>({
+  const {
+    data: unidades = [],
+    isLoading: loadingUnidades,
+    isError: errorUnidades,
+  } = useQuery<Unidad[]>({
     queryKey: ['unidades-disponibles-transportes'],
     queryFn: async () => {
       const res = await api.get('/transportes/asignaciones/unidades-disponibles');
       return res.data;
     },
     enabled: !!selectedBorrador,
+    retry: 1,
   });
 
   const asignarMutation = useMutation({
@@ -68,7 +82,6 @@ export default function AsignacionesPage() {
       queryClient.invalidateQueries({ queryKey: ['borradores-pendientes'] });
       setSelectedBorrador(null);
       setSelectedUnidad(null);
-      alert('Unidad asignada exitosamente');
     },
     onError: (error: any) => {
       alert(`Error: ${error.response?.data?.error || error.message}`);
@@ -81,7 +94,16 @@ export default function AsignacionesPage() {
   };
 
   const formatFecha = (iso: string) =>
-    new Date(iso).toLocaleDateString('es-GT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    new Date(iso + 'T12:00:00').toLocaleDateString('es-GT', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+  const formatHora = (t: string | null) => {
+    if (!t) return null;
+    const [h, m] = t.split(':');
+    const hr = parseInt(h);
+    return `${hr % 12 || 12}:${m} ${hr >= 12 ? 'PM' : 'AM'}`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -98,7 +120,7 @@ export default function AsignacionesPage() {
             <div>
               <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Asignación de Unidades</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {borradores.length} borrador{borradores.length !== 1 ? 'es' : ''} pendiente{borradores.length !== 1 ? 's' : ''}
+                {borradores.length} pendiente{borradores.length !== 1 ? 's' : ''} de vehículo
               </p>
             </div>
           </div>
@@ -117,7 +139,7 @@ export default function AsignacionesPage() {
 
       <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
         {loadingBorradores ? (
-          <p className="text-center text-gray-500 dark:text-gray-400 py-12">Cargando borradores...</p>
+          <p className="text-center text-gray-500 dark:text-gray-400 py-12">Cargando asignaciones pendientes...</p>
         ) : borradores.length === 0 ? (
           <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
             <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
@@ -128,55 +150,101 @@ export default function AsignacionesPage() {
           borradores.map((borrador) => (
             <div
               key={borrador.id}
-              className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border-2 transition-all cursor-pointer ${
+              className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border-2 transition-all ${
                 selectedBorrador?.id === borrador.id
                   ? 'border-orange-500'
                   : 'border-transparent hover:border-orange-300 dark:hover:border-orange-700'
               }`}
-              onClick={() => {
-                setSelectedBorrador(selectedBorrador?.id === borrador.id ? null : borrador);
-                setSelectedUnidad(null);
-              }}
             >
-              <div className="p-4">
+              {/* Cabecera de la tarjeta */}
+              <div
+                className="p-4 cursor-pointer"
+                onClick={() => {
+                  setSelectedBorrador(selectedBorrador?.id === borrador.id ? null : borrador);
+                  setSelectedUnidad(null);
+                }}
+              >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
+                    {/* Sede + tipo */}
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400">
-                        SIN UNIDAD
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400 uppercase">
+                        {borrador.tipo_asignacion} · SIN UNIDAD
                       </span>
                       <span className="font-semibold text-gray-900 dark:text-gray-100">
                         {borrador.sede_nombre}
                       </span>
-                      {borrador.ruta_nombre && (
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          · Ruta {borrador.ruta_codigo}
-                        </span>
-                      )}
                     </div>
+
+                    {/* Fecha */}
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 capitalize">
                       {formatFecha(borrador.fecha_turno)}
                     </p>
-                  </div>
-                  <AlertCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
-                </div>
 
-                {borrador.tripulacion && borrador.tripulacion.length > 0 && (
-                  <div className="mt-3 flex items-center gap-2 flex-wrap">
-                    <Users className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                    {borrador.tripulacion.map((t) => (
-                      <span
-                        key={t.usuario_id}
-                        className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full"
-                      >
-                        {t.nombre} <span className="text-gray-400">({t.rol})</span>
-                      </span>
-                    ))}
+                    {/* Ruta + km + sentido */}
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-700 dark:text-gray-300">
+                      {borrador.ruta_nombre && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                          Ruta {borrador.ruta_codigo} — {borrador.ruta_nombre}
+                        </span>
+                      )}
+                      {(borrador.km_inicio != null || borrador.km_final != null) && (
+                        <span className="flex items-center gap-1">
+                          <Milestone className="w-3.5 h-3.5 text-gray-400" />
+                          KM {borrador.km_inicio ?? '?'} – {borrador.km_final ?? '?'}
+                        </span>
+                      )}
+                      {borrador.sentido && (
+                        <span className="flex items-center gap-1">
+                          <Navigation className="w-3.5 h-3.5 text-gray-400" />
+                          {borrador.sentido}
+                        </span>
+                      )}
+                      {borrador.hora_salida && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-gray-400" />
+                          Salida {formatHora(borrador.hora_salida)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Acciones específicas */}
+                    {borrador.acciones && (
+                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Acciones: </span>
+                        {borrador.acciones}
+                      </p>
+                    )}
+
+                    {/* Tripulación */}
+                    {borrador.tripulacion && borrador.tripulacion.length > 0 && (
+                      <div className="mt-2 flex items-center gap-2 flex-wrap">
+                        <Users className="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0" />
+                        {borrador.tripulacion.map((t) => (
+                          <span
+                            key={t.usuario_id}
+                            className={`text-xs px-2 py-0.5 rounded-full ${
+                              t.es_comandante
+                                ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            {t.nombre} <span className="opacity-70">({t.rol})</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
+
+                  <div className="flex items-center gap-2 shrink-0 mt-0.5">
+                    <AlertCircle className="w-5 h-5 text-orange-500" />
+                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${selectedBorrador?.id === borrador.id ? 'rotate-90' : ''}`} />
+                  </div>
+                </div>
               </div>
 
-              {/* Panel de asignación de unidad */}
+              {/* Panel de selección de unidad */}
               {selectedBorrador?.id === borrador.id && (
                 <div
                   className="border-t dark:border-gray-700 p-4"
@@ -185,11 +253,16 @@ export default function AsignacionesPage() {
                   <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                     Seleccionar unidad disponible
                   </h3>
+
                   {loadingUnidades ? (
                     <p className="text-sm text-gray-500 dark:text-gray-400">Cargando unidades...</p>
+                  ) : errorUnidades ? (
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      No se pudieron cargar las unidades disponibles. Intenta nuevamente.
+                    </p>
                   ) : unidades.length === 0 ? (
                     <p className="text-sm text-amber-600 dark:text-amber-400">
-                      No hay unidades disponibles en este momento
+                      No hay unidades disponibles en este momento. Verifica el estado de la flota.
                     </p>
                   ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
@@ -212,6 +285,7 @@ export default function AsignacionesPage() {
                           <div className="min-w-0">
                             <p className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate">{u.codigo}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{u.tipo_unidad} · {u.placa}</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{u.sede_nombre}</p>
                           </div>
                         </label>
                       ))}

@@ -7,40 +7,46 @@ export const AsignacionTransporteModel = {
    */
   async getBorradoresPendientes(sedeId?: number) {
     const query = `
-      SELECT 
+      SELECT
         au.id,
         au.turno_id,
-        t.fecha as fecha_turno,
-        t.estado as estado_turno,
-        s.codigo as sede_codigo,
-        s.nombre as sede_nombre,
-        r.codigo as ruta_codigo,
-        r.nombre as ruta_nombre,
+        au.tipo_asignacion,
+        t.fecha       AS fecha_turno,
+        t.estado      AS estado_turno,
+        s.codigo      AS sede_codigo,
+        s.nombre      AS sede_nombre,
+        r.codigo      AS ruta_codigo,
+        r.nombre      AS ruta_nombre,
         au.km_inicio,
         au.km_final,
         au.sentido,
+        au.hora_salida,
+        au.acciones,
+        au.acciones_formato,
+        au.estado_nomina,
         (
           SELECT json_agg(
             json_build_object(
-              'usuario_id', tt.usuario_id,
-              'rol', tt.rol_tripulacion,
-              'nombre', u.nombre_completo,
-              'chapa', u.chapa
-            )
+              'usuario_id',    tt.usuario_id,
+              'rol',           tt.rol_tripulacion,
+              'nombre',        u.nombre_completo,
+              'chapa',         u.chapa,
+              'es_comandante', tt.es_comandante
+            ) ORDER BY tt.es_comandante DESC, tt.rol_tripulacion
           )
           FROM tripulacion_turno tt
           JOIN usuario u ON tt.usuario_id = u.id
           WHERE tt.asignacion_id = au.id
-        ) as tripulacion
+        ) AS tripulacion
       FROM asignacion_unidad au
-      JOIN turno t ON au.turno_id = t.id
-      JOIN sede s ON t.sede_id = s.id
+      JOIN turno t  ON au.turno_id  = t.id
+      JOIN sede s   ON t.sede_id    = s.id
       LEFT JOIN ruta r ON au.ruta_id = r.id
-      WHERE au.tipo_asignacion = 'PATRULLA'
+      WHERE au.tipo_asignacion IN ('PATRULLA', 'GARITA')
         AND au.unidad_id IS NULL
-        AND t.publicado = false
+        AND t.estado != 'CERRADO'
         ${sedeId ? 'AND t.sede_id = $1' : ''}
-      ORDER BY t.fecha ASC
+      ORDER BY t.fecha ASC, au.hora_salida ASC NULLS LAST
     `;
 
     return db.any(query, sedeId ? [sedeId] : []);
@@ -67,7 +73,7 @@ export const AsignacionTransporteModel = {
         AND u.disponible_transportes = true
         AND NOT EXISTS (
           SELECT 1 FROM unidad_reparacion ur
-          WHERE ur.unidad_id = u.id AND ur.activa = true
+          WHERE ur.unidad_id = u.id AND ur.fecha_fin IS NULL
         )
         ${sedeId ? 'AND u.sede_id = $1' : ''}
       ORDER BY u.codigo ASC
@@ -100,7 +106,7 @@ export const AsignacionTransporteModel = {
           AND disponible_transportes = true
           AND NOT EXISTS (
             SELECT 1 FROM unidad_reparacion ur
-            WHERE ur.unidad_id = u.id AND ur.activa = true
+            WHERE ur.unidad_id = u.id AND ur.fecha_fin IS NULL
           )
       `, [unidadId]);
 
