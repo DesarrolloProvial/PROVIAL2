@@ -84,7 +84,7 @@ async function isMobileAccessEnabled(): Promise<boolean> {
 }
 
 async function checkWhitelistMovil(
-  imei: string,
+  _imei: string,
   uuid: string,
   model?: string
 ): Promise<'APROBADO' | 'PENDIENTE' | 'BLOQUEADO'> {
