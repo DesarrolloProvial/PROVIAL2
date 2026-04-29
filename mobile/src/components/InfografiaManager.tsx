@@ -14,6 +14,7 @@ import {
     Alert,
     StyleSheet,
     Modal,
+    SafeAreaView,
 } from 'react-native';
 import { Infografia, InfografiaManagerProps, FotoItem, VideoItem } from '../types/multimedia';
 import { COLORS } from '../constants/colors';
@@ -365,7 +366,7 @@ export default function InfografiaManager({
                     animationType="slide"
                     onRequestClose={() => setShowCaptureModal(false)}
                 >
-                    <View style={styles.modalContainer}>
+                    <SafeAreaView style={styles.modalContainer}>
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>
                                 {infografiaParaCaptura.titulo}
@@ -384,7 +385,13 @@ export default function InfografiaManager({
                             initialMedia={getMultimediaForCapture(infografiaParaCaptura)}
                             onMultimediaChange={handleMultimediaChange}
                         />
-                    </View>
+                        <TouchableOpacity
+                            style={styles.modalDoneButton}
+                            onPress={() => setShowCaptureModal(false)}
+                        >
+                            <Text style={styles.modalDoneText}>Listo</Text>
+                        </TouchableOpacity>
+                    </SafeAreaView>
                 </Modal>
             )}
         </View>
@@ -652,5 +659,17 @@ const styles = StyleSheet.create({
     modalCloseText: {
         color: COLORS.primary,
         fontWeight: '600',
+    },
+    modalDoneButton: {
+        paddingVertical: 14,
+        alignItems: 'center',
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border,
+        backgroundColor: '#fff',
+    },
+    modalDoneText: {
+        color: COLORS.primary,
+        fontWeight: '700',
+        fontSize: 16,
     },
 });

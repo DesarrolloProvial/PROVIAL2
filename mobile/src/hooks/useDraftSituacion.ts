@@ -29,8 +29,8 @@ import {
 } from '../services/draftStorage';
 import { generateSituacionId, SituacionIdParams } from '../utils/situacionId';
 import MultimediaService from '../services/multimedia.service';
-import { API_URL } from '../constants/config';
 import { useAuthStore } from '../store/authStore';
+import api from '../services/api';
 
 /**
  * Respuesta del endpoint reservar-numero-salida
@@ -174,21 +174,13 @@ export function useDraftSituacion() {
       throw new Error('No autenticado');
     }
 
-    const response = await fetch(
-      `${API_URL}/unidades/${unidadCodigo}/reservar-numero-salida`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      }
-    );
+    const response = await api.get(`/unidades/${unidadCodigo}/reservar-numero-salida`);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Error al reservar numero');
+    if (response.status >= 400) {
+      throw new Error(response.data?.error || 'Error al reservar numero');
     }
 
-    return response.json();
+    return response.data;
   }, [token]);
 
   /**
@@ -412,19 +404,13 @@ export function useDraftSituacion() {
       console.log('🚀 [ENVIAR_DRAFT] Haciendo POST a:', `${API_URL}/situaciones`);
       console.log('📦 [ENVIAR_DRAFT] Payload sanitizado:', JSON.stringify({...payload, multimedia: undefined}, null, 2));
 
-      const response = await fetch(`${API_URL}/situaciones`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Idempotency-Key': draft.id
-        },
-        body: JSON.stringify(payload)
+      const response = await api.post('/situaciones', payload, {
+        headers: { 'Idempotency-Key': draft.id },
       });
 
-      if (response.ok) {
+      if (response.status >= 200 && response.status < 300) {
         // Exito!
-        const data = await response.json();
+        const data = response.data;
         console.log('✅ [ENVIAR_DRAFT] POST exitoso:', response.status);
         console.log('✅ [ENVIAR_DRAFT] Respuesta:', JSON.stringify(data, null, 2));
 
@@ -459,7 +445,7 @@ export function useDraftSituacion() {
 
       if (response.status === 409) {
         // Conflicto
-        const conflicto: ConflictoResponse = await response.json();
+        const conflicto: ConflictoResponse = response.data;
 
         await setDraftConflicto(
           conflicto.situacion_existente,
@@ -475,9 +461,9 @@ export function useDraftSituacion() {
         };
       }
 
-      // Otro error (400, 500, etc.)
+      // Otro error (400, etc.)
       console.log('❌ [ENVIAR_DRAFT] Error HTTP:', response.status);
-      const error = await response.json();
+      const error = response.data;
       console.log('❌ [ENVIAR_DRAFT] Error body:', JSON.stringify(error, null, 2));
 
       await updateDraftStatus('PENDIENTE');
@@ -583,22 +569,12 @@ export function useDraftSituacion() {
     try {
       setState(prev => ({ ...prev, sending: true }));
 
-      const response = await fetch(
-        `${API_URL}/situaciones/${draft.conflicto?.datos_servidor?.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            ...draft,
-            razon_actualizacion: 'Datos locales seleccionados por usuario'
-          })
-        }
+      const response = await api.put(
+        `/situaciones/${draft.conflicto?.datos_servidor?.id}`,
+        { ...draft, razon_actualizacion: 'Datos locales seleccionados por usuario' }
       );
 
-      if (response.ok) {
+      if (response.status >= 200 && response.status < 300) {
         await deleteDraft();
         setState(prev => ({
           ...prev,
@@ -640,23 +616,16 @@ export function useDraftSituacion() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/situaciones/conflictos`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          codigo_situacion: draft.id,
-          datos_locales: draft,
-          datos_servidor: draft.conflicto?.datos_servidor,
-          diferencias: draft.conflicto?.diferencias,
-          tipo_conflicto: 'DUPLICADO'
-        })
+      const response = await api.post('/situaciones/conflictos', {
+        codigo_situacion: draft.id,
+        datos_locales: draft,
+        datos_servidor: draft.conflicto?.datos_servidor,
+        diferencias: draft.conflicto?.diferencias,
+        tipo_conflicto: 'DUPLICADO',
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      if (response.status >= 200 && response.status < 300) {
+        const data = response.data;
         await setDraftWaitCOP(data.conflicto_id);
         await loadDraft();
         return true;

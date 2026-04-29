@@ -176,41 +176,45 @@ export default function SelectField({
                         animationType="slide"
                         onRequestClose={() => setIosVisible(false)}
                     >
-                        <TouchableOpacity
-                            style={styles.iosOverlay}
-                            activeOpacity={1}
-                            onPress={() => setIosVisible(false)}
-                        />
-                        <SafeAreaView style={styles.iosSheet}>
-                            <View style={styles.iosSheetHeader}>
-                                <TouchableOpacity onPress={() => setIosVisible(false)}>
-                                    <Text style={styles.iosDone}>Listo</Text>
-                                </TouchableOpacity>
-                            </View>
-                            <Picker
-                                selectedValue={value}
-                                onValueChange={(v) => {
-                                    if (v === null && preservedValueRef.current != null && preservedValueRef.current !== '') {
-                                        const match = resolvedOptions.some(o => String(o.value) === String(preservedValueRef.current));
-                                        if (match) { onChange(preservedValueRef.current); return; }
-                                    }
-                                    onChange(v);
-                                    if (v !== null && v !== undefined && v !== '') {
-                                        preservedValueRef.current = v;
-                                    }
-                                }}
-                            >
-                                <Picker.Item label={placeholder} value={null} color={theme.components.input.placeholderColor} />
-                                {resolvedOptions.map(option => (
-                                    <Picker.Item
-                                        key={String(option.value)}
-                                        label={option.label}
-                                        value={option.value}
-                                        enabled={!option.disabled}
-                                    />
-                                ))}
-                            </Picker>
-                        </SafeAreaView>
+                        <View style={styles.iosModalRoot}>
+                            <TouchableOpacity
+                                style={styles.iosOverlay}
+                                activeOpacity={1}
+                                onPress={() => setIosVisible(false)}
+                            />
+                            <SafeAreaView style={styles.iosSheet}>
+                                <View style={styles.iosSheetHeader}>
+                                    <TouchableOpacity onPress={() => setIosVisible(false)}>
+                                        <Text style={styles.iosDone}>Listo</Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <Picker
+                                    selectedValue={value}
+                                    itemStyle={{ color: '#111827', fontSize: 18 }}
+                                    onValueChange={(v) => {
+                                        if (v === null && preservedValueRef.current != null && preservedValueRef.current !== '') {
+                                            const match = resolvedOptions.some(o => String(o.value) === String(preservedValueRef.current));
+                                            if (match) { onChange(preservedValueRef.current); return; }
+                                        }
+                                        onChange(v);
+                                        if (v !== null && v !== undefined && v !== '') {
+                                            preservedValueRef.current = v;
+                                        }
+                                    }}
+                                >
+                                    <Picker.Item label={placeholder} value={null} color={theme.components.input.placeholderColor} />
+                                    {resolvedOptions.map(option => (
+                                        <Picker.Item
+                                            key={String(option.value)}
+                                            label={option.label}
+                                            value={option.value}
+                                            enabled={!option.disabled}
+                                            color="#111827"
+                                        />
+                                    ))}
+                                </Picker>
+                            </SafeAreaView>
+                        </View>
                     </Modal>
                 </>
             ) : (
@@ -322,12 +326,22 @@ const styles = StyleSheet.create({
         color: '#666',
         marginLeft: 8,
     },
-    iosOverlay: {
+    iosModalRoot: {
         flex: 1,
+        justifyContent: 'flex-end',
+    },
+    iosOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         backgroundColor: 'rgba(0,0,0,0.35)',
     },
     iosSheet: {
         backgroundColor: '#fff',
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
     },
     iosSheetHeader: {
         flexDirection: 'row',
