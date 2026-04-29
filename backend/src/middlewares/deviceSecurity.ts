@@ -88,8 +88,9 @@ async function checkWhitelistMovil(
   uuid: string,
   model?: string
 ): Promise<'APROBADO' | 'PENDIENTE' | 'BLOQUEADO'> {
-  // device_id canónico para móvil: "IMEI:UUID"
-  const deviceId = `${imei}:${uuid}`;
+  // device_id canónico: solo UUID (el IMEI real no es accesible en iOS/Android moderno
+  // y el pseudo-IMEI generado por la app cambia cada vez que se limpia AsyncStorage).
+  const deviceId = uuid;
 
   const row = await db.oneOrNone<{ id: number; estado: string }>(
     `SELECT id, estado FROM dispositivo_autorizado WHERE device_id = $1 LIMIT 1`,

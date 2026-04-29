@@ -18,24 +18,20 @@ const api = axios.create({
   validateStatus: (status) => status < 500, // Aceptar respuestas 4xx
 });
 
-// Obtener o crear IDs persistentes
+// Obtener UUID estable del dispositivo (iOS Vendor ID / Android ID)
+// El IMEI real no es accesible en iOS/Android moderno — se usa UUID como identidad única.
 export async function getDeviceIds() {
   let uuid = await AsyncStorage.getItem('device_uuid');
-  let imei = await AsyncStorage.getItem('device_imei');
 
   if (!uuid) {
-    uuid = Platform.OS === 'android' ? Application.androidId : await Application.getIosIdForVendorAsync();
+    uuid = Platform.OS === 'android'
+      ? Application.androidId
+      : await Application.getIosIdForVendorAsync();
     if (!uuid) uuid = 'uuid-' + Math.random().toString(36).substring(2);
     await AsyncStorage.setItem('device_uuid', uuid);
   }
 
-  if (!imei) {
-    // Generamos un pseudo-IMEI si no existe porque iOS/Android moderno ya no permite leer el real fácilmente
-    imei = 'IMEI-' + Math.floor(100000000000000 + Math.random() * 900000000000000).toString();
-    await AsyncStorage.setItem('device_imei', imei);
-  }
-
-  return { uuid, imei };
+  return { uuid, imei: uuid }; // imei = uuid para compatibilidad con headers existentes
 }
 
 // Interceptor para agregar token y headers de dispositivo
