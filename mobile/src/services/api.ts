@@ -102,7 +102,7 @@ export const authAPI = {
 
   async logout(): Promise<void> {
     await api.post('/auth/logout');
-    await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
+    await AsyncStorage.multiRemove(['token', 'refreshToken', 'user']);
   },
 };
 
