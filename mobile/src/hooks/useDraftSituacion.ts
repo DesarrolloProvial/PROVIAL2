@@ -472,23 +472,23 @@ export function useDraftSituacion() {
       return { success: false, error: error.error || 'Error al enviar' };
 
     } catch (error: any) {
-      // Error de red o fetch
+      const status = error?.response?.status;
+      const data = error?.response?.data;
+
       console.log('❌ [ENVIAR_DRAFT] ERROR capturado en catch');
+      console.log('❌ [ENVIAR_DRAFT] status:', status);
+      console.log('❌ [ENVIAR_DRAFT] data:', JSON.stringify(data, null, 2));
       console.log('❌ [ENVIAR_DRAFT] error.message:', error?.message);
-      console.log('❌ [ENVIAR_DRAFT] error.response?.status:', error?.response?.status);
-      console.log('❌ [ENVIAR_DRAFT] error.response?.data:', JSON.stringify(error?.response?.data, null, 2));
 
       await updateDraftStatus('PENDIENTE');
-      setState(prev => ({
-        ...prev,
-        sending: false,
-        error: 'Sin conexion. Draft guardado localmente.'
-      }));
 
-      return {
-        success: false,
-        error: 'Sin conexion. Draft guardado localmente.'
-      };
+      const mensaje = status
+        ? (data?.error || data?.message || `Error del servidor (${status})`)
+        : 'No se pudo conectar con el servidor. Draft guardado localmente.';
+
+      setState(prev => ({ ...prev, sending: false, error: mensaje }));
+
+      return { success: false, error: mensaje };
     }
   }, [token, loadDraft]);
 
