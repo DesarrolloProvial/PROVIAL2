@@ -106,7 +106,9 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
     fugados: 0,
     acuerdo_involucrados: false,
     acuerdo_detalle: '',
-    // Via
+    // Condiciones
+    carga_vehicular: '',
+    // Via (solo HECHO_TRANSITO)
     via_estado: '',
     via_topografia: '',
     via_geometria: '',
@@ -231,12 +233,13 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
           clima: sit.clima || '',
           area: sit.area || '',
           material_via: sit.material_via || sit.tipo_pavimento || '',
+          carga_vehicular: sit.carga_vehicular || '',
           obstruccion: (sit.obstruccion_data && sit.obstruccion_data.tipo_obstruccion)
             ? sit.obstruccion_data
             : getDefaultObstruccion(),
           observaciones: '',
           descripcion: sit.descripcion || '',
-          subtipo_situacion: sit.subtipo_situacion || '',
+          subtipo_situacion: sit.tipo_situacion_nombre || sit.subtipo_situacion || '',
           heridos: sit.heridos || 0,
           fallecidos: sit.fallecidos || 0,
           ilesos: sit.ilesos || 0,
@@ -340,7 +343,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
       setObservacionesAnteriores([]);
       setForm({
         unidad_id: '', ruta_id: '', km: '', km_fin: '', sentido: '', latitud: '', longitud: '',
-        departamento_id: null, municipio_id: null, clima: '', area: '', material_via: '',
+        departamento_id: null, municipio_id: null, clima: '', area: '', material_via: '', carga_vehicular: '',
         obstruccion: getDefaultObstruccion() as ObstruccionData, observaciones: '', descripcion: '', subtipo_situacion: '',
         heridos: 0, fallecidos: 0, ilesos: 0, heridos_leves: 0, heridos_graves: 0,
         trasladados: 0, fugados: 0, acuerdo_involucrados: false, acuerdo_detalle: '',
@@ -459,6 +462,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
         clima: form.clima || undefined,
         area: form.area || undefined,
         material_via: form.material_via || undefined,
+        carga_vehicular: form.carga_vehicular || undefined,
         obstruccion: form.obstruccion,
         observaciones: form.observaciones || undefined,
         subtipo_situacion: form.subtipo_situacion || undefined,
@@ -742,6 +746,18 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
                 sentidoSituacion={form.sentido}
               />
 
+              {/* Condiciones (ASISTENCIA_VEHICULAR y EMERGENCIA — HECHO_TRANSITO las tiene en tab Via) */}
+              {(tipoSituacion === 'ASISTENCIA_VEHICULAR' || isEmergencia) && (
+                <CondicionesViaFields
+                  clima={form.clima}
+                  area={form.area}
+                  materialVia={form.material_via}
+                  cargaVehicular={form.carga_vehicular}
+                  showViaDetails={false}
+                  onChange={handleChange}
+                />
+              )}
+
               {/* Descripcion (emergencia) */}
               {isEmergencia && (
                 <div>
@@ -879,6 +895,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
                 clima={form.clima}
                 area={form.area}
                 materialVia={form.material_via}
+                cargaVehicular={form.carga_vehicular}
                 viaEstado={form.via_estado}
                 viaTopografia={form.via_topografia}
                 viaGeometria={form.via_geometria}

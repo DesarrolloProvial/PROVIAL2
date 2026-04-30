@@ -99,6 +99,7 @@ export interface Situacion {
   codigo_boleta?: string | null;
   origen_datos?: string;
 
+  draft_created_at?: Date | null;
   created_at: Date;
   updated_at: Date;
   creado_por: number;
@@ -128,6 +129,10 @@ export interface SituacionUpdateData {
   senalizacion?: string | null;
   visibilidad?: string | null;
   via_estado?: string | null;
+  via_topografia?: string | null;
+  via_geometria?: string | null;
+  via_peralte?: string | null;
+  via_condicion?: string | null;
   ilesos?: number;
   heridos_leves?: number;
   heridos_graves?: number;
@@ -178,7 +183,9 @@ export const SituacionModel = {
         us1.nombre_completo as creado_por_nombre,
         us2.nombre_completo as actualizado_por_nombre,
         d.nombre as departamento_nombre,
-        m.nombre as municipio_nombre
+        m.nombre as municipio_nombre,
+        tsc.nombre as tipo_situacion_nombre,
+        tsc.categoria as tipo_situacion_categoria
       FROM situacion s
       LEFT JOIN unidad u ON s.unidad_id = u.id
       LEFT JOIN ruta r ON s.ruta_id = r.id
@@ -187,6 +194,7 @@ export const SituacionModel = {
       LEFT JOIN usuario us2 ON s.actualizado_por = us2.id
       LEFT JOIN departamento d ON s.departamento_id = d.id
       LEFT JOIN municipio m ON s.municipio_id = m.id
+      LEFT JOIN catalogo_tipo_situacion tsc ON s.tipo_situacion_id = tsc.id
       WHERE s.id = $1
     `;
     return db.oneOrNone(query, [id]);
@@ -590,7 +598,8 @@ export const SituacionModel = {
           sal.combustible_inicial as salida_combustible_inicial,
           sal.tripulacion,
           NULL::jsonb as datos,
-          NULL::json as fotos
+          NULL::json as fotos,
+          NULL::timestamptz as draft_created_at
         FROM salidas sal
         LEFT JOIN unidad u ON sal.unidad_id = u.id
         LEFT JOIN ruta r ON sal.ruta_inicial_id = r.id
@@ -630,7 +639,8 @@ export const SituacionModel = {
             'orden', sm.orden,
             'infografia_numero', sm.infografia_numero
           ) ORDER BY sm.infografia_numero, sm.orden)
-           FROM situacion_multimedia sm WHERE sm.situacion_id = s.id AND sm.tipo = 'FOTO') as fotos
+           FROM situacion_multimedia sm WHERE sm.situacion_id = s.id AND sm.tipo = 'FOTO') as fotos,
+          s.draft_created_at
         FROM situacion s
         -- LEFT JOIN para incluir situaciones sin salida_unidad_id (creadas desde COP)
         LEFT JOIN salidas sal ON s.salida_unidad_id = sal.id
@@ -675,7 +685,8 @@ export const SituacionModel = {
             'orden', sm.orden,
             'infografia_numero', sm.infografia_numero
           ) ORDER BY sm.infografia_numero, sm.orden)
-           FROM situacion_multimedia sm WHERE sm.actividad_id = a.id AND sm.tipo = 'FOTO') as fotos
+           FROM situacion_multimedia sm WHERE sm.actividad_id = a.id AND sm.tipo = 'FOTO') as fotos,
+          NULL::timestamptz as draft_created_at
         FROM actividad a
         INNER JOIN salidas sal ON a.salida_unidad_id = sal.id
         LEFT JOIN unidad u ON a.unidad_id = u.id

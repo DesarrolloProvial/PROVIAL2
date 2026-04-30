@@ -1,13 +1,14 @@
 import {
   CONDICIONES_CLIMATICAS, AREAS, MATERIALES_VIA,
   ESTADOS_VIA, TOPOGRAFIAS_VIA, GEOMETRIAS_VIA,
-  PERALTES_VIA, CONDICIONES_SUPERFICIE,
+  PERALTES_VIA, CONDICIONES_SUPERFICIE, CARGAS_VEHICULARES,
 } from '../../../constants/situacionTypes';
 
 interface Props {
   clima: string;
   area: string;
   materialVia: string;
+  cargaVehicular?: string;
   viaEstado?: string;
   viaTopografia?: string;
   viaGeometria?: string;
@@ -22,7 +23,7 @@ const labelCls = 'text-xs text-gray-500 dark:text-gray-400';
 const sectionCls = 'text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-4 mb-2';
 
 export default function CondicionesViaFields({
-  clima, area, materialVia,
+  clima, area, materialVia, cargaVehicular,
   viaEstado, viaTopografia, viaGeometria,
   viaPeralte, viaCondicion,
   showViaDetails, onChange,
@@ -30,13 +31,21 @@ export default function CondicionesViaFields({
   return (
     <>
       <h4 className={sectionCls}>Condiciones</h4>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelCls}>Clima</label>
           <select value={clima} onChange={e => onChange('clima', e.target.value)}
             className={selectCls}>
             <option value="">Seleccionar</option>
             {CONDICIONES_CLIMATICAS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className={labelCls}>Carga vehicular</label>
+          <select value={cargaVehicular || ''} onChange={e => onChange('carga_vehicular', e.target.value)}
+            className={selectCls}>
+            <option value="">Seleccionar</option>
+            {CARGAS_VEHICULARES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
         </div>
         <div>

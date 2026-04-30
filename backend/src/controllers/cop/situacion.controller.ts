@@ -266,6 +266,7 @@ export async function updateSituacion(req: Request, res: Response) {
       hay_heridos, cantidad_heridos, hay_fallecidos, cantidad_fallecidos,
       causa_probable, causa_especificar,
       tipo_pavimento, iluminacion, senalizacion, visibilidad, via_estado,
+      via_topografia, via_geometria, via_peralte, via_condicion,
       acuerdo_involucrados, acuerdo_detalle,
       departamento_id, municipio_id,
     } = req.body;
@@ -297,6 +298,7 @@ export async function updateSituacion(req: Request, res: Response) {
       heridos: heridosFinal, fallecidos: fallecidosFinal,
       causa_probable, causa_especificar,
       iluminacion, senalizacion, visibilidad, via_estado,
+      via_topografia, via_geometria, via_peralte, via_condicion,
       ilesos, heridos_leves, heridos_graves, trasladados, fugados,
       acuerdo_involucrados, acuerdo_detalle,
       departamento_id: deptoIdFinal,

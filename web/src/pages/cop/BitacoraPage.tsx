@@ -9,16 +9,6 @@ import CrearActividadModal from '../../components/cop/forms/CrearActividadModal'
 import SalidaCOPModal from '../../components/cop/forms/SalidaCOPModal';
 import ThemeToggle from '../../components/common/ThemeToggle';
 
-// Tipos de situación para colores
-const TIPOS_SITUACION = [
-    { value: 'PATRULLAJE', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' },
-    { value: 'INCIDENTE', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' },
-    { value: 'ASISTENCIA_VEHICULAR', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400' },
-    { value: 'EMERGENCIA', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400' },
-    { value: 'PARADA_COMIDA', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400' },
-    { value: 'OTROS', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' },
-];
-
 // Colores por tipo de registro / tipo de situación
 const TIPO_REGISTRO_STYLE: Record<string, { dot: string; border: string; bg: string; badge: string }> = {
     INCIDENTE:   { dot: 'bg-red-500',    border: 'border-red-200 dark:border-red-800',       bg: 'bg-red-50 dark:bg-red-900/20',       badge: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' },
@@ -148,16 +138,34 @@ export default function BitacoraPage() {
         });
     };
 
-    const formatTime = (dateString: string) => {
-        return new Date(dateString).toLocaleTimeString('es-GT', {
+    const formatDateShort = (dateString: string) => {
+        return new Date(dateString).toLocaleString('es-GT', {
+            day: '2-digit',
+            month: '2-digit',
             hour: '2-digit',
             minute: '2-digit',
         });
     };
 
-    const getTipoColor = (tipo: string) => {
-        const found = TIPOS_SITUACION.find(t => t.value === tipo);
-        return found?.color || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+    // Si draft_created_at difiere del created_at en más de 5 minutos, muestra ambos
+    const renderTimestamp = (item: any) => {
+        if (!item.draft_created_at) return formatDate(item.created_at);
+        const draft = new Date(item.draft_created_at).getTime();
+        const created = new Date(item.created_at).getTime();
+        if (Math.abs(draft - created) < 5 * 60 * 1000) return formatDate(item.created_at);
+        return (
+            <span className="flex flex-col items-end text-xs leading-tight">
+                <span className="font-medium">Reportado: {formatDateShort(item.draft_created_at)}</span>
+                <span className="text-gray-400 dark:text-gray-500">Subido: {formatDateShort(item.created_at)}</span>
+            </span>
+        );
+    };
+
+    const formatTime = (dateString: string) => {
+        return new Date(dateString).toLocaleTimeString('es-GT', {
+            hour: '2-digit',
+            minute: '2-digit',
+        });
     };
 
     const getRegistroStyle = (item: any) => {
@@ -405,7 +413,7 @@ export default function BitacoraPage() {
                                             </div>
                                             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                                                 <Clock className="w-4 h-4" />
-                                                {formatDate(item.created_at)}
+                                                {renderTimestamp(item)}
                                             </div>
                                         </div>
 

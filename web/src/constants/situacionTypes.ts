@@ -413,6 +413,14 @@ export const CONSIGNADO_POR = [
   { value: 'MP', label: 'Ministerio Público' },
 ];
 
+// Carga vehicular (flujo de tráfico)
+export const CARGAS_VEHICULARES = [
+  { value: 'FLUIDO', label: 'Fluido' },
+  { value: 'MODERADO', label: 'Moderado' },
+  { value: 'DENSO', label: 'Denso' },
+  { value: 'CONGESTIONADO', label: 'Congestionado' },
+];
+
 // Peralte de la vía
 export const PERALTES_VIA = ['SIN_PERALTE', 'PERALTE_IZQUIERDO', 'PERALTE_DERECHO'];
 
