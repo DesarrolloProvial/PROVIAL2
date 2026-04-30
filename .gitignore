@@ -72,6 +72,7 @@ Thumbs.db
 # Backups
 *.sql
 !migrations/*.sql
+!backend/migrations/*.sql
 !RESET_OPERATIONAL_DATA.sql
 backup_*.sql
 

@@ -19,11 +19,22 @@ const TIPOS_SITUACION = [
     { value: 'OTROS', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' },
 ];
 
-// Colores por tipo de registro
+// Colores por tipo de registro / tipo de situación
 const TIPO_REGISTRO_STYLE: Record<string, { dot: string; border: string; bg: string; badge: string }> = {
-    SITUACION: { dot: 'bg-red-500', border: 'border-red-200 dark:border-red-800', bg: 'bg-red-50 dark:bg-red-900/20', badge: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' },
-    ACTIVIDAD: { dot: 'bg-blue-500', border: 'border-blue-200 dark:border-blue-800', bg: 'bg-blue-50 dark:bg-blue-900/20', badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' },
-    SALIDA: { dot: 'bg-emerald-500', border: 'border-emerald-200 dark:border-emerald-800', bg: 'bg-emerald-50 dark:bg-emerald-900/20', badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' },
+    INCIDENTE:   { dot: 'bg-red-500',    border: 'border-red-200 dark:border-red-800',       bg: 'bg-red-50 dark:bg-red-900/20',       badge: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' },
+    ASISTENCIA:  { dot: 'bg-amber-500',  border: 'border-amber-200 dark:border-amber-800',   bg: 'bg-amber-50 dark:bg-amber-900/20',   badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
+    EMERGENCIA:  { dot: 'bg-orange-500', border: 'border-orange-200 dark:border-orange-800', bg: 'bg-orange-50 dark:bg-orange-900/20', badge: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400' },
+    ACTIVIDAD:   { dot: 'bg-blue-500',   border: 'border-blue-200 dark:border-blue-800',     bg: 'bg-blue-50 dark:bg-blue-900/20',     badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' },
+    SALIDA:      { dot: 'bg-emerald-500',border: 'border-emerald-200 dark:border-emerald-800',bg: 'bg-emerald-50 dark:bg-emerald-900/20',badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' },
+    OTROS:       { dot: 'bg-gray-400',   border: 'border-gray-200 dark:border-gray-600',     bg: 'bg-gray-50 dark:bg-gray-700/50',     badge: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' },
+};
+
+// Etiquetas legibles por tipo_situacion
+const TIPO_LABEL: Record<string, string> = {
+    HECHO_TRANSITO:       'Hecho de tránsito',
+    INCIDENTE:            'Incidente',
+    ASISTENCIA_VEHICULAR: 'Asistencia vial',
+    EMERGENCIA:           'Emergencia vial',
 };
 
 interface Tripulante {
@@ -150,7 +161,13 @@ export default function BitacoraPage() {
     };
 
     const getRegistroStyle = (item: any) => {
-        return TIPO_REGISTRO_STYLE[item.tipo_registro] || TIPO_REGISTRO_STYLE.SITUACION;
+        if (item.tipo_registro === 'ACTIVIDAD') return TIPO_REGISTRO_STYLE.ACTIVIDAD;
+        if (item.tipo_registro === 'SALIDA') return TIPO_REGISTRO_STYLE.SALIDA;
+        const tipo = item.tipo_situacion;
+        if (tipo === 'ASISTENCIA_VEHICULAR') return TIPO_REGISTRO_STYLE.ASISTENCIA;
+        if (tipo === 'EMERGENCIA') return TIPO_REGISTRO_STYLE.EMERGENCIA;
+        if (tipo === 'INCIDENTE' || tipo === 'HECHO_TRANSITO') return TIPO_REGISTRO_STYLE.INCIDENTE;
+        return TIPO_REGISTRO_STYLE.OTROS;
     };
 
     if (!unidadId) return <div>Error: No se especificó unidad</div>;
@@ -352,16 +369,19 @@ export default function BitacoraPage() {
                                     >
                                         {/* Header */}
                                         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
-                                                    item.color
-                                                        ? ''
-                                                        : isSalida
-                                                            ? style.badge
-                                                            : getTipoColor(item.tipo_situacion)
+                                                    item.color ? '' : style.badge
                                                 }`} style={item.color ? { backgroundColor: `${item.color}20`, color: item.color } : undefined}>
-                                                    {item.subtipo_nombre || item.tipo_situacion?.replace(/_/g, ' ') || 'Sin tipo'}
+                                                    {isSalida
+                                                        ? 'Jornada'
+                                                        : TIPO_LABEL[item.tipo_situacion] || item.tipo_situacion?.replace(/_/g, ' ') || 'Sin tipo'}
                                                 </span>
+                                                {!isSalida && item.subtipo_nombre && (
+                                                    <span className="text-xs text-gray-500 dark:text-gray-400 italic">
+                                                        {item.subtipo_nombre}
+                                                    </span>
+                                                )}
                                                 {isActividad && (
                                                     <span className="px-1.5 py-0.5 text-[10px] rounded bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-medium">
                                                         ACT
@@ -413,7 +433,7 @@ export default function BitacoraPage() {
                                                     ) : null;
                                                 })()}
                                                 <p className="font-medium text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
-                                                    {item.descripcion || extractObservaciones(item.observaciones) || (isSalida ? 'Salida de unidad' : 'Sin descripción')}
+                                                    {item.descripcion || extractObservaciones(item.observaciones) || (isSalida ? 'Salida de unidad' : 'Sin observaciones')}
                                                 </p>
                                                 {item.descripcion && item.observaciones && (item.descripcion.trim() !== String(extractObservaciones(item.observaciones) || '').trim()) && (
                                                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 italic whitespace-pre-wrap">

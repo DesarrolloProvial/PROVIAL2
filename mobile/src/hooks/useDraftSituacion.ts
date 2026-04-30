@@ -389,6 +389,9 @@ export function useDraftSituacion() {
         // Mapear salida_id a salida_unidad_id (backend espera este nombre)
         salida_unidad_id: draftSalidaId,
 
+        // Timestamp del draft (cuándo se reportó en campo, puede diferir de created_at en BD)
+        draft_created_at: draft.created_at,
+
         // Remover campos internos del draft que no necesita el backend
         salida_id: undefined,
         multimedia: undefined, // Se sube después con endpoint separado
