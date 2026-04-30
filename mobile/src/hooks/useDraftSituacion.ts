@@ -401,7 +401,7 @@ export function useDraftSituacion() {
         material_via: undefined // Ya se mandó como tipo_pavimento
       };
 
-      console.log('🚀 [ENVIAR_DRAFT] Haciendo POST a:', `${API_URL}/situaciones`);
+      console.log('🚀 [ENVIAR_DRAFT] Haciendo POST a:', `${(api as any).defaults?.baseURL}/situaciones`);
       console.log('📦 [ENVIAR_DRAFT] Payload sanitizado:', JSON.stringify({...payload, multimedia: undefined}, null, 2));
 
       const response = await api.post('/situaciones', payload, {
