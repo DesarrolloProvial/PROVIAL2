@@ -43,12 +43,16 @@ api.interceptors.request.use(
     }
 
     // Agregar headers de dispositivo siempre
-    const { uuid, imei } = await getDeviceIds();
-    config.headers['X-Device-UUID'] = uuid;
-    config.headers['X-Device-IMEI'] = imei;
-    config.headers['X-Device-Model'] = Device.modelName || 'Unknown Device';
-
-    console.log(`[API Interceptor] Request to: ${config.url} (Device: ${imei}:${uuid})`);
+    try {
+      const { uuid, imei } = await getDeviceIds();
+      config.headers['X-Device-UUID'] = uuid;
+      config.headers['X-Device-IMEI'] = imei;
+      config.headers['X-Device-Model'] = Device.modelName || 'Unknown Device';
+      console.log(`[API Interceptor] Request to: ${config.url} (Device: ${uuid})`);
+    } catch (e) {
+      console.error('[API Interceptor] Device headers error:', e);
+      throw e;
+    }
     return config;
   },
   (error) => {

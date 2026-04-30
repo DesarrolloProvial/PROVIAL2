@@ -479,6 +479,11 @@ export function useDraftSituacion() {
       console.log('❌ [ENVIAR_DRAFT] status:', status);
       console.log('❌ [ENVIAR_DRAFT] data:', JSON.stringify(data, null, 2));
       console.log('❌ [ENVIAR_DRAFT] error.message:', error?.message);
+      console.log('❌ [ENVIAR_DRAFT] error.code:', error?.code);
+      console.log('❌ [ENVIAR_DRAFT] error.name:', error?.name);
+      console.log('❌ [ENVIAR_DRAFT] has request:', !!error?.request);
+      console.log('❌ [ENVIAR_DRAFT] has response:', !!error?.response);
+      console.log('❌ [ENVIAR_DRAFT] baseURL:', (api as any).defaults?.baseURL);
 
       await updateDraftStatus('PENDIENTE');
 
