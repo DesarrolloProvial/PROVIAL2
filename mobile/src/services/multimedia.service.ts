@@ -6,8 +6,10 @@
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
+import * as Device from 'expo-device';
 import { API_URL } from '../constants/config';
 import { useAuthStore } from '../store/authStore';
+import api, { getDeviceIds } from './api';
 
 // Configuración de compresión
 const IMAGE_CONFIG = {
@@ -279,7 +281,9 @@ export async function uploadPhoto(
       return { success: false, error: 'No autenticado' };
     }
 
-    // Crear FormData
+    const { uuid, imei } = await getDeviceIds();
+    const model = Device.modelName || 'Unknown Device';
+
     const formData = new FormData();
     formData.append('foto', {
       uri: photo.uri,
@@ -292,7 +296,6 @@ export async function uploadPhoto(
       formData.append('longitud', location.longitude.toString());
     }
 
-    // Subir con XMLHttpRequest para soporte de progreso
     return new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
 
@@ -318,10 +321,7 @@ export async function uploadPhoto(
           });
         } else {
           const error = JSON.parse(xhr.responseText);
-          resolve({
-            success: false,
-            error: error.error || 'Error al subir foto',
-          });
+          resolve({ success: false, error: error.error || 'Error al subir foto' });
         }
       });
 
@@ -331,6 +331,10 @@ export async function uploadPhoto(
 
       xhr.open('POST', `${API_URL}/multimedia/situacion/${situacionId}/foto`);
       xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      xhr.setRequestHeader('X-App-Platform', 'mobile');
+      xhr.setRequestHeader('X-Device-UUID', uuid);
+      xhr.setRequestHeader('X-Device-IMEI', imei);
+      xhr.setRequestHeader('X-Device-Model', model);
       xhr.send(formData);
     });
   } catch (error: any) {
@@ -354,15 +358,13 @@ export async function uploadVideo(
       return { success: false, error: 'No autenticado' };
     }
 
-    // Verificar tamaño (máximo 10MB)
     if (video.size && video.size > 10 * 1024 * 1024) {
-      return {
-        success: false,
-        error: 'El video es muy grande. Máximo 10MB.',
-      };
+      return { success: false, error: 'El video es muy grande. Máximo 10MB.' };
     }
 
-    // Crear FormData
+    const { uuid, imei } = await getDeviceIds();
+    const model = Device.modelName || 'Unknown Device';
+
     const formData = new FormData();
     formData.append('video', {
       uri: video.uri,
@@ -403,10 +405,7 @@ export async function uploadVideo(
           });
         } else {
           const error = JSON.parse(xhr.responseText);
-          resolve({
-            success: false,
-            error: error.error || 'Error al subir video',
-          });
+          resolve({ success: false, error: error.error || 'Error al subir video' });
         }
       });
 
@@ -416,6 +415,10 @@ export async function uploadVideo(
 
       xhr.open('POST', `${API_URL}/multimedia/situacion/${situacionId}/video`);
       xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      xhr.setRequestHeader('X-App-Platform', 'mobile');
+      xhr.setRequestHeader('X-Device-UUID', uuid);
+      xhr.setRequestHeader('X-Device-IMEI', imei);
+      xhr.setRequestHeader('X-Device-Model', model);
       xhr.send(formData);
     });
   } catch (error: any) {
@@ -433,19 +436,9 @@ export async function getMultimediaSituacion(situacionId: number): Promise<{
   completitud: any;
 } | null> {
   try {
-    const token = useAuthStore.getState().token;
-    if (!token) return null;
-
-    const response = await fetch(
-      `${API_URL}/multimedia/situacion/${situacionId}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    if (!response.ok) return null;
-
-    return await response.json();
+    const response = await api.get(`/multimedia/situacion/${situacionId}`);
+    if (response.status >= 400) return null;
+    return response.data;
   } catch (error) {
     console.error('Error al obtener multimedia:', error);
     return null;
