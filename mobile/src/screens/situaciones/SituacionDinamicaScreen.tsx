@@ -110,6 +110,11 @@ export default function SituacionDinamicaScreen() {
             }
         });
 
+        // Fallback: backend puede devolver tipo_pavimento en vez de material_via
+        if (!formValues.material_via && data.tipo_pavimento) {
+            formValues.material_via = data.tipo_pavimento;
+        }
+
         // === CAMPOS CON _ID (tipos) ===
         if (data.tipo_asistencia_id !== undefined && data.tipo_asistencia_id !== null) {
             formValues.tipo_asistencia_id = data.tipo_asistencia_id;
@@ -180,7 +185,12 @@ export default function SituacionDinamicaScreen() {
             if (data.detalles.otros) {
                 const otros = data.detalles.otros;
                 if (otros.area) formValues.area = otros.area;
-                if (otros.material_via) formValues.material_via = otros.material_via;
+                if (!formValues.material_via && (otros.material_via || otros.tipo_pavimento))
+                    formValues.material_via = otros.material_via || otros.tipo_pavimento;
+                if (!formValues.clima && otros.clima) formValues.clima = otros.clima;
+                if (!formValues.carga_vehicular && otros.carga_vehicular) formValues.carga_vehicular = otros.carga_vehicular;
+                if (!formValues.departamento_id && otros.departamento_id) formValues.departamento_id = Number(otros.departamento_id);
+                if (!formValues.municipio_id && otros.municipio_id) formValues.municipio_id = Number(otros.municipio_id);
                 if (otros.tipo_asistencia_id) formValues.tipo_asistencia_id = otros.tipo_asistencia_id;
                 if (otros.tipo_hecho_id) formValues.tipo_hecho_id = otros.tipo_hecho_id;
                 if (otros.tipo_emergencia_id) formValues.tipo_emergencia_id = otros.tipo_emergencia_id;
@@ -587,8 +597,13 @@ export default function SituacionDinamicaScreen() {
                         descripcion_infra: formData.descripcion_danios_infra
                     },
                     // Campos específicos de asistencia/otros
+                    departamento_id: formData.departamento_id,
+                    municipio_id: formData.municipio_id,
+                    clima: formData.clima,
+                    carga_vehicular: formData.carga_vehicular,
                     area: formData.area,
                     material_via: formData.material_via,
+                    tipo_pavimento: formData.material_via,
                     obstruccion: formData.obstruye ? formData.obstruccion : null,
                     jurisdiccion: formData.jurisdiccion,
 
