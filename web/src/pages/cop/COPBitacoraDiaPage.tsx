@@ -125,6 +125,34 @@ function Sep() {
   return <div className="border-t border-dashed border-gray-200 dark:border-gray-700 my-1.5" />;
 }
 
+// ── Matriz de campos por tipo de situación ────────────────────────────────────
+
+interface CamposConfig {
+  showUbicacion: boolean;
+  showCondicionesBasicas: boolean;
+  showCondicionesDetalle: boolean;
+  showCausas: boolean;
+  showVictimas: boolean;
+  showDanos: boolean;
+  showVehiculos: boolean;
+  showAutoridades: boolean;
+}
+
+function getCampos(tipoMacro: string): CamposConfig {
+  switch (tipoMacro) {
+    case 'INCIDENTE':
+      return { showUbicacion: true, showCondicionesBasicas: true, showCondicionesDetalle: true,  showCausas: true,  showVictimas: true,  showDanos: true,  showVehiculos: true,  showAutoridades: true  };
+    case 'ASISTENCIA_VEHICULAR':
+    case 'ASISTENCIA':
+      return { showUbicacion: true, showCondicionesBasicas: true, showCondicionesDetalle: false, showCausas: false, showVictimas: false, showDanos: false, showVehiculos: true,  showAutoridades: false };
+    case 'EMERGENCIA':
+      return { showUbicacion: true, showCondicionesBasicas: true, showCondicionesDetalle: false, showCausas: false, showVictimas: false, showDanos: false, showVehiculos: false, showAutoridades: true  };
+    default:
+      // PATRULLAJE, REGULACION_TRAFICO, COMIDA, DESCANSO, PARADA_ESTRATEGICA, OTROS, etc.
+      return { showUbicacion: false, showCondicionesBasicas: true, showCondicionesDetalle: false, showCausas: false, showVictimas: false, showDanos: false, showVehiculos: false, showAutoridades: false };
+  }
+}
+
 // ── Renderizado de cada tipo de evento en el timeline ─────────────────────────
 
 function parseJsonSafe(v: any): Record<string, any> {
@@ -166,10 +194,12 @@ function LogSituacion({ item }: { item: TimelineItem }) {
   const cerrada = d.estado === 'CERRADA';
   const obstruccion = parseJsonSafe(d.obstruccion_data);
   const obstruccionEntries = Object.entries(obstruccion).filter(([, v]) => v !== null && v !== '' && v !== false);
+  const campos = getCampos(d.tipo_macro ?? d.tipo_situacion ?? '');
+  const tipoPavimento = d.tipo_pavimento ?? d.material_via;
 
   return (
     <div className="mb-5">
-      {/* Encabezado del evento */}
+      {/* Encabezado */}
       <div className="flex items-baseline gap-2 mb-1">
         <span className="font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">
           {d.tipo_nombre ?? d.tipo_macro ?? 'Situación'}
@@ -193,14 +223,17 @@ function LogSituacion({ item }: { item: TimelineItem }) {
 
       <Sep />
 
-      {/* Ubicación */}
+      {/* Ubicación: km y sentido siempre; municipio/depto/área solo si el tipo lo usa */}
       <L label="km" value={d.km != null ? String(d.km) : undefined} />
       <L label="sentido" value={str(d.sentido)} />
-      <L label="área" value={str(d.area)} />
-      <L label="municipio" value={str(d.municipio)} />
-      <L label="departamento" value={str(d.departamento)} />
-      <L label="latitud / longitud"
-        value={d.latitud != null ? `${d.latitud}, ${d.longitud}` : undefined} />
+      {campos.showUbicacion && (
+        <>
+          <L label="área" value={str(d.area)} />
+          <L label="municipio" value={str(d.municipio)} />
+          <L label="departamento" value={str(d.departamento)} />
+          <L label="latitud / longitud" value={d.latitud != null ? `${d.latitud}, ${d.longitud}` : undefined} />
+        </>
+      )}
 
       <Sep />
 
@@ -210,54 +243,74 @@ function LogSituacion({ item }: { item: TimelineItem }) {
       <L label="hora cierre" value={fmtTime(d.hora_cierre)} />
       {dur && <L label="duración total" value={dur} />}
 
-      <Sep />
-
-      {/* Personas */}
-      <L label="heridos leves" value={String(d.heridos_leves ?? 0)} />
-      <L label="heridos graves" value={String(d.heridos_graves ?? 0)} />
-      <L label="fallecidos" value={String(d.fallecidos ?? 0)} />
-      <L label="ilesos" value={String(d.ilesos ?? 0)} />
-      <L label="trasladados" value={String(d.trasladados ?? 0)} />
-      <L label="fugados" value={String(d.fugados ?? 0)} />
-
-      <Sep />
-
-      {/* Daños */}
-      <L label="daños materiales" value={boolStr(d.danios_materiales)} />
-      <L label="daños infraestr." value={boolStr(d.danios_infraestructura)} />
-      <L label="desc. daños" value={str(d.danios_descripcion)} />
-
-      <Sep />
-
       {/* Condiciones de la vía */}
-      <L label="clima" value={str(d.clima)} />
-      <L label="carga vehicular" value={str(d.carga_vehicular)} />
-      <L label="iluminación" value={str(d.iluminacion)} />
-      <L label="visibilidad" value={str(d.visibilidad)} />
-      <L label="estado vía" value={str(d.via_estado)} />
-      <L label="tipo pavimento" value={str(d.tipo_pavimento)} />
-      <L label="señalización" value={str(d.senalizacion)} />
+      {campos.showCondicionesBasicas && (
+        <>
+          <Sep />
+          <L label="clima" value={str(d.clima)} />
+          <L label="carga vehicular" value={str(d.carga_vehicular)} />
+          <L label="tipo pavimento" value={str(tipoPavimento)} />
+        </>
+      )}
+
+      {campos.showCondicionesDetalle && (
+        <>
+          <L label="iluminación" value={str(d.iluminacion)} />
+          <L label="visibilidad" value={str(d.visibilidad)} />
+          <L label="estado vía" value={str(d.via_estado)} />
+          <L label="señalización" value={str(d.senalizacion)} />
+        </>
+      )}
+
+      {/* Víctimas — solo INCIDENTE */}
+      {campos.showVictimas && (
+        <>
+          <Sep />
+          <L label="heridos leves" value={String(d.heridos_leves ?? 0)} />
+          <L label="heridos graves" value={String(d.heridos_graves ?? 0)} />
+          <L label="fallecidos" value={String(d.fallecidos ?? 0)} />
+          <L label="ilesos" value={String(d.ilesos ?? 0)} />
+          <L label="trasladados" value={String(d.trasladados ?? 0)} />
+          <L label="fugados" value={String(d.fugados ?? 0)} />
+        </>
+      )}
+
+      {/* Daños — solo INCIDENTE */}
+      {campos.showDanos && (
+        <>
+          <Sep />
+          <L label="daños materiales" value={boolStr(d.danios_materiales)} />
+          <L label="daños infraestr." value={boolStr(d.danios_infraestructura)} />
+          <L label="desc. daños" value={str(d.danios_descripcion)} />
+        </>
+      )}
+
+      {/* Causas — solo INCIDENTE */}
+      {campos.showCausas && (
+        <>
+          <Sep />
+          <L label="causa probable" value={str(d.causa_probable)} />
+          <L label="causa específica" value={str(d.causa_especificar)} />
+        </>
+      )}
+
+      {/* Autoridades / Reporte — INCIDENTE y EMERGENCIA */}
+      {campos.showAutoridades && (
+        <>
+          <Sep />
+          <L label="reportado por" value={str(d.reportado_por_nombre)} />
+          <L label="teléfono reporte" value={str(d.reportado_por_telefono)} />
+          <L label="acuerdo involuc." value={
+            d.acuerdo_involucrados
+              ? `Sí${d.acuerdo_detalle ? ` — ${d.acuerdo_detalle}` : ''}`
+              : 'No'
+          } />
+        </>
+      )}
 
       <Sep />
 
-      {/* Causa */}
-      <L label="causa probable" value={str(d.causa_probable)} />
-      <L label="causa específica" value={str(d.causa_especificar)} />
-
-      <Sep />
-
-      {/* Reporte externo */}
-      <L label="reportado por" value={str(d.reportado_por_nombre)} />
-      <L label="teléfono reporte" value={str(d.reportado_por_telefono)} />
-      <L label="acuerdo involuc." value={
-        d.acuerdo_involucrados
-          ? `Sí${d.acuerdo_detalle ? ` — ${d.acuerdo_detalle}` : ''}`
-          : 'No'
-      } />
-
-      <Sep />
-
-      {/* Observaciones */}
+      {/* Observaciones — siempre como timeline */}
       <div className="text-sm">
         <span className="font-medium text-gray-500 uppercase tracking-widest text-[10px] mr-2">observaciones</span>
         <div className="mt-2 space-y-2">
@@ -266,7 +319,7 @@ function LogSituacion({ item }: { item: TimelineItem }) {
               <div key={idx} className="bg-gray-50 dark:bg-gray-800 p-2 border-l-2 border-blue-500 rounded">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{obs.usuario}</span>
-                  <span className="text-xs text-gray-500 font-mono">{obs.hora} {obs.hora?.includes('¡') && <span title="Offline" className="text-red-500">⚠️</span>}</span>
+                  <span className="text-xs text-gray-500 font-mono">{obs.hora}</span>
                 </div>
                 <p className="text-xs text-gray-800 dark:text-gray-200">{obs.mensaje}</p>
               </div>
@@ -276,8 +329,11 @@ function LogSituacion({ item }: { item: TimelineItem }) {
           )}
         </div>
       </div>
+
+      {/* Obstrucción — si hay datos */}
       {obstruccionEntries.length > 0 && (
         <>
+          <Sep />
           <L label="obstrucción" value="" />
           {obstruccionEntries.map(([k, v]) => (
             <L key={k} label={`  ${k.replace(/_/g, ' ')}`} value={typeof v === 'boolean' ? (v ? 'Sí' : 'No') : String(v)} />
@@ -285,66 +341,68 @@ function LogSituacion({ item }: { item: TimelineItem }) {
         </>
       )}
 
-      <Sep />
-
-      {/* Vehículos involucrados */}
-      {vehiculos.length === 0 ? (
-        <L label="vehículos involuc." value="ninguno" />
-      ) : (
-        <div>
-          <L label="vehículos involuc." value={`${vehiculos.length}`} />
-          {vehiculos.map((v, i) => (
-            <div key={i} className="ml-4 mt-1 border-l-2 border-gray-200 dark:border-gray-700 pl-3 space-y-0">
-              <div className="flex items-baseline gap-2">
-                <span className="font-bold text-gray-700 dark:text-gray-300">Vehículo {i + 1}: {v.placa}</span>
-                {v.marca && <span className="text-gray-500">{v.marca}</span>}
-                {v.color && <span className="text-gray-400">{v.color}</span>}
-              </div>
-              <L label="  conductor" value={v.piloto ? `${v.piloto}${v.licencia ? ` (lic. ${v.licencia})` : ''}` : undefined} />
-              <L label="  estado piloto" value={str(v.estado_piloto)} />
-              <L label="  heridos" value={String(v.heridos ?? 0)} />
-              <L label="  fallecidos" value={String(v.fallecidos ?? 0)} />
-              <L label="  daños vehículo" value={str(v.danos)} />
-              <L label="  sanción" value={boolStr(v.sancion)} />
+      {/* Vehículos — INCIDENTE y ASISTENCIA */}
+      {campos.showVehiculos && (
+        <>
+          <Sep />
+          {vehiculos.length === 0 ? (
+            <L label="vehículos involuc." value="ninguno" />
+          ) : (
+            <div>
+              <L label="vehículos involuc." value={`${vehiculos.length}`} />
+              {vehiculos.map((v, i) => (
+                <div key={i} className="ml-4 mt-1 border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-bold text-gray-700 dark:text-gray-300">Vehículo {i + 1}: {v.placa}</span>
+                    {v.marca && <span className="text-gray-500">{v.marca}</span>}
+                    {v.color && <span className="text-gray-400">{v.color}</span>}
+                  </div>
+                  <L label="  conductor" value={v.piloto ? `${v.piloto}${v.licencia ? ` (lic. ${v.licencia})` : ''}` : undefined} />
+                  <L label="  estado piloto" value={str(v.estado_piloto)} />
+                  <L label="  heridos" value={String(v.heridos ?? 0)} />
+                  <L label="  fallecidos" value={String(v.fallecidos ?? 0)} />
+                  <L label="  daños vehículo" value={str(v.danos)} />
+                  <L label="  sanción" value={boolStr(v.sancion)} />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
-      <Sep />
-
       {/* Multimedia */}
-      {fotos.length + videos.length === 0 ? (
-        <L label="fotos / videos" value="ninguno" />
-      ) : (
-        <div>
-          <L label="fotos / videos" value={`${fotos.length} foto(s), ${videos.length} video(s)`} />
-          <div className="ml-4 mt-1.5 flex flex-wrap gap-2">
-            {fotos.map((f) => (
-              <a key={f.id} href={f.url} target="_blank" rel="noopener noreferrer"
-                className="relative w-20 h-20 rounded overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0 group border border-gray-300 dark:border-gray-600">
-                <img
-                  src={f.thumbnail ?? f.url}
-                  alt={f.titulo ?? 'foto'}
-                  className="w-full h-full object-cover group-hover:opacity-90"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
-                {f.titulo && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-1 truncate">
-                    {f.titulo}
-                  </div>
-                )}
-                <Camera className="absolute top-1 right-1 w-3 h-3 text-white/70" />
-              </a>
-            ))}
-            {videos.map((v) => (
-              <a key={v.id} href={v.url} target="_blank" rel="noopener noreferrer"
-                className="w-20 h-20 rounded bg-gray-800 dark:bg-gray-700 flex-shrink-0 flex items-center justify-center border border-gray-600 group">
-                <Video className="w-8 h-8 text-white/70 group-hover:text-white" />
-              </a>
-            ))}
+      {fotos.length + videos.length > 0 && (
+        <>
+          <Sep />
+          <div>
+            <L label="fotos / videos" value={`${fotos.length} foto(s), ${videos.length} video(s)`} />
+            <div className="ml-4 mt-1.5 flex flex-wrap gap-2">
+              {fotos.map((f) => (
+                <a key={f.id} href={f.url} target="_blank" rel="noopener noreferrer"
+                  className="relative w-20 h-20 rounded overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0 group border border-gray-300 dark:border-gray-600">
+                  <img
+                    src={f.thumbnail ?? f.url}
+                    alt={f.titulo ?? 'foto'}
+                    className="w-full h-full object-cover group-hover:opacity-90"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                  {f.titulo && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-1 truncate">
+                      {f.titulo}
+                    </div>
+                  )}
+                  <Camera className="absolute top-1 right-1 w-3 h-3 text-white/70" />
+                </a>
+              ))}
+              {videos.map((v) => (
+                <a key={v.id} href={v.url} target="_blank" rel="noopener noreferrer"
+                  className="w-20 h-20 rounded bg-gray-800 dark:bg-gray-700 flex-shrink-0 flex items-center justify-center border border-gray-600 group">
+                  <Video className="w-8 h-8 text-white/70 group-hover:text-white" />
+                </a>
+              ))}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
