@@ -85,6 +85,9 @@ export async function createSituacion(req: Request, res: Response) {
 
     const userId      = req.user!.userId;
     const codigoFinal = codigo_situacion || `WEB-${uuidv4()}`;
+    const observacionesFormateadas = observaciones
+      ? await buildObservacionEntry(userId, observaciones)
+      : null;
 
     // ── Validación de duplicados ─────────────────────────────────────────────
     if (codigo_situacion) {
@@ -131,7 +134,7 @@ export async function createSituacion(req: Request, res: Response) {
         turno_id:         ctx.turnoId,
         asignacion_id:    ctx.asignacionId,
         ruta_id:          ctx.rutaId,
-        km, sentido, latitud, longitud, observaciones,
+        km, sentido, latitud, longitud, observaciones: observacionesFormateadas,
         creado_por:       userId,
         codigo_situacion: codigoFinal,
         tipo_situacion_id:tipo_situacion_id_final,
@@ -256,6 +259,7 @@ export async function updateSituacion(req: Request, res: Response) {
     const {
       km, sentido, latitud, longitud,
       area, material_via, clima, carga_vehicular,
+      observaciones: observacionNueva,
       danios_materiales, danios_infraestructura, descripcion_danios_infra,
       obstruccion, obstruye,
       tipo_hecho_id, tipo_asistencia_id, tipo_emergencia_id,
@@ -314,10 +318,17 @@ export async function updateSituacion(req: Request, res: Response) {
       gruas:       Array.isArray(gruasData)       && gruasData.length        ? gruasData       : undefined,
       ajustadores: Array.isArray(ajustadoresData) && ajustadoresData.length  ? ajustadoresData : undefined,
     });
-    if (full) emitSituacionActualizada(full as any);
+    // Append observación nueva si se envió (nunca sobreescribir el array JSONB completo)
+    let fullFinal: any = full;
+    if (observacionNueva && String(observacionNueva).trim().length > 0) {
+      const entrada = await buildObservacionEntry(userId, String(observacionNueva).trim());
+      fullFinal = await SituacionModel.agregarObservacion(situacionId, entrada);
+    }
+
+    if (fullFinal) emitSituacionActualizada(fullFinal as any);
 
     // Log en salida_evento (no bloquea si falla)
-    const sitRow = full as any;
+    const sitRow = fullFinal as any;
     if (sitRow?.salida_unidad_id) {
       db.none(
         `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_new, realizado_por)
@@ -327,7 +338,7 @@ export async function updateSituacion(req: Request, res: Response) {
       ).catch(() => {});
     }
 
-    return res.json({ message: 'Actualizado', situacion: full });
+    return res.json({ message: 'Actualizado', situacion: fullFinal });
 
   } catch (error) {
     console.error('updateSituacion:', error);

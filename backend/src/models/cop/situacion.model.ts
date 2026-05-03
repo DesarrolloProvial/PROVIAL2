@@ -261,19 +261,8 @@ export const SituacionModel = {
       latitud: data.latitud ?? null,
       longitud: data.longitud ?? null,
 
-      // Observaciones formateadas para JSONB timeline
-      observaciones: data.observaciones 
-        ? JSON.stringify([{ 
-            hora: new Intl.DateTimeFormat('en-US', { 
-              hour12: false, 
-              hour: '2-digit', 
-              minute: '2-digit', 
-              timeZone: 'America/Guatemala' 
-            }).format(new Date()),
-            usuario: 'Creador del Incidente',
-            mensaje: data.observaciones 
-          }]) 
-        : JSON.stringify([]),
+      // Observaciones: el controller pasa el JSON ya formateado vía buildObservacionEntry
+      observaciones: data.observaciones || JSON.stringify([]),
 
       // Contexto
       clima: data.clima ?? null,
@@ -384,7 +373,6 @@ export const SituacionModel = {
 
     const fields = [
       'tipo_situacion', 'ruta_id', 'km', 'sentido', 'latitud', 'longitud',
-      'observaciones',
       'tipo_situacion_id', 'clima', 'carga_vehicular', 'departamento_id', 'municipio_id', 'obstruccion_data',
       'origen', 'area',
       'fecha_hora_aviso', 'fecha_hora_llegada', 'fecha_hora_finalizacion',
