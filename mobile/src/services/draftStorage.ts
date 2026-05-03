@@ -163,14 +163,12 @@ export async function getDraftPendiente(): Promise<DraftSituacion | null> {
     // Validar formato del ID: debe tener 8 partes (incluye salida_id)
     const partes = draft.id?.split('-').length ?? 0;
     if (partes !== 8) {
-      console.warn(`[DRAFT] Draft con ID legacy (${partes} partes), descartando: ${draft.id}`);
       await AsyncStorage.removeItem(DRAFT_KEY);
       return null;
     }
 
     return draft;
   } catch (error) {
-    console.error('[DRAFT] Error obteniendo draft:', error);
     return null;
   }
 }
@@ -183,9 +181,7 @@ export async function saveDraft(draft: DraftSituacion): Promise<void> {
   try {
     draft.updated_at = new Date().toISOString();
     await AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-    console.log(`[DRAFT] Guardado: ${draft.id} (${draft.tipo_situacion})`);
   } catch (error) {
-    console.error('[DRAFT] Error guardando draft:', error);
     throw error;
   }
 }
@@ -197,7 +193,6 @@ export async function updateDraft(updates: Partial<DraftSituacion>): Promise<Dra
   try {
     const draft = await getDraftPendiente();
     if (!draft) {
-      console.warn('[DRAFT] No hay draft para actualizar');
       return null;
     }
 
@@ -208,10 +203,8 @@ export async function updateDraft(updates: Partial<DraftSituacion>): Promise<Dra
     };
 
     await AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(updated));
-    console.log(`[DRAFT] Actualizado: ${updated.id}`);
     return updated;
   } catch (error) {
-    console.error('[DRAFT] Error actualizando draft:', error);
     throw error;
   }
 }
@@ -229,9 +222,7 @@ export async function updateDraftStatus(estado: DraftStatus): Promise<void> {
 export async function deleteDraft(): Promise<void> {
   try {
     await AsyncStorage.removeItem(DRAFT_KEY);
-    console.log('[DRAFT] Eliminado');
   } catch (error) {
-    console.error('[DRAFT] Error eliminando draft:', error);
     throw error;
   }
 }

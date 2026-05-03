@@ -56,7 +56,6 @@ export default function MultiSelectField({
                     const resolved = await CatalogResolver.resolveOptions(options);
                     setResolvedOptions(resolved);
                 } catch (err) {
-                    console.error('[MultiSelect] Error loading options:', err);
                     setResolvedOptions([]);
                 } finally {
                     setLoading(false);

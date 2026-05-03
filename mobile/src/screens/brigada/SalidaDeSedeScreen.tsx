@@ -97,7 +97,6 @@ export default function SalidaDeSedeScreen() {
         data
       );
 
-      console.log('[SALIDA SEDE] Respuesta:', response.data);
 
       // Actualizar estado
       await refreshEstadoBrigada();
@@ -113,7 +112,6 @@ export default function SalidaDeSedeScreen() {
         ]
       );
     } catch (error: any) {
-      console.error('[SALIDA SEDE] Error:', error);
       const mensaje = error.response?.data?.error || error.message || 'No se pudo registrar la salida';
       Alert.alert('Error', mensaje);
     } finally {

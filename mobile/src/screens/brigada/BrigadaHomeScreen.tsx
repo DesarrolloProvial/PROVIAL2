@@ -55,7 +55,6 @@ export default function BrigadaHomeScreen() {
         loadAsignacionDia()
       ]);
     } catch (error) {
-      console.error('Error al cargar datos:', error);
     } finally {
       setInitialLoading(false);
     }
@@ -68,7 +67,6 @@ export default function BrigadaHomeScreen() {
       setAsignacionDia(asignacion);
     } catch (error: any) {
       // Si no hay asignación, no es un error crítico
-      console.log('[ASIGNACION DIA] No hay asignación para hoy');
       setAsignacionDia(null);
     } finally {
       setLoadingAsignacionDia(false);
@@ -180,19 +178,15 @@ export default function BrigadaHomeScreen() {
 
     try {
       setCambiandoRuta(true);
-      console.log('[CAMBIAR RUTA] Cambiando a ruta ID:', nuevaRutaId);
 
       const response = await turnosAPI.cambiarRuta(nuevaRutaId);
-      console.log('[CAMBIAR RUTA] Respuesta:', response);
 
-      console.log('[CAMBIAR RUTA] Refrescando estado...');
       await refreshEstadoBrigada();
 
       setMostrarCambioRuta(false);
       setNuevaRutaId(null);
       Alert.alert('Éxito', 'Ruta cambiada correctamente');
     } catch (error: any) {
-      console.error('[CAMBIAR RUTA] Error:', error);
       const mensaje = error.response?.data?.error || error.message || 'No se pudo cambiar la ruta';
       Alert.alert('Error al cambiar ruta', mensaje);
     } finally {

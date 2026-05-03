@@ -55,7 +55,6 @@ export function FieldRenderer({ field, control, formData, disabled, protectedFie
                 message: field.errorMessage || 'Formato inválido'
             };
         } catch (e) {
-            console.warn(`[FieldRenderer] Patrón inválido para ${field.name}:`, field.validation.pattern);
         }
     }
 
@@ -218,7 +217,6 @@ export function FieldRenderer({ field, control, formData, disabled, protectedFie
                     case 'custom':
                         const CustomComponent = resolveComponent(field.component);
                         if (!CustomComponent) {
-                            console.warn(`[FieldRenderer] Componente custom no encontrado: ${field.component}`);
                             return null;
                         }
 

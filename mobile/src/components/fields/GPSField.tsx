@@ -85,7 +85,6 @@ export default function GPSField({
             setStatus('success');
 
         } catch (err) {
-            console.error('[GPS] Error capturando ubicación:', err);
             Alert.alert('Error', 'No se pudo obtener la ubicación. Verifique que el GPS esté activo.');
             setStatus('error');
         } finally {

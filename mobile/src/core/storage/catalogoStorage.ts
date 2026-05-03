@@ -211,7 +211,6 @@ class CatalogoStorage {
 
             this.initialized = true;
         } catch (error) {
-            console.error('[CATALOGOS] Error al crear tablas:', error);
             this.initialized = false;
             throw error;
         }
@@ -225,7 +224,6 @@ class CatalogoStorage {
         try {
             return this.db.getAllSync<CatalogoDepartamento>('SELECT * FROM departamento ORDER BY nombre');
         } catch (error) {
-            console.error('[CATALOGOS] Error getDepartamentos:', error);
             return [];
         }
     }
@@ -241,7 +239,6 @@ class CatalogoStorage {
                 [departamentoId]
             );
         } catch (error) {
-            console.error('[CATALOGOS] Error getMunicipios:', error);
             return [];
         }
     }
@@ -254,7 +251,6 @@ class CatalogoStorage {
         try {
             return this.db.getAllSync<CatalogoTipoVehiculo>('SELECT * FROM tipo_vehiculo ORDER BY nombre');
         } catch (error) {
-            console.error('[CATALOGOS] Error getTiposVehiculo:', error);
             return [];
         }
     }
@@ -267,7 +263,6 @@ class CatalogoStorage {
         try {
             return this.db.getAllSync<CatalogoMarcaVehiculo>('SELECT * FROM marca_vehiculo ORDER BY nombre');
         } catch (error) {
-            console.error('[CATALOGOS] Error getMarcasVehiculo:', error);
             return [];
         }
     }
@@ -280,7 +275,6 @@ class CatalogoStorage {
         try {
             return this.db.getAllSync<CatalogoAutoridad>('SELECT * FROM autoridad ORDER BY nombre');
         } catch (error) {
-            console.error('[CATALOGOS] Error getAutoridades:', error);
             return [];
         }
     }
@@ -293,7 +287,6 @@ class CatalogoStorage {
         try {
             return this.db.getAllSync<CatalogoSocorro>('SELECT * FROM socorro ORDER BY nombre');
         } catch (error) {
-            console.error('[CATALOGOS] Error getSocorro:', error);
             return [];
         }
     }
@@ -306,7 +299,6 @@ class CatalogoStorage {
         try {
             return this.db.getAllSync<CatalogoTipoHecho>('SELECT * FROM tipo_hecho ORDER BY nombre');
         } catch (error) {
-            console.error('[CATALOGOS] Error getTiposHecho:', error);
             return [];
         }
     }
@@ -319,7 +311,6 @@ class CatalogoStorage {
         try {
             return this.db.getAllSync<CatalogoTipoAsistencia>('SELECT * FROM tipo_asistencia ORDER BY nombre');
         } catch (error) {
-            console.error('[CATALOGOS] Error getTiposAsistencia:', error);
             return [];
         }
     }
@@ -332,7 +323,6 @@ class CatalogoStorage {
         try {
             return this.db.getAllSync<CatalogoTipoEmergencia>('SELECT * FROM tipo_emergencia ORDER BY nombre');
         } catch (error) {
-            console.error('[CATALOGOS] Error getTiposEmergencia:', error);
             return [];
         }
     }
@@ -345,7 +335,6 @@ class CatalogoStorage {
         try {
             return this.db.getAllSync<CatalogoEtnia>('SELECT * FROM etnia ORDER BY nombre');
         } catch (error) {
-            console.error('[CATALOGOS] Error getEtnias:', error);
             return [];
         }
     }
@@ -368,7 +357,6 @@ class CatalogoStorage {
                  VALUES ('etnia', datetime('now'), 1)`
             );
         } catch (error) {
-            console.error('[CATALOGOS] Error saveEtnias:', error);
             throw error;
         }
     }
@@ -381,7 +369,6 @@ class CatalogoStorage {
         try {
             return this.db.getAllSync<CatalogoDispositivoSeguridad>('SELECT * FROM dispositivo_seguridad ORDER BY nombre');
         } catch (error) {
-            console.error('[CATALOGOS] Error getDispositivosSeguridad:', error);
             return [];
         }
     }
@@ -404,7 +391,6 @@ class CatalogoStorage {
                  VALUES ('dispositivo_seguridad', datetime('now'), 1)`
             );
         } catch (error) {
-            console.error('[CATALOGOS] Error saveDispositivosSeguridad:', error);
             throw error;
         }
     }
@@ -417,7 +403,6 @@ class CatalogoStorage {
         try {
             return this.db.getAllSync<CatalogoCausaHecho>('SELECT * FROM causa_hecho_transito ORDER BY nombre');
         } catch (error) {
-            console.error('[CATALOGOS] Error getCausasHecho:', error);
             return [];
         }
     }
@@ -440,7 +425,6 @@ class CatalogoStorage {
                  VALUES ('causa_hecho_transito', datetime('now'), 1)`
             );
         } catch (error) {
-            console.error('[CATALOGOS] Error saveCausasHecho:', error);
             throw error;
         }
     }
@@ -463,7 +447,6 @@ class CatalogoStorage {
                  VALUES ('departamento', datetime('now'), 1)`
             );
         } catch (error) {
-            console.error('[CATALOGOS] Error saveDepartamentos:', error);
             throw error;
         }
     }
@@ -486,7 +469,6 @@ class CatalogoStorage {
                  VALUES ('municipio', datetime('now'), 1)`
             );
         } catch (error) {
-            console.error('[CATALOGOS] Error saveMunicipios:', error);
             throw error;
         }
     }
@@ -509,7 +491,6 @@ class CatalogoStorage {
                  VALUES ('tipo_vehiculo', datetime('now'), 1)`
             );
         } catch (error) {
-            console.error('[CATALOGOS] Error saveTiposVehiculo:', error);
             throw error;
         }
     }
@@ -532,7 +513,6 @@ class CatalogoStorage {
                  VALUES ('marca_vehiculo', datetime('now'), 1)`
             );
         } catch (error) {
-            console.error('[CATALOGOS] Error saveMarcasVehiculo:', error);
             throw error;
         }
     }
@@ -555,7 +535,6 @@ class CatalogoStorage {
                  VALUES ('tipo_hecho', datetime('now'), 1)`
             );
         } catch (error) {
-            console.error('[CATALOGOS] Error saveTiposHecho:', error);
             throw error;
         }
     }
@@ -578,7 +557,6 @@ class CatalogoStorage {
                  VALUES ('tipo_asistencia', datetime('now'), 1)`
             );
         } catch (error) {
-            console.error('[CATALOGOS] Error saveTiposAsistencia:', error);
             throw error;
         }
     }
@@ -601,7 +579,6 @@ class CatalogoStorage {
                  VALUES ('tipo_emergencia', datetime('now'), 1)`
             );
         } catch (error) {
-            console.error('[CATALOGOS] Error saveTiposEmergencia:', error);
             throw error;
         }
     }
@@ -617,7 +594,6 @@ class CatalogoStorage {
                 [catalogo]
             );
         } catch (error) {
-            console.error('[CATALOGOS] Error getSyncMetadata:', error);
             return null;
         }
     }
@@ -642,7 +618,6 @@ class CatalogoStorage {
             this.db.runSync('DELETE FROM causa_hecho_transito');
             this.db.runSync('DELETE FROM sync_metadata');
         } catch (error) {
-            console.error('[CATALOGOS] Error clearAll:', error);
             throw error;
         }
     }

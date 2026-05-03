@@ -97,7 +97,6 @@ export default function MultimediaCaptureOffline({
           mapMediaToSlots(draft.multimedia);
         }
       } catch (error) {
-        console.error('[MULTIMEDIA] Error cargando desde draft:', error);
       }
     }
 
@@ -270,7 +269,6 @@ export default function MultimediaCaptureOffline({
     tipo: 'FOTO' | 'VIDEO'
   ) => {
     try {
-      console.log(`[MULTIMEDIA] Procesando ${tipo} para slot ${slotIndex}`);
 
       const mediaRef: MultimediaRef = {
         tipo,
@@ -293,9 +291,7 @@ export default function MultimediaCaptureOffline({
         return newSlots;
       });
 
-      console.log(`[MULTIMEDIA] ${tipo} procesada correctamente`);
     } catch (error: any) {
-      console.error('[MULTIMEDIA] Error procesando media:', error);
       Alert.alert('Error', error.message || 'No se pudo guardar el archivo');
     }
   };
@@ -327,7 +323,6 @@ export default function MultimediaCaptureOffline({
                 return newSlots;
               });
             } catch (error) {
-              console.error('[MULTIMEDIA] Error eliminando:', error);
             }
           },
         },

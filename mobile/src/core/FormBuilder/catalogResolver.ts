@@ -102,7 +102,6 @@ export class CatalogResolver {
                 ];
 
             default:
-                console.warn(`[CATALOG_RESOLVER] Catálogo no reconocido: ${catalogRef}`);
                 return [];
         }
     }
@@ -121,7 +120,6 @@ export class CatalogResolver {
                 return fromDB.map(m => ({ value: m.id, label: m.nombre }));
             }
         } catch (error) {
-            console.warn('[CATALOG_RESOLVER] Error leyendo municipios de SQLite, usando hardcoded');
         }
         return getMunicipiosOptions(departamentoId);
     }
@@ -138,7 +136,6 @@ export class CatalogResolver {
                 return fromDB.map(d => ({ value: d.id, label: d.nombre }));
             }
         } catch (error) {
-            console.warn('[CATALOG_RESOLVER] Error leyendo departamentos de SQLite, usando hardcoded');
         }
         return getDepartamentosOptions();
     }
@@ -151,7 +148,6 @@ export class CatalogResolver {
                 label: t.nombre,
             }));
         } catch (error) {
-            console.error('[CATALOG_RESOLVER] Error en resolveTiposVehiculo:', error);
             return [];
         }
     }
@@ -164,7 +160,6 @@ export class CatalogResolver {
                 label: m.nombre,
             }));
         } catch (error) {
-            console.error('[CATALOG_RESOLVER] Error en resolveMarcasVehiculo:', error);
             return [];
         }
     }
@@ -177,7 +172,6 @@ export class CatalogResolver {
                 label: a.nombre,
             }));
         } catch (error) {
-            console.error('[CATALOG_RESOLVER] Error en resolveAutoridades:', error);
             return [];
         }
     }
@@ -190,7 +184,6 @@ export class CatalogResolver {
                 label: s.nombre,
             }));
         } catch (error) {
-            console.error('[CATALOG_RESOLVER] Error en resolveSocorro:', error);
             return [];
         }
     }
@@ -203,7 +196,6 @@ export class CatalogResolver {
                 label: t.nombre,
             }));
         } catch (error) {
-            console.error('[CATALOG_RESOLVER] Error en resolveTiposHecho:', error);
             return [];
         }
     }
@@ -216,7 +208,6 @@ export class CatalogResolver {
                 label: t.nombre,
             }));
         } catch (error) {
-            console.error('[CATALOG_RESOLVER] Error en resolveTiposAsistencia:', error);
             return [];
         }
     }
@@ -229,7 +220,6 @@ export class CatalogResolver {
                 label: t.nombre,
             }));
         } catch (error) {
-            console.error('[CATALOG_RESOLVER] Error en resolveTiposEmergencia:', error);
             return [];
         }
     }

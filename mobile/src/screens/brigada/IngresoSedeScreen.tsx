@@ -202,7 +202,6 @@ export default function IngresoSedeScreen() {
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } catch (error: any) {
-      console.error('Error al editar ingreso:', error);
       Alert.alert(
         'Error',
         error.response?.data?.error || 'No se pudo actualizar el ingreso'
@@ -234,7 +233,6 @@ export default function IngresoSedeScreen() {
         );
       }
     } catch (error: any) {
-      console.error('[INGRESO SEDE] Error:', error);
       const mensaje = error.response?.data?.error || error.message || 'No se pudo registrar el ingreso';
       Alert.alert('Error', mensaje);
     } finally {

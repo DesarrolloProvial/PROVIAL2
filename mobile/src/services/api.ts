@@ -48,15 +48,12 @@ api.interceptors.request.use(
       config.headers['X-Device-UUID'] = uuid;
       config.headers['X-Device-IMEI'] = imei;
       config.headers['X-Device-Model'] = Device.modelName || 'Unknown Device';
-      console.log(`[API Interceptor] Request to: ${config.url} (Device: ${uuid})`);
     } catch (e) {
-      console.error('[API Interceptor] Device headers error:', e);
       throw e;
     }
     return config;
   },
   (error) => {
-    console.error('[API Interceptor] Request error:', error);
     return Promise.reject(error);
   }
 );

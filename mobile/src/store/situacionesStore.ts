@@ -249,7 +249,6 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
         isLoading: false,
       });
 
-      console.error('Error al obtener situaciones:', error);
     }
   },
 
@@ -260,10 +259,8 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      console.log('[CATALOGO] Fetching /situaciones/catalogo...');
       const response = await api.get('/situaciones/catalogo');
       const catalogoRaw = response.data || [];
-      console.log('[CATALOGO] Respuesta:', Array.isArray(catalogoRaw) ? `${catalogoRaw.length} categorias` : typeof catalogoRaw, JSON.stringify(catalogoRaw).substring(0, 200));
 
       // Lista de tipos a ELIMINAR del menú (se reportan en pantallas dedicadas o están prohibidos)
       const tiposProhibidos = [
@@ -313,20 +310,17 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
           const bloqueado = bloqueadas.some(palabra => normalizado?.includes(palabra));
 
           if (bloqueado) {
-            console.log('FILTRADO:', tipo.nombre);
           }
           return !bloqueado;
         }) || []
       })).filter((cat: any) => cat.tipos.length > 0); // Remover categorías vacías
 
-      console.log('[CATALOGO] Después de filtrar:', catalogoFiltrado.length, 'categorías,', catalogoFiltrado.map((c: any) => `${c.nombre}(${c.tipos.length})`).join(', '));
 
       set({
         catalogo: catalogoFiltrado,
         isLoading: false,
       });
     } catch (error: any) {
-      console.error('[CATALOGO] Error al obtener catálogo:', error?.response?.status, error?.response?.data, error?.message);
       set({ isLoading: false });
     }
   },
@@ -339,7 +333,6 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
       const response = await api.get('/situaciones/auxiliares');
       set({ catalogosAuxiliares: response.data });
     } catch (error) {
-      console.error('Error al cargar catálogos auxiliares', error);
     }
   },
 
@@ -350,9 +343,7 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      console.log('🚀 [STORE] Enviando situación:', JSON.stringify(data, null, 2));
       const response = await api.post(`/situaciones`, data);
-      console.log('✅ [STORE] Respuesta exitosa:', response.data);
       const nuevaSituacion = response.data.situacion;
 
       // Actualizar lista local
@@ -366,10 +357,6 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
 
       return nuevaSituacion;
     } catch (error: any) {
-      console.error('❌ [STORE] Error al crear situación:', error);
-      console.error('❌ [STORE] Error response:', error?.response);
-      console.error('❌ [STORE] Error response data:', error?.response?.data);
-      console.error('❌ [STORE] Error status:', error?.response?.status);
 
       const errorMessage =
         error.response?.data?.error || error.message || 'Error al crear situación';
@@ -511,9 +498,7 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      console.log('[STORE] Creando actividad:', JSON.stringify(data, null, 2));
       const actividad = await actividadApi.crear(data);
-      console.log('[STORE] Actividad creada:', actividad);
 
       // Actualizar lista local
       const actividadesActuales = get().actividadesHoy;
@@ -528,7 +513,6 @@ export const useSituacionesStore = create<SituacionesState>((set, get) => ({
 
       return actividad;
     } catch (error: any) {
-      console.error('[STORE] Error al crear actividad:', error);
       const errorMessage = error.message || 'Error al crear actividad';
       set({ error: errorMessage, isLoading: false });
       throw new Error(errorMessage);

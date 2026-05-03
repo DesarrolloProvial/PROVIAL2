@@ -131,7 +131,6 @@ export default function FinalizarDiaScreen() {
         ]
       );
     } catch (error: any) {
-      console.error('[FINALIZAR DIA] Error:', error);
       const mensaje = error.response?.data?.error || error.message || 'No se pudo finalizar el día';
       Alert.alert('Error', mensaje);
     } finally {

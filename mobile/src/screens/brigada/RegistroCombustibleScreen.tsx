@@ -50,7 +50,6 @@ export default function RegistroCombustibleScreen() {
         ]
       );
     } catch (error: any) {
-      console.error('Error al registrar combustible:', error);
       const mensaje =
         error.response?.data?.error ||
         error.message ||

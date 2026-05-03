@@ -136,9 +136,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (username: string, password: string) => {
     set({ isLoading: true, error: null });
 
-    console.log('🔐 [LOGIN] Iniciando login...');
-    console.log('📡 [LOGIN] URL:', `${API_URL}/auth/login`);
-    console.log('👤 [LOGIN] Username:', username);
 
     // Obtener info del dispositivo para registro de control de acceso
     let deviceInfo: Record<string, string> = {};
@@ -164,7 +161,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         ...deviceInfo,
       });
 
-      console.log('✅ [LOGIN] Login exitoso:', response.data);
 
       const { accessToken, refreshToken, user } = response.data;
 
@@ -196,10 +192,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       return { success: true };
     } catch (error: any) {
-      console.error('❌ [LOGIN] Error completo:', error);
-      console.error('❌ [LOGIN] Error code:', error.code);
-      console.error('❌ [LOGIN] Error message:', error.message);
-      console.error('❌ [LOGIN] Error response:', error.response);
 
       let errorMessage = 'Error al iniciar sesión';
 
@@ -215,7 +207,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         errorMessage = error.message || 'Error desconocido';
       }
 
-      console.error('❌ [LOGIN] Error final:', errorMessage);
 
       set({
         error: errorMessage,
@@ -249,7 +240,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: null,
       });
     } catch (error) {
-      console.error('Error al cerrar sesión:', error);
     }
   },
 
@@ -290,7 +280,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ isLoading: false });
       }
     } catch (error) {
-      console.error('Error al cargar autenticación:', error);
       set({ isLoading: false });
     }
   },
@@ -318,7 +307,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (error.response?.status === 404) {
         set({ salidaActiva: null });
       } else {
-        console.error('Error al obtener salida activa:', error);
       }
     }
   },
@@ -346,7 +334,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (error.response?.status === 404) {
         set({ salidaHoy: null });
       } else {
-        console.error('Error al obtener salida de hoy:', error);
       }
     }
   },
@@ -380,7 +367,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (error.response?.status === 404) {
         set({ ingresoActivo: null });
       } else {
-        console.error('Error al obtener ingreso activo:', error);
         set({ ingresoActivo: null });
       }
     }
@@ -409,7 +395,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (error.response?.status === 404) {
         set({ miSede: null });
       } else {
-        console.error('Error al obtener mi sede:', error);
       }
     }
   },
@@ -452,7 +437,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       return response.data;
     } catch (error: any) {
-      console.error('Error al verificar acceso:', error);
       return {
         tiene_acceso: false,
         motivo_bloqueo: 'Error al verificar acceso',

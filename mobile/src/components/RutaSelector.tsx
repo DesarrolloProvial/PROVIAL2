@@ -30,18 +30,12 @@ export default function RutaSelector({ value, onChange, label = 'Ruta', required
   const loadRutas = async () => {
     try {
       setLoading(true);
-      console.log('[RutaSelector] Cargando rutas...');
       const data = await geografiaAPI.getRutas();
-      console.log('[RutaSelector] Rutas cargadas:', data.length);
       setRutas(data);
     } catch (error: any) {
-      console.error('[RutaSelector] Error al cargar rutas:', error);
-      console.error('[RutaSelector] Error response:', error.response?.data);
-      console.error('[RutaSelector] Error status:', error.response?.status);
 
       // Show user-friendly error
       if (error.response?.status === 401) {
-        console.error('[RutaSelector] Error 401 - Token inválido o expirado');
       }
     } finally {
       setLoading(false);

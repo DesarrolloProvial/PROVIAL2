@@ -107,7 +107,6 @@ export function parseSituacionId(id: string): SituacionIdParams | null {
       salida_id: parseInt(salidaStr),
     };
   } catch (error) {
-    console.error('[SITUACION_ID] Error parseando ID:', error);
     return null;
   }
 }

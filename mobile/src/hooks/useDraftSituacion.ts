@@ -211,7 +211,6 @@ export function useDraftSituacion() {
     try {
       reserva = await reservarNumero(params.unidad_codigo);
     } catch (error) {
-      console.warn('[Draft] Falló reserva online. Usando modo offline:', error);
       // Fallback: Datos temporales para permitir trabajar offline o sin salida activa
       reserva = {
         num_situacion_salida: 0, // 0 indica pendiente de sincronizar
@@ -322,24 +321,19 @@ export function useDraftSituacion() {
     conflicto?: ConflictoResponse;
     error?: string;
   }> => {
-    console.log('🚨 [ENVIAR_DRAFT] Función enviarDraft() llamada');
     const draft = await getDraftPendiente();
     if (!draft) {
-      console.warn('[ENVIAR_DRAFT] No hay draft para enviar');
       return { success: false, error: 'No hay draft para enviar' };
     }
 
     if (!token) {
-      console.warn('[ENVIAR_DRAFT] No autenticado');
       return { success: false, error: 'No autenticado' };
     }
 
     // Verificar conexion
     const netInfo = await NetInfo.fetch();
-    console.log('[ENVIAR_DRAFT] Conexión:', netInfo.isConnected);
     if (!netInfo.isConnected) {
       await updateDraftStatus('PENDIENTE');
-      console.warn('[ENVIAR_DRAFT] Sin conexión. Draft guardado localmente');
       return { success: false, error: 'Sin conexion. Draft guardado localmente.' };
     }
 
@@ -404,8 +398,6 @@ export function useDraftSituacion() {
         material_via: undefined // Ya se mandó como tipo_pavimento
       };
 
-      console.log('🚀 [ENVIAR_DRAFT] Haciendo POST a:', `${(api as any).defaults?.baseURL}/situaciones`);
-      console.log('📦 [ENVIAR_DRAFT] Payload sanitizado:', JSON.stringify({...payload, multimedia: undefined}, null, 2));
 
       const response = await api.post('/situaciones', payload, {
         headers: { 'Idempotency-Key': draft.id },
@@ -414,20 +406,16 @@ export function useDraftSituacion() {
       if (response.status >= 200 && response.status < 300) {
         // Exito!
         const data = response.data;
-        console.log('✅ [ENVIAR_DRAFT] POST exitoso:', response.status);
-        console.log('✅ [ENVIAR_DRAFT] Respuesta:', JSON.stringify(data, null, 2));
 
         // El backend retorna { situacion: { id, numero_situacion, ... } }
         const situacionId = data.situacion?.id || data.situacion_id;
         const numeroSituacion = data.situacion?.numero_situacion || data.numero_situacion;
 
-        console.log('📍 [ENVIAR_DRAFT] situacionId extraído:', situacionId);
 
         // Subir multimedia si hay
         if (draft.multimedia?.length > 0 && situacionId) {
           await subirMultimedia(situacionId, draft.multimedia);
         } else if (draft.multimedia?.length > 0 && !situacionId) {
-          console.error('❌ [ENVIAR_DRAFT] No se puede subir multimedia: situacionId es undefined');
         }
 
         // Limpiar draft
@@ -465,9 +453,7 @@ export function useDraftSituacion() {
       }
 
       // Otro error (400, etc.)
-      console.log('❌ [ENVIAR_DRAFT] Error HTTP:', response.status);
       const error = response.data;
-      console.log('❌ [ENVIAR_DRAFT] Error body:', JSON.stringify(error, null, 2));
 
       await updateDraftStatus('PENDIENTE');
       setState(prev => ({ ...prev, sending: false, error: error.error }));
@@ -478,15 +464,6 @@ export function useDraftSituacion() {
       const status = error?.response?.status;
       const data = error?.response?.data;
 
-      console.log('❌ [ENVIAR_DRAFT] ERROR capturado en catch');
-      console.log('❌ [ENVIAR_DRAFT] status:', status);
-      console.log('❌ [ENVIAR_DRAFT] data:', JSON.stringify(data, null, 2));
-      console.log('❌ [ENVIAR_DRAFT] error.message:', error?.message);
-      console.log('❌ [ENVIAR_DRAFT] error.code:', error?.code);
-      console.log('❌ [ENVIAR_DRAFT] error.name:', error?.name);
-      console.log('❌ [ENVIAR_DRAFT] has request:', !!error?.request);
-      console.log('❌ [ENVIAR_DRAFT] has response:', !!error?.response);
-      console.log('❌ [ENVIAR_DRAFT] baseURL:', (api as any).defaults?.baseURL);
 
       await updateDraftStatus('PENDIENTE');
 
@@ -508,7 +485,6 @@ export function useDraftSituacion() {
     situacionId: number,
     multimedia: MultimediaRef[]
   ): Promise<void> => {
-    console.log(`📸 [MULTIMEDIA] Subiendo ${multimedia.length} archivos a situacion ${situacionId}`);
 
     for (const media of multimedia) {
       const tipo = media.tipo as 'FOTO' | 'VIDEO';
@@ -542,27 +518,21 @@ export function useDraftSituacion() {
         let result;
 
         if (tipo === 'FOTO') {
-          console.log(`📷 [MULTIMEDIA] Subiendo FOTO ${media.orden || 1}...`);
           result = await MultimediaService.uploadPhoto(situacionId, mediaFile, location);
         } else {
-          console.log(`🎥 [MULTIMEDIA] Subiendo VIDEO...`);
           result = await MultimediaService.uploadVideo(situacionId, mediaFile, location);
         }
 
         if (result.success) {
-          console.log(`✅ [MULTIMEDIA] ${tipo} subida OK -> ID: ${result.id}, URL: ${result.url}`);
         } else {
-          console.error(`❌ [MULTIMEDIA] ${tipo} FALLÓ:`, result.error);
           // TODO: Marcar como pendiente de reintento en storage local
         }
       } catch (error: any) {
-        console.error(`❌ [MULTIMEDIA] Error subiendo ${tipo}:`, error?.message || error);
         // Continuar con el siguiente, no fallar todo
         // TODO: Marcar como pendiente de reintento
       }
     }
 
-    console.log(`📸 [MULTIMEDIA] Proceso de subida completado para situacion ${situacionId}`);
   };
 
   /**

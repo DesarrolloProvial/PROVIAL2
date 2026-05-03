@@ -58,7 +58,6 @@ export async function uploadToCloudinary(
   fileType: 'image' | 'video'
 ): Promise<CloudinaryUploadResult> {
   try {
-    console.log(`[CLOUDINARY] Iniciando upload: ${signedParams.publicId}`);
 
     // Leer archivo como base64
     const fileInfo = await FileSystem.getInfoAsync(localUri);
@@ -98,12 +97,10 @@ export async function uploadToCloudinary(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[CLOUDINARY] Error response:', errorText);
       throw new Error(`Upload failed: ${response.status}`);
     }
 
     const result = await response.json();
-    console.log(`[CLOUDINARY] Upload exitoso: ${result.secure_url}`);
 
     return {
       success: true,
@@ -111,7 +108,6 @@ export async function uploadToCloudinary(
       secureUrl: result.secure_url,
     };
   } catch (error: any) {
-    console.error('[CLOUDINARY] Error en upload:', error);
     return {
       success: false,
       error: error.message || 'Error desconocido',

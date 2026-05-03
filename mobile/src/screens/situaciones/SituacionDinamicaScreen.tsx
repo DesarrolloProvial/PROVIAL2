@@ -94,7 +94,6 @@ export default function SituacionDinamicaScreen() {
 
     // Helper para transformar datos de DB a Formulario
     const transformarDatosParaFormulario = (data: any) => {
-        console.log('[TRANSFORM] Datos de entrada: id=', data.id, 'tipo=', data.tipo_situacion, 'tipo_situacion_id=', data.tipo_situacion_id);
         const formValues: Record<string, any> = {};
 
         // === CAMPOS BÁSICOS ===
@@ -244,7 +243,6 @@ export default function SituacionDinamicaScreen() {
                 id: m.id,
                 isExisting: true,
             }));
-            console.log('[TRANSFORM] Multimedia existente:', formValues.multimedia.length, 'archivos');
         }
 
         // === MAPEAR campos de vehiculos del API al formato del form ===
@@ -266,10 +264,8 @@ export default function SituacionDinamicaScreen() {
                 direccion_propietario: v.direccion_propietario || '',
                 modelo: v.modelo || '',
             }));
-            console.log('[TRANSFORM] Vehiculos mapeados:', formValues.vehiculos.length);
         }
 
-        console.log('[TRANSFORM] Resumen: tipo_hecho_id=', formValues.tipo_hecho_id,
             'vehiculos=', formValues.vehiculos?.length || 0,
             'multimedia=', formValues.multimedia?.length || 0);
         return formValues;
@@ -280,7 +276,6 @@ export default function SituacionDinamicaScreen() {
         if (codigoSituacion) {
             const formConfig = getFormConfigForSituation(codigoSituacion);
             if (!formConfig) {
-                console.warn(`[SITUACION] No existe config para: ${codigoSituacion}`);
                 Alert.alert('Error', 'Formulario no disponible para este tipo de situación');
                 navigation.goBack();
                 return;
@@ -294,7 +289,6 @@ export default function SituacionDinamicaScreen() {
         const cargarDatosEdicion = async () => {
             if (!editMode || !situacionData) return;
 
-            console.log('[SITUACION] Modo edición - cargando datos existentes:', situacionData.id);
             setLoading(true);
 
             try {
@@ -306,15 +300,12 @@ export default function SituacionDinamicaScreen() {
                         const response = await api.get(`/situaciones/${situacionId}`);
                         if (response.data?.situacion) {
                             datosCompletos = response.data.situacion;
-                            console.log('[SITUACION] Datos completos de API:', JSON.stringify(datosCompletos, null, 2));
                         }
                     } catch (apiError) {
-                        console.warn('[SITUACION] No se pudieron cargar detalles de API, usando datos locales:', apiError);
                     }
                 }
 
                 const transformed = transformarDatosParaFormulario(datosCompletos);
-                console.log('[SITUACION] Datos transformados para edición:', JSON.stringify(transformed, null, 2));
                 setInitialValues(transformed);
 
                 // NEW: Identify fields with existing data to protect
@@ -325,7 +316,6 @@ export default function SituacionDinamicaScreen() {
                     if (Array.isArray(value)) return value.length > 0;
                     return true;
                 });
-                console.log('[PROTECTION] Fields with existing data:', fieldsWithData);
                 setProtectedFields(fieldsWithData);
 
                 // Si hay coordenadas, actualizarlas también
@@ -336,7 +326,6 @@ export default function SituacionDinamicaScreen() {
                     });
                 }
             } catch (error) {
-                console.error('[SITUACION] Error cargando datos de edición:', error);
             } finally {
                 setLoading(false);
             }
@@ -360,7 +349,6 @@ export default function SituacionDinamicaScreen() {
                 if (!check.allowed && draft) {
                     if (draft.tipo_situacion === tipoSituacion) {
                         // Draft del mismo tipo - cargar datos
-                        console.log('[SITUACION] Cargando draft existente:', draft.id);
                         cargarDraftEnFormulario(draft);
                     } else {
                         // Draft de otro tipo - mostrar modal
@@ -373,7 +361,6 @@ export default function SituacionDinamicaScreen() {
                     setShowConflictModal(true);
                 }
             } catch (error) {
-                console.error('[SITUACION] Error verificando draft:', error);
             } finally {
                 setLoading(false);
             }
@@ -393,7 +380,6 @@ export default function SituacionDinamicaScreen() {
      * Cargar datos del draft en el formulario
      */
     const cargarDraftEnFormulario = (draftData: any) => {
-        console.log('🔍 [CARGAR_DRAFT] Draft recibido:', JSON.stringify(draftData, null, 2));
         // Usar TODO el draft como base y solo sobrescribir defaults/formatos
         const initial = {
             // Defaults para que no truene el UI
@@ -418,7 +404,6 @@ export default function SituacionDinamicaScreen() {
             km: draftData.km?.toString() || '',
         };
 
-        console.log('✅ [CARGAR_DRAFT] Initial values construidos:', JSON.stringify(initial, null, 2));
         setInitialValues(initial);
 
         if (draftData.latitud && draftData.longitud) {
@@ -448,7 +433,6 @@ export default function SituacionDinamicaScreen() {
                 longitud: location.coords.longitude,
             });
         } catch (error) {
-            console.error('[SITUACION] Error GPS:', error);
         } finally {
             setObteniendoUbicacion(false);
         }
@@ -461,10 +445,8 @@ export default function SituacionDinamicaScreen() {
         situacionId: number,
         multimedia: MultimediaRef[]
     ): Promise<void> => {
-        console.log(`📸 [MULTIMEDIA-EDIT] Subiendo ${multimedia.length} archivos a situacion ${situacionId}`);
 
         for (const media of multimedia) {
-            console.log(`🔍 [DEBUG-UPLOAD] Procesando item: Tipo=${media.tipo}, URI=${media.uri}`);
 
             // FIX: Saltar archivos ya subidos (http/https, placeholders o marcados como SUBIDO)
             if (media.uri && (
@@ -473,7 +455,6 @@ export default function SituacionDinamicaScreen() {
                 (media as any).estado === 'SUBIDO' ||
                 (media as any).estado === 'COMPLETO'
             )) {
-                console.log(`⏩ [MULTIMEDIA-EDIT] Saltando archivo ya procesado: ${media.uri} (Estado: ${(media as any).estado})`);
                 continue;
             }
 
@@ -509,15 +490,12 @@ export default function SituacionDinamicaScreen() {
                 let result;
 
                 if (tipo === 'FOTO') {
-                    console.log(`📷 [MULTIMEDIA-EDIT] Subiendo FOTO ${media.orden || 1}...`);
                     result = await MultimediaService.uploadPhoto(situacionId, mediaFile, location);
                 } else {
-                    console.log(`🎥 [MULTIMEDIA-EDIT] Subiendo VIDEO...`);
                     result = await MultimediaService.uploadVideo(situacionId, mediaFile, location);
                 }
 
                 if (result.success) {
-                    console.log(`✅ [MULTIMEDIA-EDIT] ${tipo} subida OK -> ID: ${result.id}, URL: ${result.url}`);
 
                     // ACTUALIZAR ESTADO LOCAL PARA EVITAR RE-SUBIDA IMMEDIATA
                     // Modificamos el objeto 'media' directamente para que si el loop o una nueva llamada
@@ -529,14 +507,11 @@ export default function SituacionDinamicaScreen() {
                     }
 
                 } else {
-                    console.error(`❌ [MULTIMEDIA-EDIT] ${tipo} FALLÓ:`, result.error);
                 }
             } catch (error: any) {
-                console.error(`❌ [MULTIMEDIA-EDIT] Error subiendo ${tipo}:`, error?.message || error);
             }
         }
 
-        console.log(`📸 [MULTIMEDIA-EDIT] Proceso de subida completado para situacion ${situacionId}`);
     };
 
     /**
@@ -569,7 +544,6 @@ export default function SituacionDinamicaScreen() {
 
         try {
             if (editMode && situacionId) {
-                console.log('[SITUACION] Actualizando situación existente:', situacionId);
                 setLoading(true);
 
                 // Preparar payload para actualización
@@ -612,7 +586,6 @@ export default function SituacionDinamicaScreen() {
                     subtipo_situacion: formData.subtipo_situacion
                 };
 
-                console.log('[SITUACION] Enviando update:', JSON.stringify(payload, null, 2));
 
                 await api.patch(`/situaciones/${situacionId}`, payload);
 
@@ -631,16 +604,13 @@ export default function SituacionDinamicaScreen() {
                             observacion: formData.nueva_observacion.trim(),
                             hora_local: hora_local
                         });
-                        console.log('[SITUACION] Nueva observación guardada');
                     } catch (error) {
-                        console.warn('[SITUACION] Error al guardar nueva observación:', error);
                     }
                 }
 
                 // === SUBIR MULTIMEDIA (solo archivos nuevos, no re-subir existentes) ===
                 const nuevaMultimedia = (formData.multimedia || []).filter((m: any) => !m.isExisting);
                 if (nuevaMultimedia.length > 0) {
-                    console.log(`📸 [EDIT] Subiendo ${nuevaMultimedia.length} archivos nuevos...`);
                     await subirMultimediaEdicion(situacionId, nuevaMultimedia);
                 }
 
@@ -653,11 +623,9 @@ export default function SituacionDinamicaScreen() {
             }
 
             // === FLUJO OFFLINE-FIRST (CREACIÓN) ===
-            console.log('[SITUACION] Iniciando flujo offline-first (Creación)');
 
             // 1. Crear draft si no existe
             if (!draft) {
-                console.log('[SITUACION] Creando nuevo draft');
                 await crearDraft({
                     tipo_situacion: tipoSituacion,
                     tipo_situacion_id: tipoSituacionId, // Asegurar que viaja el ID
@@ -674,33 +642,7 @@ export default function SituacionDinamicaScreen() {
             }
 
             // 2. Actualizar draft con todos los datos del formulario
-            console.log('═══════════════════════════════════════════════════════');
-            console.log('🚀 [MOBILE] DATOS QUE SE VAN A ENVIAR AL BACKEND');
-            console.log('═══════════════════════════════════════════════════════');
-            console.log('📋 formData RAW (lo que viene del formulario):');
-            console.log(JSON.stringify(formData, null, 2));
-            console.log('---');
-            console.log('📍 Coordenadas calculadas:');
-            console.log('  - latitud:', latitud, '(type:', typeof latitud, ')');
-            console.log('  - longitud:', longitud, '(type:', typeof longitud, ')');
-            console.log('---');
-            console.log('🎯 Campos específicos que se enviarán:');
-            console.log('  - tipo_hecho_id:', formData.tipo_hecho_id, '(type:', typeof formData.tipo_hecho_id, ')');
-            console.log('  - tipo_asistencia_id:', formData.tipo_asistencia_id, '(type:', typeof formData.tipo_asistencia_id, ')');
-            console.log('  - tipo_emergencia_id:', formData.tipo_emergencia_id, '(type:', typeof formData.tipo_emergencia_id, ')');
-            console.log('  - clima:', formData.clima, '(type:', typeof formData.clima, ')');
-            console.log('  - carga_vehicular:', formData.carga_vehicular, '(type:', typeof formData.carga_vehicular, ')');
-            console.log('  - departamento_id:', formData.departamento_id, '(type:', typeof formData.departamento_id, ')');
-            console.log('  - municipio_id:', formData.municipio_id, '(type:', typeof formData.municipio_id, ')');
-            console.log('  - area:', formData.area, '(type:', typeof formData.area, ')');
-            console.log('  - material_via:', formData.material_via, '(type:', typeof formData.material_via, ')');
-            console.log('  - km:', formData.km, '(type:', typeof formData.km, ')');
-            console.log('  - sentido:', formData.sentido, '(type:', typeof formData.sentido, ')');
-            console.log('═══════════════════════════════════════════════════════');
 
-            console.log('🏛️ Municipio antes de guardar draft:', formData.municipio_id);
-            console.log('🏛️ Departamento antes de guardar draft:', formData.departamento_id);
-            console.log('[SITUACION] Actualizando draft con datos del formulario');
             await actualizarDraft({
                 // Mandar TODO el formData completo
                 ...formData,
@@ -721,7 +663,6 @@ export default function SituacionDinamicaScreen() {
             }, true);
 
             // 3. Intentar enviar
-            console.log('[SITUACION] Enviando draft al servidor');
             const result = await enviarDraft();
 
             if (result.success) {
@@ -742,7 +683,6 @@ export default function SituacionDinamicaScreen() {
             }
 
         } catch (error: any) {
-            console.error('[SITUACION] Error:', error);
             Alert.alert('Error', error.message || 'No se pudo guardar');
         } finally {
             setLoading(false);
@@ -762,7 +702,6 @@ export default function SituacionDinamicaScreen() {
                     {
                         text: 'Cancelar',
                         onPress: () => {
-                            console.log(`[PROTECTION] User cancelled edit of field: ${fieldName}`);
                             resolve(false);
                         },
                         style: 'cancel'
@@ -770,7 +709,6 @@ export default function SituacionDinamicaScreen() {
                     {
                         text: 'Editar',
                         onPress: () => {
-                            console.log(`[PROTECTION] User confirmed edit of field: ${fieldName}`);
                             resolve(true);
                         },
                         style: 'destructive'

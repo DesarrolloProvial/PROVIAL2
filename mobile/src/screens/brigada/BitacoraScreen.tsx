@@ -82,7 +82,6 @@ export default function BitacoraScreen() {
         loadIngresos(),
       ]);
     } catch (error) {
-      console.error('Error al cargar datos:', error);
     }
   };
 
@@ -91,7 +90,6 @@ export default function BitacoraScreen() {
       const response = await ingresosAPI.getMisIngresosHoy();
       setIngresosHoy(response.ingresos || []);
     } catch (error) {
-      console.error('Error al cargar ingresos:', error);
       setIngresosHoy([]);
     }
   };
@@ -134,7 +132,6 @@ export default function BitacoraScreen() {
       setModalEdicionSalidaVisible(false);
       Alert.alert('Éxito', 'Datos de salida actualizados correctamente');
     } catch (error: any) {
-      console.error('Error al editar salida:', error);
       Alert.alert(
         'Error',
         error.response?.data?.error || 'No se pudo actualizar la salida'
@@ -145,7 +142,6 @@ export default function BitacoraScreen() {
   };
 
   const abrirModalEdicionSituacion = (situacion: SituacionCompleta) => {
-    console.log('[BITACORA] Abriendo edición de situación:', situacion);
 
     // Navegar a la pantalla correspondiente según el tipo de situación
     switch (situacion.tipo_situacion) {
@@ -214,7 +210,6 @@ export default function BitacoraScreen() {
       setModalEdicionSituacionVisible(false);
       Alert.alert('Éxito', 'Situación actualizada correctamente');
     } catch (error: any) {
-      console.error('Error al editar situación:', error);
       Alert.alert(
         'Error',
         error.response?.data?.error || 'No se pudo actualizar la situación'
@@ -257,7 +252,6 @@ export default function BitacoraScreen() {
       setModalEdicionIngresoVisible(false);
       Alert.alert('Éxito', 'Ingreso actualizado correctamente');
     } catch (error: any) {
-      console.error('Error al editar ingreso:', error);
       Alert.alert(
         'Error',
         error.response?.data?.error || 'No se pudo actualizar el ingreso'
@@ -297,7 +291,6 @@ export default function BitacoraScreen() {
         `La situación ahora es de tipo ${nuevoTipo === 'INCIDENTE' ? 'Incidente' : 'Asistencia Vehicular'}`
       );
     } catch (error: any) {
-      console.error('Error al cambiar tipo:', error);
       Alert.alert(
         'Error',
         error.message || 'No se pudo cambiar el tipo de situación'

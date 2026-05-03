@@ -109,7 +109,6 @@ export default function Inspeccion360Screen() {
         });
         setRespuestas(respuestasIniciales);
       } catch (error: any) {
-        console.error('Error cargando plantilla:', error);
         Alert.alert(
           'Error',
           'No se pudo cargar la plantilla de inspección 360.',
@@ -262,7 +261,6 @@ export default function Inspeccion360Screen() {
                 foto_url: uploadResponse.data.url,
               };
             } catch (uploadError) {
-              console.error('Error subiendo foto:', uploadError);
               return respuesta;
             }
           }
@@ -292,7 +290,6 @@ export default function Inspeccion360Screen() {
 
                   return uploadResponse.data.url;
                 } catch (uploadError) {
-                  console.error('Error subiendo foto de daño:', uploadError);
                   return fotoUri; // Mantener URI local si falla
                 }
               }
@@ -329,7 +326,6 @@ export default function Inspeccion360Screen() {
         ]
       );
     } catch (error: any) {
-      console.error('Error enviando inspección:', error);
       Alert.alert(
         'Error',
         error.response?.data?.error || 'No se pudo enviar la inspección.'

@@ -38,7 +38,6 @@ export default function AjustadorManager({
     const agregarAjustador = () => {
         try {
             if (fields.length >= maxAjustadores) {
-                console.warn('Máximo de ajustadores alcanzado');
                 return;
             }
 
@@ -52,19 +51,16 @@ export default function AjustadorManager({
                 vehiculo_color: '',
             });
         } catch (error) {
-            console.error('Error al agregar ajustador:', error);
         }
     };
 
     const eliminarAjustador = (index: number) => {
         try {
             if (fields.length === 0) {
-                console.warn('No hay ajustadores para eliminar');
                 return;
             }
             remove(index);
         } catch (error) {
-            console.error('Error al eliminar ajustador:', error);
         }
     };
 

@@ -10,16 +10,13 @@ import { uploadMultimedia } from './cloudinaryUpload';
 export async function uploadSituacionMultimedia(situacionId: number, mediaRefs: MultimediaRef[]) {
     if (!mediaRefs || mediaRefs.length === 0) return { uploaded: 0, failed: 0 };
 
-    console.log(`[SYNC] Iniciando carga de ${mediaRefs.length} archivos para situación ${situacionId}`);
 
     // 1. Upload to Cloudinary using offline-first strategy (signed uploads)
     const { uploaded, failed } = await uploadMultimedia(situacionId.toString(), mediaRefs, (current, total) => {
-        console.log(`[SYNC] Progreso Cloudinary: ${current}/${total}`);
     });
 
     if (uploaded.length === 0) {
         if (failed.length > 0) {
-            console.error('[SYNC] Falló la carga de todos los archivos a Cloudinary');
             throw new Error('No se pudieron subir los archivos multimedia');
         }
         return { uploaded: 0, failed: 0 };
@@ -40,9 +37,7 @@ export async function uploadSituacionMultimedia(situacionId: number, mediaRefs: 
     });
 
     // 3. Send to backend to save references
-    console.log(`[SYNC] Guardando ${archivos.length} referencias en backend...`);
     await api.post(`/multimedia/situacion/${situacionId}/batch`, { archivos });
 
-    console.log(`[SYNC] Completado. Subidos: ${uploaded.length}, Fallidos: ${failed.length}`);
     return { uploaded: uploaded.length, failed: failed.length };
 }

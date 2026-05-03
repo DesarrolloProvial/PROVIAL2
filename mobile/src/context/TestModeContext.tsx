@@ -42,7 +42,6 @@ export function TestModeProvider({ children }: { children: ReactNode }) {
         setTestModeEnabled(true);
       }
     } catch (error) {
-      console.error('[TEST MODE] Error loading state:', error);
     }
   };
 
@@ -50,9 +49,7 @@ export function TestModeProvider({ children }: { children: ReactNode }) {
     try {
       await AsyncStorage.setItem(TEST_MODE_KEY, 'true');
       setTestModeEnabled(true);
-      console.log('🧪 [TEST MODE] Activado');
     } catch (error) {
-      console.error('[TEST MODE] Error enabling:', error);
     }
   };
 
@@ -60,9 +57,7 @@ export function TestModeProvider({ children }: { children: ReactNode }) {
     try {
       await AsyncStorage.setItem(TEST_MODE_KEY, 'false');
       setTestModeEnabled(false);
-      console.log('✅ [TEST MODE] Desactivado');
     } catch (error) {
-      console.error('[TEST MODE] Error disabling:', error);
     }
   };
 
@@ -77,12 +72,9 @@ export function TestModeProvider({ children }: { children: ReactNode }) {
   // Funciones de reseteo (eliminan datos REALES del backend)
   const resetSalida = async () => {
     try {
-      console.log('🔄 [TEST MODE] Reseteando salida actual...');
-      console.log('[TEST MODE] Llamando a POST /test-mode/reset-salida');
 
       // Finalizar salida en el backend
       const response = await api.post('/test-mode/reset-salida');
-      console.log('[TEST MODE] Respuesta del backend:', response.data);
 
       // Limpiar estado local
       await AsyncStorage.multiRemove([
@@ -90,10 +82,7 @@ export function TestModeProvider({ children }: { children: ReactNode }) {
         '@provial_estado_brigada'
       ]);
 
-      console.log('✅ [TEST MODE] Salida finalizada en backend y limpiada localmente');
     } catch (error: any) {
-      console.error('[TEST MODE] Error resetting salida:', error);
-      console.error('[TEST MODE] Error details:', {
         message: error.message,
         code: error.code,
         response: error.response?.data,
@@ -105,7 +94,6 @@ export function TestModeProvider({ children }: { children: ReactNode }) {
 
   const resetIngresos = async () => {
     try {
-      console.log('🔄 [TEST MODE] Reseteando ingresos...');
 
       // Eliminar del backend
       await api.post('/test-mode/reset-ingresos');
@@ -113,16 +101,13 @@ export function TestModeProvider({ children }: { children: ReactNode }) {
       // Limpiar estado local
       await AsyncStorage.removeItem('@provial_ingreso_activo');
 
-      console.log('✅ [TEST MODE] Ingresos eliminados del backend y local');
     } catch (error) {
-      console.error('[TEST MODE] Error resetting ingresos:', error);
       throw error;
     }
   };
 
   const resetSituaciones = async () => {
     try {
-      console.log('🔄 [TEST MODE] Reseteando situaciones...');
 
       // Eliminar del backend
       await api.post('/test-mode/reset-situaciones');
@@ -130,16 +115,13 @@ export function TestModeProvider({ children }: { children: ReactNode }) {
       // Limpiar estado local
       await AsyncStorage.removeItem('@provial_situaciones');
 
-      console.log('✅ [TEST MODE] Situaciones eliminadas del backend y local');
     } catch (error) {
-      console.error('[TEST MODE] Error resetting situaciones:', error);
       throw error;
     }
   };
 
   const resetAll = async () => {
     try {
-      console.log('🔄 [TEST MODE] Reseteando TODO...');
 
       // Eliminar todo del backend en una sola llamada
       await api.post('/test-mode/reset-all');
@@ -152,9 +134,7 @@ export function TestModeProvider({ children }: { children: ReactNode }) {
         '@provial_situaciones'
       ]);
 
-      console.log('✅ [TEST MODE] Todo eliminado del backend y local');
     } catch (error) {
-      console.error('[TEST MODE] Error resetting all:', error);
       throw error;
     }
   };

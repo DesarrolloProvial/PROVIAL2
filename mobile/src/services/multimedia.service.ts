@@ -100,7 +100,6 @@ export async function takePhoto(): Promise<MediaFile | null> {
       height: compressed.height,
     };
   } catch (error) {
-    console.error('Error al tomar foto:', error);
     throw error;
   }
 }
@@ -140,7 +139,6 @@ export async function pickPhoto(): Promise<MediaFile | null> {
       height: compressed.height,
     };
   } catch (error) {
-    console.error('Error al seleccionar foto:', error);
     throw error;
   }
 }
@@ -182,7 +180,6 @@ export async function recordVideo(): Promise<MediaFile | null> {
       size: (fileInfo as any).size,
     };
   } catch (error) {
-    console.error('Error al grabar video:', error);
     throw error;
   }
 }
@@ -222,7 +219,6 @@ export async function pickVideo(): Promise<MediaFile | null> {
       size: (fileInfo as any).size,
     };
   } catch (error) {
-    console.error('Error al seleccionar video:', error);
     throw error;
   }
 }
@@ -252,7 +248,6 @@ async function compressImage(uri: string): Promise<{
       }
     );
 
-    console.log(`[MULTIMEDIA] Imagen comprimida: ${result.width}x${result.height}`);
 
     return {
       uri: result.uri,
@@ -260,7 +255,6 @@ async function compressImage(uri: string): Promise<{
       height: result.height,
     };
   } catch (error) {
-    console.error('Error al comprimir imagen:', error);
     // Retornar original si falla la compresión
     return { uri, width: 0, height: 0 };
   }
@@ -338,7 +332,6 @@ export async function uploadPhoto(
       xhr.send(formData);
     });
   } catch (error: any) {
-    console.error('Error al subir foto:', error);
     return { success: false, error: error.message };
   }
 }
@@ -422,7 +415,6 @@ export async function uploadVideo(
       xhr.send(formData);
     });
   } catch (error: any) {
-    console.error('Error al subir video:', error);
     return { success: false, error: error.message };
   }
 }
@@ -440,7 +432,6 @@ export async function getMultimediaSituacion(situacionId: number): Promise<{
     if (response.status >= 400) return null;
     return response.data;
   } catch (error) {
-    console.error('Error al obtener multimedia:', error);
     return null;
   }
 }

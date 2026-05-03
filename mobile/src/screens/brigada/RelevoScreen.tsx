@@ -89,7 +89,6 @@ export default function RelevoScreen() {
         observaciones: observaciones.trim() || undefined,
       });
 
-      console.log('[RELEVO] Respuesta:', response.data);
 
       // Actualizar estado
       await refreshEstadoBrigada();
@@ -105,7 +104,6 @@ export default function RelevoScreen() {
         ]
       );
     } catch (error: any) {
-      console.error('[RELEVO] Error:', error);
       const mensaje = error.response?.data?.error || error.message || 'No se pudo registrar el relevo';
       Alert.alert('Error', mensaje);
     } finally {

@@ -50,7 +50,6 @@ export function FormBuilder({
     useEffect(() => {
         // Solo resetear si los valores realmente cambiaron
         if (initialValuesKey !== prevInitialValuesRef.current && initialValuesKey !== '{}') {
-            console.log('[FormBuilder] Actualizando valores iniciales:', initialValuesKey.substring(0, 200));
             prevInitialValuesRef.current = initialValuesKey;
             reset(initialValues);
             hasResetRef.current = true;

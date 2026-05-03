@@ -133,14 +133,12 @@ export default function IniciarSalidaScreen() {
             const rutasData = await geografiaAPI.getRutas();
             setRutas(rutasData);
           } catch (err) {
-            console.error('Error cargando rutas:', err);
             Alert.alert('Error', 'No se pudieron cargar las rutas. Verifica tu conexión.');
           } finally {
             setLoadingRutas(false);
           }
         }
       } catch (error) {
-        console.log('[INICIAR SALIDA] No hay asignacion de turno');
         setAsignacionTurno(null);
       } finally {
         setLoadingAsignacion(false);
@@ -206,7 +204,6 @@ export default function IniciarSalidaScreen() {
           observaciones_salida: observaciones.trim() || undefined,
         });
 
-        console.log('[EDITAR SALIDA] Actualización exitosa');
 
         await refreshSalidaActiva();
 
@@ -230,7 +227,6 @@ export default function IniciarSalidaScreen() {
           observaciones_salida: observaciones.trim() || undefined,
         });
 
-        console.log('[INICIAR SALIDA] Respuesta:', response.data);
 
         // Actualizar estado
         await refreshEstadoBrigada();
@@ -255,7 +251,6 @@ export default function IniciarSalidaScreen() {
         );
       }
     } catch (error: any) {
-      console.error('[INICIAR/EDITAR SALIDA] Error:', error);
       const mensaje = error.response?.data?.error || error.message || (editMode ? 'No se pudo actualizar la salida' : 'No se pudo iniciar la salida');
       Alert.alert('Error', mensaje);
     } finally {

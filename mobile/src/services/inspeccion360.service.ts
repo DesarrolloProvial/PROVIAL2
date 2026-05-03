@@ -177,7 +177,6 @@ export const inspeccion360Service = {
 
       return downloadResult.uri;
     } catch (error) {
-      console.error('Error al descargar PDF:', error);
       throw error;
     }
   },
@@ -201,7 +200,6 @@ export const inspeccion360Service = {
         dialogTitle: 'Compartir Inspeccion 360',
       });
     } catch (error) {
-      console.error('Error al compartir PDF:', error);
       throw error;
     }
   },

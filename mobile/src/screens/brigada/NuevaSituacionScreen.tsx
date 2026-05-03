@@ -137,7 +137,6 @@ export default function NuevaSituacionScreen() {
   useEffect(() => {
     fetchCatalogo();
     fetchCatalogosAuxiliares();
-    api.get('/unidades/activas').then(r => setUnidadesList(r.data.unidades || [])).catch(console.error);
   }, []);
 
   // Reset al cambiar tipo
@@ -511,12 +510,9 @@ export default function NuevaSituacionScreen() {
           });
 
           if (allMedia.length > 0) {
-            console.log(`[NuevaSituacion] Iniciando subida de ${allMedia.length} archivos multimedia...`);
             // No esperamos a que termine, se ejecuta en "segundo plano"
             // Importar dinámicamente para evitar ciclos si fuera necesario, o usar el import estático
             require('../../services/multimediaSync').uploadSituacionMultimedia(nuevaSituacion.id, allMedia)
-              .then((res: any) => console.log('[NuevaSituacion] Subida completada', res))
-              .catch((err: any) => console.error('[NuevaSituacion] Error en subida background', err));
           }
         }
 
@@ -526,10 +522,6 @@ export default function NuevaSituacionScreen() {
       const mensajeExito = FORMULARIOS_ACTIVIDAD.includes(formularioTipo) ? 'Actividad registrada' : 'Situación guardada';
       Alert.alert('Éxito', mensajeExito, [{ text: 'OK', onPress: () => navigation.goBack() }]);
     } catch (error: any) {
-      console.error('❌ ERROR COMPLETO AL CREAR SITUACIÓN:', JSON.stringify(error, null, 2));
-      console.error('❌ ERROR RESPONSE:', error?.response?.data);
-      console.error('❌ ERROR MESSAGE:', error?.message);
-      console.error('❌ ERROR MSG:', error?.msg);
 
       const errorMsg = error?.response?.data?.error
         || error?.response?.data?.message

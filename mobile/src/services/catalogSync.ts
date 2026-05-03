@@ -111,18 +111,6 @@ export async function syncCatalogosAuxiliares(): Promise<boolean> {
 
         return true;
     } catch (error: any) {
-        console.error('[CATALOG_SYNC] ❌ Error sincronizando catálogos:', error);
-
-        // Detalles del error
-        if (error.response) {
-            console.error('[CATALOG_SYNC] Response status:', error.response.status);
-            console.error('[CATALOG_SYNC] Response data:', error.response.data);
-        } else if (error.request) {
-            console.error('[CATALOG_SYNC] No se recibió respuesta del servidor');
-        } else {
-            console.error('[CATALOG_SYNC] Error:', error.message);
-        }
-
         return false;
     }
 }
@@ -160,10 +148,8 @@ export async function syncGeografia(): Promise<boolean> {
             await catalogoStorage.saveMunicipios(normalized);
         }
 
-        console.log(`[CATALOG_SYNC] ✅ Geografía: ${departamentos.length} departamentos, ${municipios.length} municipios`);
         return true;
     } catch (error: any) {
-        console.error('[CATALOG_SYNC] ❌ Error sincronizando geografía:', error);
         return false;
     }
 }
@@ -185,7 +171,6 @@ export async function areCatalogsSynced(): Promise<boolean> {
             tiposEmergencia.length > 0
         );
     } catch (error) {
-        console.error('[CATALOG_SYNC] Error verificando catálogos:', error);
         return false;
     }
 }

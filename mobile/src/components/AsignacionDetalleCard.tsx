@@ -53,7 +53,6 @@ export interface AsignacionDetalleCardProps {
 
 export default function AsignacionDetalleCard(props: AsignacionDetalleCardProps) {
     // DEBUG: Log all props to see what data is arriving
-    console.log('📋 [AsignacionDetalleCard] Props recibidos:', {
         titulo: props.titulo,
         unidad_codigo: props.unidad_codigo,
         tipo_unidad: props.tipo_unidad,

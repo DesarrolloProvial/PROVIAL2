@@ -84,7 +84,6 @@ export const PlacaInput: React.FC<PlacaInputProps> = ({
           // Si hay error, simplemente no mostrar alerta
           setVehiculoInfo(null);
           setAlertaVisible(false);
-          console.log('No se encontró historial para esta placa (normal si es primera vez)');
         } finally {
           setIsChecking(false);
         }

@@ -50,7 +50,6 @@ export default function RadioField({
                     const resolved = await CatalogResolver.resolveOptions(options);
                     setResolvedOptions(resolved);
                 } catch (err) {
-                    console.error('[RadioField] Error loading options:', err);
                     setResolvedOptions([]);
                 } finally {
                     setLoading(false);

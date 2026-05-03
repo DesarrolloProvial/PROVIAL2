@@ -60,7 +60,6 @@ export function resolveComponent(component: ComponentType<any> | string | undefi
     if (typeof component === 'string') {
         const resolved = componentRegistry[component];
         if (!resolved) {
-            console.warn(`[ComponentRegistry] Componente no encontrado: ${component}`);
         }
         return resolved || null;
     }

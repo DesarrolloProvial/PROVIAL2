@@ -38,7 +38,6 @@ export default function GruaManager({
     const agregarGrua = () => {
         try {
             if (fields.length >= maxGruas) {
-                console.warn('Máximo de grúas alcanzado');
                 return;
             }
 
@@ -53,19 +52,16 @@ export default function GruaManager({
                 costo_traslado: 0,
             });
         } catch (error) {
-            console.error('Error al agregar grúa:', error);
         }
     };
 
     const eliminarGrua = (index: number) => {
         try {
             if (fields.length === 0) {
-                console.warn('No hay grúas para eliminar');
                 return;
             }
             remove(index);
         } catch (error) {
-            console.error('Error al eliminar grúa:', error);
         }
     };
 

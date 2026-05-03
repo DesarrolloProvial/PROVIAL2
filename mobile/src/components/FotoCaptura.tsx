@@ -60,7 +60,6 @@ export default function FotoCaptura({
     setIsPicking(true);
 
     try {
-      console.log('[FotoCaptura] Abriendo galería...');
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
@@ -69,13 +68,11 @@ export default function FotoCaptura({
         presentationStyle: ImagePicker.UIImagePickerPresentationStyle.FULL_SCREEN,
       });
 
-      console.log('[FotoCaptura] Resultado:', result.canceled ? 'cancelado' : 'seleccionado');
 
       if (!result.canceled && result.assets?.length) {
         onFotoCapturada(result.assets[0].uri);
       }
     } catch (error: any) {
-      console.error('[FotoCaptura] Error galería:', error);
       Alert.alert('Error', 'No se pudo abrir la galería');
     } finally {
       setIsPicking(false);
@@ -92,7 +89,6 @@ export default function FotoCaptura({
 
   const abrirCamara = async () => {
     try {
-      console.log('[FotoCaptura] Abriendo cámara...');
 
       if (!cameraPermission?.granted) {
         const result = await requestCameraPermission();
@@ -104,7 +100,6 @@ export default function FotoCaptura({
 
       setCameraVisible(true);
     } catch (error: any) {
-      console.error('[FotoCaptura] Error cámara:', error);
       Alert.alert('Error', 'No se pudo abrir la cámara');
     }
   };
@@ -114,17 +109,14 @@ export default function FotoCaptura({
 
     try {
       setCameraLoading(true);
-      console.log('[FotoCaptura] Capturando...');
 
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.7,
       });
 
-      console.log('[FotoCaptura] Foto capturada:', photo.uri);
       setCameraVisible(false);
       onFotoCapturada(photo.uri);
     } catch (error) {
-      console.error('[FotoCaptura] Error capturando:', error);
       Alert.alert('Error', 'No se pudo capturar la foto');
     } finally {
       setCameraLoading(false);

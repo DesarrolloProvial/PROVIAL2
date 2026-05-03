@@ -77,7 +77,6 @@ export default function SelectField({
                         setResolvedOptions(resolved);
                     }
                 } catch (error) {
-                    console.error('[SelectField] Error cargando opciones:', error);
                     setResolvedOptions([]);
                 } finally {
                     setLoading(false);
@@ -94,7 +93,6 @@ export default function SelectField({
     useEffect(() => {
         if (resolvedOptions.length > 0 || value != null) {
             const optionValues = resolvedOptions.map(o => `${o.value}(${typeof o.value})`).join(',');
-            console.log(`[SelectField:${label}] value=${value} (${typeof value}) | preserved=${preservedValueRef.current} | options=[${optionValues}] | loading=${loading}`);
         }
     }, [value, resolvedOptions.length, loading]);
 
@@ -105,7 +103,6 @@ export default function SelectField({
             if (currentIsEmpty) {
                 const match = resolvedOptions.some(o => String(o.value) === String(preservedValueRef.current));
                 if (match) {
-                    console.log(`[SelectField:${label}] Restaurando valor preservado:`, preservedValueRef.current);
                     onChange(preservedValueRef.current);
                 }
             }

@@ -30,7 +30,6 @@ export {
 export function getFormConfigForSituation(situacionId: string): FormConfig | null {
     const config = FORM_CONFIGS[situacionId];
     if (!config) {
-        console.warn(`[FORM_REGISTRY] No existe configuración para situación: ${situacionId}`);
         return null;
     }
     return config;
