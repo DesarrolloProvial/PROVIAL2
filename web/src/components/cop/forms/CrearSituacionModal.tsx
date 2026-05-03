@@ -793,7 +793,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
                             {obs.usuario || 'Usuario anónimo'}
                           </span>
                           <span className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">
-                            {obs.hora ? new Date(obs.hora).toLocaleString() : ''}
+                            {obs.hora || ''}
                           </span>
                         </div>
                         <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{obs.mensaje}</p>
