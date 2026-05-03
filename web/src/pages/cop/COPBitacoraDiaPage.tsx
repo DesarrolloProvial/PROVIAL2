@@ -133,6 +133,28 @@ function parseJsonSafe(v: any): Record<string, any> {
   try { return JSON.parse(v); } catch { return {}; }
 }
 
+const FIELD_LABELS: Record<string, string> = {
+  situacion_id:        'situación ID',
+  actividad_id:        'actividad ID',
+  observaciones:       'observaciones',
+  ruta_id:             'ruta ID',
+  ruta_codigo:         'código ruta',
+  ruta_nombre:         'nombre ruta',
+  km:                  'kilómetro',
+  km_inicial:          'km inicial',
+  km_final:            'km final',
+  combustible:         'combustible',
+  combustible_inicial: 'comb. inicial',
+  combustible_final:   'comb. final',
+  motivo:              'motivo',
+  descripcion:         'descripción',
+  tipo:                'tipo',
+  estado:              'estado',
+  codigo:              'código',
+  salida_id:           'salida ID',
+  unidad_id:           'unidad ID',
+};
+
 function LogSituacion({ item }: { item: TimelineItem }) {
   const d = item.datos;
   const hora = fmtTime(item.ts);
@@ -175,7 +197,6 @@ function LogSituacion({ item }: { item: TimelineItem }) {
       <L label="km" value={d.km != null ? String(d.km) : undefined} />
       <L label="sentido" value={str(d.sentido)} />
       <L label="área" value={str(d.area)} />
-      <L label="referencia" value={str(d.referencia)} />
       <L label="municipio" value={str(d.municipio)} />
       <L label="departamento" value={str(d.departamento)} />
       <L label="latitud / longitud"
@@ -421,19 +442,29 @@ function LogActividad({ item }: { item: TimelineItem }) {
 function LogEvento({ item }: { item: TimelineItem }) {
   const d = item.datos;
   const hora = fmtTime(item.ts);
+  const datosAnt = parseJsonSafe(d.datos_ant);
+  const datosNew = parseJsonSafe(d.datos_new);
 
-  // Construir diff si hay datos_ant / datos_new
   const diffLines: { label: string; ant: string; nuevo: string }[] = [];
   if (d.datos_ant && d.datos_new) {
-    const allKeys = new Set([...Object.keys(d.datos_ant), ...Object.keys(d.datos_new)]);
+    const allKeys = new Set([...Object.keys(datosAnt), ...Object.keys(datosNew)]);
     allKeys.forEach(k => {
-      const ant = d.datos_ant[k];
-      const nuevo = d.datos_new[k];
+      const ant = datosAnt[k];
+      const nuevo = datosNew[k];
       if (String(ant) !== String(nuevo)) {
-        diffLines.push({ label: k.replace(/_/g, ' '), ant: str(ant), nuevo: str(nuevo) });
+        diffLines.push({
+          label: FIELD_LABELS[k] ?? k.replace(/_/g, ' '),
+          ant: str(ant),
+          nuevo: str(nuevo),
+        });
       }
     });
   }
+
+  // Cuando solo hay datos_new (e.g. CIERRE_SITUACION), mostrar campos legibles en lugar de JSON crudo
+  const datosNewEntries = d.datos_new
+    ? Object.entries(datosNew).filter(([, v]) => v !== null && v !== '' && v !== undefined)
+    : [];
 
   return (
     <div className="mb-5">
@@ -457,9 +488,13 @@ function LogEvento({ item }: { item: TimelineItem }) {
         </>
       )}
 
-      {/* Si no hay diff estructurado pero hay datos, mostrarlo */}
-      {diffLines.length === 0 && d.datos_new && (
-        <L label="datos nuevos" value={JSON.stringify(d.datos_new)} />
+      {diffLines.length === 0 && datosNewEntries.length > 0 && (
+        <>
+          <Sep />
+          {datosNewEntries.map(([k, v]) => (
+            <L key={k} label={FIELD_LABELS[k] ?? k.replace(/_/g, ' ')} value={String(v)} />
+          ))}
+        </>
       )}
     </div>
   );

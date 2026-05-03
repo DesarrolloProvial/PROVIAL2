@@ -43,13 +43,17 @@ export type TipoSituacion =
 export interface MultimediaRef {
   tipo: 'FOTO' | 'VIDEO';
   uri: string;
-  orden?: number; // Solo para fotos (1, 2, 3)
-  infografia_numero?: number; // Agrupador de evidencia
-  infografia_titulo?: string; // Título opcional
-  // Metadata opcional para subida
+  orden?: number;
+  infografia_numero?: number;
+  infografia_titulo?: string;
   latitud?: number;
   longitud?: number;
-  duracion_segundos?: number; // Solo para videos
+  duracion_segundos?: number;
+  // Upload tracking
+  estado?: 'PENDIENTE' | 'SUBIENDO' | 'SUBIDO' | 'ERROR';
+  uploaded_at?: string | null;
+  upload_attempts?: number;
+  last_error?: string | null;
 }
 
 /**

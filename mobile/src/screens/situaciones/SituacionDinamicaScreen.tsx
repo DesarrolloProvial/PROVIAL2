@@ -496,19 +496,22 @@ export default function SituacionDinamicaScreen() {
                 }
 
                 if (result.success) {
-
-                    // ACTUALIZAR ESTADO LOCAL PARA EVITAR RE-SUBIDA IMMEDIATA
-                    // Modificamos el objeto 'media' directamente para que si el loop o una nueva llamada
-                    // usa esta misma referencia, sepa que ya está subido.
-                    (media as any).estado = 'SUBIDO';
+                    media.estado = 'SUBIDO';
+                    media.uploaded_at = new Date().toISOString();
+                    media.upload_attempts = (media.upload_attempts ?? 0) + 1;
+                    media.last_error = null;
                     if (result.url) {
-                        (media as any).uri = result.url;
                         media.uri = result.url;
                     }
-
                 } else {
+                    media.estado = 'ERROR';
+                    media.upload_attempts = (media.upload_attempts ?? 0) + 1;
+                    media.last_error = result.error ?? 'Error desconocido';
                 }
             } catch (error: any) {
+                media.estado = 'ERROR';
+                media.upload_attempts = (media.upload_attempts ?? 0) + 1;
+                media.last_error = error?.message ?? 'Error desconocido';
             }
         }
 
