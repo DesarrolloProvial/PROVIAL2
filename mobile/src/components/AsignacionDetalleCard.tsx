@@ -52,21 +52,6 @@ export interface AsignacionDetalleCardProps {
 }
 
 export default function AsignacionDetalleCard(props: AsignacionDetalleCardProps) {
-    // DEBUG: Log all props to see what data is arriving
-        titulo: props.titulo,
-        unidad_codigo: props.unidad_codigo,
-        tipo_unidad: props.tipo_unidad,
-        mi_rol: props.mi_rol,
-        es_comandante: props.es_comandante,
-        ruta_codigo: props.ruta_codigo,
-        sentido: props.sentido,
-        hora_salida: props.hora_salida,
-        recorrido_permitido: props.recorrido_permitido,
-        acciones: props.acciones,
-        tripulacion: props.tripulacion,
-        primeraSeccionLabel: props.primeraSeccionLabel,
-        primeraSeccionValor: props.primeraSeccionValor,
-    });
 
     const {
         titulo,
