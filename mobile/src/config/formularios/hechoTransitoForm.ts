@@ -147,6 +147,56 @@ export const hechoTransitoForm: FormConfig = {
                         label: 'Carga Vehicular',
                         options: '@catalogos.carga_vehicular',
                     },
+                    {
+                        name: 'iluminacion',
+                        type: 'select',
+                        label: 'Iluminación',
+                        options: [
+                            { value: 'DIURNA', label: 'Diurna (día)' },
+                            { value: 'NOCTURNA_ILUMINADA', label: 'Nocturna con iluminación' },
+                            { value: 'NOCTURNA_OSCURA', label: 'Nocturna sin iluminación' },
+                            { value: 'CREPUSCULO', label: 'Crepúsculo/Amanecer' },
+                        ],
+                    },
+                    {
+                        name: 'visibilidad',
+                        type: 'select',
+                        label: 'Visibilidad',
+                        options: [
+                            { value: 'BUENA', label: 'Buena' },
+                            { value: 'REGULAR', label: 'Regular' },
+                            { value: 'MALA', label: 'Mala' },
+                            { value: 'SIN_VISIBILIDAD', label: 'Sin visibilidad' },
+                        ],
+                    },
+                    {
+                        name: 'senalizacion',
+                        type: 'select',
+                        label: 'Señalización',
+                        options: [
+                            { value: 'BUENA', label: 'Buena' },
+                            { value: 'REGULAR', label: 'Regular' },
+                            { value: 'DEFICIENTE', label: 'Deficiente' },
+                            { value: 'SIN_SENALIZACION', label: 'Sin señalización' },
+                        ],
+                    },
+                    {
+                        name: 'via_estado',
+                        type: 'select',
+                        label: 'Estado de la vía',
+                        options: [
+                            { value: 'BUENO', label: 'Bueno' },
+                            { value: 'REGULAR', label: 'Regular' },
+                            { value: 'MALO', label: 'Malo' },
+                        ],
+                    },
+                    {
+                        name: 'causa_probable',
+                        type: 'text',
+                        label: 'Causa probable',
+                        placeholder: 'Describa la causa probable del hecho',
+                        multiline: true,
+                    },
                 ],
             },
             {

@@ -100,7 +100,8 @@ export default function SituacionDinamicaScreen() {
         // Copiar campos que tienen el mismo nombre
         const camposDirectos = [
             'sentido', 'observaciones', 'descripcion',
-            'clima', 'carga_vehicular', 'area', 'material_via'
+            'clima', 'carga_vehicular', 'area', 'material_via',
+            'iluminacion', 'visibilidad', 'senalizacion', 'via_estado', 'causa_probable',
         ];
 
         camposDirectos.forEach(campo => {
@@ -266,8 +267,6 @@ export default function SituacionDinamicaScreen() {
             }));
         }
 
-            'vehiculos=', formValues.vehiculos?.length || 0,
-            'multimedia=', formValues.multimedia?.length || 0);
         return formValues;
     };
 
@@ -583,6 +582,13 @@ export default function SituacionDinamicaScreen() {
                     tipo_pavimento: formData.material_via,
                     obstruccion: formData.obstruye ? formData.obstruccion : null,
                     jurisdiccion: formData.jurisdiccion,
+                    // Condiciones de vía — solo relevantes para HECHO_TRANSITO,
+                    // el backend ignora los que no aplican al tipo
+                    iluminacion: formData.iluminacion || undefined,
+                    visibilidad: formData.visibilidad || undefined,
+                    senalizacion: formData.senalizacion || undefined,
+                    via_estado: formData.via_estado || undefined,
+                    causa_probable: formData.causa_probable || undefined,
 
                     // Asegurar envío de tipoIncidente para subtipo
                     tipoIncidente: formData.tipoIncidente,
