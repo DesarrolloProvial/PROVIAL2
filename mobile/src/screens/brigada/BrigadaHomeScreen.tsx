@@ -565,10 +565,14 @@ export default function BrigadaHomeScreen() {
                   </Text>
                 </View>
               )}
-              {actividadActiva.observaciones && (
+              {actividadActiva.observaciones && (Array.isArray(actividadActiva.observaciones) ? actividadActiva.observaciones.length > 0 : true) && (
                 <View style={styles.descriptionRow}>
                   <Text style={styles.infoLabel}>Observaciones:</Text>
-                  <Text style={styles.descripcionText}>{actividadActiva.observaciones}</Text>
+                  <Text style={styles.descripcionText}>
+                    {Array.isArray(actividadActiva.observaciones)
+                      ? (actividadActiva.observaciones[actividadActiva.observaciones.length - 1]?.mensaje || '')
+                      : String(actividadActiva.observaciones)}
+                  </Text>
                 </View>
               )}
             </View>
@@ -676,10 +680,14 @@ export default function BrigadaHomeScreen() {
                   </Text>
                 </View>
               )}
-              {situacionActiva.observaciones && (
+              {situacionActiva.observaciones && (Array.isArray(situacionActiva.observaciones) ? situacionActiva.observaciones.length > 0 : true) && (
                 <View style={styles.descriptionRow}>
                   <Text style={styles.infoLabel}>Observaciones:</Text>
-                  <Text style={styles.descripcionText}>{situacionActiva.observaciones}</Text>
+                  <Text style={styles.descripcionText}>
+                    {Array.isArray(situacionActiva.observaciones)
+                      ? (situacionActiva.observaciones[situacionActiva.observaciones.length - 1]?.mensaje || '')
+                      : String(situacionActiva.observaciones)}
+                  </Text>
                 </View>
               )}
             </View>

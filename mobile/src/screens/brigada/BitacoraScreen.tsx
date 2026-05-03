@@ -188,7 +188,11 @@ export default function BitacoraScreen() {
         // Para otros tipos (SALIDA_SEDE, CAMBIO_RUTA), usar el modal simple
         setSituacionEditando(situacion);
         setDescripcionEdicion(situacion.descripcion || '');
-        setObservacionesEdicion(situacion.observaciones || '');
+        setObservacionesEdicion(
+          Array.isArray(situacion.observaciones)
+            ? (situacion.observaciones[situacion.observaciones.length - 1]?.mensaje || '')
+            : (situacion.observaciones || '')
+        );
         setKmEdicionSituacion(situacion.km?.toString() || '');
         setModalEdicionSituacionVisible(true);
     }
