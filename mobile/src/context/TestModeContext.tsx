@@ -83,11 +83,6 @@ export function TestModeProvider({ children }: { children: ReactNode }) {
       ]);
 
     } catch (error: any) {
-        message: error.message,
-        code: error.code,
-        response: error.response?.data,
-        status: error.response?.status,
-      });
       throw error;
     }
   };
