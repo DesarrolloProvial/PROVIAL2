@@ -280,9 +280,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           await get().refreshEstadoBrigada();
         }
 
-        // Sincronizar catálogos auxiliares desde backend
+        // Sincronizar catálogos desde backend
         try {
-          await syncCatalogosAuxiliares();
+          await Promise.all([syncCatalogosAuxiliares(), syncGeografia()]);
         } catch (error) {
           // No fallar el load si falla la sincronización
         }

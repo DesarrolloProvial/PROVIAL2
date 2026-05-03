@@ -115,6 +115,7 @@ export class CatalogResolver {
         departamentoId: number
     ): Promise<FieldOption[]> {
         try {
+            await catalogoStorage.init();
             const fromDB = await catalogoStorage.getMunicipiosByDepartamento(departamentoId);
             if (fromDB.length > 0) {
                 return fromDB.map(m => ({ value: m.id, label: m.nombre }));
@@ -131,6 +132,7 @@ export class CatalogResolver {
 
     private static async resolveDepartamentos(): Promise<FieldOption[]> {
         try {
+            await catalogoStorage.init();
             const fromDB = await catalogoStorage.getDepartamentos();
             if (fromDB.length > 0) {
                 return fromDB.map(d => ({ value: d.id, label: d.nombre }));
