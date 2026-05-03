@@ -109,6 +109,9 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
     // Condiciones
     carga_vehicular: '',
     // Via (solo HECHO_TRANSITO)
+    iluminacion: '',
+    visibilidad: '',
+    senalizacion: '',
     via_estado: '',
     via_topografia: '',
     via_geometria: '',
@@ -249,6 +252,9 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
           fugados: sit.fugados || 0,
           acuerdo_involucrados: sit.acuerdo_involucrados || false,
           acuerdo_detalle: sit.acuerdo_detalle || '',
+          iluminacion: sit.iluminacion || '',
+          visibilidad: sit.visibilidad || '',
+          senalizacion: sit.senalizacion || '',
           via_estado: sit.via_estado || '',
           via_topografia: sit.via_topografia || '',
           via_geometria: sit.via_geometria || '',
@@ -325,7 +331,6 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
           setDetallesSocorro(socDetalles);
         }
       } catch (err) {
-        console.error('Error loading situacion:', err);
         setError('Error al cargar la situacion');
       } finally {
         if (!cancelled) setLoadingEdit(false);
@@ -347,6 +352,7 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
         obstruccion: getDefaultObstruccion() as ObstruccionData, observaciones: '', descripcion: '', subtipo_situacion: '',
         heridos: 0, fallecidos: 0, ilesos: 0, heridos_leves: 0, heridos_graves: 0,
         trasladados: 0, fugados: 0, acuerdo_involucrados: false, acuerdo_detalle: '',
+        iluminacion: '', visibilidad: '', senalizacion: '',
         via_estado: '', via_topografia: '', via_geometria: '',
         via_peralte: '', via_condicion: '', grupo: '', causas: [], requiere_infografia: false,
       });
@@ -438,11 +444,8 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
   };
 
   const handleSubmit = async () => {
-    console.log('[SUBMIT] unidad_id:', form.unidad_id, 'km:', form.km, 'editId:', editSituacionId, 'vehiculos:', vehiculos.length);
-    if (vehiculos.length > 0) console.log('[SUBMIT] vehiculos[0]:', JSON.stringify(vehiculos[0]));
     if (!form.unidad_id) { setError('Selecciona una unidad'); return; }
     if (!form.km) { setError('Ingresa el kilometro'); return; }
-    console.log('[SUBMIT] validaciones OK, enviando...');
     setSaving(true);
     setError('');
 
@@ -480,6 +483,9 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
         payload.fugados = form.fugados;
         payload.acuerdo_involucrados = form.acuerdo_involucrados;
         payload.acuerdo_detalle = form.acuerdo_detalle || undefined;
+        payload.iluminacion = form.iluminacion || undefined;
+        payload.visibilidad = form.visibilidad || undefined;
+        payload.senalizacion = form.senalizacion || undefined;
         payload.via_estado = form.via_estado || undefined;
         payload.via_topografia = form.via_topografia || undefined;
         payload.via_geometria = form.via_geometria || undefined;
@@ -532,7 +538,6 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
       onCreated();
       onClose();
     } catch (err: any) {
-      console.error('Error guardando situacion:', err);
       setError(err.response?.data?.error || err.message || 'Error al crear la situacion');
     } finally {
       setSaving(false);
@@ -896,6 +901,9 @@ export default function CrearSituacionModal({ isOpen, onClose, onCreated, unidad
                 area={form.area}
                 materialVia={form.material_via}
                 cargaVehicular={form.carga_vehicular}
+                iluminacion={form.iluminacion}
+                visibilidad={form.visibilidad}
+                senalizacion={form.senalizacion}
                 viaEstado={form.via_estado}
                 viaTopografia={form.via_topografia}
                 viaGeometria={form.via_geometria}

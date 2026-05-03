@@ -2,6 +2,7 @@ import {
   CONDICIONES_CLIMATICAS, AREAS, MATERIALES_VIA,
   ESTADOS_VIA, TOPOGRAFIAS_VIA, GEOMETRIAS_VIA,
   PERALTES_VIA, CONDICIONES_SUPERFICIE, CARGAS_VEHICULARES,
+  ILUMINACIONES, VISIBILIDADES, SENALIZACIONES,
 } from '../../../constants/situacionTypes';
 
 interface Props {
@@ -9,6 +10,9 @@ interface Props {
   area: string;
   materialVia: string;
   cargaVehicular?: string;
+  iluminacion?: string;
+  visibilidad?: string;
+  senalizacion?: string;
   viaEstado?: string;
   viaTopografia?: string;
   viaGeometria?: string;
@@ -24,6 +28,7 @@ const sectionCls = 'text-xs font-semibold text-gray-500 dark:text-gray-400 upper
 
 export default function CondicionesViaFields({
   clima, area, materialVia, cargaVehicular,
+  iluminacion, visibilidad, senalizacion,
   viaEstado, viaTopografia, viaGeometria,
   viaPeralte, viaCondicion,
   showViaDetails, onChange,
@@ -110,6 +115,33 @@ export default function CondicionesViaFields({
                 className={selectCls}>
                 <option value="">Seleccionar</option>
                 {CONDICIONES_SUPERFICIE.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          <h4 className={sectionCls}>Condiciones ambientales</h4>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className={labelCls}>Iluminacion</label>
+              <select value={iluminacion || ''} onChange={e => onChange('iluminacion', e.target.value)}
+                className={selectCls}>
+                <option value="">Seleccionar</option>
+                {ILUMINACIONES.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Visibilidad</label>
+              <select value={visibilidad || ''} onChange={e => onChange('visibilidad', e.target.value)}
+                className={selectCls}>
+                <option value="">Seleccionar</option>
+                {VISIBILIDADES.map(v => <option key={v.value} value={v.value}>{v.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Senalizacion</label>
+              <select value={senalizacion || ''} onChange={e => onChange('senalizacion', e.target.value)}
+                className={selectCls}>
+                <option value="">Seleccionar</option>
+                {SENALIZACIONES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </div>
           </div>

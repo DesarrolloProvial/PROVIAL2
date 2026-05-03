@@ -457,6 +457,22 @@ export const CUSTODIAS = [
   { value: 'LIBERADO', label: 'Liberado' },
 ];
 
+// Visibilidad en la vía
+export const VISIBILIDADES = [
+  { value: 'BUENA', label: 'Buena' },
+  { value: 'REGULAR', label: 'Regular' },
+  { value: 'MALA', label: 'Mala' },
+  { value: 'SIN_VISIBILIDAD', label: 'Sin visibilidad' },
+];
+
+// Señalización de la vía
+export const SENALIZACIONES = [
+  { value: 'BUENA', label: 'Buena' },
+  { value: 'REGULAR', label: 'Regular' },
+  { value: 'DEFICIENTE', label: 'Deficiente' },
+  { value: 'SIN_SENALIZACION', label: 'Sin señalización' },
+];
+
 // Sexo
 export const SEXOS = [
   { value: 'M', label: 'Masculino' },
