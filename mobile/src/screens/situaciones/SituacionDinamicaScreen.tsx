@@ -698,6 +698,8 @@ export default function SituacionDinamicaScreen() {
             console.log('  - sentido:', formData.sentido, '(type:', typeof formData.sentido, ')');
             console.log('═══════════════════════════════════════════════════════');
 
+            console.log('🏛️ Municipio antes de guardar draft:', formData.municipio_id);
+            console.log('🏛️ Departamento antes de guardar draft:', formData.departamento_id);
             console.log('[SITUACION] Actualizando draft con datos del formulario');
             await actualizarDraft({
                 // Mandar TODO el formData completo
@@ -709,6 +711,9 @@ export default function SituacionDinamicaScreen() {
                 longitud,
                 ubicacion_manual: testModeEnabled,
                 tipo_situacion_id: tipoSituacionId,
+                // Forzar tipos numéricos para IDs de ubicación
+                departamento_id: formData.departamento_id ? Number(formData.departamento_id) : null,
+                municipio_id: formData.municipio_id ? Number(formData.municipio_id) : null,
                 // Fallbacks para compatibilidad
                 tipo_hecho_id: formData.tipo_hecho_id || formData.tipoIncidente,
                 tipo_asistencia_id: formData.tipo_asistencia_id || formData.tipoAsistencia,
