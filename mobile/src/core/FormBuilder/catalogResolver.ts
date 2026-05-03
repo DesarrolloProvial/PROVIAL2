@@ -109,12 +109,19 @@ export class CatalogResolver {
 
     /**
      * Resolver municipios por departamento
-     * Este método se llama dinámicamente cuando cambia el departamento
+     * Usa SQLite (IDs reales de BD) con fallback a datos hardcodeados
      */
     static async resolveMunicipiosByDepartamento(
         departamentoId: number
     ): Promise<FieldOption[]> {
-        // Usar datos estáticos quemados en la app (Offline First)
+        try {
+            const fromDB = await catalogoStorage.getMunicipiosByDepartamento(departamentoId);
+            if (fromDB.length > 0) {
+                return fromDB.map(m => ({ value: m.id, label: m.nombre }));
+            }
+        } catch (error) {
+            console.warn('[CATALOG_RESOLVER] Error leyendo municipios de SQLite, usando hardcoded');
+        }
         return getMunicipiosOptions(departamentoId);
     }
 
@@ -123,7 +130,14 @@ export class CatalogResolver {
     // ============================================
 
     private static async resolveDepartamentos(): Promise<FieldOption[]> {
-        // Usar datos estáticos quemados en la app (Offline First)
+        try {
+            const fromDB = await catalogoStorage.getDepartamentos();
+            if (fromDB.length > 0) {
+                return fromDB.map(d => ({ value: d.id, label: d.nombre }));
+            }
+        } catch (error) {
+            console.warn('[CATALOG_RESOLVER] Error leyendo departamentos de SQLite, usando hardcoded');
+        }
         return getDepartamentosOptions();
     }
 

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL, STORAGE_KEYS } from '../constants/config';
-import { syncCatalogosAuxiliares } from '../services/catalogSync';
+import { syncCatalogosAuxiliares, syncGeografia } from '../services/catalogSync';
 import { getDeviceIds } from '../services/api';
 import * as Device from 'expo-device';
 
@@ -187,9 +187,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         await get().refreshEstadoBrigada();
       }
 
-      // Sincronizar catálogos auxiliares desde backend
+      // Sincronizar catálogos desde backend
       try {
-        await syncCatalogosAuxiliares();
+        await Promise.all([syncCatalogosAuxiliares(), syncGeografia()]);
       } catch (error) {
         // No fallar el login si falla la sincronización
       }

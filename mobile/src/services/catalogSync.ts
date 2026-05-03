@@ -10,6 +10,8 @@
 import api from './api';
 import { catalogoStorage } from '../core/storage/catalogoStorage';
 import type {
+    CatalogoDepartamento,
+    CatalogoMunicipio,
     CatalogoTipoHecho,
     CatalogoTipoAsistencia,
     CatalogoTipoEmergencia,
@@ -121,6 +123,47 @@ export async function syncCatalogosAuxiliares(): Promise<boolean> {
             console.error('[CATALOG_SYNC] Error:', error.message);
         }
 
+        return false;
+    }
+}
+
+/**
+ * Sincronizar catálogo de geografía (departamentos y municipios) desde el backend
+ */
+export async function syncGeografia(): Promise<boolean> {
+    try {
+        await catalogoStorage.init();
+
+        const [deptoRes, muniRes] = await Promise.all([
+            api.get<{ departamentos: CatalogoDepartamento[] }>('/geografia/departamentos'),
+            api.get<{ municipios: CatalogoMunicipio[] }>('/geografia/municipios'),
+        ]);
+
+        const departamentos = deptoRes.data.departamentos || [];
+        const municipios = muniRes.data.municipios || [];
+
+        if (departamentos.length > 0) {
+            const normalized: CatalogoDepartamento[] = departamentos.map(d => ({
+                id: typeof d.id === 'string' ? parseInt(d.id, 10) : d.id,
+                nombre: d.nombre,
+                codigo: d.codigo || String(d.id),
+            }));
+            await catalogoStorage.saveDepartamentos(normalized);
+        }
+
+        if (municipios.length > 0) {
+            const normalized: CatalogoMunicipio[] = municipios.map(m => ({
+                id: typeof m.id === 'string' ? parseInt(m.id, 10) : m.id,
+                nombre: m.nombre,
+                departamento_id: typeof m.departamento_id === 'string' ? parseInt(m.departamento_id, 10) : m.departamento_id,
+            }));
+            await catalogoStorage.saveMunicipios(normalized);
+        }
+
+        console.log(`[CATALOG_SYNC] ✅ Geografía: ${departamentos.length} departamentos, ${municipios.length} municipios`);
+        return true;
+    } catch (error: any) {
+        console.error('[CATALOG_SYNC] ❌ Error sincronizando geografía:', error);
         return false;
     }
 }
