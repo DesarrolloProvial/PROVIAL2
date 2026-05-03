@@ -180,8 +180,8 @@ export async function createSituacion(req: Request, res: Response) {
 
     return res.status(201).json({ message: 'Situación creada', situacion: full });
 
-  } catch (error) {
-    if ((error as any).code === '23505' && req.body.id) {
+  } catch (error: any) {
+    if (error.code === '23505' && req.body.id) {
       const existente = await SituacionModel.findByCodigoSituacion(req.body.id).catch(() => null);
       if (existente) return res.status(200).json({
         situacion: await SituacionModel.getById(existente.id),
@@ -189,7 +189,9 @@ export async function createSituacion(req: Request, res: Response) {
       });
     }
     console.error('createSituacion:', error);
-    return res.status(500).json({ error: 'Error interno del servidor' });
+    // DEBUG TEMP — remover después del diagnóstico
+    const dbInfo = error.code ? ` [pg:${error.code} ${error.constraint || error.detail || ''}]` : '';
+    return res.status(500).json({ error: `Error interno del servidor${dbInfo}: ${error.message || ''}` });
   }
 }
 
