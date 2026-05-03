@@ -189,9 +189,7 @@ export async function createSituacion(req: Request, res: Response) {
       });
     }
     console.error('createSituacion:', error);
-    // DEBUG TEMP — remover después del diagnóstico
-    const dbInfo = error.code ? ` [pg:${error.code} ${error.constraint || error.detail || ''}]` : '';
-    return res.status(500).json({ error: `Error interno del servidor${dbInfo}: ${error.message || ''}` });
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 

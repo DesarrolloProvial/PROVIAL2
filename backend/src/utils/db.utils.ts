@@ -83,7 +83,10 @@ export async function buildObservacionEntry(
   hora_local?: string,
 ): Promise<string> {
   const user = await db.oneOrNone(
-    'SELECT chapa, nombre_completo, rol FROM usuario WHERE id = $1',
+    `SELECT u.chapa, u.nombre_completo, r.nombre AS rol
+     FROM usuario u
+     JOIN rol r ON r.id = u.rol_id
+     WHERE u.id = $1`,
     [userId],
   );
   const firmaUsuario = user
