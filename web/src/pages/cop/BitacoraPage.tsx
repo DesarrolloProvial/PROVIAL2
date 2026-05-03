@@ -19,13 +19,50 @@ const TIPO_REGISTRO_STYLE: Record<string, { dot: string; border: string; bg: str
     OTROS:       { dot: 'bg-gray-400',   border: 'border-gray-200 dark:border-gray-600',     bg: 'bg-gray-50 dark:bg-gray-700/50',     badge: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' },
 };
 
-// Etiquetas legibles por tipo_situacion
+// Etiquetas legibles por tipo_situacion — INCIDENTE → 'Hecho de tránsito'
 const TIPO_LABEL: Record<string, string> = {
     HECHO_TRANSITO:       'Hecho de tránsito',
-    INCIDENTE:            'Incidente',
+    INCIDENTE:            'Hecho de tránsito',
     ASISTENCIA_VEHICULAR: 'Asistencia vial',
+    ASISTENCIA:           'Asistencia vial',
     EMERGENCIA:           'Emergencia vial',
+    PATRULLAJE:           'Patrullaje',
+    REGULACION_TRAFICO:   'Regulación de tráfico',
+    PARADA_ESTRATEGICA:   'Parada estratégica',
+    COMIDA:               'Descanso / Comida',
+    DESCANSO:             'Descanso / Comida',
+    SALIDA_SEDE:          'Salida de sede',
+    CAMBIO_RUTA:          'Cambio de ruta',
+    OTROS:                'Otros',
 };
+
+// Campos del resumen de tarjeta según tipo (fuente de verdad: docs/vault/MATRIZ_CAMPOS.md)
+interface CamposCardConfig {
+    showUbicacion: boolean;       // área, municipio/depto
+    showCondBasicas: boolean;     // clima, carga_vehicular, tipo_pavimento
+    showCondDetalle: boolean;     // iluminacion, visibilidad
+    showCausas: boolean;          // causa_probable
+    showVictimas: boolean;        // resumen heridos/fallecidos
+}
+
+function getCamposCard(tipoSituacion: string, tipoRegistro: string): CamposCardConfig {
+    if (tipoRegistro === 'ACTIVIDAD') {
+        return { showUbicacion: false, showCondBasicas: true, showCondDetalle: false, showCausas: false, showVictimas: false };
+    }
+    switch (tipoSituacion) {
+        case 'INCIDENTE':
+        case 'HECHO_TRANSITO':
+            return { showUbicacion: true, showCondBasicas: true, showCondDetalle: true, showCausas: true, showVictimas: true };
+        case 'ASISTENCIA_VEHICULAR':
+        case 'ASISTENCIA':
+            return { showUbicacion: true, showCondBasicas: true, showCondDetalle: false, showCausas: false, showVictimas: false };
+        case 'EMERGENCIA':
+            return { showUbicacion: true, showCondBasicas: true, showCondDetalle: false, showCausas: false, showVictimas: false };
+        default:
+            // PATRULLAJE, REGULACION_TRAFICO, COMIDA, DESCANSO, OTROS, etc.
+            return { showUbicacion: false, showCondBasicas: true, showCondDetalle: false, showCausas: false, showVictimas: false };
+    }
+}
 
 interface Tripulante {
     brigada_id?: number;
@@ -92,7 +129,6 @@ export default function BitacoraPage() {
                 setUnidadInfo(res.data.unidad || res.data);
             }).catch(() => {
                 // Si falla (403 para COP), usar datos de la bitácora como fallback
-                console.log('Info de unidad no disponible, se usará datos de bitácora');
             });
         }
     }, [unidadId]);
@@ -375,39 +411,34 @@ export default function BitacoraPage() {
                                         }`}
                                         onClick={() => !isSalida && handleEditClick(item)}
                                     >
-                                        {/* Header */}
-                                        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
-                                                    item.color ? '' : style.badge
-                                                }`} style={item.color ? { backgroundColor: `${item.color}20`, color: item.color } : undefined}>
-                                                    {isSalida
-                                                        ? 'Jornada'
-                                                        : TIPO_LABEL[item.tipo_situacion] || item.tipo_situacion?.replace(/_/g, ' ') || 'Sin tipo'}
-                                                </span>
-                                                {!isSalida && item.subtipo_nombre && (
-                                                    <span className="text-xs text-gray-500 dark:text-gray-400 italic">
-                                                        {item.subtipo_nombre}
+                                        {/* Header: título macro + subtipo + estado + timestamp */}
+                                        <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+                                            <div className="flex flex-col gap-0.5">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
+                                                        item.color ? '' : style.badge
+                                                    }`} style={item.color ? { backgroundColor: `${item.color}20`, color: item.color } : undefined}>
+                                                        {isSalida
+                                                            ? 'Jornada'
+                                                            : isActividad
+                                                            ? 'Actividad'
+                                                            : TIPO_LABEL[item.tipo_situacion] || item.tipo_situacion?.replace(/_/g, ' ') || 'Sin tipo'}
                                                     </span>
-                                                )}
-                                                {isActividad && (
-                                                    <span className="px-1.5 py-0.5 text-[10px] rounded bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-medium">
-                                                        ACT
-                                                    </span>
-                                                )}
-                                                {isSalida && (
-                                                    <span className="px-1.5 py-0.5 text-[10px] rounded bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 font-medium">
-                                                        JORNADA
-                                                    </span>
-                                                )}
-                                                {!isSalida && (
-                                                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                                        #{item.id}
-                                                    </span>
-                                                )}
-                                                {(item.estado === 'ACTIVA' || item.estado === 'EN_SALIDA') && (
-                                                    <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full">
-                                                        {item.estado === 'EN_SALIDA' ? 'EN CURSO' : 'ACTIVA'}
+                                                    {(item.estado === 'ACTIVA' || item.estado === 'EN_SALIDA') && (
+                                                        <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full font-medium">
+                                                            {item.estado === 'EN_SALIDA' ? 'EN CURSO' : 'ACTIVA'}
+                                                        </span>
+                                                    )}
+                                                    {!isSalida && (
+                                                        <span className="text-xs font-medium text-gray-400 dark:text-gray-500">
+                                                            #{item.id}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {/* Subtipo en pequeño bajo el badge */}
+                                                {(item.subtipo_nombre || item.tipo_nombre) && (
+                                                    <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                                                        {item.subtipo_nombre || item.tipo_nombre}
                                                     </span>
                                                 )}
                                             </div>
@@ -418,88 +449,136 @@ export default function BitacoraPage() {
                                         </div>
 
                                         {/* Contenido */}
-                                        <div className="grid md:grid-cols-2 gap-4">
-                                            <div>
-                                                {(() => {
-                                                    const trip = typeof item.tripulacion === 'string'
-                                                        ? JSON.parse(item.tripulacion || '[]')
-                                                        : (item.tripulacion || []);
-                                                    return trip.length > 0 ? (
-                                                        <div className="flex flex-wrap gap-2 mb-2">
-                                                            {trip.map((t: Tripulante, idx: number) => (
-                                                                <span key={idx} className="inline-flex items-center gap-1 text-xs bg-white dark:bg-gray-700 px-2 py-1 rounded border border-emerald-200 dark:border-emerald-700">
-                                                                    <span className="font-semibold text-emerald-700 dark:text-emerald-400">
-                                                                        {t.rol || t.rol_tripulacion || 'T'}:
-                                                                    </span>
-                                                                    <span className="dark:text-gray-300">
-                                                                        {t.nombre || t.nombre_completo || '-'}
-                                                                    </span>
-                                                                    {t.chapa && <span className="text-gray-400 dark:text-gray-500">[{t.chapa}]</span>}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    ) : null;
-                                                })()}
-                                                <p className="font-medium text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
-                                                    {item.descripcion || extractObservaciones(item.observaciones) || (isSalida ? 'Salida de unidad' : 'Sin observaciones')}
-                                                </p>
-                                                {item.descripcion && item.observaciones && (item.descripcion.trim() !== String(extractObservaciones(item.observaciones) || '').trim()) && (
-                                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 italic whitespace-pre-wrap">
-                                                        &quot;{extractObservaciones(item.observaciones)}&quot;
-                                                    </p>
-                                                )}
-                                                {/* Datos JSONB para actividades */}
-                                                {isActividad && item.datos && (() => {
-                                                    const d = typeof item.datos === 'string' ? JSON.parse(item.datos || '{}') : (item.datos || {});
-                                                    const keys = Object.keys(d).filter(k => d[k] !== null && d[k] !== '' && d[k] !== undefined);
-                                                    return keys.length > 0 ? (
-                                                        <div className="flex flex-wrap gap-2 mt-2">
-                                                            {keys.map(k => (
-                                                                <span key={k} className="text-xs bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-2 py-1 rounded">
-                                                                    {k.replace(/_/g, ' ')}: {typeof d[k] === 'object' ? JSON.stringify(d[k]) : String(d[k])}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    ) : null;
-                                                })()}
-                                            </div>
+                                        {(() => {
+                                            const campos = getCamposCard(item.tipo_situacion || '', item.tipo_registro);
+                                            const trip = typeof item.tripulacion === 'string'
+                                                ? JSON.parse(item.tripulacion || '[]')
+                                                : (item.tripulacion || []);
+                                            const ultimaObs = extractObservaciones(item.observaciones);
+                                            const tipoPavimento = item.tipo_pavimento ?? item.material_via;
+                                            const victimasSummary = campos.showVictimas
+                                                ? [
+                                                    item.heridos_leves > 0 ? `${item.heridos_leves} h. leve${item.heridos_leves !== 1 ? 's' : ''}` : null,
+                                                    item.heridos_graves > 0 ? `${item.heridos_graves} h. grave${item.heridos_graves !== 1 ? 's' : ''}` : null,
+                                                    item.fallecidos > 0 ? `${item.fallecidos} fallecido${item.fallecidos !== 1 ? 's' : ''}` : null,
+                                                  ].filter(Boolean).join(' · ')
+                                                : null;
 
-                                            <div className="space-y-1 text-sm">
-                                                {item.ruta_codigo && (
-                                                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                                                        <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                                                        <span>{item.ruta_codigo} Km {item.km} {item.sentido && `(${item.sentido})`}</span>
+                                            return (
+                                                <div className="grid md:grid-cols-2 gap-4">
+                                                    {/* Columna izquierda: tripulación + descripción/última observación */}
+                                                    <div>
+                                                        {trip.length > 0 && (
+                                                            <div className="flex flex-wrap gap-2 mb-2">
+                                                                {trip.map((t: Tripulante, idx: number) => (
+                                                                    <span key={idx} className="inline-flex items-center gap-1 text-xs bg-white dark:bg-gray-700 px-2 py-1 rounded border border-emerald-200 dark:border-emerald-700">
+                                                                        <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                                                                            {t.rol || t.rol_tripulacion || 'T'}:
+                                                                        </span>
+                                                                        <span className="dark:text-gray-300">
+                                                                            {t.nombre || t.nombre_completo || '-'}
+                                                                        </span>
+                                                                        {t.chapa && <span className="text-gray-400 dark:text-gray-500">[{t.chapa}]</span>}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Última observación como texto principal */}
+                                                        <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                                            {ultimaObs || item.descripcion || (isSalida ? 'Salida de unidad' : 'Sin observaciones')}
+                                                        </p>
+
+                                                        {/* Resumen de víctimas — solo INCIDENTE */}
+                                                        {victimasSummary && (
+                                                            <p className="text-xs font-semibold text-red-600 dark:text-red-400 mt-1">
+                                                                {victimasSummary}
+                                                            </p>
+                                                        )}
                                                     </div>
-                                                )}
-                                                {item.creado_por_nombre && (
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                                        Registrado por: {item.creado_por_nombre}
-                                                    </div>
-                                                )}
-                                                {/* Infografía: fotos de situacion o actividad */}
-                                                {item.fotos && item.fotos.length > 0 && (
-                                                    <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-700">
-                                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">📷 {item.fotos.length} foto(s)</p>
-                                                        <div className="flex flex-wrap gap-1.5">
-                                                            {item.fotos.map((foto: any) => (
-                                                                <a
-                                                                    key={foto.id}
-                                                                    href={foto.url}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                >
-                                                                    <img
-                                                                        src={foto.thumbnail || foto.url}
-                                                                        alt={`Foto ${foto.orden}`}
-                                                                        className="w-20 h-14 object-cover rounded border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition"
-                                                                    />
-                                                                </a>
-                                                            ))}
+
+                                                    {/* Columna derecha: ubicación + campos por tipo */}
+                                                    <div className="space-y-1 text-sm">
+                                                        {/* Ruta + km + sentido — siempre */}
+                                                        {(item.ruta_codigo || item.km) && (
+                                                            <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                                                                <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-gray-400 dark:text-gray-500" />
+                                                                <span>
+                                                                    {item.ruta_codigo && `${item.ruta_codigo} `}
+                                                                    {item.km != null && `Km ${item.km}`}
+                                                                    {item.sentido && ` (${item.sentido})`}
+                                                                </span>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Tags de campos por tipo */}
+                                                        <div className="flex flex-wrap gap-1 mt-1">
+                                                            {campos.showUbicacion && item.area && (
+                                                                <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
+                                                                    {item.area}
+                                                                </span>
+                                                            )}
+                                                            {campos.showCondBasicas && item.clima && (
+                                                                <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
+                                                                    {item.clima}
+                                                                </span>
+                                                            )}
+                                                            {campos.showCondBasicas && item.carga_vehicular && (
+                                                                <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
+                                                                    {item.carga_vehicular}
+                                                                </span>
+                                                            )}
+                                                            {campos.showCondBasicas && tipoPavimento && (
+                                                                <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
+                                                                    {tipoPavimento}
+                                                                </span>
+                                                            )}
+                                                            {campos.showCondDetalle && item.iluminacion && (
+                                                                <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
+                                                                    {item.iluminacion}
+                                                                </span>
+                                                            )}
+                                                            {campos.showCondDetalle && item.visibilidad && (
+                                                                <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
+                                                                    {item.visibilidad}
+                                                                </span>
+                                                            )}
+                                                            {campos.showCausas && item.causa_probable && (
+                                                                <span className="text-xs bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded">
+                                                                    {item.causa_probable}
+                                                                </span>
+                                                            )}
                                                         </div>
+
+                                                        {item.creado_por_nombre && (
+                                                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                                Por: {item.creado_por_nombre}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Fotos */}
+                                                        {item.fotos && item.fotos.length > 0 && (
+                                                            <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                                                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+                                                                    {item.fotos.length} foto(s)
+                                                                </p>
+                                                                <div className="flex flex-wrap gap-1.5">
+                                                                    {item.fotos.map((foto: any) => (
+                                                                        <a key={foto.id} href={foto.url} target="_blank" rel="noopener noreferrer">
+                                                                            <img
+                                                                                src={foto.thumbnail || foto.url}
+                                                                                alt={`Foto ${foto.orden}`}
+                                                                                className="w-16 h-12 object-cover rounded border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition"
+                                                                            />
+                                                                        </a>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                )}
-                                            </div>
-                                        </div>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                                 );
