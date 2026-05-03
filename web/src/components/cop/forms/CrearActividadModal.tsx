@@ -170,8 +170,7 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
             }
           }
         }
-      } catch (err) {
-        console.error('Error loading actividad:', err);
+      } catch {
         setError('Error al cargar la actividad');
       } finally {
         if (!cancelled) setLoadingEdit(false);
@@ -251,7 +250,6 @@ export default function CrearActividadModal({ isOpen, onClose, onCreated, unidad
         }
       }
     } catch (err: any) {
-      console.error('Error guardando actividad:', err);
       setError(err.response?.data?.error || err.message || 'Error al guardar la actividad');
     } finally {
       setSaving(false);

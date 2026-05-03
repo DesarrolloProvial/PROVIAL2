@@ -174,7 +174,7 @@ export default function EditarSituacionPage() {
                         )}
 
                         {(tipoFormulario === 'HECHO_TRANSITO' || tipoFormulario === 'ASISTENCIA_VIAL') && (
-                            <FormularioHechoTransito situacion={situacion} onDataChange={setFormData} />
+                            <FormularioHechoTransito situacion={situacion} onDataChange={setFormData} tipoFormulario={tipoFormulario} />
                         )}
 
                         {tipoFormulario === 'EMERGENCIA' && (

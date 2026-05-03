@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { geografiaAPI } from '../../services/api';
 import { X, Plus } from 'lucide-react';
+import { ILUMINACIONES, VISIBILIDADES, SENALIZACIONES } from '../../constants/situacionTypes';
 
 interface Props {
     situacion: any;
     incidente?: any;
     onDataChange: (data: any) => void;
+    tipoFormulario?: string;
 }
 
 const TIPOS_HECHO = [
@@ -33,7 +35,8 @@ const MATERIALES_VIA = [
     { value: 'ADOQUIN', label: 'Adoquín' }
 ];
 
-export default function FormularioHechoTransito({ situacion, incidente, onDataChange }: Props) {
+export default function FormularioHechoTransito({ situacion, incidente, onDataChange, tipoFormulario }: Props) {
+  const isHecho = tipoFormulario !== 'ASISTENCIA_VIAL';
     const [activeTab, setActiveTab] = useState('general');
     const [departamentos, setDepartamentos] = useState<any[]>([]);
     const [municipios, setMunicipios] = useState<any[]>([]);
@@ -162,8 +165,8 @@ export default function FormularioHechoTransito({ situacion, incidente, onDataCh
             try {
                 const data = await geografiaAPI.getDepartamentos();
                 setDepartamentos(data);
-            } catch (error) {
-                console.error('Error cargando departamentos:', error);
+            } catch {
+                // ignore
             }
         };
         loadDepartamentos();
@@ -176,8 +179,8 @@ export default function FormularioHechoTransito({ situacion, incidente, onDataCh
                 try {
                     const data = await geografiaAPI.getMunicipiosPorDepartamento(Number(formData.departamento_id));
                     setMunicipios(data);
-                } catch (error) {
-                    console.error('Error cargando municipios:', error);
+                } catch {
+                    // ignore
                 }
             } else {
                 setMunicipios([]);
@@ -370,7 +373,8 @@ export default function FormularioHechoTransito({ situacion, incidente, onDataCh
                         </div>
                     </div>
 
-                    {/* Condiciones de Vía */}
+                    {/* Condiciones de Vía — solo HECHO_TRANSITO */}
+                    {isHecho && (
                     <div>
                         <h3 className="text-md font-semibold text-gray-800 mb-4">Condiciones de Vía</h3>
                         <div className="grid grid-cols-2 gap-4">
@@ -379,11 +383,7 @@ export default function FormularioHechoTransito({ situacion, incidente, onDataCh
                                 <select value={formData.iluminacion || ''} onChange={(e) => handleChange('iluminacion', e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                     <option value="">Seleccione...</option>
-                                    <option value="DIA">Día</option>
-                                    <option value="NOCHE_CON_LUZ">Noche con luz</option>
-                                    <option value="NOCHE_SIN_LUZ">Noche sin luz</option>
-                                    <option value="AMANECER">Amanecer</option>
-                                    <option value="ATARDECER">Atardecer</option>
+                                    {ILUMINACIONES.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
                                 </select>
                             </div>
                             <div>
@@ -391,10 +391,7 @@ export default function FormularioHechoTransito({ situacion, incidente, onDataCh
                                 <select value={formData.senalizacion || ''} onChange={(e) => handleChange('senalizacion', e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                     <option value="">Seleccione...</option>
-                                    <option value="BUENA">Buena</option>
-                                    <option value="REGULAR">Regular</option>
-                                    <option value="DEFICIENTE">Deficiente</option>
-                                    <option value="INEXISTENTE">Inexistente</option>
+                                    {SENALIZACIONES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                                 </select>
                             </div>
                             <div>
@@ -402,9 +399,7 @@ export default function FormularioHechoTransito({ situacion, incidente, onDataCh
                                 <select value={formData.visibilidad || ''} onChange={(e) => handleChange('visibilidad', e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                     <option value="">Seleccione...</option>
-                                    <option value="BUENA">Buena</option>
-                                    <option value="REGULAR">Regular</option>
-                                    <option value="MALA">Mala</option>
+                                    {VISIBILIDADES.map(v => <option key={v.value} value={v.value}>{v.label}</option>)}
                                 </select>
                             </div>
                             <div>
@@ -424,6 +419,7 @@ export default function FormularioHechoTransito({ situacion, incidente, onDataCh
                             </div>
                         </div>
                     </div>
+                    )}
 
                     {/* Víctimas */}
                     <div>
