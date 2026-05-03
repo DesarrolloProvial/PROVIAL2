@@ -261,8 +261,7 @@ export const SituacionModel = {
       latitud: data.latitud ?? null,
       longitud: data.longitud ?? null,
 
-      // Observaciones: el controller pasa el JSON ya formateado vía buildObservacionEntry
-      observaciones: data.observaciones || JSON.stringify([]),
+      observaciones: JSON.stringify(data.observaciones || []),
 
       // Contexto
       clima: data.clima ?? null,

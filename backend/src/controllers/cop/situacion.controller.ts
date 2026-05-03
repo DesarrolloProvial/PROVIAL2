@@ -85,9 +85,10 @@ export async function createSituacion(req: Request, res: Response) {
 
     const userId      = req.user!.userId;
     const codigoFinal = codigo_situacion || `WEB-${uuidv4()}`;
-    const observacionesFormateadas = observaciones
-      ? await buildObservacionEntry(userId, observaciones)
-      : null;
+    // buildObservacionEntry devuelve JSON string → parseamos para obtener [{hora,usuario,mensaje}]
+    const observacionesIniciales: any[] = observaciones && String(observaciones).trim().length > 0
+      ? JSON.parse(await buildObservacionEntry(userId, String(observaciones).trim()))
+      : [];
 
     // ── Validación de duplicados ─────────────────────────────────────────────
     if (codigo_situacion) {
@@ -134,7 +135,7 @@ export async function createSituacion(req: Request, res: Response) {
         turno_id:         ctx.turnoId,
         asignacion_id:    ctx.asignacionId,
         ruta_id:          ctx.rutaId,
-        km, sentido, latitud, longitud, observaciones: observacionesFormateadas,
+        km, sentido, latitud, longitud, observaciones: observacionesIniciales,
         creado_por:       userId,
         codigo_situacion: codigoFinal,
         tipo_situacion_id:tipo_situacion_id_final,
