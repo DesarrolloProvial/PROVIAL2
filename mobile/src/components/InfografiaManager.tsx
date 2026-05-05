@@ -1,682 +1,502 @@
-// components/InfografiaManager.tsx
-// Componente principal para gestionar múltiples infografías
-// RECONSTRUIDO: Versión robusta con manejo defensivo de null/undefined y Keys únicas
-// FIX v5: Optional Chaining agresivo para evitar ReferenceError: map
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    ScrollView,
-    Image,
-    Alert,
-    StyleSheet,
-    Modal,
-    SafeAreaView,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  Alert,
+  StyleSheet,
+  Modal,
+  SafeAreaView,
 } from 'react-native';
 import { Infografia, InfografiaManagerProps, FotoItem, VideoItem } from '../types/multimedia';
 import { COLORS } from '../constants/colors';
-import {
-    validateInfografia,
-    createNewInfografia,
-} from '../utils/infografiaValidation';
+import { validateInfografia, createNewInfografia } from '../utils/infografiaValidation';
 import { generateMultimediaFilename } from '../utils/multimediaFilename';
 import MultimediaCaptureOffline from './MultimediaCaptureOffline';
 import type { MultimediaRef } from '../services/draftStorage';
 
 export default function InfografiaManager({
-    situacionId,
-    infografias: propInfografias,
-    onChange,
-    disabled = false,
+  situacionId,
+  infografias: propInfografias,
+  onChange,
+  disabled = false,
 }: InfografiaManagerProps) {
-    const [activeTab, setActiveTab] = useState(0);
-    const [showCaptureModal, setShowCaptureModal] = useState(false);
-    const [captureForInfografia, setCaptureForInfografia] = useState<number | null>(null);
+  const [showCaptureModal, setShowCaptureModal] = React.useState(false);
 
-    // Asegurar que infografias sea siempre un array válido y sus elementos estén completos
-    const infografias = React.useMemo(() => {
-        if (!Array.isArray(propInfografias)) return [];
-        return propInfografias.map(inf => ({
-            ...inf,
-            numero: typeof inf.numero === 'number' ? inf.numero : 0,
-            titulo: inf.titulo || `Infografía`,
-            fotos: Array.isArray(inf.fotos) ? inf.fotos : [], // CRITICAL FIX: Asegurar array
-            video: inf.video || null,
-        }));
-    }, [propInfografias]);
+  const infografias = React.useMemo(() => {
+    if (!Array.isArray(propInfografias)) return [];
+    return propInfografias.map(inf => ({
+      ...inf,
+      numero: typeof inf.numero === 'number' ? inf.numero : 0,
+      titulo: inf.titulo || 'Infografía',
+      fotos: Array.isArray(inf.fotos) ? inf.fotos : [],
+      video: inf.video || null,
+    }));
+  }, [propInfografias]);
 
-    // Obtener infografía activa de forma segura
-    const activeInfografia = infografias?.[activeTab] || null;
+  // Una sola infografía — siempre trabajamos con infografias[0]
+  const infografia = infografias[0] ?? null;
 
-    // Si no hay infografías, mostrar estado vacío o inicializar una
-    useEffect(() => {
-        // Usar propInfografias para chequear si debemos inicializar, 
-        // para evitar loops con el objeto sanitizado
-        if ((!propInfografias || (Array.isArray(propInfografias) && propInfografias.length === 0)) && !disabled && onChange) {
-            // Auto-iniciar con una infografía vacía si está vacío
-            const newInfo = createNewInfografia([]);
-            onChange([newInfo]);
-        }
-    }, [propInfografias, disabled, onChange]);
-
-    // Agregar nueva infografía
-    const handleAgregarInfografia = () => {
-        // No permitir agregar si la última infografía está vacía
-        const ultima = infografias[infografias.length - 1];
-        if (ultima && ultima.fotos.length === 0 && !ultima.video) {
-            Alert.alert('Infografía vacía', 'Agrega fotos o video a la infografía actual antes de crear una nueva.');
-            return;
-        }
-
-        // Evitar duplicados de número
-        const newInfografia = createNewInfografia(infografias);
-
-        // Verificación extra de unicidad
-        // USAR OPTIONAL CHAINING
-        if (infografias?.some(i => i.numero === newInfografia.numero)) {
-            const max = infografias?.length > 0
-                ? Math.max(...infografias.map(i => i.numero))
-                : 0;
-            newInfografia.numero = max + 1;
-            newInfografia.titulo = `Infografía ${newInfografia.numero}`;
-        }
-
-        const updated = [...(infografias || []), newInfografia];
-        onChange(updated);
-        setActiveTab(updated.length - 1); // Cambiar al nuevo tab
-    };
-
-    // Eliminar infografía
-    const handleEliminarInfografia = (numero: number) => {
-        const infografia = infografias?.find(i => i.numero === numero);
-        if (!infografia) return;
-
-        Alert.alert(
-            'Eliminar Infografía',
-            `¿Seguro que deseas eliminar "${infografia.titulo}"?\n\nSe perderán ${infografia.fotos?.length || 0} foto(s) y ${infografia.video ? '1 video' : '0 videos'}.`,
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                    text: 'Eliminar',
-                    style: 'destructive',
-                    onPress: () => {
-                        const updated = infografias?.filter(i => i.numero !== numero) || [];
-                        onChange(updated);
-                        // Ajustar tab activo si es necesario
-                        if (activeTab >= updated.length) {
-                            setActiveTab(Math.max(0, updated.length - 1));
-                        }
-                    },
-                },
-            ]
-        );
-    };
-
-    // Actualizar título
-    const handleUpdateTitulo = (numero: number, titulo: string) => {
-        // USAR OPTIONAL CHAINING
-        const updated = infografias?.map(inf =>
-            inf.numero === numero ? { ...inf, titulo } : inf
-        ) || [];
-        onChange(updated);
-    };
-
-    // Abrir modal de captura para infografía
-    const handleOpenCapture = (infografiaNumero: number) => {
-        setCaptureForInfografia(infografiaNumero);
-        setShowCaptureModal(true);
-    };
-
-    // Obtener multimedia para el componente de captura
-    const getMultimediaForCapture = (infografia: Infografia): MultimediaRef[] => {
-        const multimediaRefs: MultimediaRef[] = [];
-
-        // Agregar fotos
-        // USAR OPTIONAL CHAINING
-        infografia.fotos?.forEach(foto => {
-            multimediaRefs.push({
-                tipo: 'FOTO',
-                uri: foto.uri,
-                orden: foto.orden,
-            });
-        });
-
-        // Agregar video
-        if (infografia.video) {
-            multimediaRefs.push({
-                tipo: 'VIDEO',
-                uri: infografia.video.uri,
-                duracion_segundos: infografia.video.duracion_segundos,
-            });
-        }
-
-        return multimediaRefs;
-    };
-
-    // Manejar cambios de multimedia desde el componente de captura
-    const handleMultimediaChange = (multimedia: MultimediaRef[]) => {
-        if (captureForInfografia === null) return;
-
-        // USAR OPTIONAL CHAINING
-        const updated = infografias?.map(inf => {
-            if (inf.numero === captureForInfografia) {
-                // Convertir MultimediaRef[] a FotoItem[] y VideoItem
-                const fotos: FotoItem[] = [];
-                let video: VideoItem | null = null;
-
-                multimedia?.forEach(item => {
-                    if (item.tipo === 'FOTO' && item.orden) {
-                        const filename = generateMultimediaFilename({
-                            situacionId,
-                            infografiaNumero: inf.numero,
-                            tipo: 'FOTO',
-                            orden: item.orden,
-                        });
-
-                        fotos.push({
-                            orden: item.orden,
-                            uri: item.uri,
-                            filename,
-                            estado: 'PENDIENTE',
-                        });
-                    } else if (item.tipo === 'VIDEO') {
-                        const filename = generateMultimediaFilename({
-                            situacionId,
-                            infografiaNumero: inf.numero,
-                            tipo: 'VIDEO',
-                        });
-
-                        video = {
-                            uri: item.uri,
-                            filename,
-                            duracion_segundos: item.duracion_segundos,
-                            estado: 'PENDIENTE',
-                        };
-                    }
-                });
-
-                return {
-                    ...inf,
-                    fotos,
-                    video,
-                };
-            }
-            return inf;
-        }) || [];
-
-        onChange(updated);
-    };
-
-    if (!activeInfografia && (!infografias || infografias.length === 0)) {
-        // Sin infografías - mostrar botón para crear primera
-        return (
-            <View style={styles.container}>
-                <View style={styles.emptyState}>
-                    <Text style={styles.emptyIcon}>📷</Text>
-                    <Text style={styles.emptyTitle}>Sin Evidencia Fotográfica</Text>
-                    <Text style={styles.emptyText}>
-                        Agrega fotos y videos para documentar esta situación
-                    </Text>
-                    <TouchableOpacity
-                        style={styles.addButton}
-                        onPress={handleAgregarInfografia}
-                        disabled={disabled}
-                    >
-                        <Text style={styles.addButtonText}>➕ Agregar Primera Infografía</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        );
+  useEffect(() => {
+    if ((!propInfografias || propInfografias.length === 0) && !disabled && onChange) {
+      onChange([createNewInfografia([])]);
     }
+  }, [propInfografias, disabled, onChange]);
 
-    const validation = activeInfografia ? validateInfografia(activeInfografia) : { isValid: true, errors: [] };
+  const handleUpdateTitulo = (titulo: string) => {
+    if (!infografia) return;
+    onChange([{ ...infografia, titulo }]);
+  };
 
-    const infografiaParaCaptura = captureForInfografia !== null
-        ? infografias?.find(inf => inf.numero === captureForInfografia)
-        : null;
-
-    return (
-        <View style={styles.container}>
-            {/* Header con tabs y botón agregar */}
-            <View style={styles.headerContainer}>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.tabsContainer}
-                    contentContainerStyle={styles.tabsContent}
-                >
-                    {/* USAR OPTIONAL CHAINING EN RENDER */}
-                    {infografias?.map((inf, idx) => (
-                        <TouchableOpacity
-                            // KEY ÚNICA ROBUSTA: Combinación de número e índice
-                            key={`tab-${inf.numero}-${idx}`}
-                            style={[styles.tab, activeTab === idx && styles.tabActive]}
-                            onPress={() => setActiveTab(idx)}
-                            disabled={disabled}
-                        >
-                            <Text style={[styles.tabText, activeTab === idx && styles.tabTextActive]}>
-                                Infografía {inf.numero}
-                            </Text>
-                            {!validateInfografia(inf).isValid && (
-                                <View style={styles.errorDot} />
-                            )}
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-
-                {/* Botón prominente para agregar nueva infografía */}
-                <TouchableOpacity
-                    style={styles.addInfografiaButton}
-                    onPress={handleAgregarInfografia}
-                    disabled={disabled}
-                >
-                    <Text style={styles.addInfografiaButtonText}>➕</Text>
-                </TouchableOpacity>
-            </View>
-
-            {activeInfografia && (
-                <ScrollView style={styles.content}>
-                    {/* Título editable */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionLabel}>📝 Título de Infografía</Text>
-                        <TextInput
-                            style={[styles.input, disabled && styles.inputDisabled]}
-                            value={activeInfografia.titulo}
-                            onChangeText={(text) => handleUpdateTitulo(activeInfografia.numero, text)}
-                            placeholder="Describe esta infografía..."
-                            maxLength={100}
-                            editable={!disabled}
-                        />
-                    </View>
-
-                    {/* Botón para abrir captura de multimedia */}
-                    <TouchableOpacity
-                        style={styles.captureButton}
-                        onPress={() => handleOpenCapture(activeInfografia.numero)}
-                        disabled={disabled}
-                    >
-                        <Text style={styles.captureButtonIcon}>📷 🎥</Text>
-                        <Text style={styles.captureButtonText}>
-                            {activeInfografia.fotos?.length === 0 && !activeInfografia.video
-                                ? 'Agregar Fotos y Video'
-                                : 'Editar Fotos y Video'}
-                        </Text>
-                    </TouchableOpacity>
-
-                    {/* Preview de multimedia capturada */}
-                    {((activeInfografia.fotos?.length || 0) > 0 || activeInfografia.video) && (
-                        <View style={styles.previewSection}>
-                            <Text style={styles.previewLabel}>
-                                📷 {activeInfografia.fotos?.length || 0} Foto(s) | 🎥 {activeInfografia.video ? '1' : '0'} Video
-                            </Text>
-                            <View style={styles.previewGrid}>
-                                {/* USAR OPTIONAL CHAINING EN FOTOS */}
-                                {activeInfografia.fotos?.map((foto, idx) => (
-                                    <View
-                                        // KEY ÚNICA ROBUSTA: Combinación de orden e índice
-                                        key={`foto-${foto.orden}-${idx}`}
-                                        style={styles.previewItem}
-                                    >
-                                        <Image source={{ uri: foto.uri }} style={styles.previewImage} />
-                                        <Text style={styles.previewOrder}>{foto.orden}</Text>
-                                    </View>
-                                ))}
-                                {activeInfografia.video && (
-                                    <View style={styles.previewItem}>
-                                        <View style={styles.videoPreview}>
-                                            <Text style={styles.videoPreviewIcon}>🎥</Text>
-                                        </View>
-                                    </View>
-                                )}
-                            </View>
-                        </View>
-                    )}
-
-                    {/* Información de contexto */}
-                    <View style={styles.infoBar}>
-                        <Text style={styles.infoText}>
-                            📊 Infografía {activeInfografia.numero} de {infografias?.length || 0}
-                        </Text>
-                        {(infografias?.length || 0) > 1 && (
-                            <TouchableOpacity
-                                style={styles.deleteButton}
-                                onPress={() => handleEliminarInfografia(activeInfografia.numero)}
-                                disabled={disabled}
-                            >
-                                <Text style={styles.deleteButtonText}>🗑️ Eliminar</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-
-                    {/* Errores de validación */}
-                    {!validation.isValid && (
-                        <View style={styles.validationErrors}>
-                            <Text style={styles.errorIcon}>⚠️</Text>
-                            <View>
-                                {/* USAR OPTIONAL CHAINING EN VALIDATION ERRORS */}
-                                {validation.errors?.map((error, idx) => (
-                                    <Text key={`error-${idx}`} style={styles.errorText}>• {error}</Text>
-                                ))}
-                            </View>
-                        </View>
-                    )}
-                </ScrollView>
-            )}
-
-            {/* Modal de Captura */}
-            {infografiaParaCaptura && (
-                <Modal
-                    visible={showCaptureModal}
-                    animationType="slide"
-                    onRequestClose={() => setShowCaptureModal(false)}
-                >
-                    <SafeAreaView style={styles.modalContainer}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>
-                                {infografiaParaCaptura.titulo}
-                            </Text>
-                            <TouchableOpacity
-                                style={styles.modalCloseButton}
-                                onPress={() => setShowCaptureModal(false)}
-                            >
-                                <Text style={styles.modalCloseText}>✕ Cerrar</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <MultimediaCaptureOffline
-                            draftUuid={`${situacionId}_I${infografiaParaCaptura.numero}`}
-                            tipoSituacion="INFOGRAFIA"
-                            manualMode={true}
-                            initialMedia={getMultimediaForCapture(infografiaParaCaptura)}
-                            onMultimediaChange={handleMultimediaChange}
-                        />
-                        <TouchableOpacity
-                            style={styles.modalDoneButton}
-                            onPress={() => setShowCaptureModal(false)}
-                        >
-                            <Text style={styles.modalDoneText}>Listo</Text>
-                        </TouchableOpacity>
-                    </SafeAreaView>
-                </Modal>
-            )}
-        </View>
+  const handleEliminar = () => {
+    if (!infografia) return;
+    Alert.alert(
+      'Eliminar evidencia',
+      `¿Eliminar "${infografia.titulo}"?\n\nSe perderán ${infografia.fotos?.length || 0} foto(s) y ${infografia.video ? '1 video' : '0 videos'}.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Eliminar', style: 'destructive', onPress: () => onChange([]) },
+      ]
     );
+  };
+
+  const getMultimediaForCapture = (inf: Infografia): MultimediaRef[] => {
+    const refs: MultimediaRef[] = [];
+    inf.fotos?.forEach(foto => {
+      refs.push({ tipo: 'FOTO', uri: foto.uri, orden: foto.orden });
+    });
+    if (inf.video) {
+      refs.push({ tipo: 'VIDEO', uri: inf.video.uri, duracion_segundos: inf.video.duracion_segundos });
+    }
+    return refs;
+  };
+
+  const handleMultimediaChange = (multimedia: MultimediaRef[]) => {
+    if (!infografia) return;
+    const fotos: FotoItem[] = [];
+    let video: VideoItem | null = null;
+
+    multimedia?.forEach(item => {
+      if (item.tipo === 'FOTO' && item.orden) {
+        fotos.push({
+          orden: item.orden,
+          uri: item.uri,
+          filename: generateMultimediaFilename({
+            situacionId,
+            infografiaNumero: infografia.numero,
+            tipo: 'FOTO',
+            orden: item.orden,
+          }),
+          estado: 'PENDIENTE',
+        });
+      } else if (item.tipo === 'VIDEO') {
+        video = {
+          uri: item.uri,
+          filename: generateMultimediaFilename({
+            situacionId,
+            infografiaNumero: infografia.numero,
+            tipo: 'VIDEO',
+          }),
+          duracion_segundos: item.duracion_segundos,
+          estado: 'PENDIENTE',
+        };
+      }
+    });
+
+    onChange([{ ...infografia, fotos, video }]);
+  };
+
+  // Estado vacío
+  if (!infografia) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIconWrapper}>
+            <Text style={styles.emptyIcon}>📷</Text>
+          </View>
+          <Text style={styles.emptyTitle}>Sin Evidencia Fotográfica</Text>
+          <Text style={styles.emptyText}>
+            Agrega fotos y video para documentar esta situación
+          </Text>
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() => {
+              if (!disabled && onChange) onChange([createNewInfografia([])]);
+            }}
+            disabled={disabled}
+          >
+            <Text style={styles.primaryBtnText}>+ Agregar evidencia</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  const validation = validateInfografia(infografia);
+  const fotoCount = infografia.fotos?.length ?? 0;
+  const hasMedia = fotoCount > 0 || !!infografia.video;
+
+  return (
+    <View style={styles.container}>
+      {/* Card de infografía */}
+      <View style={styles.card}>
+        {/* Título */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>Título</Text>
+          <TextInput
+            style={[styles.titleInput, disabled && styles.inputDisabled]}
+            value={infografia.titulo}
+            onChangeText={handleUpdateTitulo}
+            placeholder="Describe esta evidencia..."
+            placeholderTextColor={COLORS.text.secondary}
+            maxLength={100}
+            editable={!disabled}
+          />
+        </View>
+
+        {/* Botón captura multimedia */}
+        <TouchableOpacity
+          style={[styles.captureBtn, disabled && styles.captureBtnDisabled]}
+          onPress={() => setShowCaptureModal(true)}
+          disabled={disabled}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.captureBtnIcon}>📷</Text>
+          <Text style={styles.captureBtnText}>
+            {hasMedia ? 'Editar fotos y video' : 'Agregar fotos y video'}
+          </Text>
+          {hasMedia && (
+            <View style={styles.mediaBadge}>
+              <Text style={styles.mediaBadgeText}>
+                {fotoCount} foto{fotoCount !== 1 ? 's' : ''}{infografia.video ? ' · 1 video' : ''}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* Preview de fotos */}
+        {fotoCount > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.previewScroll}
+            contentContainerStyle={styles.previewContent}
+          >
+            {infografia.fotos?.map((foto, idx) => (
+              <View key={`foto-${foto.orden}-${idx}`} style={styles.previewItem}>
+                <Image source={{ uri: foto.uri }} style={styles.previewImage} />
+                <View style={styles.previewBadge}>
+                  <Text style={styles.previewBadgeText}>{foto.orden}</Text>
+                </View>
+              </View>
+            ))}
+            {infografia.video && (
+              <View style={styles.previewItem}>
+                <View style={[styles.previewImage, styles.videoPreview]}>
+                  <Text style={styles.videoIcon}>🎥</Text>
+                </View>
+              </View>
+            )}
+          </ScrollView>
+        )}
+
+        {/* Errores de validación */}
+        {!validation.isValid && (
+          <View style={styles.validationBox}>
+            {validation.errors?.map((err, i) => (
+              <Text key={i} style={styles.validationText}>• {err}</Text>
+            ))}
+          </View>
+        )}
+
+        {/* Footer: eliminar */}
+        {!disabled && (
+          <TouchableOpacity style={styles.deleteRow} onPress={handleEliminar}>
+            <Text style={styles.deleteText}>🗑 Eliminar evidencia</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Modal captura */}
+      <Modal
+        visible={showCaptureModal}
+        animationType="slide"
+        onRequestClose={() => setShowCaptureModal(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{infografia.titulo}</Text>
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setShowCaptureModal(false)}
+            >
+              <Text style={styles.modalCloseText}>✕ Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+
+          <MultimediaCaptureOffline
+            draftUuid={`${situacionId}_I${infografia.numero}`}
+            tipoSituacion="INFOGRAFIA"
+            manualMode
+            initialMedia={getMultimediaForCapture(infografia)}
+            onMultimediaChange={handleMultimediaChange}
+          />
+
+          <TouchableOpacity
+            style={styles.modalDoneBtn}
+            onPress={() => setShowCaptureModal(false)}
+          >
+            <Text style={styles.modalDoneText}>Listo</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      </Modal>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    emptyState: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 60,
-        paddingHorizontal: 20,
-    },
-    emptyIcon: {
-        fontSize: 60,
-        marginBottom: 16,
-    },
-    emptyTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: COLORS.text.primary,
-        marginBottom: 8,
-    },
-    emptyText: {
-        fontSize: 14,
-        color: COLORS.text.secondary,
-        textAlign: 'center',
-        marginBottom: 24,
-    },
-    addButton: {
-        backgroundColor: COLORS.primary,
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        borderRadius: 8,
-    },
-    addButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    tabsContainer: {
-        flex: 1,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    headerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: COLORS.background,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    tabsContent: {
-        paddingRight: 8,
-    },
-    addInfografiaButton: {
-        backgroundColor: COLORS.primary,
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginHorizontal: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
-    },
-    addInfografiaButtonText: {
-        fontSize: 24,
-        color: '#FFFFFF',
-    },
-    tab: {
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderBottomWidth: 2,
-        borderBottomColor: 'transparent',
-        position: 'relative',
-    },
-    tabActive: {
-        borderBottomColor: COLORS.primary,
-    },
-    tabText: {
-        color: COLORS.text.secondary,
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    tabTextActive: {
-        color: COLORS.primary,
-        fontWeight: '600',
-    },
-    errorDot: {
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: COLORS.danger,
-    },
-    content: {
-        flex: 1,
-        padding: 16,
-    },
-    section: {
-        marginBottom: 16,
-    },
-    sectionLabel: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: COLORS.text.primary,
-        marginBottom: 8,
-    },
-    input: {
-        backgroundColor: COLORS.background,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 14,
-        color: COLORS.text.primary,
-    },
-    inputDisabled: {
-        backgroundColor: COLORS.background,
-        color: COLORS.text.secondary,
-    },
-    captureButton: {
-        backgroundColor: COLORS.primary,
-        borderRadius: 12,
-        padding: 20,
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    captureButtonIcon: {
-        fontSize: 40,
-        marginBottom: 8,
-    },
-    captureButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    previewSection: {
-        marginBottom: 16,
-    },
-    previewLabel: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: COLORS.text.secondary,
-        marginBottom: 12,
-    },
-    previewGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 12,
-    },
-    previewItem: {
-        width: 80,
-        height: 80,
-        borderRadius: 8,
-        overflow: 'hidden',
-        position: 'relative',
-        backgroundColor: COLORS.background,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    previewImage: {
-        width: '100%',
-        height: '100%',
-    },
-    previewOrder: {
-        position: 'absolute',
-        top: 4,
-        right: 4,
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        color: '#FFFFFF',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-        fontSize: 12,
-        fontWeight: '600',
-    },
-    videoPreview: {
-        width: '100%',
-        height: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: COLORS.background,
-    },
-    videoPreviewIcon: {
-        fontSize: 32,
-    },
-    validationErrors: {
-        flexDirection: 'row',
-        backgroundColor: COLORS.danger + '10',
-        padding: 12,
-        borderRadius: 8,
-        borderLeftWidth: 4,
-        borderLeftColor: COLORS.danger,
-        marginBottom: 16,
-        gap: 12,
-    },
-    infoBar: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: COLORS.background,
-        padding: 12,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        marginBottom: 16,
-    },
-    infoText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: COLORS.text.primary,
-    },
-    deleteButton: {
-        backgroundColor: COLORS.background,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 6,
-        borderWidth: 1,
-        borderColor: COLORS.danger,
-    },
-    deleteButtonText: {
-        color: COLORS.danger,
-        fontSize: 13,
-        fontWeight: '600',
-    },
-    errorIcon: {
-        fontSize: 20,
-    },
-    errorText: {
-        fontSize: 13,
-        color: COLORS.danger,
-        marginBottom: 4,
-    },
-    modalContainer: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-        backgroundColor: '#fff',
-    },
-    modalTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: COLORS.text.primary,
-    },
-    modalCloseButton: {
-        padding: 8,
-    },
-    modalCloseText: {
-        color: COLORS.primary,
-        fontWeight: '600',
-    },
-    modalDoneButton: {
-        paddingVertical: 14,
-        alignItems: 'center',
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
-        backgroundColor: '#fff',
-    },
-    modalDoneText: {
-        color: COLORS.primary,
-        fontWeight: '700',
-        fontSize: 16,
-    },
+  container: {
+    flex: 1,
+  },
+
+  // Empty state
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+  },
+  emptyIconWrapper: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: COLORS.primary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyIcon: {
+    fontSize: 36,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  primaryBtn: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 28,
+    paddingVertical: 13,
+    borderRadius: 10,
+  },
+  primaryBtnText: {
+    color: COLORS.white,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+
+  // Card
+  card: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  // Title field
+  fieldGroup: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 6,
+  },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: COLORS.text.secondary,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  titleInput: {
+    fontSize: 15,
+    color: COLORS.text.primary,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: COLORS.background,
+  },
+  inputDisabled: {
+    color: COLORS.text.secondary,
+  },
+
+  // Capture button
+  captureBtn: {
+    marginHorizontal: 16,
+    marginVertical: 10,
+    backgroundColor: COLORS.primary,
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  captureBtnDisabled: {
+    opacity: 0.5,
+  },
+  captureBtnIcon: {
+    fontSize: 22,
+  },
+  captureBtnText: {
+    color: COLORS.white,
+    fontSize: 15,
+    fontWeight: '600',
+    flex: 1,
+  },
+  mediaBadge: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  mediaBadgeText: {
+    color: COLORS.white,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  // Preview
+  previewScroll: {
+    marginBottom: 8,
+  },
+  previewContent: {
+    paddingHorizontal: 16,
+    gap: 8,
+    flexDirection: 'row',
+    paddingBottom: 4,
+  },
+  previewItem: {
+    width: 72,
+    height: 72,
+    borderRadius: 8,
+    overflow: 'hidden',
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  previewBadge: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  previewBadgeText: {
+    color: COLORS.white,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  videoPreview: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.gray[100],
+  },
+  videoIcon: {
+    fontSize: 28,
+  },
+
+  // Validation
+  validationBox: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: COLORS.danger + '10',
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.danger,
+    borderRadius: 6,
+    padding: 10,
+  },
+  validationText: {
+    fontSize: 13,
+    color: COLORS.danger,
+    lineHeight: 18,
+  },
+
+  // Delete row
+  deleteRow: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: COLORS.border,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  deleteText: {
+    fontSize: 14,
+    color: COLORS.danger,
+    fontWeight: '500',
+  },
+
+  // Modal
+  modalContainer: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text.primary,
+    flex: 1,
+  },
+  modalCloseBtn: {
+    padding: 8,
+  },
+  modalCloseText: {
+    color: COLORS.primary,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  modalDoneBtn: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: COLORS.border,
+    backgroundColor: COLORS.white,
+  },
+  modalDoneText: {
+    color: COLORS.primary,
+    fontWeight: '700',
+    fontSize: 16,
+  },
 });

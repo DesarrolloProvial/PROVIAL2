@@ -1,18 +1,10 @@
-/**
- * CrossPlatformPicker
- *
- * Android: Picker nativo inline (muestra diálogo al tocar — comportamiento nativo Android).
- * iOS: TouchableOpacity trigger → Modal con Picker completo + botón "Listo".
- *   El Picker embebido en iOS queda clipado a 48px con overflow:hidden, por lo que
- *   se prefiere el patrón modal para que el usuario vea el scroll wheel completo.
- */
-
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, Platform,
   Modal, TouchableOpacity, SafeAreaView,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { useTheme } from '../core/theme';
 
 export interface PickerOption {
   label: string;
@@ -40,32 +32,43 @@ export default function CrossPlatformPicker({
   disabled = false,
   style,
 }: CrossPlatformPickerProps) {
+  const theme = useTheme();
+  const c = theme.colors;
+
   const [iosVisible, setIosVisible] = useState(false);
 
   const selectedLabel =
     options.find(o => String(o.value) === String(selectedValue))?.label ?? placeholder;
-
   const isPlaceholder = selectedValue === null || selectedValue === undefined;
 
   if (Platform.OS === 'ios') {
     return (
       <View style={style}>
         {label && (
-          <Text style={styles.label}>
+          <Text style={[styles.label, { color: c.text.primary }]}>
             {label}
-            {required && <Text style={styles.required}> *</Text>}
+            {required && <Text style={{ color: c.danger }}> *</Text>}
           </Text>
         )}
 
         <TouchableOpacity
-          style={[styles.iosTrigger, disabled && styles.iosTriggerDisabled]}
+          style={[
+            styles.trigger,
+            {
+              borderColor: c.border,
+              backgroundColor: disabled ? c.gray[100] : c.surface,
+            },
+          ]}
           onPress={() => { if (!disabled) setIosVisible(true); }}
           activeOpacity={disabled ? 1 : 0.7}
         >
-          <Text style={[styles.iosTriggerText, isPlaceholder && styles.iosPlaceholder]}>
+          <Text style={[
+            styles.triggerText,
+            { color: isPlaceholder ? c.text.disabled : c.text.primary },
+          ]}>
             {selectedLabel}
           </Text>
-          <Text style={styles.iosChevron}>▾</Text>
+          <Text style={[styles.chevron, { color: c.text.secondary }]}>▾</Text>
         </TouchableOpacity>
 
         <Modal
@@ -75,19 +78,19 @@ export default function CrossPlatformPicker({
           onRequestClose={() => setIosVisible(false)}
         >
           <TouchableOpacity
-            style={styles.iosOverlay}
+            style={styles.overlay}
             activeOpacity={1}
             onPress={() => setIosVisible(false)}
           />
-          <SafeAreaView style={styles.iosSheet}>
-            <View style={styles.iosSheetHeader}>
+          <SafeAreaView style={[styles.sheet, { backgroundColor: c.surface }]}>
+            <View style={[styles.sheetHeader, { borderBottomColor: c.border }]}>
               <TouchableOpacity onPress={() => setIosVisible(false)}>
-                <Text style={styles.iosDone}>Listo</Text>
+                <Text style={{ fontSize: 16, color: c.primary, fontWeight: '600' }}>Listo</Text>
               </TouchableOpacity>
             </View>
             <Picker
               selectedValue={selectedValue}
-              onValueChange={(val) => onValueChange(val)}
+              onValueChange={onValueChange}
             >
               <Picker.Item label={placeholder} value={null} />
               {options.map((option, index) => (
@@ -104,20 +107,23 @@ export default function CrossPlatformPicker({
     );
   }
 
-  // Android: picker inline nativo (comportamiento original)
+  // Android: picker inline nativo
   return (
     <View style={style}>
       {label && (
-        <Text style={styles.label}>
+        <Text style={[styles.label, { color: c.text.primary }]}>
           {label}
-          {required && <Text style={styles.required}> *</Text>}
+          {required && <Text style={{ color: c.danger }}> *</Text>}
         </Text>
       )}
-      <View style={styles.pickerContainer}>
+      <View style={[
+        styles.pickerContainer,
+        { borderColor: c.border, backgroundColor: c.surface },
+      ]}>
         <Picker
           selectedValue={selectedValue}
           onValueChange={onValueChange}
-          style={styles.picker}
+          style={[styles.picker, { color: c.text.primary }]}
           enabled={!disabled}
         >
           <Picker.Item label={placeholder} value={null} />
@@ -138,74 +144,44 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 6,
   },
-  required: {
-    color: '#d32f2f',
-  },
-
-  // ── iOS ──────────────────────────────────────────────────────────────────
-  iosTrigger: {
+  trigger: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     height: 48,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
-    backgroundColor: '#fff',
     marginBottom: 10,
   },
-  iosTriggerDisabled: {
-    backgroundColor: '#f5f5f5',
-  },
-  iosTriggerText: {
+  triggerText: {
     fontSize: 15,
-    color: '#333',
     flex: 1,
   },
-  iosPlaceholder: {
-    color: '#999',
-  },
-  iosChevron: {
+  chevron: {
     fontSize: 16,
-    color: '#666',
     marginLeft: 8,
   },
-  iosOverlay: {
+  overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
-  iosSheet: {
-    backgroundColor: '#fff',
-  },
-  iosSheetHeader: {
+  sheet: {},
+  sheetHeader: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
-  iosDone: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-
-  // ── Android ──────────────────────────────────────────────────────────────
   pickerContainer: {
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
-    backgroundColor: '#fff',
     marginBottom: 10,
-    // overflow:hidden clipa el texto nativo del Picker en Android → invisible
   },
   picker: {
     height: 50,
-    color: '#333',
   },
 });
