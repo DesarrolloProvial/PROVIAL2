@@ -27,12 +27,8 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     return res.status(401).json({ error: 'No autorizado: Token inválido o expirado' });
   }
 
-  // Verificar si el acceso fue revocado individualmente o por cambio de grupo
-  const [bloqueado, grupoBloqueado] = await Promise.all([
-    cache.get(`acceso_bloqueado:${payload.userId}`),
-    cache.get(`grupo_bloqueado:${payload.userId}`),
-  ]);
-  if (bloqueado || grupoBloqueado) {
+  const bloqueado = await cache.get(`acceso_bloqueado:${payload.userId}`);
+  if (bloqueado) {
     return res.status(401).json({ error: 'Acceso revocado. Inicia sesión nuevamente.' });
   }
 

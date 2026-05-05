@@ -30,7 +30,8 @@ export type CopPermission =
   | 'puede_crear_persistentes'
   | 'puede_cerrar_persistentes'
   | 'puede_promover_situaciones'
-  | 'puede_asignar_unidades';
+  | 'puede_asignar_unidades'
+  | 'puede_gestionar_grupos';
 
 /**
  * Middleware para autorizar acciones basadas en sub-rol COP
@@ -162,6 +163,45 @@ export async function canViewPersistentes(req: Request, res: Response, next: Nex
   }
 
   return next();
+}
+
+/**
+ * Middleware para autorizar gestión de grupos y calendarios.
+ * OPERACIONES y ADMIN tienen acceso directo.
+ * COP solo si su sub-rol tiene puede_gestionar_grupos = true.
+ */
+export async function authorizeGruposGestion(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
+
+    const { rol } = req.user;
+
+    if (rol === 'SUPER_ADMIN' || rol === 'ADMIN' || rol === 'OPERACIONES') {
+      return next();
+    }
+
+    if (rol === 'COP') {
+      const subRol = await getSubRolCop(req.user.userId);
+      if (subRol?.puede_gestionar_grupos === true) {
+        req.subRolCop = subRol;
+        return next();
+      }
+      return res.status(403).json({
+        error: 'Sin permisos',
+        message: 'Tu rol del COP no tiene permiso para gestionar grupos.',
+      });
+    }
+
+    return res.status(403).json({
+      error: 'Acceso denegado',
+      message: 'No tienes permisos para gestionar grupos.',
+    });
+  } catch (error) {
+    console.error('Error en authorizeGruposGestion:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
 }
 
 /**

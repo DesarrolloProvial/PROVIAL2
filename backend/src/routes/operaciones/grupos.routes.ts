@@ -15,6 +15,7 @@ import {
   setEstadoGrupo,
 } from '../../controllers/operaciones/grupo.controller';
 import { authenticate, authorize } from '../../middlewares/auth';
+import { authorizeGruposGestion } from '../../middlewares/subRolCop';
 
 const router = Router();
 
@@ -56,13 +57,13 @@ router.get('/acceso/verificar/:usuario_id', authenticate, authorize('COP', 'OPER
 // ========================================
 
 // Generar calendario automáticamente
-router.post('/calendario/generar', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), generarCalendario);
+router.post('/calendario/generar', authenticate, authorizeGruposGestion, generarCalendario);
 
 // Actualizar entrada de calendario
-router.patch('/:grupo/calendario/:fecha', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), updateCalendario);
+router.patch('/:grupo/calendario/:fecha', authenticate, authorizeGruposGestion, updateCalendario);
 
 // Establecer estado de grupo (Manual)
-router.post('/:grupo/estado', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), setEstadoGrupo);
+router.post('/:grupo/estado', authenticate, authorizeGruposGestion, setEstadoGrupo);
 
 // ========================================
 // GESTIÓN DE ACCESO (OPERACIONES/MANDOS/ADMIN)

@@ -128,26 +128,6 @@ export async function setEstadoGrupo(req: Request, res: Response) {
 
     await GrupoModel.setEstadoGrupoRango(grupoId, inicio, fin, estado, observaciones);
 
-    // Sincronizar sesiones activas con el nuevo estado del grupo
-    const hoy = new Date();
-    const inicioHoy = inicio <= hoy && fin >= hoy;
-    if (inicioHoy) {
-      // El cambio afecta el día de hoy → revocar / restaurar acceso de los miembros
-      const miembros = await db.manyOrNone<{ id: number; exento_grupos: boolean }>(
-        `SELECT id, exento_grupos FROM usuario WHERE grupo = $1 AND activo = TRUE AND acceso_app_activo = TRUE`,
-        [grupoId]
-      );
-      for (const m of miembros) {
-        if (m.exento_grupos) continue;
-        if (estado === 'DESCANSO') {
-          await cache.set(`grupo_bloqueado:${m.id}`, '1', 86400);
-          await cache.invalidatePattern(`refresh_token:${m.id}:*`);
-        } else {
-          await cache.del(`grupo_bloqueado:${m.id}`);
-        }
-      }
-    }
-
     return res.json({
       message: 'Estado del grupo actualizado exitosamente',
       grupo: grupoId,
@@ -293,7 +273,6 @@ export async function toggleAccesoIndividual(req: Request, res: Response) {
       await cache.invalidatePattern(`refresh_token:${usuarioId}:*`);
     } else {
       await cache.del(`acceso_bloqueado:${usuarioId}`);
-      await cache.del(`grupo_bloqueado:${usuarioId}`);
     }
 
     return res.json({
