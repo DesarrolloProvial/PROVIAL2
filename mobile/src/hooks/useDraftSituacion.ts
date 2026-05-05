@@ -376,6 +376,12 @@ export function useDraftSituacion() {
         clima: toNull(draft.clima),
         carga_vehicular: toNull(draft.carga_vehicular),
         area: toNull(draft.area),
+        iluminacion: toNull(draft.iluminacion),
+        visibilidad: toNull(draft.visibilidad),
+        senalizacion: toNull(draft.senalizacion),
+        causa_probable: toNull(draft.causa_probable),
+        causa_especificar: toNull(draft.causa_especificar),
+        via_estado: toNull(draft.via_estado),
 
         // Mantener ID determinista
         id: draft.id,

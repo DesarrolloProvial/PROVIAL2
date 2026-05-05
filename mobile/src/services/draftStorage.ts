@@ -126,6 +126,14 @@ export interface DraftSituacion {
   area?: string;
   material_via?: string;
 
+  // Condiciones de la vía (HECHO_TRANSITO y otros)
+  iluminacion?: string | null;
+  visibilidad?: string | null;
+  senalizacion?: string | null;
+  causa_probable?: string | null;
+  causa_especificar?: string | null;
+  via_estado?: string | null;
+
   // Multimedia
   multimedia: MultimediaRef[];
 
