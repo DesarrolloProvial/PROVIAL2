@@ -52,7 +52,8 @@ export async function getTurnoByFecha(req: Request, res: Response) {
     const { fecha } = req.params;
     if (!fecha) return res.status(400).json({ error: 'La fecha es requerida' });
 
-    const turno = await TurnoModel.findByFecha(fecha);
+    const sedeId = req.user!.sede;
+    const turno = await TurnoModel.findByFecha(fecha, sedeId);
     if (!turno) return res.status(404).json({ error: 'No existe turno para esta fecha', fecha });
 
     return res.json({ turno });
@@ -67,7 +68,10 @@ export async function createTurno(req: Request, res: Response) {
     const { fecha, fecha_fin, observaciones, sede_id } = req.body;
     if (!fecha) return res.status(400).json({ error: 'La fecha es requerida' });
 
-    const sedeIdFinal = sede_id || req.user!.sede || null;
+    const sedeIdFinal = sede_id || req.user!.sede;
+    if (!sedeIdFinal) {
+      return res.status(400).json({ error: 'sede_id es requerido. Tu usuario no tiene sede asignada.' });
+    }
 
     const existente = await TurnoModel.findTurnoExistente(fecha, sedeIdFinal);
     if (existente) {
@@ -85,6 +89,9 @@ export async function createTurno(req: Request, res: Response) {
     return res.status(201).json({ message: 'Turno creado exitosamente', turno });
   } catch (error) {
     console.error('Error en createTurno:', error);
+    if ((error as any).code === '23505') {
+      return res.status(409).json({ error: 'Ya existe un turno para esta fecha y sede' });
+    }
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -122,7 +129,13 @@ export async function createAsignacion(req: Request, res: Response) {
       const motivo = (error as any).message.split(':')[2] || 'Desconocido';
       return res.status(409).json({ error: `No se puede asignar la tripulación. Uno de los usuarios está inactivo por: ${motivo}` });
     }
-    if ((error as any).code === 'P0001') return res.status(400).json({ error: (error as any).message });
+    if ((error as any).code === 'P0001' || (error as any).message?.startsWith('SEDE_MISMATCH')) {
+      return res.status(400).json({ error: 'La unidad no pertenece a la sede de este turno' });
+    }
+    if ((error as any).message?.startsWith('USUARIO_DUPLICADO')) {
+      const msg = (error as any).message.replace('USUARIO_DUPLICADO: ', '');
+      return res.status(409).json({ error: msg });
+    }
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

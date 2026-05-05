@@ -83,10 +83,24 @@ export interface MiAsignacionHoy {
 }
 
 export const TurnoModel = {
-  // Obtener turno de una fecha
-  async findByFecha(fecha: string): Promise<Turno | null> {
+  // Obtener turno por fecha y sede (fuente de verdad para multi-sede)
+  async findByFechaYSede(fecha: string, sedeId: number): Promise<Turno | null> {
     return db.oneOrNone(
-      'SELECT * FROM turno WHERE fecha = $1',
+      'SELECT * FROM turno WHERE fecha = $1 AND sede_id = $2',
+      [fecha, sedeId]
+    );
+  },
+
+  // Compatibilidad: busca por fecha restringido a una sede (evita ambigüedad multi-sede)
+  async findByFecha(fecha: string, sedeId?: number): Promise<Turno | null> {
+    if (sedeId) {
+      return db.oneOrNone(
+        'SELECT * FROM turno WHERE fecha = $1 AND sede_id = $2',
+        [fecha, sedeId]
+      );
+    }
+    return db.oneOrNone(
+      'SELECT * FROM turno WHERE fecha = $1 ORDER BY id LIMIT 1',
       [fecha]
     );
   },
@@ -496,6 +510,17 @@ export const TurnoModel = {
     data: Record<string, any>,
     tripulacion: Array<{ usuario_id: number; rol_tripulacion: string; es_comandante?: boolean; telefono_contacto?: string }>
   ): Promise<{ asignacion: any; tripulacionCreada: any[] }> {
+    // Validación de sede antes de abrir transacción
+    if (data.unidad_id) {
+      const [turno, unidad] = await Promise.all([
+        db.oneOrNone<{ sede_id: number }>('SELECT sede_id FROM turno WHERE id = $1', [turnoId]),
+        db.oneOrNone<{ sede_id: number }>('SELECT sede_id FROM unidad WHERE id = $1', [data.unidad_id]),
+      ]);
+      if (turno && unidad && turno.sede_id !== unidad.sede_id) {
+        throw Object.assign(new Error('SEDE_MISMATCH: La unidad no pertenece a la sede de este turno'), { code: 'P0001' });
+      }
+    }
+
     return db.tx(async (t) => {
       const asignacion = await t.one(
         `INSERT INTO asignacion_unidad

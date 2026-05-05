@@ -5,6 +5,7 @@ import { generadorService } from '../../services/operaciones/generador.service';
 import type { SugerenciaAsignacion, ParametrosGenerador } from '../../services/operaciones/generador.service';
 import { ArrowLeft, Sparkles, Users, Truck, CheckCircle, AlertCircle, Info, Settings, Shield, Home } from 'lucide-react';
 import ThemeToggle from '../../components/common/ThemeToggle';
+import CalendarPicker from '../../components/common/CalendarPicker';
 import { localToday } from '../../utils/dates';
 
 export default function GeneradorTurnosPage() {
@@ -107,17 +108,11 @@ export default function GeneradorTurnosPage() {
 
               <div className={`space-y-4 ${showConfig ? 'block' : 'hidden lg:block'}`}>
                 {/* Fecha */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Fecha del turno
-                  </label>
-                  <input
-                    type="date"
-                    value={fecha}
-                    onChange={(e) => setFecha(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-gray-100"
-                  />
-                </div>
+                <CalendarPicker
+                  label="Fecha del turno"
+                  value={fecha}
+                  onChange={setFecha}
+                />
 
                 {/* Número de unidades */}
                 <div>

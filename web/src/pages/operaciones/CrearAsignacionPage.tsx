@@ -10,6 +10,7 @@ import type { CreateAsignacionProgramadaDTO } from '../../services/operaciones/a
 import type { BrigadaDisponible } from '../../services/operaciones/operaciones.service';
 import { CheckCircle, AlertCircle, Users, Truck, ArrowLeft, Plus, X, Search, Crown, Info } from 'lucide-react';
 import ThemeToggle from '../../components/common/ThemeToggle';
+import CalendarPicker from '../../components/common/CalendarPicker';
 import { localTomorrow } from '../../utils/dates';
 
 export default function CrearAsignacionPage() {
@@ -289,16 +290,12 @@ export default function CrearAsignacionPage() {
             <div className="card-body">
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Fecha del Turno</h2>
               <div className="flex flex-wrap items-end gap-4">
-                <div>
-                  <label className="label">Fecha de Salida *</label>
-                  <input
-                    type="date"
-                    value={fecha}
-                    onChange={(e) => setFecha(e.target.value)}
-                    className="input-field"
-                    required
-                  />
-                </div>
+                <CalendarPicker
+                  label="Fecha de Salida"
+                  value={fecha}
+                  onChange={setFecha}
+                  required
+                />
 
                 <label className="flex items-center gap-2 cursor-pointer pb-2">
                   <input
@@ -314,16 +311,12 @@ export default function CrearAsignacionPage() {
                 </label>
 
                 {esComisionLarga && (
-                  <div>
-                    <label className="label">Fecha de Regreso</label>
-                    <input
-                      type="date"
-                      value={fechaFin}
-                      onChange={(e) => setFechaFin(e.target.value)}
-                      min={fecha}
-                      className="input-field"
-                    />
-                  </div>
+                  <CalendarPicker
+                    label="Fecha de Regreso"
+                    value={fechaFin}
+                    onChange={setFechaFin}
+                    min={fecha}
+                  />
                 )}
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
