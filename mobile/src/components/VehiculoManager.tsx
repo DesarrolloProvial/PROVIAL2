@@ -10,10 +10,9 @@
 import React, { useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Control, useFieldArray } from 'react-hook-form';
-import { MaterialIcons } from '@expo/vector-icons';
-import { Button } from 'react-native-paper';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../core/theme';
 import { VehiculoForm } from './VehiculoForm';
-import { COLORS } from '../constants/colors';
 
 interface Props {
     control: Control<any>;
@@ -34,6 +33,9 @@ export default function VehiculoManager({
     readonly = false,
     label = 'Vehículos',
 }: Props) {
+    const theme = useTheme();
+    const c = theme.colors;
+
     const { fields, append, remove } = useFieldArray({
         control,
         name,
@@ -98,45 +100,44 @@ export default function VehiculoManager({
         <View style={styles.container}>
             <View style={styles.header}>
                 <View>
-                    <Text style={styles.title}>{label}</Text>
+                    <Text style={[styles.title, { color: c.text.primary }]}>{label}</Text>
                     {maxVehiculos > 1 && (
-                        <Text style={styles.subtitle}>
+                        <Text style={[styles.subtitle, { color: c.text.secondary }]}>
                             {fields.length} de {maxVehiculos} vehículos
                         </Text>
                     )}
                 </View>
                 {!readonly && fields.length < maxVehiculos && (
-                    <Button
-                        mode="contained"
-                        icon="plus"
+                    <TouchableOpacity
                         onPress={agregarVehiculo}
-                        style={styles.addButton}
-                        compact
+                        style={[styles.addButton, { backgroundColor: c.primary }]}
+                        activeOpacity={0.8}
                     >
-                        Agregar Vehículo
-                    </Button>
+                        <MaterialCommunityIcons name="plus" size={16} color={c.text.inverse} />
+                        <Text style={[styles.addButtonText, { color: c.text.inverse }]}>Agregar Vehículo</Text>
+                    </TouchableOpacity>
                 )}
             </View>
 
             <ScrollView style={styles.vehiculosContainer}>
                 {fields.length === 0 ? (
                     <View style={styles.emptyState}>
-                        <MaterialIcons name="directions-car" size={48} color={COLORS.text.disabled} />
-                        <Text style={styles.emptyText}>
+                        <MaterialIcons name="directions-car" size={48} color={c.text.disabled} />
+                        <Text style={[styles.emptyText, { color: c.text.secondary }]}>
                             {readonly ? 'No hay vehículos registrados' : 'Presiona "Agregar Vehículo" para comenzar'}
                         </Text>
                     </View>
                 ) : (
                     fields.map((field, index) => (
-                        <View key={field.id} style={styles.vehiculoCard}>
-                            <View style={styles.vehiculoHeader}>
-                                <Text style={styles.vehiculoNumber}>Vehículo #{index + 1}</Text>
+                        <View key={field.id} style={[styles.vehiculoCard, { borderColor: c.border, backgroundColor: c.surface }]}>
+                            <View style={[styles.vehiculoHeader, { borderBottomColor: c.border }]}>
+                                <Text style={[styles.vehiculoNumber, { color: c.primary }]}>Vehículo #{index + 1}</Text>
                                 {!readonly && fields.length > minVehiculos && (
                                     <TouchableOpacity
                                         onPress={() => eliminarVehiculo(index)}
                                         style={styles.deleteButton}
                                     >
-                                        <MaterialIcons name="delete" size={24} color={COLORS.error} />
+                                        <MaterialIcons name="delete" size={24} color={c.danger} />
                                     </TouchableOpacity>
                                 )}
                             </View>
@@ -151,7 +152,7 @@ export default function VehiculoManager({
             </ScrollView>
 
             {required && fields.length === 0 && (
-                <Text style={styles.errorText}>Se requiere al menos un vehículo</Text>
+                <Text style={[styles.errorText, { color: c.danger }]}>Se requiere al menos un vehículo</Text>
             )}
         </View>
     );
@@ -171,26 +172,31 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: COLORS.text.primary,
     },
     subtitle: {
         fontSize: 14,
-        color: COLORS.text.secondary,
         marginTop: 2,
     },
     addButton: {
-        backgroundColor: COLORS.primary,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 14,
+        paddingVertical: 9,
+        borderRadius: 8,
+    },
+    addButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
     },
     vehiculosContainer: {
         flex: 1,
     },
     vehiculoCard: {
-        backgroundColor: '#fff',
         borderRadius: 12,
         padding: 16,
         marginBottom: 16,
         borderWidth: 1,
-        borderColor: COLORS.border,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
@@ -204,12 +210,10 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         paddingBottom: 12,
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
     },
     vehiculoNumber: {
         fontSize: 16,
         fontWeight: '600',
-        color: COLORS.primary,
     },
     deleteButton: {
         padding: 4,
@@ -222,11 +226,9 @@ const styles = StyleSheet.create({
     emptyText: {
         marginTop: 16,
         fontSize: 14,
-        color: COLORS.text.secondary,
         textAlign: 'center',
     },
     errorText: {
-        color: COLORS.error,
         fontSize: 14,
         marginTop: 8,
         paddingHorizontal: 4,

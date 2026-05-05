@@ -1,21 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Switch } from 'react-native';
 import { Controller, Control, useWatch } from 'react-hook-form';
-import {
-    TextInput,
-    Button,
-    HelperText,
-    Switch,
-    RadioButton,
-    List,
-    SegmentedButtons
-} from 'react-native-paper';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../core/theme';
 import { PlacaInput } from './PlacaInput';
 import SelectConOtro from './SelectConOtro';
 import CrossPlatformPicker from './CrossPlatformPicker';
 import PersonaManager from './PersonaManager';
 import DispositivosSeguridad from './DispositivosSeguridad';
+import DateField from './fields/DateField';
 import { catalogoStorage } from '../core/storage/catalogoStorage';
 
 interface VehiculoFormProps {
@@ -24,8 +17,13 @@ interface VehiculoFormProps {
     onRemove: () => void;
 }
 
+const LICENCIA_TIPOS = ['A', 'B', 'C', 'M', 'E'];
+const DOC_AUTORIDADES = ['PNC', 'PMT', 'MP'];
+
 export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRemove }) => {
-    // Catálogos desde SQLite
+    const theme = useTheme();
+    const c = theme.colors;
+
     const [tiposVehiculo, setTiposVehiculo] = useState<{label: string, value: string}[]>([]);
     const [marcas, setMarcas] = useState<{label: string, value: string}[]>([]);
     const [etnias, setEtnias] = useState<{label: string, value: string}[]>([]);
@@ -44,9 +42,8 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
         });
     }, []);
 
-    // Estado para secciones expandidas/colapsadas
     const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
-        preliminares: true, // Expandido por defecto
+        preliminares: true,
         tc: false,
         licencia: false,
         carga: false,
@@ -59,12 +56,6 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
         custodia: false,
     });
 
-    // State para date pickers
-    const [activeDatePicker, setActiveDatePicker] = useState<string | null>(null);
-    const [datePickerValue, setDatePickerValue] = useState<Date>(new Date());
-    const [datePickerOnChange, setDatePickerOnChange] = useState<((date: Date) => void) | null>(null);
-
-    // Watch para mostrar secciones condicionales
     const cargado = useWatch({ control, name: `vehiculos.${index}.cargado` });
     const tieneContenedor = useWatch({ control, name: `vehiculos.${index}.tiene_contenedor` });
     const esBus = useWatch({ control, name: `vehiculos.${index}.es_bus` });
@@ -76,76 +67,67 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
         setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
     };
 
-    // Handler para el DateTimePicker nativo
-    const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-        if (Platform.OS === 'android') {
-            setActiveDatePicker(null);
-        }
+    const inputStyle = [
+        styles.input,
+        { borderColor: c.border, backgroundColor: c.surface, color: c.text.primary },
+    ];
 
-        if (event.type === 'set' && selectedDate && datePickerOnChange) {
-            datePickerOnChange(selectedDate);
-            if (Platform.OS === 'ios') {
-                setActiveDatePicker(null);
-            }
-        } else if (event.type === 'dismissed') {
-            setActiveDatePicker(null);
-        }
-    };
+    const AccordionHeader = ({ sectionKey, title }: { sectionKey: string; title: string }) => (
+        <TouchableOpacity
+            style={[styles.accordionHeader, { backgroundColor: c.background, borderColor: c.border }]}
+            onPress={() => toggleSection(sectionKey)}
+            activeOpacity={0.7}
+        >
+            <Text style={[styles.accordionTitle, { color: c.text.primary }]}>{title}</Text>
+            <MaterialCommunityIcons
+                name={expandedSections[sectionKey] ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={c.text.secondary}
+            />
+        </TouchableOpacity>
+    );
 
-    // Helper para renderizar date picker (usa el nativo del sistema)
-    const renderDateField = (fieldName: string, label: string) => (
-        <Controller
-            control={control}
-            name={`vehiculos.${index}.${fieldName}`}
-            render={({ field: { onChange, value } }) => (
-                <View style={styles.dateContainer}>
-                    <Text style={styles.label}>{label}</Text>
-                    <Button
-                        mode="outlined"
-                        onPress={() => {
-                            setDatePickerValue(value ? new Date(value) : new Date());
-                            setDatePickerOnChange(() => onChange);
-                            setActiveDatePicker(fieldName);
-                        }}
-                        icon="calendar"
-                        style={styles.dateButton}
-                    >
-                        {value ? new Date(value).toLocaleDateString('es-GT') : 'Seleccionar Fecha'}
-                    </Button>
-
-                    {/* DateTimePicker nativo - solo se muestra cuando este campo está activo */}
-                    {activeDatePicker === fieldName && (
-                        <DateTimePicker
-                            value={datePickerValue}
-                            mode="date"
-                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                            onChange={handleDateChange}
-                        />
-                    )}
-                </View>
-            )}
-        />
+    const SwitchToggle = ({
+        label,
+        fieldName,
+    }: {
+        label: string;
+        fieldName: string;
+    }) => (
+        <View style={[styles.switchRow, { backgroundColor: c.background, borderColor: c.border }]}>
+            <Text style={[styles.switchLabel, { color: c.text.primary }]}>{label}</Text>
+            <Controller
+                control={control}
+                name={`vehiculos.${index}.${fieldName}`}
+                render={({ field: { onChange, value } }) => (
+                    <Switch
+                        value={value || false}
+                        onValueChange={onChange}
+                        trackColor={{ false: c.gray[200], true: c.primary + '80' }}
+                        thumbColor={value ? c.primary : c.gray[400]}
+                    />
+                )}
+            />
+        </View>
     );
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>Vehículo {index + 1}</Text>
-                <Button onPress={onRemove} textColor="red" mode="text">Eliminar</Button>
+        <View style={[styles.container, { borderColor: c.border, backgroundColor: c.surface }]}>
+            {/* Header */}
+            <View style={[styles.header, { borderBottomColor: c.border }]}>
+                <Text style={[styles.title, { color: c.text.primary }]}>Vehículo {index + 1}</Text>
+                <TouchableOpacity onPress={onRemove} style={styles.removeBtn}>
+                    <Text style={[styles.removeBtnText, { color: c.danger }]}>Eliminar</Text>
+                </TouchableOpacity>
             </View>
 
             {/* ============================================ */}
             {/* SECCIÓN 1: PRELIMINARES */}
             {/* ============================================ */}
-            <List.Accordion
-                title="Preliminares"
-                expanded={expandedSections.preliminares}
-                onPress={() => toggleSection('preliminares')}
-                style={styles.accordion}
-                titleStyle={styles.accordionTitle}
-            >
-                <View style={styles.section}>
-                    {/* Tipo Vehículo */}
+            <AccordionHeader sectionKey="preliminares" title="Preliminares" />
+
+            {expandedSections.preliminares && (
+                <View style={[styles.section, { backgroundColor: c.surface }]}>
                     <Controller
                         control={control}
                         name={`vehiculos.${index}.tipo_vehiculo`}
@@ -160,19 +142,21 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         )}
                     />
 
-                    {/* Color y Marca */}
                     <View style={styles.row}>
                         <Controller
                             control={control}
                             name={`vehiculos.${index}.color`}
                             render={({ field: { onChange, value } }) => (
-                                <TextInput
-                                    label="Color"
-                                    value={value || ''}
-                                    onChangeText={onChange}
-                                    mode="outlined"
-                                    style={[styles.input, styles.half]}
-                                />
+                                <View style={[styles.fieldGroup, styles.half]}>
+                                    <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Color</Text>
+                                    <TextInput
+                                        value={value || ''}
+                                        onChangeText={onChange}
+                                        style={inputStyle}
+                                        placeholderTextColor={c.text.disabled}
+                                        placeholder="Color"
+                                    />
+                                </View>
                             )}
                         />
                         <Controller
@@ -192,7 +176,6 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         />
                     </View>
 
-                    {/* Placa (usando PlacaInput con validación) */}
                     <Controller
                         control={control}
                         name={`vehiculos.${index}.placa`}
@@ -212,7 +195,6 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         )}
                     />
 
-                    {/* Estado del Piloto */}
                     <Controller
                         control={control}
                         name={`vehiculos.${index}.estado_piloto`}
@@ -235,70 +217,78 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         )}
                     />
 
-                    {/* Ebriedad */}
-                    <View style={styles.switchRow}>
-                        <Text>¿Ebriedad del Piloto?</Text>
+                    <View style={[styles.switchRow, { backgroundColor: c.background, borderColor: c.border }]}>
+                        <Text style={[styles.switchLabel, { color: c.text.primary }]}>¿Ebriedad del Piloto?</Text>
                         <Controller
                             control={control}
                             name={`vehiculos.${index}.ebriedad`}
                             render={({ field: { onChange, value } }) => (
-                                <Switch value={value || false} onValueChange={onChange} />
+                                <Switch
+                                    value={value || false}
+                                    onValueChange={onChange}
+                                    trackColor={{ false: c.gray[200], true: c.primary + '80' }}
+                                    thumbColor={value ? c.primary : c.gray[400]}
+                                />
                             )}
                         />
                     </View>
 
-                    {/* Hospital de traslado (condicional si HERIDO o TRASLADADO) */}
                     {(estadoPiloto === 'TRASLADADO' || estadoPiloto === 'HERIDO') && (
                         <>
-                            <Controller
-                                control={control}
-                                name={`vehiculos.${index}.hospital_traslado_piloto`}
-                                render={({ field: { onChange, value } }) => (
-                                    <TextInput
-                                        label="Hospital de Traslado"
-                                        value={value || ''}
-                                        onChangeText={onChange}
-                                        mode="outlined"
-                                        style={styles.input}
-                                    />
-                                )}
-                            />
-                            <Controller
-                                control={control}
-                                name={`vehiculos.${index}.descripcion_lesiones_piloto`}
-                                render={({ field: { onChange, value } }) => (
-                                    <TextInput
-                                        label="Descripción de Lesiones"
-                                        value={value || ''}
-                                        onChangeText={onChange}
-                                        mode="outlined"
-                                        multiline
-                                        numberOfLines={2}
-                                        style={styles.input}
-                                    />
-                                )}
-                            />
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Hospital de Traslado</Text>
+                                <Controller
+                                    control={control}
+                                    name={`vehiculos.${index}.hospital_traslado_piloto`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <TextInput
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            style={inputStyle}
+                                            placeholderTextColor={c.text.disabled}
+                                        />
+                                    )}
+                                />
+                            </View>
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Descripción de Lesiones</Text>
+                                <Controller
+                                    control={control}
+                                    name={`vehiculos.${index}.descripcion_lesiones_piloto`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <TextInput
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            style={[inputStyle, { minHeight: 72, textAlignVertical: 'top' }]}
+                                            multiline
+                                            numberOfLines={2}
+                                            placeholderTextColor={c.text.disabled}
+                                        />
+                                    )}
+                                />
+                            </View>
                         </>
                     )}
 
-                    {/* Datos de fallecido (condicional) */}
                     {estadoPiloto === 'FALLECIDO' && (
                         <>
-                            <Controller
-                                control={control}
-                                name={`vehiculos.${index}.causa_fallecimiento`}
-                                render={({ field: { onChange, value } }) => (
-                                    <TextInput
-                                        label="Causa Aparente de Fallecimiento"
-                                        value={value || ''}
-                                        onChangeText={onChange}
-                                        mode="outlined"
-                                        multiline
-                                        numberOfLines={2}
-                                        style={styles.input}
-                                    />
-                                )}
-                            />
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Causa Aparente de Fallecimiento</Text>
+                                <Controller
+                                    control={control}
+                                    name={`vehiculos.${index}.causa_fallecimiento`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <TextInput
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            style={[inputStyle, { minHeight: 72, textAlignVertical: 'top' }]}
+                                            multiline
+                                            numberOfLines={2}
+                                            placeholderTextColor={c.text.disabled}
+                                        />
+                                    )}
+                                />
+                            </View>
                             <Controller
                                 control={control}
                                 name={`vehiculos.${index}.lugar_fallecimiento`}
@@ -317,224 +307,246 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                                     />
                                 )}
                             />
-                            <Controller
-                                control={control}
-                                name={`vehiculos.${index}.hospital_traslado_piloto`}
-                                render={({ field: { onChange, value } }) => (
-                                    <TextInput
-                                        label="Hospital (si fue trasladado)"
-                                        value={value || ''}
-                                        onChangeText={onChange}
-                                        mode="outlined"
-                                        style={styles.input}
-                                    />
-                                )}
-                            />
-                            <Controller
-                                control={control}
-                                name={`vehiculos.${index}.consignado_por`}
-                                render={({ field: { onChange, value } }) => (
-                                    <TextInput
-                                        label="Consignado por (autoridad)"
-                                        value={value || ''}
-                                        onChangeText={onChange}
-                                        mode="outlined"
-                                        placeholder="Ej: MP, PNC"
-                                        style={styles.input}
-                                    />
-                                )}
-                            />
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Hospital (si fue trasladado)</Text>
+                                <Controller
+                                    control={control}
+                                    name={`vehiculos.${index}.hospital_traslado_piloto`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <TextInput
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            style={inputStyle}
+                                            placeholderTextColor={c.text.disabled}
+                                        />
+                                    )}
+                                />
+                            </View>
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Consignado por (autoridad)</Text>
+                                <Controller
+                                    control={control}
+                                    name={`vehiculos.${index}.consignado_por`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <TextInput
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            style={inputStyle}
+                                            placeholder="Ej: MP, PNC"
+                                            placeholderTextColor={c.text.disabled}
+                                        />
+                                    )}
+                                />
+                            </View>
                         </>
                     )}
 
-                    {/* Personas Asistidas */}
-                    <Controller
-                        control={control}
-                        name={`vehiculos.${index}.personas_asistidas`}
-                        render={({ field: { onChange, value } }) => (
-                            <TextInput
-                                label="Personas Asistidas"
-                                value={value?.toString() || '0'}
-                                onChangeText={(text) => onChange(parseInt(text) || 0)}
-                                keyboardType="numeric"
-                                mode="outlined"
-                                style={styles.input}
-                            />
-                        )}
-                    />
+                    <View style={styles.fieldGroup}>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Personas Asistidas</Text>
+                        <Controller
+                            control={control}
+                            name={`vehiculos.${index}.personas_asistidas`}
+                            render={({ field: { onChange, value } }) => (
+                                <TextInput
+                                    value={value?.toString() || '0'}
+                                    onChangeText={(text) => onChange(parseInt(text) || 0)}
+                                    keyboardType="numeric"
+                                    style={inputStyle}
+                                    placeholderTextColor={c.text.disabled}
+                                />
+                            )}
+                        />
+                    </View>
                 </View>
-            </List.Accordion>
+            )}
 
             {/* ============================================ */}
             {/* SECCIÓN 2: TARJETA CIRCULACIÓN */}
             {/* ============================================ */}
-            <List.Accordion
-                title="Tarjeta Circulación"
-                expanded={expandedSections.tc}
-                onPress={() => toggleSection('tc')}
-                style={styles.accordion}
-                titleStyle={styles.accordionTitle}
-            >
-                <View style={styles.section}>
-                    <Controller
-                        control={control}
-                        name={`vehiculos.${index}.tarjeta_circulacion`}
-                        render={({ field: { onChange, value } }) => (
-                            <TextInput
-                                label="No. Tarjeta Circulación"
-                                value={value || ''}
-                                onChangeText={onChange}
-                                keyboardType="numeric"
-                                mode="outlined"
-                                style={styles.input}
-                            />
-                        )}
-                    />
+            <AccordionHeader sectionKey="tc" title="Tarjeta Circulación" />
 
-                    <Controller
-                        control={control}
-                        name={`vehiculos.${index}.nit`}
-                        render={({ field: { onChange, value } }) => (
-                            <TextInput
-                                label="NIT Propietario"
-                                value={value || ''}
-                                onChangeText={onChange}
-                                keyboardType="numeric"
-                                mode="outlined"
-                                style={styles.input}
+            {expandedSections.tc && (
+                <View style={[styles.section, { backgroundColor: c.surface }]}>
+                    {[
+                        { name: 'tarjeta_circulacion', label: 'No. Tarjeta Circulación', keyboard: 'numeric' as const },
+                        { name: 'nit', label: 'NIT Propietario', keyboard: 'numeric' as const },
+                        { name: 'nombre_propietario', label: 'Nombre Propietario', keyboard: 'default' as const },
+                    ].map(({ name, label, keyboard }) => (
+                        <View key={name} style={styles.fieldGroup}>
+                            <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>{label}</Text>
+                            <Controller
+                                control={control}
+                                name={`vehiculos.${index}.${name}`}
+                                render={({ field: { onChange, value } }) => (
+                                    <TextInput
+                                        value={value || ''}
+                                        onChangeText={onChange}
+                                        keyboardType={keyboard}
+                                        style={inputStyle}
+                                        placeholderTextColor={c.text.disabled}
+                                    />
+                                )}
                             />
-                        )}
-                    />
+                        </View>
+                    ))}
 
-                    <Controller
-                        control={control}
-                        name={`vehiculos.${index}.nombre_propietario`}
-                        render={({ field: { onChange, value } }) => (
-                            <TextInput
-                                label="Nombre Propietario"
-                                value={value || ''}
-                                onChangeText={onChange}
-                                mode="outlined"
-                                style={styles.input}
-                            />
-                        )}
-                    />
+                    <View style={styles.fieldGroup}>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Dirección Propietario</Text>
+                        <Controller
+                            control={control}
+                            name={`vehiculos.${index}.direccion_propietario`}
+                            render={({ field: { onChange, value } }) => (
+                                <TextInput
+                                    value={value || ''}
+                                    onChangeText={onChange}
+                                    style={[inputStyle, { minHeight: 72, textAlignVertical: 'top' }]}
+                                    multiline
+                                    numberOfLines={2}
+                                    placeholderTextColor={c.text.disabled}
+                                />
+                            )}
+                        />
+                    </View>
 
-                    <Controller
-                        control={control}
-                        name={`vehiculos.${index}.direccion_propietario`}
-                        render={({ field: { onChange, value } }) => (
-                            <TextInput
-                                label="Dirección Propietario"
-                                value={value || ''}
-                                onChangeText={onChange}
-                                mode="outlined"
-                                multiline
-                                numberOfLines={2}
-                                style={styles.input}
-                            />
-                        )}
-                    />
-
-                    <Controller
-                        control={control}
-                        name={`vehiculos.${index}.modelo`}
-                        render={({ field: { onChange, value } }) => (
-                            <TextInput
-                                label="Modelo (Año)"
-                                value={value || ''}
-                                onChangeText={onChange}
-                                keyboardType="numeric"
-                                mode="outlined"
-                                placeholder="Ej: 2020"
-                                style={styles.input}
-                            />
-                        )}
-                    />
+                    <View style={styles.fieldGroup}>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Modelo (Año)</Text>
+                        <Controller
+                            control={control}
+                            name={`vehiculos.${index}.modelo`}
+                            render={({ field: { onChange, value } }) => (
+                                <TextInput
+                                    value={value || ''}
+                                    onChangeText={onChange}
+                                    keyboardType="numeric"
+                                    style={inputStyle}
+                                    placeholder="Ej: 2020"
+                                    placeholderTextColor={c.text.disabled}
+                                />
+                            )}
+                        />
+                    </View>
                 </View>
-            </List.Accordion>
+            )}
 
             {/* ============================================ */}
             {/* SECCIÓN 3: LICENCIA */}
             {/* ============================================ */}
-            <List.Accordion
-                title="Licencia de Conducir"
-                expanded={expandedSections.licencia}
-                onPress={() => toggleSection('licencia')}
-                style={styles.accordion}
-                titleStyle={styles.accordionTitle}
-            >
-                <View style={styles.section}>
-                    <Controller
-                        control={control}
-                        name={`vehiculos.${index}.nombre_piloto`}
-                        render={({ field: { onChange, value } }) => (
-                            <TextInput
-                                label="Nombre Completo del Piloto"
-                                value={value || ''}
-                                onChangeText={onChange}
-                                mode="outlined"
-                                style={styles.input}
-                            />
-                        )}
-                    />
+            <AccordionHeader sectionKey="licencia" title="Licencia de Conducir" />
 
-                    <Text style={styles.label}>Tipo de Licencia</Text>
+            {expandedSections.licencia && (
+                <View style={[styles.section, { backgroundColor: c.surface }]}>
+                    <View style={styles.fieldGroup}>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Nombre Completo del Piloto</Text>
+                        <Controller
+                            control={control}
+                            name={`vehiculos.${index}.nombre_piloto`}
+                            render={({ field: { onChange, value } }) => (
+                                <TextInput
+                                    value={value || ''}
+                                    onChangeText={onChange}
+                                    style={inputStyle}
+                                    placeholderTextColor={c.text.disabled}
+                                />
+                            )}
+                        />
+                    </View>
+
+                    {/* Tipo de Licencia — chip selector */}
                     <Controller
                         control={control}
                         name={`vehiculos.${index}.licencia_tipo`}
                         render={({ field: { onChange, value } }) => (
-                            <SegmentedButtons
-                                value={value || ''}
-                                onValueChange={onChange}
-                                buttons={[
-                                    { value: 'A', label: 'A' },
-                                    { value: 'B', label: 'B' },
-                                    { value: 'C', label: 'C' },
-                                    { value: 'M', label: 'M' },
-                                    { value: 'E', label: 'E' },
-                                ]}
-                                style={styles.segmentedButtons}
-                            />
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Tipo de Licencia</Text>
+                                <View style={styles.chipRow}>
+                                    {LICENCIA_TIPOS.map((tipo) => {
+                                        const selected = value === tipo;
+                                        return (
+                                            <TouchableOpacity
+                                                key={tipo}
+                                                onPress={() => onChange(tipo)}
+                                                style={[
+                                                    styles.chip,
+                                                    {
+                                                        backgroundColor: selected ? c.primary : c.surface,
+                                                        borderColor: selected ? c.primary : c.border,
+                                                    },
+                                                ]}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Text style={[styles.chipText, { color: selected ? c.text.inverse : c.text.primary }]}>
+                                                    {tipo}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </View>
+                                <Text style={[styles.helperText, { color: c.text.secondary }]}>
+                                    A: Motos | B: Livianos | C: Pesados | M: Maquinaria | E: Especial
+                                </Text>
+                            </View>
                         )}
                     />
-                    <HelperText type="info">
-                        A: Motos | B: Livianos | C: Pesados | M: Maquinaria | E: Especial
-                    </HelperText>
+
+                    <View style={styles.fieldGroup}>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>No. Licencia</Text>
+                        <Controller
+                            control={control}
+                            name={`vehiculos.${index}.licencia_numero`}
+                            render={({ field: { onChange, value } }) => (
+                                <TextInput
+                                    value={value || ''}
+                                    onChangeText={onChange}
+                                    keyboardType="numeric"
+                                    style={inputStyle}
+                                    placeholderTextColor={c.text.disabled}
+                                />
+                            )}
+                        />
+                    </View>
 
                     <Controller
                         control={control}
-                        name={`vehiculos.${index}.licencia_numero`}
+                        name={`vehiculos.${index}.licencia_vencimiento`}
                         render={({ field: { onChange, value } }) => (
-                            <TextInput
-                                label="No. Licencia"
-                                value={value || ''}
-                                onChangeText={onChange}
-                                keyboardType="numeric"
-                                mode="outlined"
-                                style={styles.input}
+                            <DateField
+                                label="Fecha Vencimiento Licencia"
+                                value={value ? new Date(value) : null}
+                                onChange={onChange}
+                                mode="date"
                             />
                         )}
                     />
 
-                    {renderDateField('licencia_vencimiento', 'Fecha Vencimiento Licencia')}
+                    <View style={styles.fieldGroup}>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Antigüedad Licencia (años)</Text>
+                        <Controller
+                            control={control}
+                            name={`vehiculos.${index}.licencia_antiguedad`}
+                            render={({ field: { onChange, value } }) => (
+                                <TextInput
+                                    value={value?.toString() || ''}
+                                    onChangeText={(text) => onChange(parseInt(text) || 0)}
+                                    keyboardType="numeric"
+                                    style={inputStyle}
+                                    placeholderTextColor={c.text.disabled}
+                                />
+                            )}
+                        />
+                    </View>
 
                     <Controller
                         control={control}
-                        name={`vehiculos.${index}.licencia_antiguedad`}
+                        name={`vehiculos.${index}.fecha_nacimiento_piloto`}
                         render={({ field: { onChange, value } }) => (
-                            <TextInput
-                                label="Antigüedad Licencia (años)"
-                                value={value?.toString() || ''}
-                                onChangeText={(text) => onChange(parseInt(text) || 0)}
-                                keyboardType="numeric"
-                                mode="outlined"
-                                style={styles.input}
+                            <DateField
+                                label="Fecha de Nacimiento"
+                                value={value ? new Date(value) : null}
+                                onChange={onChange}
+                                mode="date"
                             />
                         )}
                     />
-
-                    {renderDateField('fecha_nacimiento_piloto', 'Fecha de Nacimiento')}
 
                     <Controller
                         control={control}
@@ -550,435 +562,360 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
                         )}
                     />
 
-                    {/* Sexo del Piloto */}
+                    {/* Sexo del Piloto — radio row */}
                     <Controller
                         control={control}
                         name={`vehiculos.${index}.sexo_piloto`}
                         render={({ field: { onChange, value } }) => (
-                            <View style={styles.input}>
-                                <RadioButton.Group onValueChange={onChange} value={value || ''}>
-                                    <Text style={{ fontWeight: '500', marginBottom: 4 }}>Sexo del Piloto</Text>
-                                    <View style={{ flexDirection: 'row', gap: 16 }}>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                            <RadioButton value="M" />
-                                            <Text>Masculino</Text>
-                                        </View>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                            <RadioButton value="F" />
-                                            <Text>Femenino</Text>
-                                        </View>
-                                    </View>
-                                </RadioButton.Group>
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Sexo del Piloto</Text>
+                                <View style={styles.radioRow}>
+                                    {[{ label: 'Masculino', val: 'M' }, { label: 'Femenino', val: 'F' }].map(({ label, val }) => {
+                                        const selected = value === val;
+                                        return (
+                                            <TouchableOpacity
+                                                key={val}
+                                                onPress={() => onChange(val)}
+                                                style={styles.radioOption}
+                                                activeOpacity={0.7}
+                                            >
+                                                <View style={[styles.radioOuter, { borderColor: selected ? c.primary : c.border }]}>
+                                                    {selected && <View style={[styles.radioInner, { backgroundColor: c.primary }]} />}
+                                                </View>
+                                                <Text style={[styles.radioLabel, { color: c.text.primary }]}>{label}</Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </View>
                             </View>
                         )}
                     />
                 </View>
-            </List.Accordion>
+            )}
 
             {/* ============================================ */}
-            {/* SECCIÓN 4: CARGA (solo si cargado = true) */}
+            {/* SECCIÓN 4: CARGA */}
             {/* ============================================ */}
-            <View style={styles.switchRow}>
-                <Text>¿Vehículo Cargado?</Text>
-                <Controller
-                    control={control}
-                    name={`vehiculos.${index}.cargado`}
-                    render={({ field: { onChange, value } }) => (
-                        <Switch value={value || false} onValueChange={onChange} />
-                    )}
-                />
-            </View>
+            <SwitchToggle label="¿Vehículo Cargado?" fieldName="cargado" />
 
             {cargado && (
-                <List.Accordion
-                    title="Datos de Carga"
-                    expanded={expandedSections.carga}
-                    onPress={() => toggleSection('carga')}
-                    style={styles.accordion}
-                    titleStyle={styles.accordionTitle}
-                >
-                    <View style={styles.section}>
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.carga_tipo`}
-                            render={({ field: { onChange, value } }) => (
-                                <TextInput
-                                    label="Tipo de Carga"
-                                    value={value || ''}
-                                    onChangeText={onChange}
-                                    mode="outlined"
-                                    placeholder="Ej: Granos, Materiales, Mercadería"
-                                    style={styles.input}
+                <>
+                    <AccordionHeader sectionKey="carga" title="Datos de Carga" />
+                    {expandedSections.carga && (
+                        <View style={[styles.section, { backgroundColor: c.surface }]}>
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Tipo de Carga</Text>
+                                <Controller
+                                    control={control}
+                                    name={`vehiculos.${index}.carga_tipo`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <TextInput
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            style={inputStyle}
+                                            placeholder="Ej: Granos, Materiales, Mercadería"
+                                            placeholderTextColor={c.text.disabled}
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.carga_descripcion`}
-                            render={({ field: { onChange, value } }) => (
-                                <TextInput
-                                    label="Descripción de Carga"
-                                    value={value || ''}
-                                    onChangeText={onChange}
-                                    mode="outlined"
-                                    multiline
-                                    numberOfLines={3}
-                                    style={styles.input}
+                            </View>
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Descripción de Carga</Text>
+                                <Controller
+                                    control={control}
+                                    name={`vehiculos.${index}.carga_descripcion`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <TextInput
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            style={[inputStyle, { minHeight: 88, textAlignVertical: 'top' }]}
+                                            multiline
+                                            numberOfLines={3}
+                                            placeholderTextColor={c.text.disabled}
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-                    </View>
-                </List.Accordion>
+                            </View>
+                        </View>
+                    )}
+                </>
             )}
 
             {/* ============================================ */}
-            {/* SECCIÓN 5: CONTENEDOR (solo si tiene_contenedor = true) */}
+            {/* SECCIÓN 5: CONTENEDOR */}
             {/* ============================================ */}
-            <View style={styles.switchRow}>
-                <Text>¿Tiene Contenedor/Remolque?</Text>
-                <Controller
-                    control={control}
-                    name={`vehiculos.${index}.tiene_contenedor`}
-                    render={({ field: { onChange, value } }) => (
-                        <Switch value={value || false} onValueChange={onChange} />
-                    )}
-                />
-            </View>
+            <SwitchToggle label="¿Tiene Contenedor/Remolque?" fieldName="tiene_contenedor" />
 
             {tieneContenedor && (
-                <List.Accordion
-                    title="Datos de Contenedor/Remolque"
-                    expanded={expandedSections.contenedor}
-                    onPress={() => toggleSection('contenedor')}
-                    style={styles.accordion}
-                    titleStyle={styles.accordionTitle}
-                >
-                    <View style={styles.section}>
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.contenedor_numero`}
-                            render={({ field: { onChange, value } }) => (
-                                <TextInput
-                                    label="No. Contenedor/Remolque"
-                                    value={value || ''}
-                                    onChangeText={onChange}
-                                    mode="outlined"
-                                    style={styles.input}
+                <>
+                    <AccordionHeader sectionKey="contenedor" title="Datos de Contenedor/Remolque" />
+                    {expandedSections.contenedor && (
+                        <View style={[styles.section, { backgroundColor: c.surface }]}>
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>No. Contenedor/Remolque</Text>
+                                <Controller
+                                    control={control}
+                                    name={`vehiculos.${index}.contenedor_numero`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <TextInput
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            style={inputStyle}
+                                            placeholderTextColor={c.text.disabled}
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.contenedor_empresa`}
-                            render={({ field: { onChange, value } }) => (
-                                <TextInput
-                                    label="Empresa Contenedor"
-                                    value={value || ''}
-                                    onChangeText={onChange}
-                                    mode="outlined"
-                                    placeholder="Ej: MAERSK, EVERGREEN"
-                                    style={styles.input}
+                            </View>
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Empresa Contenedor</Text>
+                                <Controller
+                                    control={control}
+                                    name={`vehiculos.${index}.contenedor_empresa`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <TextInput
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            style={inputStyle}
+                                            placeholder="Ej: MAERSK, EVERGREEN"
+                                            placeholderTextColor={c.text.disabled}
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-                    </View>
-                </List.Accordion>
+                            </View>
+                        </View>
+                    )}
+                </>
             )}
 
             {/* ============================================ */}
-            {/* SECCIÓN 6: BUS EXTRAURBANO (solo si es_bus = true) */}
+            {/* SECCIÓN 6: BUS EXTRAURBANO */}
             {/* ============================================ */}
-            <View style={styles.switchRow}>
-                <Text>¿Es Bus Extraurbano?</Text>
-                <Controller
-                    control={control}
-                    name={`vehiculos.${index}.es_bus`}
-                    render={({ field: { onChange, value } }) => (
-                        <Switch value={value || false} onValueChange={onChange} />
-                    )}
-                />
-            </View>
+            <SwitchToggle label="¿Es Bus Extraurbano?" fieldName="es_bus" />
 
             {esBus && (
-                <List.Accordion
-                    title="Datos de Bus Extraurbano"
-                    expanded={expandedSections.bus}
-                    onPress={() => toggleSection('bus')}
-                    style={styles.accordion}
-                    titleStyle={styles.accordionTitle}
-                >
-                    <View style={styles.section}>
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.bus_empresa`}
-                            render={({ field: { onChange, value } }) => (
-                                <TextInput
-                                    label="Empresa de Transporte"
-                                    value={value || ''}
-                                    onChangeText={onChange}
-                                    mode="outlined"
-                                    style={styles.input}
+                <>
+                    <AccordionHeader sectionKey="bus" title="Datos de Bus Extraurbano" />
+                    {expandedSections.bus && (
+                        <View style={[styles.section, { backgroundColor: c.surface }]}>
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Empresa de Transporte</Text>
+                                <Controller
+                                    control={control}
+                                    name={`vehiculos.${index}.bus_empresa`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <TextInput
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            style={inputStyle}
+                                            placeholderTextColor={c.text.disabled}
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.bus_ruta`}
-                            render={({ field: { onChange, value } }) => (
-                                <TextInput
-                                    label="Ruta del Bus"
-                                    value={value || ''}
-                                    onChangeText={onChange}
-                                    mode="outlined"
-                                    placeholder="Ej: Guatemala - Quetzaltenango"
-                                    style={styles.input}
+                            </View>
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Ruta del Bus</Text>
+                                <Controller
+                                    control={control}
+                                    name={`vehiculos.${index}.bus_ruta`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <TextInput
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            style={inputStyle}
+                                            placeholder="Ej: Guatemala - Quetzaltenango"
+                                            placeholderTextColor={c.text.disabled}
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.bus_pasajeros`}
-                            render={({ field: { onChange, value } }) => (
-                                <TextInput
-                                    label="Cantidad de Pasajeros"
-                                    value={value?.toString() || ''}
-                                    onChangeText={(text) => onChange(parseInt(text) || 0)}
-                                    keyboardType="numeric"
-                                    mode="outlined"
-                                    style={styles.input}
+                            </View>
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Cantidad de Pasajeros</Text>
+                                <Controller
+                                    control={control}
+                                    name={`vehiculos.${index}.bus_pasajeros`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <TextInput
+                                            value={value?.toString() || ''}
+                                            onChangeText={(text) => onChange(parseInt(text) || 0)}
+                                            keyboardType="numeric"
+                                            style={inputStyle}
+                                            placeholderTextColor={c.text.disabled}
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-                    </View>
-                </List.Accordion>
+                            </View>
+                        </View>
+                    )}
+                </>
             )}
 
             {/* ============================================ */}
-            {/* SECCIÓN 7: SANCIÓN (solo si tiene_sancion = true) */}
+            {/* SECCIÓN 7: SANCIÓN */}
             {/* ============================================ */}
-            <View style={styles.switchRow}>
-                <Text>¿Se Aplicó Sanción?</Text>
-                <Controller
-                    control={control}
-                    name={`vehiculos.${index}.tiene_sancion`}
-                    render={({ field: { onChange, value } }) => (
-                        <Switch value={value || false} onValueChange={onChange} />
-                    )}
-                />
-            </View>
+            <SwitchToggle label="¿Se Aplicó Sanción?" fieldName="tiene_sancion" />
 
             {tieneSancion && (
-                <List.Accordion
-                    title="Datos de Sanción"
-                    expanded={expandedSections.sancion}
-                    onPress={() => toggleSection('sancion')}
-                    style={styles.accordion}
-                    titleStyle={styles.accordionTitle}
-                >
-                    <View style={styles.section}>
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.sancion_articulo`}
-                            render={({ field: { onChange, value } }) => (
-                                <TextInput
-                                    label="Artículo"
-                                    value={value || ''}
-                                    onChangeText={onChange}
-                                    mode="outlined"
-                                    placeholder="Ej: Art. 145, Art. 146"
-                                    style={styles.input}
+                <>
+                    <AccordionHeader sectionKey="sancion" title="Datos de Sanción" />
+                    {expandedSections.sancion && (
+                        <View style={[styles.section, { backgroundColor: c.surface }]}>
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Artículo</Text>
+                                <Controller
+                                    control={control}
+                                    name={`vehiculos.${index}.sancion_articulo`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <TextInput
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            style={inputStyle}
+                                            placeholder="Ej: Art. 145, Art. 146"
+                                            placeholderTextColor={c.text.disabled}
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.sancion_descripcion`}
-                            render={({ field: { onChange, value } }) => (
-                                <TextInput
-                                    label="Descripción de Sanción"
-                                    value={value || ''}
-                                    onChangeText={onChange}
-                                    mode="outlined"
-                                    multiline
-                                    numberOfLines={3}
-                                    placeholder="Ej: Conducir sin licencia, Exceso de velocidad"
-                                    style={styles.input}
+                            </View>
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Descripción de Sanción</Text>
+                                <Controller
+                                    control={control}
+                                    name={`vehiculos.${index}.sancion_descripcion`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <TextInput
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            style={[inputStyle, { minHeight: 88, textAlignVertical: 'top' }]}
+                                            multiline
+                                            numberOfLines={3}
+                                            placeholder="Ej: Conducir sin licencia, Exceso de velocidad"
+                                            placeholderTextColor={c.text.disabled}
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.sancion_monto`}
-                            render={({ field: { onChange, value } }) => (
-                                <TextInput
-                                    label="Monto (Q)"
-                                    value={value?.toString() || ''}
-                                    onChangeText={(text) => onChange(parseFloat(text) || 0)}
-                                    keyboardType="decimal-pad"
-                                    mode="outlined"
-                                    style={styles.input}
+                            </View>
+                            <View style={styles.fieldGroup}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Monto (Q)</Text>
+                                <Controller
+                                    control={control}
+                                    name={`vehiculos.${index}.sancion_monto`}
+                                    render={({ field: { onChange, value } }) => (
+                                        <TextInput
+                                            value={value?.toString() || ''}
+                                            onChangeText={(text) => onChange(parseFloat(text) || 0)}
+                                            keyboardType="decimal-pad"
+                                            style={inputStyle}
+                                            placeholder="0.00"
+                                            placeholderTextColor={c.text.disabled}
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-                    </View>
-                </List.Accordion>
+                            </View>
+                        </View>
+                    )}
+                </>
             )}
 
             {/* ============================================ */}
             {/* SECCIÓN 8: DOCUMENTOS CONSIGNADOS */}
             {/* ============================================ */}
-            <List.Accordion
-                title="Documentos Consignados"
-                expanded={expandedSections.documentos}
-                onPress={() => toggleSection('documentos')}
-                style={styles.accordion}
-                titleStyle={styles.accordionTitle}
-            >
-                <View style={styles.section}>
-                    <Text style={styles.sectionInfo}>
+            <AccordionHeader sectionKey="documentos" title="Documentos Consignados" />
+
+            {expandedSections.documentos && (
+                <View style={[styles.section, { backgroundColor: c.surface }]}>
+                    <Text style={[styles.sectionInfo, { color: c.text.secondary }]}>
                         Marque los documentos que fueron consignados a la autoridad
                     </Text>
 
-                    {/* Licencia de conducir */}
-                    <View style={styles.switchRow}>
-                        <Text>Licencia de conducir</Text>
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.doc_consignado_licencia`}
-                            render={({ field: { onChange, value } }) => (
-                                <Switch value={value || false} onValueChange={onChange} />
-                            )}
-                        />
-                    </View>
+                    {[
+                        { name: 'doc_consignado_licencia', label: 'Licencia de conducir' },
+                        { name: 'doc_consignado_tarjeta_circulacion', label: 'Tarjeta de circulación' },
+                        { name: 'doc_consignado_tarjeta', label: 'Tarjeta de propiedad' },
+                        { name: 'doc_consignado_licencia_transporte', label: 'Licencia de transporte' },
+                        { name: 'doc_consignado_tarjeta_operaciones', label: 'Tarjeta de operaciones' },
+                        { name: 'doc_consignado_poliza', label: 'Póliza de seguro' },
+                    ].map(({ name, label }) => (
+                        <View key={name} style={[styles.switchRow, { backgroundColor: c.background, borderColor: c.border }]}>
+                            <Text style={[styles.switchLabel, { color: c.text.primary }]}>{label}</Text>
+                            <Controller
+                                control={control}
+                                name={`vehiculos.${index}.${name}`}
+                                render={({ field: { onChange, value } }) => (
+                                    <Switch
+                                        value={value || false}
+                                        onValueChange={onChange}
+                                        trackColor={{ false: c.gray[200], true: c.primary + '80' }}
+                                        thumbColor={value ? c.primary : c.gray[400]}
+                                    />
+                                )}
+                            />
+                        </View>
+                    ))}
 
-                    {/* Tarjeta de circulación */}
-                    <View style={styles.switchRow}>
-                        <Text>Tarjeta de circulación</Text>
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.doc_consignado_tarjeta_circulacion`}
-                            render={({ field: { onChange, value } }) => (
-                                <Switch value={value || false} onValueChange={onChange} />
-                            )}
-                        />
-                    </View>
-
-                    {/* Tarjeta de propiedad */}
-                    <View style={styles.switchRow}>
-                        <Text>Tarjeta de propiedad</Text>
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.doc_consignado_tarjeta`}
-                            render={({ field: { onChange, value } }) => (
-                                <Switch value={value || false} onValueChange={onChange} />
-                            )}
-                        />
-                    </View>
-
-                    {/* Licencia de transporte */}
-                    <View style={styles.switchRow}>
-                        <Text>Licencia de transporte</Text>
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.doc_consignado_licencia_transporte`}
-                            render={({ field: { onChange, value } }) => (
-                                <Switch value={value || false} onValueChange={onChange} />
-                            )}
-                        />
-                    </View>
-
-                    {/* Tarjeta de operaciones */}
-                    <View style={styles.switchRow}>
-                        <Text>Tarjeta de operaciones</Text>
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.doc_consignado_tarjeta_operaciones`}
-                            render={({ field: { onChange, value } }) => (
-                                <Switch value={value || false} onValueChange={onChange} />
-                            )}
-                        />
-                    </View>
-
-                    {/* Póliza de seguro */}
-                    <View style={styles.switchRow}>
-                        <Text>Póliza de seguro</Text>
-                        <Controller
-                            control={control}
-                            name={`vehiculos.${index}.doc_consignado_poliza`}
-                            render={({ field: { onChange, value } }) => (
-                                <Switch value={value || false} onValueChange={onChange} />
-                            )}
-                        />
-                    </View>
-
-                    {/* Consignado por (autoridad) */}
-                    <Text style={[styles.label, { marginTop: 10 }]}>Consignado por (autoridad)</Text>
+                    {/* Consignado por — chip selector */}
                     <Controller
                         control={control}
                         name={`vehiculos.${index}.doc_consignado_por`}
                         render={({ field: { onChange, value } }) => (
-                            <SegmentedButtons
-                                value={value || ''}
-                                onValueChange={onChange}
-                                buttons={[
-                                    { value: 'PNC', label: 'PNC' },
-                                    { value: 'PMT', label: 'PMT' },
-                                    { value: 'MP', label: 'MP' },
-                                ]}
-                                style={styles.segmentedButtons}
-                            />
+                            <View style={[styles.fieldGroup, { marginTop: 10 }]}>
+                                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Consignado por (autoridad)</Text>
+                                <View style={styles.chipRow}>
+                                    {DOC_AUTORIDADES.map((aut) => {
+                                        const selected = value === aut;
+                                        return (
+                                            <TouchableOpacity
+                                                key={aut}
+                                                onPress={() => onChange(aut)}
+                                                style={[
+                                                    styles.chip,
+                                                    {
+                                                        backgroundColor: selected ? c.primary : c.surface,
+                                                        borderColor: selected ? c.primary : c.border,
+                                                    },
+                                                ]}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Text style={[styles.chipText, { color: selected ? c.text.inverse : c.text.primary }]}>
+                                                    {aut}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </View>
+                            </View>
                         )}
                     />
                 </View>
-            </List.Accordion>
+            )}
 
             {/* ============================================ */}
             {/* SECCIÓN 9: PERSONAS / ACOMPAÑANTES */}
             {/* ============================================ */}
-            <List.Accordion
-                title="Personas / Acompañantes"
-                expanded={expandedSections.personas}
-                onPress={() => toggleSection('personas')}
-                style={styles.accordion}
-                titleStyle={styles.accordionTitle}
-            >
-                <View style={styles.section}>
+            <AccordionHeader sectionKey="personas" title="Personas / Acompañantes" />
+
+            {expandedSections.personas && (
+                <View style={[styles.section, { backgroundColor: c.surface }]}>
                     <PersonaManager control={control} vehiculoIndex={index} />
                 </View>
-            </List.Accordion>
+            )}
 
             {/* ============================================ */}
             {/* SECCIÓN 10: DISPOSITIVOS DE SEGURIDAD */}
             {/* ============================================ */}
-            <List.Accordion
-                title="Dispositivos de Seguridad"
-                expanded={expandedSections.dispositivos}
-                onPress={() => toggleSection('dispositivos')}
-                style={styles.accordion}
-                titleStyle={styles.accordionTitle}
-            >
-                <View style={styles.section}>
+            <AccordionHeader sectionKey="dispositivos" title="Dispositivos de Seguridad" />
+
+            {expandedSections.dispositivos && (
+                <View style={[styles.section, { backgroundColor: c.surface }]}>
                     <DispositivosSeguridad control={control} vehiculoIndex={index} />
                 </View>
-            </List.Accordion>
+            )}
 
             {/* ============================================ */}
             {/* SECCIÓN 11: CUSTODIA DEL VEHÍCULO */}
             {/* ============================================ */}
-            <List.Accordion
-                title="Custodia del Vehículo"
-                expanded={expandedSections.custodia}
-                onPress={() => toggleSection('custodia')}
-                style={styles.accordion}
-                titleStyle={styles.accordionTitle}
-            >
-                <View style={styles.section}>
+            <AccordionHeader sectionKey="custodia" title="Custodia del Vehículo" />
+
+            {expandedSections.custodia && (
+                <View style={[styles.section, { backgroundColor: c.surface }]}>
                     <Controller
                         control={control}
                         name={`vehiculos.${index}.custodia_estado`}
@@ -1001,131 +938,163 @@ export const VehiculoForm: React.FC<VehiculoFormProps> = ({ control, index, onRe
 
                     {custodiaEstado && custodiaEstado !== 'LIBRE' && (
                         <>
-                            <Controller
-                                control={control}
-                                name={`vehiculos.${index}.custodia_autoridad`}
-                                render={({ field: { onChange, value } }) => (
-                                    <TextInput
-                                        label="Autoridad"
-                                        value={value || ''}
-                                        onChangeText={onChange}
-                                        mode="outlined"
-                                        style={styles.input}
+                            {[
+                                { name: 'custodia_autoridad', label: 'Autoridad' },
+                                { name: 'custodia_motivo', label: 'Motivo' },
+                                { name: 'custodia_destino', label: 'Destino' },
+                            ].map(({ name, label }) => (
+                                <View key={name} style={styles.fieldGroup}>
+                                    <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>{label}</Text>
+                                    <Controller
+                                        control={control}
+                                        name={`vehiculos.${index}.${name}`}
+                                        render={({ field: { onChange, value } }) => (
+                                            <TextInput
+                                                value={value || ''}
+                                                onChangeText={onChange}
+                                                style={inputStyle}
+                                                placeholderTextColor={c.text.disabled}
+                                            />
+                                        )}
                                     />
-                                )}
-                            />
-                            <Controller
-                                control={control}
-                                name={`vehiculos.${index}.custodia_motivo`}
-                                render={({ field: { onChange, value } }) => (
-                                    <TextInput
-                                        label="Motivo"
-                                        value={value || ''}
-                                        onChangeText={onChange}
-                                        mode="outlined"
-                                        style={styles.input}
-                                    />
-                                )}
-                            />
-                            <Controller
-                                control={control}
-                                name={`vehiculos.${index}.custodia_destino`}
-                                render={({ field: { onChange, value } }) => (
-                                    <TextInput
-                                        label="Destino"
-                                        value={value || ''}
-                                        onChangeText={onChange}
-                                        mode="outlined"
-                                        style={styles.input}
-                                    />
-                                )}
-                            />
+                                </View>
+                            ))}
                         </>
                     )}
                 </View>
-            </List.Accordion>
+            )}
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        padding: 10,
         borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        marginBottom: 15,
-        backgroundColor: '#fff',
+        borderRadius: 10,
+        marginBottom: 12,
+        overflow: 'hidden',
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 10,
-        paddingBottom: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        borderBottomWidth: StyleSheet.hairlineWidth,
     },
     title: {
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 17,
+        fontWeight: '700',
     },
-    accordion: {
-        backgroundColor: '#f5f5f5',
-        marginBottom: 8,
-        borderRadius: 4,
+    removeBtn: {
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+    },
+    removeBtnText: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    accordionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        borderTopWidth: StyleSheet.hairlineWidth,
     },
     accordionTitle: {
         fontSize: 15,
         fontWeight: '600',
     },
     section: {
-        padding: 12,
-        backgroundColor: '#fff',
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+    },
+    fieldGroup: {
+        marginBottom: 12,
+    },
+    fieldLabel: {
+        fontSize: 12,
+        fontWeight: '500',
+        marginBottom: 4,
     },
     input: {
-        marginBottom: 10,
-        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        fontSize: 15,
     },
     row: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 10,
+        marginBottom: 0,
     },
     half: {
         width: '48%',
-    },
-    label: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 5,
-        marginTop: 5,
-    },
-    radioContainer: {
-        marginBottom: 10,
     },
     switchRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingVertical: 12,
-        paddingHorizontal: 10,
-        backgroundColor: '#f9f9f9',
-        borderRadius: 4,
-        marginBottom: 8,
+        paddingHorizontal: 14,
+        borderTopWidth: StyleSheet.hairlineWidth,
     },
-    dateContainer: {
-        marginBottom: 10,
+    switchLabel: {
+        fontSize: 15,
+        fontWeight: '500',
+        flex: 1,
+        marginRight: 8,
     },
-    dateButton: {
-        marginTop: 5,
+    chipRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginTop: 4,
     },
-    segmentedButtons: {
-        marginBottom: 5,
+    chip: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+    },
+    chipText: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    radioRow: {
+        flexDirection: 'row',
+        gap: 20,
+        marginTop: 4,
+    },
+    radioOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    radioOuter: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    radioInner: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+    },
+    radioLabel: {
+        fontSize: 15,
+    },
+    helperText: {
+        fontSize: 11,
+        marginTop: 4,
     },
     sectionInfo: {
         fontSize: 13,
-        color: '#666',
         marginBottom: 12,
         fontStyle: 'italic',
     },

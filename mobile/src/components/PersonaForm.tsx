@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { Controller, Control, useWatch } from 'react-hook-form';
-import { TextInput, RadioButton } from 'react-native-paper';
+import { useTheme } from '../core/theme';
 import CrossPlatformPicker from './CrossPlatformPicker';
 
 interface PersonaFormProps {
@@ -27,52 +27,103 @@ const ESTADO_OPTIONS = [
 ];
 
 export const PersonaForm: React.FC<PersonaFormProps> = ({ control, vehiculoIndex, personaIndex, onRemove }) => {
+    const theme = useTheme();
+    const c = theme.colors;
+
     const prefix = `vehiculos.${vehiculoIndex}.personas.${personaIndex}`;
     const estado = useWatch({ control, name: `${prefix}.estado` });
 
+    const inputStyle = [
+        styles.input,
+        { borderColor: c.border, backgroundColor: c.surface, color: c.text.primary },
+    ];
+
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>Persona {personaIndex + 1}</Text>
-                <Text onPress={onRemove} style={styles.removeBtn}>Eliminar</Text>
+        <View style={[styles.container, { borderColor: c.border, backgroundColor: c.surface }]}>
+            <View style={[styles.header, { borderBottomColor: c.border }]}>
+                <Text style={[styles.title, { color: c.text.primary }]}>Persona {personaIndex + 1}</Text>
+                <TouchableOpacity onPress={onRemove} style={styles.removeBtn}>
+                    <Text style={[styles.removeBtnText, { color: c.danger }]}>Eliminar</Text>
+                </TouchableOpacity>
             </View>
 
-            <Controller
-                control={control}
-                name={`${prefix}.nombre`}
-                render={({ field: { onChange, value } }) => (
-                    <TextInput label="Nombre" value={value || ''} onChangeText={onChange} mode="outlined" style={styles.input} />
-                )}
-            />
+            <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Nombre</Text>
+                <Controller
+                    control={control}
+                    name={`${prefix}.nombre`}
+                    render={({ field: { onChange, value } }) => (
+                        <TextInput
+                            value={value || ''}
+                            onChangeText={onChange}
+                            style={inputStyle}
+                            placeholderTextColor={c.text.disabled}
+                        />
+                    )}
+                />
+            </View>
 
             <View style={styles.row}>
-                <Controller
-                    control={control}
-                    name={`${prefix}.dpi`}
-                    render={({ field: { onChange, value } }) => (
-                        <TextInput label="DPI" value={value || ''} onChangeText={onChange} keyboardType="numeric" mode="outlined" style={[styles.input, styles.flex1]} />
-                    )}
-                />
-                <Controller
-                    control={control}
-                    name={`${prefix}.edad`}
-                    render={({ field: { onChange, value } }) => (
-                        <TextInput label="Edad" value={value?.toString() || ''} onChangeText={t => onChange(parseInt(t) || '')} keyboardType="numeric" mode="outlined" style={[styles.input, { width: 80 }]} />
-                    )}
-                />
+                <View style={[styles.fieldGroup, styles.flex1]}>
+                    <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>DPI</Text>
+                    <Controller
+                        control={control}
+                        name={`${prefix}.dpi`}
+                        render={({ field: { onChange, value } }) => (
+                            <TextInput
+                                value={value || ''}
+                                onChangeText={onChange}
+                                keyboardType="numeric"
+                                style={inputStyle}
+                                placeholderTextColor={c.text.disabled}
+                            />
+                        )}
+                    />
+                </View>
+                <View style={[styles.fieldGroup, { width: 80 }]}>
+                    <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Edad</Text>
+                    <Controller
+                        control={control}
+                        name={`${prefix}.edad`}
+                        render={({ field: { onChange, value } }) => (
+                            <TextInput
+                                value={value?.toString() || ''}
+                                onChangeText={(t) => onChange(parseInt(t) || '')}
+                                keyboardType="numeric"
+                                style={inputStyle}
+                                placeholderTextColor={c.text.disabled}
+                            />
+                        )}
+                    />
+                </View>
             </View>
 
-            <Text style={styles.label}>Género</Text>
+            {/* Género — radio row */}
             <Controller
                 control={control}
                 name={`${prefix}.genero`}
                 render={({ field: { onChange, value } }) => (
-                    <RadioButton.Group onValueChange={onChange} value={value || ''}>
+                    <View style={styles.fieldGroup}>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Género</Text>
                         <View style={styles.radioRow}>
-                            <RadioButton.Item label="M" value="M" mode="android" style={styles.radioItem} />
-                            <RadioButton.Item label="F" value="F" mode="android" style={styles.radioItem} />
+                            {[{ label: 'Masculino', val: 'M' }, { label: 'Femenino', val: 'F' }].map(({ label, val }) => {
+                                const selected = value === val;
+                                return (
+                                    <TouchableOpacity
+                                        key={val}
+                                        onPress={() => onChange(val)}
+                                        style={styles.radioOption}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={[styles.radioOuter, { borderColor: selected ? c.primary : c.border }]}>
+                                            {selected && <View style={[styles.radioInner, { backgroundColor: c.primary }]} />}
+                                        </View>
+                                        <Text style={[styles.radioLabel, { color: c.text.primary }]}>{label}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
                         </View>
-                    </RadioButton.Group>
+                    </View>
                 )}
             />
 
@@ -106,32 +157,60 @@ export const PersonaForm: React.FC<PersonaFormProps> = ({ control, vehiculoIndex
 
             {(estado === 'HERIDO' || estado === 'TRASLADADO') && (
                 <>
-                    <Controller
-                        control={control}
-                        name={`${prefix}.hospital_traslado`}
-                        render={({ field: { onChange, value } }) => (
-                            <TextInput label="Hospital de Traslado" value={value || ''} onChangeText={onChange} mode="outlined" style={styles.input} />
-                        )}
-                    />
-                    <Controller
-                        control={control}
-                        name={`${prefix}.descripcion_lesiones`}
-                        render={({ field: { onChange, value } }) => (
-                            <TextInput label="Descripción de Lesiones" value={value || ''} onChangeText={onChange} mode="outlined" multiline numberOfLines={2} style={styles.input} />
-                        )}
-                    />
+                    <View style={styles.fieldGroup}>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Hospital de Traslado</Text>
+                        <Controller
+                            control={control}
+                            name={`${prefix}.hospital_traslado`}
+                            render={({ field: { onChange, value } }) => (
+                                <TextInput
+                                    value={value || ''}
+                                    onChangeText={onChange}
+                                    style={inputStyle}
+                                    placeholderTextColor={c.text.disabled}
+                                />
+                            )}
+                        />
+                    </View>
+                    <View style={styles.fieldGroup}>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Descripción de Lesiones</Text>
+                        <Controller
+                            control={control}
+                            name={`${prefix}.descripcion_lesiones`}
+                            render={({ field: { onChange, value } }) => (
+                                <TextInput
+                                    value={value || ''}
+                                    onChangeText={onChange}
+                                    style={[inputStyle, { minHeight: 72, textAlignVertical: 'top' }]}
+                                    multiline
+                                    numberOfLines={2}
+                                    placeholderTextColor={c.text.disabled}
+                                />
+                            )}
+                        />
+                    </View>
                 </>
             )}
 
             {estado === 'FALLECIDO' && (
                 <>
-                    <Controller
-                        control={control}
-                        name={`${prefix}.causa_fallecimiento`}
-                        render={({ field: { onChange, value } }) => (
-                            <TextInput label="Causa Aparente de Fallecimiento" value={value || ''} onChangeText={onChange} mode="outlined" multiline numberOfLines={2} style={styles.input} />
-                        )}
-                    />
+                    <View style={styles.fieldGroup}>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Causa Aparente de Fallecimiento</Text>
+                        <Controller
+                            control={control}
+                            name={`${prefix}.causa_fallecimiento`}
+                            render={({ field: { onChange, value } }) => (
+                                <TextInput
+                                    value={value || ''}
+                                    onChangeText={onChange}
+                                    style={[inputStyle, { minHeight: 72, textAlignVertical: 'top' }]}
+                                    multiline
+                                    numberOfLines={2}
+                                    placeholderTextColor={c.text.disabled}
+                                />
+                            )}
+                        />
+                    </View>
                     <Controller
                         control={control}
                         name={`${prefix}.lugar_fallecimiento`}
@@ -158,25 +237,43 @@ export const PersonaForm: React.FC<PersonaFormProps> = ({ control, vehiculoIndex
 
 const styles = StyleSheet.create({
     container: {
-        padding: 10,
         borderWidth: 1,
-        borderColor: '#e0e0e0',
         borderRadius: 8,
         marginBottom: 10,
-        backgroundColor: '#fafafa',
+        overflow: 'hidden',
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderBottomWidth: StyleSheet.hairlineWidth,
     },
     title: { fontSize: 14, fontWeight: '600' },
-    removeBtn: { color: '#ef4444', fontSize: 13 },
-    input: { marginBottom: 8, backgroundColor: '#fff' },
+    removeBtn: { paddingVertical: 4, paddingHorizontal: 8 },
+    removeBtnText: { fontSize: 13, fontWeight: '600' },
+    fieldGroup: { marginBottom: 8, paddingHorizontal: 12 },
+    fieldLabel: { fontSize: 12, fontWeight: '500', marginBottom: 4 },
+    input: {
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        fontSize: 15,
+    },
     row: { flexDirection: 'row', gap: 8 },
     flex1: { flex: 1 },
-    label: { fontSize: 13, color: '#666', marginBottom: 4, marginTop: 4 },
-    radioRow: { flexDirection: 'row' },
-    radioItem: { flex: 1 },
+    radioRow: { flexDirection: 'row', gap: 20, marginTop: 4 },
+    radioOption: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    radioOuter: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    radioInner: { width: 10, height: 10, borderRadius: 5 },
+    radioLabel: { fontSize: 15 },
 });
