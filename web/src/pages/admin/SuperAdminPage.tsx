@@ -124,7 +124,6 @@ export default function SuperAdminPage() {
       <PageHeader
         title="Super Administrador"
         subtitle={`Panel de control del sistema - ${isSuperAdmin ? 'SUPER_ADMIN' : 'ADMIN'}`}
-        backTo="/operaciones"
       >
         <ThemeToggle />
         <button

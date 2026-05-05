@@ -205,7 +205,7 @@ export default function AdminPanelPage() {
       <PageHeader
         title="Panel de Administracion"
         subtitle="Gestion de roles y permisos del sistema"
-        backTo="/operaciones"
+        backTo="/super-admin"
       >
         <ThemeToggle />
         <button

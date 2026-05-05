@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, JWTPayload } from '../utils/jwt';
 import { normalizeId } from '../utils/db.utils';
+import { cache } from '../config/redis';
 
 // Extender Request para incluir user
 declare global {
@@ -12,18 +13,24 @@ declare global {
 }
 
 // Middleware de autenticación
-export function authenticate(req: Request, res: Response, next: NextFunction) {
+export async function authenticate(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No autorizado: Token no proporcionado' });
   }
 
-  const token = authHeader.substring(7); // Remover "Bearer "
+  const token = authHeader.substring(7);
   const payload = verifyAccessToken(token);
 
   if (!payload) {
     return res.status(401).json({ error: 'No autorizado: Token inválido o expirado' });
+  }
+
+  // Verificar si el acceso fue revocado después de emitir el token
+  const bloqueado = await cache.get(`acceso_bloqueado:${payload.userId}`);
+  if (bloqueado) {
+    return res.status(401).json({ error: 'Acceso revocado. Inicia sesión nuevamente.' });
   }
 
   req.user = payload;

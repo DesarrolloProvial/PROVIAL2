@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AdministracionModel } from '../../models/admin/administracion.model';
 import { esSuperAdmin, puedeVerTodosDepartamentos } from '../../middlewares/superAdmin';
 import { normalizeId } from '../../utils/db.utils';
+import { cache } from '../../config/redis';
 
 // =====================================================
 // DEPARTAMENTOS
@@ -462,6 +463,16 @@ export async function toggleAccesoApp(req: Request, res: Response) {
     if (!usuarioAnterior) return res.status(404).json({ error: 'Usuario no encontrado' });
 
     await AdministracionModel.toggleAccesoAppUsuario(usuarioId, acceso_app_activo);
+
+    if (!acceso_app_activo) {
+      // Bloquear tokens activos: marcar en Redis durante 24h (lifetime del access token)
+      // y revocar todos los refresh tokens del usuario
+      await cache.set(`acceso_bloqueado:${usuarioId}`, '1', 86400);
+      await cache.invalidatePattern(`refresh_token:${usuarioId}:*`);
+    } else {
+      // Re-habilitación: limpiar el bloqueo
+      await cache.del(`acceso_bloqueado:${usuarioId}`);
+    }
 
     await AdministracionModel.registrarAccion('TOGGLE_ACCESO_APP', modificadoPor, {
       tablaAfectada: 'usuario', registroId: usuarioId, usuarioAfectadoId: usuarioId,

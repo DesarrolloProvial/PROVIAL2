@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
-import { Smartphone, RefreshCw, CheckCircle, XCircle, Clock, Shield } from 'lucide-react';
+import { Smartphone, RefreshCw, CheckCircle, XCircle, Clock, ArrowLeft } from 'lucide-react';
 
 type EstadoDispositivo = 'PENDIENTE' | 'APROBADO' | 'BLOQUEADO';
 
@@ -24,6 +25,7 @@ const ESTADO_CONFIG: Record<EstadoDispositivo, { label: string; color: string; i
 };
 
 export default function DispositivosPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [filtro, setFiltro] = useState<EstadoDispositivo | 'TODOS'>('TODOS');
   const [notasModal, setNotasModal] = useState<{ id: number; accion: EstadoDispositivo } | null>(null);
@@ -75,6 +77,13 @@ export default function DispositivosPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/super-admin')}
+              className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+              title="Volver"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             <div className="p-2 bg-blue-100 rounded-lg">
               <Smartphone className="w-6 h-6 text-blue-600" />
             </div>
@@ -93,21 +102,6 @@ export default function DispositivosPage() {
           >
             <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
-        </div>
-
-        {/* Info banner */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-start gap-3">
-          <Shield className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-blue-800 dark:text-blue-300">
-            <p className="font-medium mb-1">Control de dispositivos desactivado actualmente</p>
-            <p>
-              Los dispositivos se registran automáticamente al hacer login, pero no se bloquean.
-              Cuando informática decida activar el control, agrega{' '}
-              <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">DEVICE_AUTH_ENABLED=true</code>{' '}
-              en las variables de entorno de Railway. A partir de ese momento solo entrarán los dispositivos
-              con estado <strong>Aprobado</strong>.
-            </p>
-          </div>
         </div>
 
         {/* Filtros / contadores */}

@@ -156,6 +156,7 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 8,
     backgroundColor: '#fff',
+    marginBottom: 10,
   },
   iosTriggerDisabled: {
     backgroundColor: '#f5f5f5',
@@ -200,7 +201,8 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 8,
     backgroundColor: '#fff',
-    overflow: 'hidden',
+    marginBottom: 10,
+    // overflow:hidden clipa el texto nativo del Picker en Android → invisible
   },
   picker: {
     height: 50,
