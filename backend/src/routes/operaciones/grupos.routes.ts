@@ -56,13 +56,13 @@ router.get('/acceso/verificar/:usuario_id', authenticate, authorize('COP', 'OPER
 // ========================================
 
 // Generar calendario automáticamente
-router.post('/calendario/generar', authenticate, authorize('OPERACIONES', 'ADMIN'), generarCalendario);
+router.post('/calendario/generar', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), generarCalendario);
 
 // Actualizar entrada de calendario
-router.patch('/:grupo/calendario/:fecha', authenticate, authorize('OPERACIONES', 'ADMIN'), updateCalendario);
+router.patch('/:grupo/calendario/:fecha', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), updateCalendario);
 
 // Establecer estado de grupo (Manual)
-router.post('/:grupo/estado', authenticate, authorize('OPERACIONES', 'ADMIN'), setEstadoGrupo);
+router.post('/:grupo/estado', authenticate, authorize('OPERACIONES', 'ADMIN', 'ENCARGADO_NOMINAS'), setEstadoGrupo);
 
 // ========================================
 // GESTIÓN DE ACCESO (OPERACIONES/MANDOS/ADMIN)

@@ -117,21 +117,16 @@ export default function MultimediaCaptureOffline({
       });
     }
 
-    // Logic para carga inicial
+    // Carga inicial: solo en mount. No re-ejecutar si initialMedia cambia
+    // porque causaría un loop: foto capturada → onMultimediaChange → parent actualiza
+    // initialMedia → effect re-corre con slots stale → resetea fotos.
     if (manualMode && initialMedia && initialMedia.length > 0) {
-      // Usar un timeout pequeño para asegurar que el componente esté montado y slots inicializados
-      // O simplemente setear directo. Como es effect on mount/deps, es seguro.
-      // Pero debemos evitar re-loops si initialMedia no cambia.
-
-      // Comprobar si ya tenemos estos datos para evitar re-render innecesario
-      const hasData = slots.some(s => s.media !== null);
-      if (!hasData) {
-        mapMediaToSlots(initialMedia);
-      }
+      mapMediaToSlots(initialMedia);
     } else if (draftUuid && !manualMode) {
       loadFromDraft();
     }
-  }, [draftUuid, manualMode, initialMedia]); // Removed slots from deps to avoid loop
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo en mount — initialMedia/draftUuid no cambian mientras el modal está abierto
 
   // Verificar completitud y notificar cambios
   useEffect(() => {

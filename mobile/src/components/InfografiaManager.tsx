@@ -64,6 +64,13 @@ export default function InfografiaManager({
 
     // Agregar nueva infografía
     const handleAgregarInfografia = () => {
+        // No permitir agregar si la última infografía está vacía
+        const ultima = infografias[infografias.length - 1];
+        if (ultima && ultima.fotos.length === 0 && !ultima.video) {
+            Alert.alert('Infografía vacía', 'Agrega fotos o video a la infografía actual antes de crear una nueva.');
+            return;
+        }
+
         // Evitar duplicados de número
         const newInfografia = createNewInfografia(infografias);
 

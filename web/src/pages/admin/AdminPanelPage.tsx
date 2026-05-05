@@ -131,8 +131,9 @@ export default function AdminPanelPage() {
   const roles: RolDisponible[] = rolesData?.roles || [];
   const sedes: Sede[] = sedesData?.sedes || [];
 
-  // Filtrar usuarios del sistema
+  // Filtrar usuarios del sistema (nunca mostrar SUPER_ADMIN aquí)
   const usuariosFiltrados = usuarios.filter(u => {
+    if (u.rol_nombre === 'SUPER_ADMIN') return false;
     const matchSearch = !searchSistema ||
       u.nombre_completo?.toLowerCase().includes(searchSistema.toLowerCase()) ||
       u.username?.toLowerCase().includes(searchSistema.toLowerCase());
@@ -419,7 +420,7 @@ export default function AdminPanelPage() {
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
               >
                 <option value="">Todos los roles</option>
-                {roles.filter(r => r.nombre !== 'BRIGADA').map(rol => (
+                {roles.filter(r => r.nombre !== 'BRIGADA' && r.nombre !== 'SUPER_ADMIN').map(rol => (
                   <option key={rol.id} value={rol.nombre}>{rol.nombre}</option>
                 ))}
               </select>
@@ -571,7 +572,7 @@ export default function AdminPanelPage() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="">Seleccionar rol</option>
-                  {roles.map(rol => (
+                  {roles.filter(r => r.nombre !== 'SUPER_ADMIN').map(rol => (
                     <option key={rol.id} value={rol.id}>
                       {rol.nombre} {rol.descripcion ? `- ${rol.descripcion}` : ''}
                     </option>
