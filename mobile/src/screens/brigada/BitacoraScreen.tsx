@@ -22,7 +22,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import api, { ingresosAPI } from '../../services/api';
 
 type RegistroBitacora = {
-  tipo: 'SALIDA' | 'SITUACION' | 'INGRESO';
+  tipo: 'SALIDA' | 'SITUACION' | 'INGRESO' | 'ACTIVIDAD';
   id: number;
   created_at: string;
   data?: any;
@@ -30,7 +30,7 @@ type RegistroBitacora = {
 
 export default function BitacoraScreen() {
   const navigation = useNavigation();
-  const { situacionesHoy, fetchMisSituacionesHoy, cambiarTipoSituacion, isLoading } = useSituacionesStore();
+  const { situacionesHoy, actividadesHoy, fetchMisSituacionesHoy, cambiarTipoSituacion, isLoading } = useSituacionesStore();
   const { salidaActiva, refreshSalidaActiva } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
   const [filtroTipo, setFiltroTipo] = useState<TipoSituacion | 'SALIDA' | 'INGRESO' | null>(null);
@@ -363,9 +363,19 @@ export default function BitacoraScreen() {
       });
     });
 
+    // Agregar actividades operativas
+    actividadesHoy.forEach((actividad) => {
+      registros.push({
+        tipo: 'ACTIVIDAD',
+        id: actividad.id,
+        created_at: actividad.created_at,
+        data: actividad,
+      });
+    });
+
     // Ordenar por fecha (más reciente primero)
     return registros.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [salidaActiva, situacionesHoy, ingresosHoy]);
+  }, [salidaActiva, situacionesHoy, ingresosHoy, actividadesHoy]);
 
   const registrosFiltrados = filtroTipo
     ? registrosBitacora.filter((r) => {
@@ -724,12 +734,69 @@ export default function BitacoraScreen() {
     );
   };
 
+  const renderActividadCard = (actividad: any) => {
+    const isActiva = actividad.estado === 'ACTIVA';
+    const color = actividad.tipo_actividad_color || COLORS.primary;
+    const nombre = actividad.tipo_actividad_nombre || 'Actividad';
+    const icono = actividad.tipo_actividad_icono || '⚙️';
+
+    return (
+      <View style={[styles.card, isActiva && { borderLeftWidth: 4, borderLeftColor: color }]}>
+        <View style={styles.cardHeader}>
+          <View style={styles.cardHeaderLeft}>
+            <View style={[styles.tipoBadge, { backgroundColor: color }]}>
+              <Text style={styles.tipoBadgeText}>{icono} {nombre.toUpperCase()}</Text>
+            </View>
+            {isActiva && (
+              <View style={[styles.estadoBadge, { backgroundColor: COLORS.success }]}>
+                <Text style={styles.estadoBadgeText}>ACTIVA</Text>
+              </View>
+            )}
+          </View>
+          {actividad.codigo_actividad && (
+            <Text style={styles.numeroSituacion}>{actividad.codigo_actividad}</Text>
+          )}
+        </View>
+        <View style={styles.cardContent}>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Inicio:</Text>
+            <Text style={styles.infoValue}>{formatFecha(actividad.created_at)}</Text>
+          </View>
+          {!isActiva && actividad.closed_at && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Duración:</Text>
+              <Text style={styles.infoValue}>{formatDuracion(actividad.created_at, actividad.closed_at)}</Text>
+            </View>
+          )}
+          {actividad.ruta_codigo && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Ubicación:</Text>
+              <Text style={styles.infoValue}>
+                {actividad.ruta_codigo}{actividad.km ? ` Km ${actividad.km}` : ''}
+              </Text>
+            </View>
+          )}
+          {actividad.observaciones && (
+            <View style={styles.descriptionContainer}>
+              <Text style={styles.descripcionText} numberOfLines={2}>
+                {actividad.observaciones}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
+
   const renderRegistroCard = ({ item }: { item: RegistroBitacora }) => {
     if (item.tipo === 'SALIDA') {
       return renderSalidaCard(item.data);
     }
     if (item.tipo === 'INGRESO') {
       return renderIngresoCard(item.data);
+    }
+    if (item.tipo === 'ACTIVIDAD') {
+      return renderActividadCard(item.data);
     }
     return renderSituacionCard({ item: item.data });
   };

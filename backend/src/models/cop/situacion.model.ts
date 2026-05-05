@@ -486,7 +486,7 @@ export const SituacionModel = {
       LEFT JOIN ruta r ON s.ruta_id = r.id
       LEFT JOIN catalogo_tipo_situacion tsc ON s.tipo_situacion_id = tsc.id
       WHERE s.unidad_id = $/unidad_id/
-      AND s.created_at >= CURRENT_DATE
+      AND DATE(s.created_at AT TIME ZONE 'America/Guatemala') >= DATE(NOW() AT TIME ZONE 'America/Guatemala')
     `;
 
     if (salida_id) {
