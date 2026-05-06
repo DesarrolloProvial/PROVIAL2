@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   Switch,
+  Alert,
 } from 'react-native';
 import { Controller, Control, useWatch } from 'react-hook-form';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -44,7 +45,17 @@ export const GruaForm: React.FC<GruaFormProps> = ({ control, index, onRemove }) 
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: c.border }]}>
         <Text style={[styles.title, { color: c.text.primary }]}>Grúa {index + 1}</Text>
-        <TouchableOpacity onPress={onRemove} style={styles.removeBtn}>
+        <TouchableOpacity
+          onPress={() => Alert.alert(
+            'Eliminar grúa',
+            `¿Deseas eliminar la grúa ${index + 1}?`,
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Eliminar', style: 'destructive', onPress: onRemove },
+            ]
+          )}
+          style={styles.removeBtn}
+        >
           <Text style={[styles.removeBtnText, { color: c.danger }]}>Eliminar</Text>
         </TouchableOpacity>
       </View>

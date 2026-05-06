@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Controller, Control, useWatch } from 'react-hook-form';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../core/theme';
@@ -36,7 +36,17 @@ export const AjustadorForm: React.FC<AjustadorFormProps> = ({ control, index, on
             {/* Header */}
             <View style={[styles.header, { borderBottomColor: c.border }]}>
                 <Text style={[styles.title, { color: c.text.primary }]}>Ajustador {index + 1}</Text>
-                <TouchableOpacity onPress={onRemove} style={styles.removeBtn}>
+                <TouchableOpacity
+                    onPress={() => Alert.alert(
+                        'Eliminar ajustador',
+                        `¿Deseas eliminar el ajustador ${index + 1}?`,
+                        [
+                            { text: 'Cancelar', style: 'cancel' },
+                            { text: 'Eliminar', style: 'destructive', onPress: onRemove },
+                        ]
+                    )}
+                    style={styles.removeBtn}
+                >
                     <Text style={[styles.removeBtnText, { color: c.danger }]}>Eliminar</Text>
                 </TouchableOpacity>
             </View>

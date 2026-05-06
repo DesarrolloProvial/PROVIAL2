@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, StyleSheet, Platform,
-  Modal, TouchableOpacity, SafeAreaView, Text,
+  Modal, TouchableOpacity, SafeAreaView, Text, TextInput,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { TextInput } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../core/theme';
 
 const OTRO_VALUE = '__OTRO__';
 
@@ -32,6 +33,9 @@ export default function SelectConOtro({
     otroLabel = 'Otro',
     style,
 }: SelectConOtroProps) {
+    const theme = useTheme();
+    const c = theme.colors;
+
     const isOtro = value !== '' && value !== null && value !== undefined
         && !options.some(o => o.value === value)
         && value !== OTRO_VALUE;
@@ -77,35 +81,21 @@ export default function SelectConOtro({
         ? `${otroLabel}...`
         : (options.find(o => o.value === value)?.label ?? placeholder);
 
-    const renderPicker = (inModal = false) => (
-        <Picker
-            selectedValue={pickerValue}
-            onValueChange={(v) => {
-                handlePickerChange(v);
-                if (inModal) setIosVisible(false);
-            }}
-            style={!inModal ? styles.picker : undefined}
-        >
-            <Picker.Item label={placeholder} value={null} />
-            {allOptions.map((opt, i) => (
-                <Picker.Item key={`${opt.value}-${i}`} label={opt.label} value={opt.value} />
-            ))}
-        </Picker>
-    );
-
     return (
         <View style={[styles.container, style]}>
+            <Text style={[styles.label, { color: c.text.secondary }]}>{label}</Text>
+
             {Platform.OS === 'ios' ? (
                 <>
                     <TouchableOpacity
-                        style={styles.iosTrigger}
+                        style={[styles.trigger, { borderColor: c.border, backgroundColor: c.surface }]}
                         onPress={() => setIosVisible(true)}
                         activeOpacity={0.7}
                     >
-                        <Text style={[styles.iosTriggerText, !value && styles.iosPlaceholder]}>
+                        <Text style={[styles.triggerText, { color: value ? c.text.primary : c.text.disabled }]}>
                             {selectedLabel}
                         </Text>
-                        <Text style={styles.iosChevron}>▾</Text>
+                        <MaterialCommunityIcons name="chevron-down" size={20} color={c.text.secondary} />
                     </TouchableOpacity>
 
                     <Modal
@@ -115,35 +105,69 @@ export default function SelectConOtro({
                         onRequestClose={() => setIosVisible(false)}
                     >
                         <TouchableOpacity
-                            style={styles.iosOverlay}
+                            style={styles.overlay}
                             activeOpacity={1}
                             onPress={() => setIosVisible(false)}
                         />
-                        <SafeAreaView style={styles.iosSheet}>
-                            <View style={styles.iosSheetHeader}>
+                        <SafeAreaView style={[styles.sheet, { backgroundColor: c.surface }]}>
+                            <View style={[styles.sheetHeader, { borderBottomColor: c.border }]}>
                                 <TouchableOpacity onPress={() => setIosVisible(false)}>
-                                    <Text style={styles.iosDone}>Listo</Text>
+                                    <Text style={[styles.doneText, { color: c.primary }]}>Listo</Text>
                                 </TouchableOpacity>
                             </View>
-                            {renderPicker(true)}
+                            <Picker
+                                selectedValue={pickerValue}
+                                onValueChange={(v) => {
+                                    handlePickerChange(v);
+                                    setIosVisible(false);
+                                }}
+                                itemStyle={{ color: c.text.primary, fontSize: 18 }}
+                            >
+                                <Picker.Item label={placeholder} value={null} color={c.text.disabled} />
+                                {allOptions.map((opt, i) => (
+                                    <Picker.Item
+                                        key={`${opt.value}-${i}`}
+                                        label={opt.label}
+                                        value={opt.value}
+                                        color={c.text.primary}
+                                    />
+                                ))}
+                            </Picker>
                         </SafeAreaView>
                     </Modal>
                 </>
             ) : (
-                <View style={styles.pickerWrapper}>
-                    {renderPicker()}
+                <View style={[styles.androidWrapper, { borderColor: c.border, backgroundColor: c.surface }]}>
+                    <Picker
+                        selectedValue={pickerValue}
+                        onValueChange={handlePickerChange}
+                        style={[styles.androidPicker, { color: c.text.primary }]}
+                        dropdownIconColor={c.text.secondary}
+                    >
+                        <Picker.Item label={placeholder} value={null} color={c.text.disabled} />
+                        {allOptions.map((opt, i) => (
+                            <Picker.Item
+                                key={`${opt.value}-${i}`}
+                                label={opt.label}
+                                value={opt.value}
+                                color={c.text.primary}
+                            />
+                        ))}
+                    </Picker>
                 </View>
             )}
 
             {showOtroInput && (
-                <TextInput
-                    label={`${label} (especifique)`}
-                    value={otroText}
-                    onChangeText={handleOtroTextChange}
-                    mode="outlined"
-                    style={styles.otroInput}
-                    placeholder={`Escriba ${label.toLowerCase()}...`}
-                />
+                <View style={styles.otroGroup}>
+                    <Text style={[styles.label, { color: c.text.secondary }]}>{label} (especifique)</Text>
+                    <TextInput
+                        value={otroText}
+                        onChangeText={handleOtroTextChange}
+                        style={[styles.otroInput, { borderColor: c.border, backgroundColor: c.surface, color: c.text.primary }]}
+                        placeholder={`Escriba ${label.toLowerCase()}...`}
+                        placeholderTextColor={c.text.disabled}
+                    />
+                </View>
             )}
         </View>
     );
@@ -151,68 +175,64 @@ export default function SelectConOtro({
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 8,
+        marginBottom: 12,
     },
-
-    // Android
-    pickerWrapper: {
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 4,
-        backgroundColor: '#fff',
-        overflow: 'hidden',
+    label: {
+        fontSize: 12,
+        fontWeight: '500',
+        marginBottom: 4,
     },
-    picker: {
-        height: 50,
-    },
-
-    // iOS
-    iosTrigger: {
+    // iOS trigger
+    trigger: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        height: 50,
+        height: 48,
         paddingHorizontal: 12,
         borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 4,
-        backgroundColor: '#fff',
+        borderRadius: 8,
     },
-    iosTriggerText: {
+    triggerText: {
         fontSize: 15,
-        color: '#333',
         flex: 1,
     },
-    iosPlaceholder: {
-        color: '#999',
-    },
-    iosChevron: {
-        fontSize: 16,
-        color: '#666',
-        marginLeft: 8,
-    },
-    iosOverlay: {
+    overlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.35)',
     },
-    iosSheet: {
-        backgroundColor: '#fff',
+    sheet: {
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
     },
-    iosSheetHeader: {
+    sheetHeader: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
         paddingHorizontal: 16,
         paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
+        borderBottomWidth: StyleSheet.hairlineWidth,
     },
-    iosDone: {
+    doneText: {
         fontSize: 16,
-        color: '#007AFF',
         fontWeight: '600',
     },
-
-    otroInput: {
+    // Android
+    androidWrapper: {
+        borderWidth: 1,
+        borderRadius: 8,
+        justifyContent: 'center',
+    },
+    androidPicker: {
+        height: 50,
+    },
+    // Otro input
+    otroGroup: {
         marginTop: 6,
+    },
+    otroInput: {
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        fontSize: 15,
     },
 });

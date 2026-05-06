@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Controller, Control, useWatch } from 'react-hook-form';
 import { useTheme } from '../core/theme';
 import CrossPlatformPicker from './CrossPlatformPicker';
@@ -42,7 +42,17 @@ export const PersonaForm: React.FC<PersonaFormProps> = ({ control, vehiculoIndex
         <View style={[styles.container, { borderColor: c.border, backgroundColor: c.surface }]}>
             <View style={[styles.header, { borderBottomColor: c.border }]}>
                 <Text style={[styles.title, { color: c.text.primary }]}>Persona {personaIndex + 1}</Text>
-                <TouchableOpacity onPress={onRemove} style={styles.removeBtn}>
+                <TouchableOpacity
+                    onPress={() => Alert.alert(
+                        'Eliminar persona',
+                        `¿Deseas eliminar a la persona ${personaIndex + 1}?`,
+                        [
+                            { text: 'Cancelar', style: 'cancel' },
+                            { text: 'Eliminar', style: 'destructive', onPress: onRemove },
+                        ]
+                    )}
+                    style={styles.removeBtn}
+                >
                     <Text style={[styles.removeBtnText, { color: c.danger }]}>Eliminar</Text>
                 </TouchableOpacity>
             </View>

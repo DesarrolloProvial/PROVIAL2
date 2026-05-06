@@ -8,7 +8,7 @@
  */
 
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Control, useFieldArray } from 'react-hook-form';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../core/theme';
@@ -65,11 +65,15 @@ export default function VehiculoManager({
     };
 
     const eliminarVehiculo = (index: number) => {
-        // Permitir eliminar siempre que queden más de minVehiculos
-        if (fields.length <= minVehiculos) {
-            return;
-        }
-        remove(index);
+        if (fields.length <= minVehiculos) return;
+        Alert.alert(
+            'Eliminar vehículo',
+            `¿Deseas eliminar el vehículo ${index + 1}? Se perderán todos sus datos.`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                { text: 'Eliminar', style: 'destructive', onPress: () => remove(index) },
+            ]
+        );
     };
 
     // Si no hay vehículos y es requerido, agregar uno automáticamente

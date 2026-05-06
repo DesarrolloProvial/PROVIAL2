@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     View,
     Text,
     TextInput,
     StyleSheet,
     TouchableOpacity,
-    ScrollView,
 } from 'react-native';
-import { COLORS } from '../constants/colors';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../core/theme';
 import { AUTORIDADES, UNIDADES_SOCORRO } from '../constants/situacionTypes';
 
 export interface DetalleAutoridad {
@@ -45,30 +45,23 @@ export default function AutoridadSocorroManager({
     detalles,
     onChange,
 }: Props) {
+    const theme = useTheme();
+    const c = theme.colors;
+
     const opciones = tipo === 'autoridad' ? AUTORIDADES : UNIDADES_SOCORRO;
     const titulo = tipo === 'autoridad' ? 'Autoridades Presentes' : 'Unidades de Socorro';
 
     const toggleSeleccion = (nombre: string) => {
         if (nombre === 'Ninguna') {
-            onChange({
-                seleccionados: ['Ninguna'],
-                detalles: {}
-            });
+            onChange({ seleccionados: ['Ninguna'], detalles: {} });
         } else {
-            const nuevosSeleccionados = seleccionados.filter((s) => s !== 'Ninguna');
+            const base = seleccionados.filter((s) => s !== 'Ninguna');
             let nuevosDetalles = { ...detalles };
-            let seleccionFinal: string[];
 
-            if (nuevosSeleccionados.includes(nombre)) {
-                // Deseleccionar
-                seleccionFinal = nuevosSeleccionados.filter((s) => s !== nombre);
-                // Eliminar detalles
+            if (base.includes(nombre)) {
                 delete nuevosDetalles[nombre];
+                onChange({ seleccionados: base.filter((s) => s !== nombre), detalles: nuevosDetalles });
             } else {
-                // Seleccionar
-                seleccionFinal = [...nuevosSeleccionados, nombre];
-
-                // Crear entrada de detalles vacía
                 nuevosDetalles[nombre] = {
                     nombre,
                     hora_llegada: '',
@@ -79,34 +72,23 @@ export default function AutoridadSocorroManager({
                     subestacion: '',
                     cantidad_unidades: '',
                 };
+                onChange({ seleccionados: [...base, nombre], detalles: nuevosDetalles });
             }
-
-            // Actualizar TODO de una vez
-            onChange({
-                seleccionados: seleccionFinal,
-                detalles: nuevosDetalles
-            });
         }
     };
 
     const actualizarDetalle = (nombre: string, campo: keyof DetalleAutoridad, valor: string) => {
-        const nuevosDetalles = {
-            ...detalles,
-            [nombre]: {
-                ...detalles[nombre],
-                [campo]: valor,
-            },
-        };
-
         onChange({
             seleccionados,
-            detalles: nuevosDetalles
+            detalles: {
+                ...detalles,
+                [nombre]: { ...detalles[nombre], [campo]: valor },
+            },
         });
     };
 
     const renderDetallesFormulario = (nombre: string) => {
         if (nombre === 'PROVIAL' || nombre === 'Ninguna') return null;
-        if (!seleccionados.includes(nombre)) return null;
 
         const detalle = detalles[nombre] || {
             nombre: '',
@@ -119,85 +101,97 @@ export default function AutoridadSocorroManager({
             cantidad_unidades: '',
         } as DetalleAutoridad;
 
+        const inputStyle = [
+            styles.fieldInput,
+            { borderColor: c.border, backgroundColor: c.surface, color: c.text.primary },
+        ];
+
         return (
-            <View key={`detalles-${nombre}`} style={styles.detallesCard}>
-                <Text style={styles.detallesTitle}>Detalles de {nombre}</Text>
+            <View
+                key={`detalles-${nombre}`}
+                style={[styles.detallesCard, { backgroundColor: c.surface, borderColor: c.border, borderLeftColor: c.primary }]}
+            >
+                <Text style={[styles.detallesTitle, { color: c.primary }]}>Detalles de {nombre}</Text>
 
                 <View style={styles.formRow}>
                     <View style={styles.formField}>
-                        <Text style={styles.fieldLabel}>Hora de llegada</Text>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Hora de llegada</Text>
                         <TextInput
-                            style={styles.fieldInput}
+                            style={inputStyle}
                             value={detalle.hora_llegada}
                             onChangeText={(val) => actualizarDetalle(nombre, 'hora_llegada', val)}
                             placeholder="HH:MM"
+                            placeholderTextColor={c.text.disabled}
                         />
                     </View>
-
                     <View style={styles.formField}>
-                        <Text style={styles.fieldLabel}>NIP/Chapa</Text>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>NIP/Chapa</Text>
                         <TextInput
-                            style={styles.fieldInput}
+                            style={inputStyle}
                             value={detalle.nip_chapa}
                             onChangeText={(val) => actualizarDetalle(nombre, 'nip_chapa', val)}
                             placeholder="Ingrese NIP o Chapa"
+                            placeholderTextColor={c.text.disabled}
                         />
                     </View>
                 </View>
 
                 <View style={styles.formRow}>
                     <View style={styles.formField}>
-                        <Text style={styles.fieldLabel}>Número de unidad</Text>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>No. de unidad</Text>
                         <TextInput
-                            style={styles.fieldInput}
+                            style={inputStyle}
                             value={detalle.numero_unidad}
                             onChangeText={(val) => actualizarDetalle(nombre, 'numero_unidad', val)}
                             placeholder="Ej: 001"
+                            placeholderTextColor={c.text.disabled}
                         />
                     </View>
-
                     <View style={styles.formField}>
-                        <Text style={styles.fieldLabel}>Nombre de comandante</Text>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Nombre de comandante</Text>
                         <TextInput
-                            style={styles.fieldInput}
+                            style={inputStyle}
                             value={detalle.nombre_comandante}
                             onChangeText={(val) => actualizarDetalle(nombre, 'nombre_comandante', val)}
                             placeholder="Nombre completo"
+                            placeholderTextColor={c.text.disabled}
                         />
                     </View>
                 </View>
 
                 <View style={styles.formRow}>
                     <View style={styles.formField}>
-                        <Text style={styles.fieldLabel}>Cantidad de elementos</Text>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Cantidad de elementos</Text>
                         <TextInput
-                            style={styles.fieldInput}
+                            style={inputStyle}
                             value={detalle.cantidad_elementos}
                             onChangeText={(val) => actualizarDetalle(nombre, 'cantidad_elementos', val)}
                             placeholder="Ej: 5"
                             keyboardType="numeric"
+                            placeholderTextColor={c.text.disabled}
                         />
                     </View>
-
                     <View style={styles.formField}>
-                        <Text style={styles.fieldLabel}>Subestación</Text>
+                        <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Subestación</Text>
                         <TextInput
-                            style={styles.fieldInput}
+                            style={inputStyle}
                             value={detalle.subestacion}
                             onChangeText={(val) => actualizarDetalle(nombre, 'subestacion', val)}
                             placeholder="Nombre de subestación"
+                            placeholderTextColor={c.text.disabled}
                         />
                     </View>
                 </View>
 
                 <View style={styles.formField}>
-                    <Text style={styles.fieldLabel}>Cantidad de unidades</Text>
+                    <Text style={[styles.fieldLabel, { color: c.text.secondary }]}>Cantidad de unidades</Text>
                     <TextInput
-                        style={styles.fieldInput}
+                        style={inputStyle}
                         value={detalle.cantidad_unidades}
                         onChangeText={(val) => actualizarDetalle(nombre, 'cantidad_unidades', val)}
                         placeholder="Ej: 2"
                         keyboardType="numeric"
+                        placeholderTextColor={c.text.disabled}
                     />
                 </View>
             </View>
@@ -206,31 +200,45 @@ export default function AutoridadSocorroManager({
 
     return (
         <View style={styles.container}>
-            <Text style={styles.sectionTitle}>{titulo}</Text>
+            <Text style={[styles.sectionTitle, { color: c.text.primary }]}>{titulo}</Text>
 
-            <View style={styles.checkboxGrid}>
-                {opciones.map((opcion) => (
-                    <TouchableOpacity
-                        key={opcion}
-                        style={styles.checkboxItem}
-                        onPress={() => toggleSeleccion(opcion)}
-                    >
-                        <View
+            <View style={styles.chipGrid}>
+                {opciones.map((opcion) => {
+                    const selected = seleccionados.includes(opcion);
+                    return (
+                        <TouchableOpacity
+                            key={opcion}
+                            onPress={() => toggleSeleccion(opcion)}
+                            activeOpacity={0.7}
                             style={[
-                                styles.checkbox,
-                                seleccionados.includes(opcion) && styles.checkboxChecked,
+                                styles.chip,
+                                {
+                                    backgroundColor: selected ? c.primary : c.surface,
+                                    borderColor: selected ? c.primary : c.border,
+                                },
                             ]}
                         >
-                            {seleccionados.includes(opcion) && (
-                                <Text style={styles.checkboxCheck}>✓</Text>
+                            <Text
+                                style={[
+                                    styles.chipText,
+                                    { color: selected ? c.text.inverse : c.text.primary },
+                                ]}
+                            >
+                                {opcion}
+                            </Text>
+                            {selected && (
+                                <MaterialCommunityIcons
+                                    name="check"
+                                    size={14}
+                                    color={c.text.inverse}
+                                    style={styles.chipCheck}
+                                />
                             )}
-                        </View>
-                        <Text style={styles.checkboxLabel}>{opcion}</Text>
-                    </TouchableOpacity>
-                ))}
+                        </TouchableOpacity>
+                    );
+                })}
             </View>
 
-            {/* Formularios de detalles */}
             <View style={styles.detallesContainer}>
                 {seleccionados
                     .filter((nombre) => nombre !== 'Ninguna' && nombre !== 'PROVIAL')
@@ -242,65 +250,46 @@ export default function AutoridadSocorroManager({
 
 const styles = StyleSheet.create({
     container: {
-        marginVertical: 12,
+        marginVertical: 8,
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: 15,
         fontWeight: '600',
-        color: COLORS.text.primary,
         marginBottom: 12,
     },
-    checkboxGrid: {
+    chipGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 12,
+        gap: 8,
     },
-    checkboxItem: {
+    chip: {
         flexDirection: 'row',
         alignItems: 'center',
-        width: '48%',
-        marginBottom: 8,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
     },
-    checkbox: {
-        width: 24,
-        height: 24,
-        borderWidth: 2,
-        borderColor: COLORS.border,
-        borderRadius: 4,
-        marginRight: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
+    chipText: {
+        fontSize: 13,
+        fontWeight: '500',
     },
-    checkboxChecked: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
-    checkboxCheck: {
-        color: COLORS.white,
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    checkboxLabel: {
-        fontSize: 14,
-        color: COLORS.text.primary,
-        flex: 1,
+    chipCheck: {
+        marginLeft: 5,
     },
     detallesContainer: {
         marginTop: 16,
     },
     detallesCard: {
-        backgroundColor: COLORS.white,
-        padding: 16,
-        borderRadius: 8,
+        padding: 14,
+        borderRadius: 10,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: COLORS.primary,
         borderLeftWidth: 4,
     },
     detallesTitle: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '600',
-        color: COLORS.primary,
         marginBottom: 12,
     },
     formRow: {
@@ -312,17 +301,15 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     fieldLabel: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '500',
-        color: COLORS.text.secondary,
         marginBottom: 4,
     },
     fieldInput: {
         borderWidth: 1,
-        borderColor: COLORS.border,
         borderRadius: 6,
-        padding: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
         fontSize: 14,
-        backgroundColor: COLORS.background,
     },
 });
