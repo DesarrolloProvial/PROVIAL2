@@ -1,242 +1,271 @@
-# Sistema Provial Integral
+# ProVial — Sistema de Gestión de Brigadas Viales
 
-# PROVIAL - Sistema Integral de Gestión Vial
-
-Sistema completo para la gestión de incidentes viales, brigadas, y operaciones de carreteras en Guatemala.
-
-## 🏗️ Arquitectura
-
-- **Backend**: Node.js + TypeScript + Express + PostgreSQL
-- **Mobile**: React Native + Expo (Brigadas)
-- **Web**: React + TypeScript (Centro de Control)
-- **Database**: PostgreSQL 16 + Redis
-
-## 📁 Estructura del Proyecto
-
-```
-proyectoProvialMovilWeb/
-├── backend/          # API REST
-├── mobile/           # App móvil (Brigadas)
-├── web/              # Panel web (COP/Operaciones)
-├── migrations/       # Migraciones SQL
-├── docker/           # Configuración Docker
-└── shared/           # Tipos compartidos
-```
-
-## 🚀 Inicio Rápido
-
-### 1. Levantar Base de Datos
-```bash
-docker-compose up -d
-```
-
-### 2. Backend
-```bash
-cd backend
-npm install
-npm run dev
-```
-
-### 3. Mobile
-```bash
-cd mobile
-npm install
-npx expo start
-```
-
-### 4. Web
-```bash
-cd web
-npm install
-npm run dev
-```
-
-## 📚 Documentación
-
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - Arquitectura técnica completa
-- [DATABASE_DESIGN.md](./DATABASE_DESIGN.md) - Diseño de base de datos
-- [ESTADO_ACTUAL.md](./ESTADO_ACTUAL.md) - Estado actual del proyecto
-- [GETTING_STARTED.md](./GETTING_STARTED.md) - Guía de inicio
-- [INSTALL_GUIDE.md](./INSTALL_GUIDE.md) - Instalación detallada
-
-
-## 📦 Dependencias Principales
-
-- PostgreSQL 16
-- Node.js 20+
-- React Native (Expo SDK 54)
-- TypeScript 5.9+
-
-## 🛠️ Estado del Proyecto
-
-**Última actualización**: Diciembre 2025
-
-**Funcionalidades Implementadas**:
-- ✅ Autenticación y roles
-- ✅ Gestión de turnos y asignaciones
-- ✅ Salidas e ingresos a sede
-- ✅ Reportes de incidentes (en desarrollo - normalización de datos)
-- ✅ Bitácora de situaciones
-- ✅ Gestión de grupos y calendario
-
-**En Desarrollo**:
-- 🚧 Sistema de inteligencia (historial de vehículos/pilotos)
-- 🚧 Formularios detallados de incidentes
-- 🚧 Dashboard de análisis
-
-## 📄 Licencia
-
-UNLICENSED - Uso interno
-
-### Mobile
-- **Framework:** React Native + Expo
-- **Navegación:** Expo Router
-- **Estado:** Zustand + Immer
-- **UI:** React Native Paper
-
-### Infraestructura
-- **Contenedores:** Docker + Docker Compose
-- **Proxy:** Nginx
-- **CI/CD:** GitHub Actions (opcional)
-- **Hosting:** VPS (Hetzner/Contabo/DigitalOcean)
-
-## 🚀 Quick Start
-
-### Prerrequisitos
-- Node.js 20+
-- Docker & Docker Compose
-- Git
-
-### 1. Clonar e instalar dependencias
-
-```bash
-git clone https://github.com/tu-org/proyecto-provial.git
-cd proyecto-provial
-
-# Instalar dependencias de todo el monorepo
-npm install
-```
-
-### 2. Levantar servicios con Docker
-
-```bash
-# Iniciar PostgreSQL + Redis
-docker-compose up -d
-
-# Esperar a que PostgreSQL esté listo
-sleep 5
-
-# Ejecutar migraciones
-cd migrations
-./run_migrations.sh postgresql://postgres:postgres@localhost:5432/provial_db
-
-# O en Windows:
-psql postgresql://postgres:postgres@localhost:5432/provial_db -f 001_create_extensions.sql
-# ... ejecutar cada migración en orden
-```
-
-### 3. Configurar variables de entorno
-
-```bash
-# Backend
-cp backend/.env.example backend/.env
-# Editar backend/.env con tus configuraciones
-
-# Web
-cp web/.env.example web/.env
-```
-
-### 4. Iniciar en modo desarrollo
-
-```bash
-# Terminal 1: Backend
-cd backend
-npm run dev
-
-# Terminal 2: Web
-cd web
-npm run dev
-
-# Terminal 3: Mobile
-cd mobile
-npm run start
-```
-
-## 📚 Documentación
-
-- **[DATABASE_DESIGN.md](./DATABASE_DESIGN.md)** - Modelo de datos completo con DER
-- **[migrations/README.md](./migrations/README.md)** - Guía de migraciones de BD
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Arquitectura del sistema (pendiente)
-- **[API.md](./backend/API.md)** - Documentación de endpoints (pendiente)
-
-## 📋 Fases de Desarrollo
-
-### ✅ Fase 0: Infraestructura
-- [x] Diseño de base de datos
-- [x] Migraciones SQL
-- [x] Estructura de monorepo
-- [ ] Docker Compose configurado
-- [ ] Documentación de arquitectura
-
-### 🔨 Fase 1: API Core + Auth (En progreso)
-- [ ] Setup backend con Express + TypeScript
-- [ ] Autenticación JWT
-- [ ] CRUD catálogos
-- [ ] WebSockets base
-
-### 📱 Fase 2: App Móvil Brigadas
-- [ ] Desarrollo de app React Native
-- [ ] Login y auth
-- [ ] CRUD incidentes
-- [ ] Generación de mensajes WhatsApp
-- [ ] Modo offline básico
-
-### 💻 Fase 3: Panel Web COP
-- [ ] Dashboard de incidentes
-- [ ] Tablero de estado de unidades
-- [ ] Tiempo real con WebSockets
-- [ ] Gestión de actividades
-
-### 📊 Fase 4: Reportes Automatizados
-- [ ] Reporte diario de actividades
-- [ ] Hoja de accidentología
-- [ ] Generación de PDFs
-
-### 🗺️ Fase 5: Dashboard Radar COP
-- [ ] Mapa de incidentes activos
-- [ ] Búsqueda rápida
-- [ ] Interfaz para llamadas
-
-### 🌐 Fase 6: Portal Público
-- [ ] App/web pública tipo Waze
-- [ ] Reportes ciudadanos
-- [ ] Gestión de reportes en COP
-
-### 📈 Fase 7: Métricas y BI
-- [ ] Dashboard estadístico
-- [ ] Reportes de no atendidos
-- [ ] Exportación de datos
-
-### 🔐 Fase 8: Producción
-- [ ] Seguridad y auditoría
-- [ ] Despliegue en VPS
-- [ ] Backups automáticos
-- [ ] Capacitación
-- [ ] Monitoreo
-
-## 🤝 Contribuir
-
-(Instrucciones de contribución - ajustar según tu flujo)
-
-## 📄 Licencia
-
-(Especificar licencia)
-
-## 👥 Equipo
-
-(Créditos del equipo de desarrollo)
+Sistema operativo para brigadas de carreteras de Guatemala.  
+Stack: Express + TypeScript (backend), React + Vite (web), React Native + Expo (móvil).
 
 ---
 
-**Versión:** 1.0.0-alpha
-**Última actualización:** 2025-01-26
+## Modalidades de despliegue
+
+| Modalidad | Cuándo usarla |
+|-----------|--------------|
+| [VM Docker](#modalidad-1--vm-docker-instalación-institucional) | Servidor institucional sin internet, instalación completa |
+| [Desarrollo local](#modalidad-2--desarrollo-local) | Desarrollar y probar cambios |
+| [Railway / Vercel](#modalidad-3--producción-railwayvercel) | Producción actual en la nube |
+
+---
+
+## Nota importante: la base de datos
+
+El repositorio solo contiene las migraciones **126–145**. Las migraciones anteriores (esquema base, ~125 tablas) no están en el repo. Para tener la BD funcional necesitas una de estas dos cosas:
+
+- **`backups/provial.backup`** — backup completo exportado de Railway (recomendado)
+- **`docker/init-scripts/000_base_schema.sql`** — dump del esquema generado con `pg_dump --schema-only` desde Railway (para staging limpio sin datos)
+
+Sin ninguna de las dos, el sistema levanta pero la BD estará vacía y sin tablas.
+
+---
+
+## Modalidad 1 — VM Docker (instalación institucional)
+
+Un solo servidor, todo en Docker, acceso en el puerto 80.
+
+### Requisitos
+
+- Docker Engine 24+ y Docker Compose v2
+- Puerto 80 disponible en el servidor
+
+### Pasos
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/Yorfad/PROVIAL.git
+cd PROVIAL
+
+# 2. Configurar variables de entorno
+cp .env.example .env
+```
+
+Editar `.env` — como mínimo cambiar estos valores:
+
+```env
+VM_HOST=192.168.1.100       # IP o dominio del servidor (sin http://)
+DB_PASSWORD=contraseña_segura
+JWT_SECRET=clave_larga_y_aleatoria_minimo_32_caracteres
+JWT_REFRESH_SECRET=otra_clave_larga_y_aleatoria
+```
+
+```bash
+# 3. El backend/.env NO necesita edición para VM
+#    El compose sobreescribe automáticamente DB_HOST, REDIS_HOST, STORAGE_TYPE, etc.
+cp backend/.env.example backend/.env
+
+# 4. Colocar el backup de la BD (ver nota arriba)
+mkdir -p backups
+cp /ruta/al/backup.bak backups/provial.backup
+
+# 5. Levantar todo
+docker compose up -d --build
+```
+
+El sistema queda disponible en `http://<VM_HOST>`.
+
+### URLs disponibles
+
+| URL | Qué sirve |
+|-----|-----------|
+| `http://<VM_HOST>/` | Panel web (COP, operaciones, admin) |
+| `http://<VM_HOST>/api/` | API REST |
+| `http://<VM_HOST>/uploads/` | Fotos y videos subidos por las brigadas |
+| `http://<VM_HOST>:5050` | pgAdmin (solo con `--profile tools`) |
+
+```bash
+# pgAdmin (administración visual de la BD)
+docker compose --profile tools up -d pgadmin
+# Acceder en http://<VM_HOST>:5050
+# Email: admin@provial.local  /  Password: el DB_PASSWORD del .env
+```
+
+### Comandos útiles en VM
+
+```bash
+# Estado de los servicios
+docker compose ps
+
+# Logs en tiempo real
+docker compose logs -f backend
+docker compose logs -f nginx
+docker compose logs migrator        # ver si las migraciones corrieron bien
+
+# Reiniciar backend sin reconstruir
+docker compose restart backend
+
+# Actualizar a la última versión
+git pull origin main
+docker compose up -d --build backend web
+
+# Espacio usado por archivos subidos
+docker exec provial_backend du -sh /app/uploads
+
+# Detener todo (los datos en volúmenes se conservan)
+docker compose down
+
+# PELIGRO: detener y borrar todos los datos
+docker compose down -v
+```
+
+### Backup de los archivos subidos (fotos/videos)
+
+```bash
+docker run --rm \
+  -v uploads_data:/data \
+  -v $(pwd)/backups:/out \
+  alpine tar czf /out/uploads_$(date +%Y%m%d).tar.gz /data
+```
+
+---
+
+## Modalidad 2 — Desarrollo local
+
+Backend y web corren directamente con Node; solo PostgreSQL y Redis en Docker.
+
+### Requisitos
+
+- Node.js 20+
+- Docker (para PostgreSQL y Redis)
+
+### 1. Infraestructura (BD y Redis)
+
+```bash
+docker compose up -d postgres redis
+```
+
+### 2. Backend
+
+```bash
+cd backend
+cp .env.example .env
+# Los valores por defecto (localhost:5432, localhost:6379) ya funcionan
+
+npm install
+npm run dev
+# API en http://localhost:3000
+```
+
+Variables mínimas en `backend/.env` para desarrollo:
+
+```env
+NODE_ENV=development
+PORT=3000
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/provial_db
+REDIS_URL=redis://localhost:6379
+JWT_SECRET=dev-secret
+JWT_REFRESH_SECRET=dev-refresh-secret
+CORS_ORIGIN=http://localhost:5173,http://localhost:8081
+STORAGE_TYPE=local
+STORAGE_BASE_URL=http://localhost:3000/uploads
+```
+
+### 3. Web
+
+```bash
+cd web
+npm install
+
+# Crear archivo de entorno local (no se versiona)
+echo "VITE_API_URL=http://localhost:3000/api" > .env.local
+echo "VITE_SOCKET_URL=http://localhost:3000" >> .env.local
+
+npm run dev
+# Web en http://localhost:5173
+```
+
+### 4. Aplicación móvil
+
+```bash
+cd mobile
+npm install
+
+# Editar mobile/src/constants/config.ts
+# Cambiar API_URL a la IP de tu PC en la red local (no localhost)
+# Ejemplo: export const API_URL = 'http://192.168.1.50:3000/api';
+
+npx expo start
+```
+
+> `localhost` no funciona desde un teléfono físico. Usar la IP de la PC en la red local.
+
+---
+
+## Modalidad 3 — Producción Railway/Vercel
+
+El deploy ocurre automáticamente al hacer `git push origin main`.
+
+| Servicio | Plataforma |
+|----------|-----------|
+| Backend API | Railway (auto-deploy) |
+| Frontend web | Vercel (auto-deploy) |
+| Base de datos | PostgreSQL en Railway |
+| Redis | Railway |
+| Multimedia | Cloudinary (configurado en variables de Railway) |
+
+Las migraciones en producción se aplican manualmente:
+
+```bash
+psql <DATABASE_URL_RAILWAY> -f backend/migrations/<NNN>_nombre.sql
+```
+
+---
+
+## Estructura del repositorio
+
+```
+proyectoProvialMovilWeb/
+├── backend/
+│   ├── src/
+│   │   ├── controllers/     # por dominio: common/, cop/, operaciones/, etc.
+│   │   ├── models/          # queries DB por entidad
+│   │   ├── routes/          # rutas por dominio
+│   │   ├── services/        # cloudinary.service, storage.service, socket, etc.
+│   │   ├── middlewares/     # auth, deviceSecurity, idempotency
+│   │   └── utils/           # normalizeId, buildObservacionEntry, etc.
+│   ├── migrations/          # migraciones 126-145 (las anteriores requieren backup)
+│   ├── Dockerfile
+│   └── .env.example
+├── web/
+│   ├── src/
+│   ├── Dockerfile
+│   └── nginx.conf           # SPA config del contenedor web
+├── mobile/
+│   └── src/
+│       ├── screens/
+│       ├── components/
+│       ├── services/        # api.ts (axios con headers de dispositivo)
+│       ├── store/           # Zustand: authStore, situacionesStore
+│       └── constants/       # config.ts con API_URL
+├── nginx/
+│   └── nginx.conf           # Reverse proxy principal (puerto 80)
+├── docker/
+│   ├── migrator/
+│   │   └── run_migrations.sh   # corre migraciones con tracking table
+│   └── init-scripts/
+│       └── 00_run_migrations.sh  # restaura backup si existe
+├── backups/
+│   └── .gitkeep             # colocar provial.backup aquí
+├── docker-compose.yml       # stack completo para VM
+├── .env.example             # variables del compose (VM_HOST, DB_PASSWORD, etc.)
+└── README.md
+```
+
+---
+
+## Lo que NO incluye el repo
+
+| Qué | Por qué no está |
+|-----|----------------|
+| `backend/.env` | Credenciales de producción |
+| `backend/uploads/` | Archivos subidos por usuarios |
+| `backups/provial.backup` | Datos reales — pedir al administrador |
+| `docs/vault/` | Documentación interna con IPs y contexto sensible |
+| `mobile/src/constants/config.ts` | URL del backend, varía por máquina |
+| Migraciones 1–125 | No están en el repo, requieren backup o dump del esquema |
