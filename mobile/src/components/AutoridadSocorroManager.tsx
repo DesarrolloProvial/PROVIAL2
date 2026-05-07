@@ -59,20 +59,29 @@ export default function AutoridadSocorroManager({
             let nuevosDetalles = { ...detalles };
 
             if (base.includes(nombre)) {
-                delete nuevosDetalles[nombre];
-                onChange({ seleccionados: base.filter((s) => s !== nombre), detalles: nuevosDetalles });
+                // Solo quitar de seleccionados — conservar detalles como caché
+                onChange({
+                    seleccionados: base.filter((s) => s !== nombre),
+                    detalles: { ...detalles },
+                });
             } else {
-                nuevosDetalles[nombre] = {
-                    nombre,
-                    hora_llegada: '',
-                    nip_chapa: '',
-                    numero_unidad: '',
-                    nombre_comandante: '',
-                    cantidad_elementos: '',
-                    subestacion: '',
-                    cantidad_unidades: '',
-                };
-                onChange({ seleccionados: [...base, nombre], detalles: nuevosDetalles });
+                onChange({
+                    seleccionados: [...base, nombre],
+                    detalles: {
+                        ...detalles,
+                        // Reusar datos previos si existen, solo inicializar si es la primera vez
+                        [nombre]: detalles[nombre] || {
+                            nombre,
+                            hora_llegada: '',
+                            nip_chapa: '',
+                            numero_unidad: '',
+                            nombre_comandante: '',
+                            cantidad_elementos: '',
+                            subestacion: '',
+                            cantidad_unidades: '',
+                        },
+                    },
+                });
             }
         }
     };

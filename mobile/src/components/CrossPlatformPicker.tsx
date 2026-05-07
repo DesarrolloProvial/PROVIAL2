@@ -91,13 +91,15 @@ export default function CrossPlatformPicker({
             <Picker
               selectedValue={selectedValue}
               onValueChange={onValueChange}
+              itemStyle={{ color: c.text.primary, fontSize: 18 }}
             >
-              <Picker.Item label={placeholder} value={null} />
+              <Picker.Item label={placeholder} value={null} color={c.text.disabled} />
               {options.map((option, index) => (
                 <Picker.Item
                   key={`${option.value}-${index}`}
                   label={option.label}
                   value={option.value}
+                  color={c.text.primary}
                 />
               ))}
             </Picker>
@@ -125,13 +127,15 @@ export default function CrossPlatformPicker({
           onValueChange={onValueChange}
           style={[styles.picker, { color: c.text.primary }]}
           enabled={!disabled}
+          dropdownIconColor={c.text.secondary}
         >
-          <Picker.Item label={placeholder} value={null} />
+          <Picker.Item label={placeholder} value={null} color={c.text.disabled} />
           {options.map((option, index) => (
             <Picker.Item
               key={`${option.value}-${index}`}
               label={option.label}
               value={option.value}
+              color={c.text.primary}
             />
           ))}
         </Picker>
