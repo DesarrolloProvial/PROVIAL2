@@ -74,6 +74,7 @@ Thumbs.db
 !migrations/*.sql
 !backend/migrations/*.sql
 !RESET_OPERATIONAL_DATA.sql
+!docker/schema/*.sql
 backup_*.sql
 
 # Archive folder (old files)

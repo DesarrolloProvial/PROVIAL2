@@ -17,12 +17,17 @@ Stack: Express + TypeScript (backend), React + Vite (web), React Native + Expo (
 
 ## Nota importante: la base de datos
 
-El repositorio solo contiene las migraciones **126–145**. Las migraciones anteriores (esquema base, ~125 tablas) no están en el repo. Para tener la BD funcional necesitas una de estas dos cosas:
+El repositorio incluye `docker/schema/000_base_schema.sql` — un dump completo del esquema (sin datos) generado desde Railway. Esto permite montar la VM desde cero sin necesidad de un backup.
 
-- **`backups/provial.backup`** — backup completo exportado de Railway (recomendado)
-- **`docker/init-scripts/000_base_schema.sql`** — dump del esquema generado con `pg_dump --schema-only` desde Railway (para staging limpio sin datos)
+El init-script elige automáticamente qué usar, en este orden de prioridad:
 
-Sin ninguna de las dos, el sistema levanta pero la BD estará vacía y sin tablas.
+| Qué existe | Qué hace al iniciar |
+|-----------|---------------------|
+| `backups/provial.backup` | Restaura BD completa con datos históricos |
+| `docker/schema/000_base_schema.sql` | Crea el esquema vacío (tablas, funciones, índices) |
+| Nada | BD vacía; el migrator aplica las migraciones del repo |
+
+En los dos primeros casos, el migrator detecta que el esquema ya está aplicado y solo instala migraciones nuevas.
 
 ---
 
@@ -60,7 +65,8 @@ JWT_REFRESH_SECRET=otra_clave_larga_y_aleatoria
 #    El compose sobreescribe automáticamente DB_HOST, REDIS_HOST, STORAGE_TYPE, etc.
 cp backend/.env.example backend/.env
 
-# 4. Colocar el backup de la BD (ver nota arriba)
+# 4. (Opcional) Restaurar con datos históricos reales
+#    Sin este paso el sistema levanta con el esquema vacío (tablas listas, sin registros)
 mkdir -p backups
 cp /ruta/al/backup.bak backups/provial.backup
 
@@ -268,4 +274,4 @@ proyectoProvialMovilWeb/
 | `backups/provial.backup` | Datos reales — pedir al administrador |
 | `docs/vault/` | Documentación interna con IPs y contexto sensible |
 | `mobile/src/constants/config.ts` | URL del backend, varía por máquina |
-| Migraciones 1–125 | No están en el repo, requieren backup o dump del esquema |
+| `backups/provial.backup` | Datos reales — pedir al administrador si se necesitan |

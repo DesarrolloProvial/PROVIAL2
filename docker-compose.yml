@@ -23,6 +23,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/migrations:/migrations:ro
       - ./docker/init-scripts:/docker-entrypoint-initdb.d:ro
+      - ./docker/schema:/schema:ro
       - ./backups:/backups:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
