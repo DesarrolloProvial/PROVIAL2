@@ -12,8 +12,65 @@ import {
   deleteByUrl,
   isCloudinaryConfiguredUnsigned
 } from '../../services/common/cloudinary.service';
+import {
+  uploadPhoto as localUploadPhoto,
+  uploadVideo as localUploadVideo,
+  deleteFile as localDeleteFile
+} from '../../services/common/storage.service';
 import { db } from '../../config/database';
 import { normalizeId } from '../../utils/db.utils';
+
+const IS_LOCAL = process.env.STORAGE_TYPE === 'local';
+
+// Adaptador unificado para fotos
+async function subirFotoAdapter(
+  buffer: Buffer,
+  mimetype: string,
+  originalname: string,
+  situacionId: number,
+  orden: number,
+  codigoSituacion?: string,
+  infografiaNumero: number = 1
+): Promise<{ success: boolean; url?: string; thumbnailUrl?: string; nombreArchivo?: string; width?: number; height?: number; size?: number; error?: string }> {
+  if (IS_LOCAL) {
+    const r = await localUploadPhoto({ buffer, originalname, mimetype }, situacionId);
+    return { ...r, nombreArchivo: r.filename };
+  }
+  const r = await uploadPhotoBuffer(buffer, situacionId, orden, codigoSituacion, infografiaNumero);
+  return { ...r, nombreArchivo: r.publicId };
+}
+
+// Adaptador unificado para videos
+async function subirVideoAdapter(
+  buffer: Buffer,
+  mimetype: string,
+  originalname: string,
+  situacionId: number,
+  codigoSituacion?: string,
+  infografiaNumero: number = 1
+): Promise<{ success: boolean; url?: string; nombreArchivo?: string; size?: number; duration?: number; error?: string }> {
+  if (IS_LOCAL) {
+    const r = await localUploadVideo({ buffer, originalname, mimetype }, situacionId);
+    return { ...r, nombreArchivo: r.filename };
+  }
+  const r = await uploadVideoBuffer(buffer, situacionId, codigoSituacion, infografiaNumero);
+  return { ...r, nombreArchivo: r.publicId };
+}
+
+// Eliminar archivo — local o cloudinary según storage activo
+async function eliminarArchivoAdapter(url: string): Promise<void> {
+  if (IS_LOCAL) {
+    await localDeleteFile(url);
+  } else {
+    await deleteByUrl(url);
+  }
+}
+
+// Verificar que el storage activo está configurado
+function storageDisponible(): boolean {
+  if (IS_LOCAL) return true;
+  return isCloudinaryConfiguredUnsigned();
+}
 
 const storage = multer.memoryStorage();
 
@@ -58,22 +115,18 @@ export async function subirFoto(req: Request, res: Response) {
       });
     }
 
-    if (!isCloudinaryConfiguredUnsigned()) {
-      console.error('[MULTIMEDIA] Cloudinary NO está configurado!');
+    if (!storageDisponible()) {
+      console.error('[MULTIMEDIA] Storage no configurado!');
       return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
     }
 
-    console.log(`[MULTIMEDIA] Subiendo foto a Cloudinary para situación ${situacionIdNum} Infografía ${infografiaNumero}...`);
-    const result = await uploadPhotoBuffer(
-      req.file.buffer,
-      situacionIdNum,
-      ordenSiguiente,
-      situacion.codigo_situacion,
-      infografiaNumero
+    const result = await subirFotoAdapter(
+      req.file.buffer, req.file.mimetype, req.file.originalname,
+      situacionIdNum, ordenSiguiente, situacion.codigo_situacion, infografiaNumero
     );
 
     if (!result.success) {
-      console.error('[MULTIMEDIA] Error subiendo a Cloudinary:', result.error);
+      console.error('[MULTIMEDIA] Error subiendo foto:', result.error);
       return res.status(500).json({ error: result.error });
     }
 
@@ -85,7 +138,7 @@ export async function subirFoto(req: Request, res: Response) {
       orden: ordenSiguiente,
       url_original: result.url!,
       url_thumbnail: result.thumbnailUrl,
-      nombre_archivo: result.publicId || `foto_${ordenSiguiente}`,
+      nombre_archivo: result.nombreArchivo || `foto_${ordenSiguiente}`,
       mime_type: req.file.mimetype,
       tamanio_bytes: result.size || req.file.size,
       ancho: result.width,
@@ -145,14 +198,16 @@ export async function subirVideo(req: Request, res: Response) {
       });
     }
 
-    if (!isCloudinaryConfiguredUnsigned()) {
-      console.error('[MULTIMEDIA] Cloudinary NO está configurado!');
+    if (!storageDisponible()) {
+      console.error('[MULTIMEDIA] Storage no configurado!');
       return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
     }
 
-    console.log(`[MULTIMEDIA] Subiendo video a Cloudinary para situación ${situacionIdNum} Infografía ${infografiaNumero}...`);
-    const result = await uploadVideoBuffer(
+    console.log(`[MULTIMEDIA] Subiendo video para situación ${situacionIdNum} Infografía ${infografiaNumero}...`);
+    const result = await subirVideoAdapter(
       req.file.buffer,
+      req.file.mimetype,
+      req.file.originalname,
       situacionIdNum,
       situacion.codigo_situacion,
       infografiaNumero
@@ -169,7 +224,7 @@ export async function subirVideo(req: Request, res: Response) {
       infografia_titulo: infografia_titulo || null,
       tipo: 'VIDEO',
       url_original: result.url!,
-      nombre_archivo: result.publicId || `video_${Date.now()}`,
+      nombre_archivo: result.nombreArchivo || `video_${Date.now()}`,
       mime_type: req.file.mimetype,
       tamanio_bytes: result.size || req.file.size,
       duracion_segundos: duracion_segundos ? parseInt(duracion_segundos) : (result.duration ? Math.round(result.duration) : null),
@@ -246,7 +301,7 @@ export async function eliminarMultimedia(req: Request, res: Response) {
       return res.status(403).json({ error: 'No tienes permiso para eliminar este archivo' });
     }
 
-    await deleteByUrl(multimedia.url_original);
+    await eliminarArchivoAdapter(multimedia.url_original);
     await MultimediaModel.delete(id);
 
     console.log(`[MULTIMEDIA] Archivo ${id} eliminado por usuario ${req.user!.userId}`);
@@ -374,8 +429,8 @@ export async function getStats(req: Request, res: Response) {
 
     return res.json({
       storage: {
-        provider: 'cloudinary',
-        configured: isCloudinaryConfiguredUnsigned()
+        provider: IS_LOCAL ? 'local' : 'cloudinary',
+        configured: storageDisponible()
       },
       database: {
         total_archivos: parseInt(dbStats.total_archivos),
@@ -452,19 +507,14 @@ export async function subirFotoGenerica(req: Request, res: Response) {
     if (!req.user) return res.status(401).json({ error: 'No autorizado' });
     if (!req.file) return res.status(400).json({ error: 'No se recibió ningún archivo' });
 
-    if (!isCloudinaryConfiguredUnsigned()) {
-      console.error('[MULTIMEDIA] Cloudinary NO está configurado!');
+    if (!storageDisponible()) {
+      console.error('[MULTIMEDIA] Storage no configurado!');
       return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
     }
 
-    const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(2, 8);
-    const folder = req.body.folder || 'provial_general';
-    const publicId = `${folder}/${timestamp}_${randomId}`;
-
-    const result = await uploadPhotoBuffer(req.file.buffer, 0, 1, publicId);
+    const result = await subirFotoAdapter(req.file.buffer, req.file.mimetype, req.file.originalname, 0, 1);
     if (!result.success) {
-      console.error('[MULTIMEDIA] Error subiendo a Cloudinary:', result.error);
+      console.error('[MULTIMEDIA] Error subiendo foto genérica:', result.error);
       return res.status(500).json({ error: result.error });
     }
 
@@ -472,7 +522,7 @@ export async function subirFotoGenerica(req: Request, res: Response) {
       success: true,
       url: result.url,
       thumbnailUrl: result.thumbnailUrl,
-      publicId: result.publicId,
+      publicId: result.nombreArchivo,
       size: result.size,
       width: result.width,
       height: result.height
@@ -501,9 +551,9 @@ export async function subirFotoActividad(req: Request, res: Response) {
     const ordenSiguiente = await MultimediaModel.getSiguienteOrdenFotoActividad(actividadIdNum, infografiaNumero);
     if (ordenSiguiente > 3) return res.status(400).json({ error: `Límite de fotos alcanzado para infografía ${infografiaNumero}` });
 
-    if (!isCloudinaryConfiguredUnsigned()) return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
+    if (!storageDisponible()) return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
 
-    const result = await uploadPhotoBuffer(req.file.buffer, actividadIdNum, ordenSiguiente, `ACT-${actividadIdNum}`, infografiaNumero);
+    const result = await subirFotoAdapter(req.file.buffer, req.file.mimetype, req.file.originalname, actividadIdNum, ordenSiguiente, `ACT-${actividadIdNum}`, infografiaNumero);
     if (!result.success) return res.status(500).json({ error: result.error });
 
     const multimediaId = await MultimediaModel.create({
@@ -514,7 +564,7 @@ export async function subirFotoActividad(req: Request, res: Response) {
       orden: ordenSiguiente,
       url_original: result.url!,
       url_thumbnail: result.thumbnailUrl,
-      nombre_archivo: result.publicId || `foto_${ordenSiguiente}`,
+      nombre_archivo: result.nombreArchivo || `foto_${ordenSiguiente}`,
       mime_type: req.file.mimetype,
       tamanio_bytes: result.size || req.file.size,
       ancho: result.width,
@@ -547,9 +597,9 @@ export async function subirVideoActividad(req: Request, res: Response) {
     const actividad = await db.oneOrNone('SELECT id FROM actividad WHERE id = $1', [actividadIdNum]);
     if (!actividad) return res.status(404).json({ error: 'Actividad no encontrada' });
 
-    if (!isCloudinaryConfiguredUnsigned()) return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
+    if (!storageDisponible()) return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
 
-    const result = await uploadVideoBuffer(req.file.buffer, actividadIdNum, `ACT-${actividadIdNum}`, infografiaNumero);
+    const result = await subirVideoAdapter(req.file.buffer, req.file.mimetype, req.file.originalname, actividadIdNum, `ACT-${actividadIdNum}`, infografiaNumero);
     if (!result.success) return res.status(500).json({ error: result.error });
 
     const multimediaId = await MultimediaModel.create({
@@ -558,7 +608,7 @@ export async function subirVideoActividad(req: Request, res: Response) {
       infografia_titulo: infografia_titulo || null,
       tipo: 'VIDEO',
       url_original: result.url!,
-      nombre_archivo: result.publicId || `video_act_${actividadIdNum}`,
+      nombre_archivo: result.nombreArchivo || `video_act_${actividadIdNum}`,
       mime_type: req.file.mimetype,
       tamanio_bytes: result.size || req.file.size,
       duracion_segundos: req.body.duracion_segundos ? parseInt(req.body.duracion_segundos) : null,

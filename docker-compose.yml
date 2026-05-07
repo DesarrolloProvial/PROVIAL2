@@ -107,6 +107,8 @@ services:
       REDIS_PORT: "6379"
       CORS_ORIGIN: http://${VM_HOST:-localhost}
       SOCKET_IO_CORS_ORIGIN: http://${VM_HOST:-localhost}
+      STORAGE_TYPE: local
+      STORAGE_BASE_URL: http://${VM_HOST:-localhost}/uploads
     volumes:
       - uploads_data:/app/uploads
     depends_on:
@@ -155,6 +157,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - uploads_data:/uploads:ro
     depends_on:
       backend:
         condition: service_healthy
