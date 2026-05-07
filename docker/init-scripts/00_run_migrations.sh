@@ -1,20 +1,39 @@
 #!/bin/bash
-# Script para ejecutar todas las migraciones en orden
-# Este script se ejecuta automáticamente cuando se inicia el contenedor de PostgreSQL
+# Se ejecuta UNA SOLA VEZ cuando el volumen de postgres está vacío (initdb).
+# Si existe /backups/provial.backup: restaura la BD y pre-registra todas las
+# migraciones como ya aplicadas, para que el servicio migrator solo aplique
+# diferencias en vez de re-correr todo.
+# Si no hay backup: deja la BD vacía y el migrator corre desde cero.
 
 set -e
 
-echo "=== Iniciando ejecución de migraciones PROVIAL ==="
+BACKUP_FILE="/backups/provial.backup"
 
-# Obtener lista de migraciones ordenadas numéricamente
-cd /migrations
+if [ -f "$BACKUP_FILE" ]; then
+    echo "=== Backup encontrado — restaurando $BACKUP_FILE ==="
 
-# Ejecutar migraciones base primero (001-009)
-for f in 00*.sql 01*.sql 02*.sql 03*.sql 04*.sql 05*.sql 06*.sql 07*.sql; do
-    if [ -f "$f" ]; then
-        echo "Ejecutando: $f"
-        psql -U postgres -d provial_db -f "$f" 2>&1 || echo "Warning: $f ya aplicado o error"
+    if file "$BACKUP_FILE" | grep -q "PostgreSQL custom database dump"; then
+        pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner --no-privileges "$BACKUP_FILE" || true
+    else
+        psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f "$BACKUP_FILE" || true
     fi
-done
 
-echo "=== Migraciones completadas ==="
+    echo "=== Backup restaurado. Pre-registrando migraciones como aplicadas... ==="
+
+    psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "
+        CREATE TABLE IF NOT EXISTS _schema_migrations (
+            filename   TEXT PRIMARY KEY,
+            applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+    "
+
+    for f in /migrations/*.sql; do
+        fname=$(basename "$f")
+        psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
+            "INSERT INTO _schema_migrations (filename) VALUES ('$fname') ON CONFLICT DO NOTHING;" > /dev/null
+    done
+
+    echo "=== Pre-registro completo. El migrator solo aplicará migraciones nuevas. ==="
+else
+    echo "=== Sin backup — BD limpia. El migrator aplicará todas las migraciones. ==="
+fi

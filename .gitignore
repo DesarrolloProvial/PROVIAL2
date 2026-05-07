@@ -92,8 +92,12 @@ docs/vault/
 *.csv
 
 # Backups de base de datos (datos reales, nunca en git)
-backups/
+backups/*
+!backups/.gitkeep
 database/backup/
+
+# Variables de entorno raíz (docker-compose)
+.env
 
 # Reorganization script
 reorganize.ps1

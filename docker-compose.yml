@@ -1,36 +1,53 @@
 version: '3.8'
 
+# ProVial — stack VM institucional
+# Uso:
+#   1. cp .env.example .env  y editar VM_HOST, DB_PASSWORD, JWT_SECRET
+#   2. (opcional) copiar backup a backups/provial.backup
+#   3. docker compose up -d --build
+
 services:
+
+  # ============================================================
+  # POSTGRES
+  # ============================================================
   postgres:
     image: postgis/postgis:16-3.4-alpine
     container_name: provial_postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: provial_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=es_GT.UTF-8 --lc-ctype=es_GT.UTF-8"
-    ports:
-      - "5433:5432"
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./migrations:/migrations
-      - ./docker/init-scripts:/docker-entrypoint-initdb.d
+      - ./backend/migrations:/migrations:ro
+      - ./docker/init-scripts:/docker-entrypoint-initdb.d:ro
+      - ./backups:/backups:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - provial_network
+    # Puerto no expuesto al host — solo accesible dentro de la red Docker.
+    # Descomentar solo si necesitas acceso externo a la BD.
+    # ports:
+    #   - "5432:5432"
 
+  # ============================================================
+  # REDIS
+  # ============================================================
   redis:
     image: redis:7-alpine
     container_name: provial_redis
     restart: unless-stopped
-    command: redis-server --appendonly yes
-    ports:
-      - "6379:6379"
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     healthcheck:
@@ -41,36 +58,121 @@ services:
     networks:
       - provial_network
 
-  # Backend (opcional, para desarrollo puedes correrlo fuera de Docker)
-  # backend:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   container_name: provial_backend
-  #   restart: unless-stopped
-  #   env_file:
-  #     - ./backend/.env
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-  #   volumes:
-  #     - ./backend/src:/app/src
-  #     - ./backend/uploads:/app/uploads
-  #   networks:
-  #     - provial_network
+  # ============================================================
+  # MIGRATOR (one-shot: corre y termina)
+  # Aplica solo las migraciones pendientes usando tabla de tracking.
+  # Si hay backups/provial.backup, el init-script ya restauró la BD
+  # y pre-pobló la tabla; el migrator solo aplica las diferencias.
+  # ============================================================
+  migrator:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: provial_migrator
+    volumes:
+      - ./backend/migrations:/migrations:ro
+      - ./docker/migrator:/scripts:ro
+    environment:
+      PGHOST: postgres
+      PGUSER: ${DB_USER:-postgres}
+      PGPASSWORD: ${DB_PASSWORD:-postgres}
+      PGDATABASE: provial_db
+    command: ["sh", "/scripts/run_migrations.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - provial_network
 
-  # PostgreSQL Admin (opcional, útil para desarrollo)
+  # ============================================================
+  # BACKEND API
+  # ============================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: provial_backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: provial_db
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/provial_db
+      REDIS_URL: redis://redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      CORS_ORIGIN: http://${VM_HOST:-localhost}
+      SOCKET_IO_CORS_ORIGIN: http://${VM_HOST:-localhost}
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+    networks:
+      - provial_network
+
+  # ============================================================
+  # WEB (React/Vite — build en contenedor, servido por nginx)
+  # ============================================================
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+        VITE_SOCKET_URL: ""
+        VITE_APP_ENV: production
+    container_name: provial_web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - provial_network
+
+  # ============================================================
+  # NGINX (entry point único — puerto 80)
+  # /api  → backend:3000
+  # /socket.io → backend:3000
+  # /     → web:80
+  # ============================================================
+  nginx:
+    image: nginx:alpine
+    container_name: provial_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      web:
+        condition: service_started
+    networks:
+      - provial_network
+
+  # ============================================================
+  # HERRAMIENTAS (solo con: docker compose --profile tools up)
+  # ============================================================
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: provial_pgadmin
     restart: unless-stopped
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@provial.local
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_PASSWORD: ${DB_PASSWORD:-postgres}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
       - "5050:80"
@@ -83,29 +185,11 @@ services:
     profiles:
       - tools
 
-  # Redis Commander (opcional, útil para debugging)
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    container_name: provial_redis_commander
-    restart: unless-stopped
-    environment:
-      - REDIS_HOSTS=local:provial_redis:6379
-    ports:
-      - "8081:8081"
-    depends_on:
-      - redis
-    networks:
-      - provial_network
-    profiles:
-      - tools
-
 volumes:
   postgres_data:
-    driver: local
   redis_data:
-    driver: local
+  uploads_data:
   pgadmin_data:
-    driver: local
 
 networks:
   provial_network:
