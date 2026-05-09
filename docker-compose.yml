@@ -106,6 +106,8 @@ services:
       REDIS_URL: redis://redis:6379
       REDIS_HOST: redis
       REDIS_PORT: "6379"
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       CORS_ORIGIN: http://${VM_HOST:-localhost}
       SOCKET_IO_CORS_ORIGIN: http://${VM_HOST:-localhost}
       STORAGE_TYPE: local
