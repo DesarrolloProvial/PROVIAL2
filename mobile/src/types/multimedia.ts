@@ -32,6 +32,7 @@ export interface Infografia {
     fotos: FotoItem[];
     video: VideoItem | null;
     created_at: string;
+    editable?: boolean;
 }
 
 export interface InfografiaManagerProps {

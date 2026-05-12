@@ -18,8 +18,9 @@ import { generateMultimediaFilename } from '../utils/multimediaFilename';
 import MultimediaCaptureOffline from './MultimediaCaptureOffline';
 import type { MultimediaRef } from '../services/draftStorage';
 
-// Una infografía es "histórica" si ya fue subida (actualización previa)
+// Una infografía es "histórica" si fue cargada desde el servidor (no creada en esta sesión)
 function isHistorical(inf: Infografia): boolean {
+  if (inf.editable) return false;
   return inf.fotos.some(f => f.estado === 'SUBIDO') || (inf.video?.estado === 'SUBIDO' ?? false);
 }
 

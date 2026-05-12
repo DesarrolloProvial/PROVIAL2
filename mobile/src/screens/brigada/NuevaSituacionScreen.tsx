@@ -119,6 +119,7 @@ export default function NuevaSituacionScreen() {
       fotos: [],
       video: null,
       created_at: new Date().toISOString(),
+      editable: true,
     }
   ]);
   const [draftUuid] = useState(() => `temp-${Date.now()}`); // UUID temporal para el componente
@@ -238,6 +239,7 @@ export default function NuevaSituacionScreen() {
           fotos: [],
           video: null,
           created_at: new Date().toISOString(),
+          editable: true,
         }]);
       }
     }

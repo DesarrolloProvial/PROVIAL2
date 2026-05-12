@@ -159,8 +159,7 @@ export const ActividadModel = {
       LEFT JOIN catalogo_tipo_situacion cts ON a.tipo_actividad_id = cts.id
       LEFT JOIN usuario us ON a.creado_por = us.id
       WHERE a.unidad_id = $1
-        AND a.created_at >= CURRENT_DATE
-        AND a.created_at < CURRENT_DATE + INTERVAL '1 day'
+        AND DATE(a.created_at AT TIME ZONE 'America/Guatemala') = DATE(NOW() AT TIME ZONE 'America/Guatemala')
       ORDER BY a.created_at DESC
     `;
     return db.manyOrNone(query, [unidadId]);

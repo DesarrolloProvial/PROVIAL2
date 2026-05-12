@@ -115,5 +115,6 @@ export function createNewInfografia(
         fotos: [],
         video: null,
         created_at: new Date().toISOString(),
+        editable: true,
     };
 }

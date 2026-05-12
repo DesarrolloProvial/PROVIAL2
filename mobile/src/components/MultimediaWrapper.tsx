@@ -29,6 +29,7 @@ const DEFAULT_INFOGRAFIA: Infografia[] = [{
     fotos: [],
     video: null,
     created_at: new Date().toISOString(),
+    editable: true,
 }];
 
 // URI especial para marcar una infografía que existe pero no tiene fotos aún
@@ -47,6 +48,7 @@ const toGroupedInfografias = (input?: Infografia[] | MultimediaRef[] | any): Inf
     const primerElemento = input[0];
     if (primerElemento && typeof primerElemento === 'object' && 'fotos' in primerElemento && Array.isArray(primerElemento.fotos)) {
         return input.map((inf, idx) => ({
+            ...inf,
             numero: typeof inf.numero === 'number' ? inf.numero : idx + 1,
             titulo: inf.titulo || `Infografía ${idx + 1}`,
             fotos: Array.isArray(inf.fotos) ? inf.fotos : [],
