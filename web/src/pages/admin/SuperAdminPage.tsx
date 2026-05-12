@@ -38,7 +38,6 @@ import {
   EyeOff,
   Save,
   KeyRound,
-  MapPin,
   Star,
   Lock
 } from 'lucide-react';
@@ -164,9 +163,6 @@ export default function SuperAdminPage() {
         {activeTab === 'dashboard' && (
           <DashboardTab
             estadisticas={estadisticas}
-            departamentos={departamentos || []}
-            sedes={sedes || []}
-            isSuperAdmin={isSuperAdmin}
           />
         )}
         {activeTab === 'usuarios' && (
@@ -209,14 +205,8 @@ export default function SuperAdminPage() {
 
 function DashboardTab({
   estadisticas,
-  departamentos,
-  sedes,
-  isSuperAdmin,
 }: {
   estadisticas?: EstadisticasAdmin;
-  departamentos: DepartamentoSistema[];
-  sedes: SedeCompleta[];
-  isSuperAdmin: boolean;
 }) {
   const queryClient = useQueryClient();
   const [modalDepartamento, setModalDepartamento] = useState<DepartamentoSistema | 'new' | null>(null);

@@ -97,6 +97,7 @@ export function authorizeCopSubRol(...requiredPermissions: CopPermission[]) {
             puede_cerrar_persistentes: 'cerrar situaciones persistentes',
             puede_promover_situaciones: 'promover situaciones a persistentes',
             puede_asignar_unidades: 'asignar unidades',
+            puede_gestionar_grupos: 'gestionar grupos y calendarios',
           };
 
           return res.status(403).json({
