@@ -315,6 +315,32 @@ export default function NuevaSituacionScreen() {
           municipio_id: muniId || null,
         };
         await api.patch(`/situaciones/${situacionId}`, data);
+
+        // Subir multimedia nueva agregada en esta edición (saltar URLs ya subidas)
+        const newMedia: any[] = infografias.flatMap(inf => [
+          ...inf.fotos
+            .filter(f => !f.uri.startsWith('http'))
+            .map(f => ({
+              uri: f.uri,
+              tipo: 'FOTO',
+              orden: f.orden,
+              infografia_numero: inf.numero,
+              infografia_titulo: inf.titulo,
+              latitud: f.latitud,
+              longitud: f.longitud,
+            })),
+          ...(inf.video && !inf.video.uri.startsWith('http') ? [{
+            uri: inf.video.uri,
+            tipo: 'VIDEO',
+            infografia_numero: inf.numero,
+            infografia_titulo: inf.titulo,
+            duracion_segundos: inf.video.duracion_segundos,
+          }] : []),
+        ]);
+
+        if (newMedia.length > 0) {
+          require('../../services/multimediaSync').uploadSituacionMultimedia(situacionId, newMedia);
+        }
       } else if (FORMULARIOS_ACTIVIDAD.includes(formularioTipo)) {
         // ============================================
         // ACTIVIDAD OPERATIVA -> POST /api/actividades
