@@ -475,8 +475,10 @@ export const SituacionModel = {
             'tipo', sm.tipo,
             'orden', sm.orden,
             'url', sm.url_original,
-            'thumbnail', sm.url_thumbnail
-          ) ORDER BY sm.tipo, sm.orden)
+            'thumbnail', sm.url_thumbnail,
+            'infografia_numero', sm.infografia_numero,
+            'infografia_titulo', sm.infografia_titulo
+          ) ORDER BY sm.infografia_numero, sm.tipo, sm.orden)
           FROM situacion_multimedia sm WHERE sm.situacion_id = s.id),
           '[]'
         ) as multimedia,
@@ -922,7 +924,7 @@ export const SituacionModel = {
       `SELECT au.unidad_id FROM tripulacion_turno tt
        JOIN asignacion_unidad au ON tt.asignacion_id = au.id
        JOIN turno t ON au.turno_id = t.id
-       WHERE tt.usuario_id = $1 AND t.fecha = CURRENT_DATE
+       WHERE tt.usuario_id = $1 AND t.fecha = DATE(NOW() AT TIME ZONE 'America/Guatemala')
        ORDER BY tt.created_at DESC LIMIT 1`,
       [userId]
     );
