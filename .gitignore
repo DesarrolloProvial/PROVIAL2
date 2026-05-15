@@ -80,8 +80,10 @@ backup_*.sql
 # Archive folder (old files)
 archive/
 
-# Vault Obsidian (documentación local, no versionada por ahora)
-docs/vault/
+# Vault Obsidian — solo ignorar config interna de Obsidian, los .md sí van al repo
+docs/vault/.obsidian/
+docs/vault/.trash/
+docs/vault/.stversions/
 
 # Archivos de Office y datos institucionales sensibles
 *.xlsx
