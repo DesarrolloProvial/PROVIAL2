@@ -44,6 +44,7 @@ export interface CreateMultimediaParams {
   latitud?: number | null;
   longitud?: number | null;
   subido_por: number;
+  estado?: string;
 }
 
 export interface MultimediaResumen {
@@ -65,12 +66,12 @@ export const MultimediaModel = {
         situacion_id, actividad_id, infografia_numero, infografia_titulo, tipo, orden, url_original, url_thumbnail,
         nombre_archivo, mime_type, tamanio_bytes,
         ancho, alto, duracion_segundos,
-        latitud, longitud, subido_por
+        latitud, longitud, subido_por, estado
       ) VALUES (
         $1, $2, $3, $4, $5, $6,
         $7, $8, $9, $10, $11,
         $12, $13, $14,
-        $15, $16, $17
+        $15, $16, $17, $18
       ) RETURNING id
     `, [
       params.situacion_id || null,
@@ -89,7 +90,8 @@ export const MultimediaModel = {
       params.duracion_segundos || null,
       params.latitud || null,
       params.longitud || null,
-      params.subido_por
+      params.subido_por,
+      params.estado || 'PENDIENTE'
     ]);
     return result.id;
   },

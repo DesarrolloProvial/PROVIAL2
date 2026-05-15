@@ -484,7 +484,8 @@ export async function guardarReferenciasCloudinary(req: Request, res: Response) 
           nombre_archivo: public_id || url.split('/').pop() || 'archivo',
           mime_type: tipo === 'VIDEO' ? 'video/mp4' : 'image/jpeg',
           tamanio_bytes: 0,
-          subido_por: req.user!.userId
+          subido_por: req.user!.userId,
+          estado: 'SUBIDO'
         });
         resultados.push({ url, id: multimediaId, success: true });
       } catch (err: any) {
