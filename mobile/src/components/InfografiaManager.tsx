@@ -18,7 +18,7 @@ import { generateMultimediaFilename } from '../utils/multimediaFilename';
 import MultimediaCaptureOffline from './MultimediaCaptureOffline';
 import type { MultimediaRef } from '../services/draftStorage';
 
-// Una infografía es "histórica" si fue cargada desde el servidor (no creada en esta sesión)
+// Histórica = no tiene flag editable Y sus fotos ya estaban subidas al recargar del servidor
 function isHistorical(inf: Infografia): boolean {
   if (inf.editable) return false;
   return inf.fotos.some(f => f.estado === 'SUBIDO') || (inf.video?.estado === 'SUBIDO' ?? false);
@@ -30,7 +30,8 @@ export default function InfografiaManager({
   onChange,
   disabled = false,
 }: InfografiaManagerProps) {
-  const [showCaptureModal, setShowCaptureModal] = useState(false);
+  // numero de la infografía cuyo modal de captura está abierto
+  const [captureTargetNumero, setCaptureTargetNumero] = useState<number | null>(null);
 
   const infografias = React.useMemo(() => {
     if (!Array.isArray(propInfografias)) return [];
@@ -43,10 +44,11 @@ export default function InfografiaManager({
     }));
   }, [propInfografias]);
 
-  // Separar históricas (SUBIDO) de la infografía de esta actualización (vacía/PENDIENTE)
   const historicalInfografias = infografias.filter(isHistorical);
-  const sessionInfografia = infografias.find(inf => !isHistorical(inf)) ?? null;
-  const canAddNew = !sessionInfografia && !disabled;
+  const sessionInfografias = infografias.filter(inf => !isHistorical(inf));
+  const captureTarget = captureTargetNumero !== null
+    ? infografias.find(inf => inf.numero === captureTargetNumero) ?? null
+    : null;
 
   // Auto-inicializar en creación (array completamente vacío)
   useEffect(() => {
@@ -59,24 +61,20 @@ export default function InfografiaManager({
     onChange([...infografias, createNewInfografia(infografias)]);
   };
 
-  const handleUpdateTitulo = (titulo: string) => {
-    if (!sessionInfografia) return;
-    onChange(infografias.map(inf =>
-      inf.numero === sessionInfografia.numero ? { ...inf, titulo } : inf
-    ));
+  const handleUpdateTitulo = (numero: number, titulo: string) => {
+    onChange(infografias.map(inf => inf.numero === numero ? { ...inf, titulo } : inf));
   };
 
-  const handleDeleteSession = () => {
-    if (!sessionInfografia) return;
-    const fotoCount = sessionInfografia.fotos?.length ?? 0;
+  const handleDeleteSession = (target: Infografia) => {
+    const fotoCount = target.fotos?.length ?? 0;
     Alert.alert(
       'Eliminar evidencia',
-      `¿Eliminar "${sessionInfografia.titulo}"?\n${fotoCount} foto(s) y ${sessionInfografia.video ? '1 video' : '0 videos'} se perderán.`,
+      `¿Eliminar "${target.titulo}"?\n${fotoCount} foto(s) y ${target.video ? '1 video' : '0 videos'} se perderán.`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Eliminar', style: 'destructive',
-          onPress: () => onChange(infografias.filter(inf => inf.numero !== sessionInfografia.numero)),
+          onPress: () => onChange(infografias.filter(inf => inf.numero !== target.numero)),
         },
       ]
     );
@@ -89,8 +87,7 @@ export default function InfografiaManager({
     return refs;
   };
 
-  const handleMultimediaChange = (multimedia: MultimediaRef[]) => {
-    if (!sessionInfografia) return;
+  const handleMultimediaChange = (targetNumero: number, multimedia: MultimediaRef[]) => {
     const fotos: FotoItem[] = [];
     let video: VideoItem | null = null;
 
@@ -101,7 +98,7 @@ export default function InfografiaManager({
           uri: item.uri,
           filename: generateMultimediaFilename({
             situacionId,
-            infografiaNumero: sessionInfografia.numero,
+            infografiaNumero: targetNumero,
             tipo: 'FOTO',
             orden: item.orden,
           }),
@@ -112,7 +109,7 @@ export default function InfografiaManager({
           uri: item.uri,
           filename: generateMultimediaFilename({
             situacionId,
-            infografiaNumero: sessionInfografia.numero,
+            infografiaNumero: targetNumero,
             tipo: 'VIDEO',
           }),
           duracion_segundos: item.duracion_segundos,
@@ -122,13 +119,95 @@ export default function InfografiaManager({
     });
 
     onChange(infografias.map(inf =>
-      inf.numero === sessionInfografia.numero ? { ...inf, fotos, video } : inf
+      inf.numero === targetNumero ? { ...inf, fotos, video } : inf
     ));
   };
 
-  const validation = sessionInfografia ? validateInfografia(sessionInfografia) : null;
-  const sessionFotoCount = sessionInfografia?.fotos?.length ?? 0;
-  const sessionHasMedia = sessionFotoCount > 0 || !!sessionInfografia?.video;
+  const renderSessionCard = (inf: Infografia) => {
+    const validation = validateInfografia(inf);
+    const fotoCount = inf.fotos?.length ?? 0;
+    const hasMedia = fotoCount > 0 || !!inf.video;
+
+    return (
+      <View key={`session-${inf.numero}`} style={styles.card}>
+        {/* Título */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>Título</Text>
+          <TextInput
+            style={[styles.titleInput, disabled && styles.inputDisabled]}
+            value={inf.titulo}
+            onChangeText={(t) => handleUpdateTitulo(inf.numero, t)}
+            placeholder="Describe esta evidencia..."
+            placeholderTextColor={COLORS.text.secondary}
+            maxLength={100}
+            editable={!disabled}
+          />
+        </View>
+
+        {/* Botón captura */}
+        <TouchableOpacity
+          style={[styles.captureBtn, disabled && styles.captureBtnDisabled]}
+          onPress={() => setCaptureTargetNumero(inf.numero)}
+          disabled={disabled}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.captureBtnIcon}>📷</Text>
+          <Text style={styles.captureBtnText}>
+            {hasMedia ? 'Editar fotos y video' : 'Agregar fotos y video'}
+          </Text>
+          {hasMedia && (
+            <View style={styles.mediaBadge}>
+              <Text style={styles.mediaBadgeText}>
+                {fotoCount} foto{fotoCount !== 1 ? 's' : ''}{inf.video ? ' · 1 video' : ''}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* Preview */}
+        {fotoCount > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.previewScroll}
+            contentContainerStyle={styles.previewContent}
+          >
+            {inf.fotos?.map((foto, idx) => (
+              <View key={`foto-${foto.orden}-${idx}`} style={styles.previewItem}>
+                <Image source={{ uri: foto.uri }} style={styles.previewImage} />
+                <View style={styles.previewBadge}>
+                  <Text style={styles.previewBadgeText}>{foto.orden}</Text>
+                </View>
+              </View>
+            ))}
+            {inf.video && (
+              <View style={styles.previewItem}>
+                <View style={[styles.previewImage, styles.videoPreview]}>
+                  <Text style={{ fontSize: 28 }}>🎥</Text>
+                </View>
+              </View>
+            )}
+          </ScrollView>
+        )}
+
+        {/* Errores de validación */}
+        {!validation.isValid && (
+          <View style={styles.validationBox}>
+            {validation.errors?.map((err, i) => (
+              <Text key={i} style={styles.validationText}>• {err}</Text>
+            ))}
+          </View>
+        )}
+
+        {/* Eliminar */}
+        {!disabled && (
+          <TouchableOpacity style={styles.deleteRow} onPress={() => handleDeleteSession(inf)}>
+            <Text style={styles.deleteText}>🗑 Eliminar evidencia</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -175,120 +254,44 @@ export default function InfografiaManager({
         </View>
       )}
 
-      {/* ── Evidencia de esta actualización ──────────────────────────────── */}
-      {sessionInfografia ? (
-        <View style={styles.card}>
-          {/* Título */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Título</Text>
-            <TextInput
-              style={[styles.titleInput, disabled && styles.inputDisabled]}
-              value={sessionInfografia.titulo}
-              onChangeText={handleUpdateTitulo}
-              placeholder="Describe esta evidencia..."
-              placeholderTextColor={COLORS.text.secondary}
-              maxLength={100}
-              editable={!disabled}
-            />
-          </View>
+      {/* ── Infografías de sesión (editables) ─────────────────────────────── */}
+      {sessionInfografias.map(inf => renderSessionCard(inf))}
 
-          {/* Botón captura */}
-          <TouchableOpacity
-            style={[styles.captureBtn, disabled && styles.captureBtnDisabled]}
-            onPress={() => setShowCaptureModal(true)}
-            disabled={disabled}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.captureBtnIcon}>📷</Text>
-            <Text style={styles.captureBtnText}>
-              {sessionHasMedia ? 'Editar fotos y video' : 'Agregar fotos y video'}
-            </Text>
-            {sessionHasMedia && (
-              <View style={styles.mediaBadge}>
-                <Text style={styles.mediaBadgeText}>
-                  {sessionFotoCount} foto{sessionFotoCount !== 1 ? 's' : ''}{sessionInfografia.video ? ' · 1 video' : ''}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-
-          {/* Preview */}
-          {sessionFotoCount > 0 && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.previewScroll}
-              contentContainerStyle={styles.previewContent}
-            >
-              {sessionInfografia.fotos?.map((foto, idx) => (
-                <View key={`foto-${foto.orden}-${idx}`} style={styles.previewItem}>
-                  <Image source={{ uri: foto.uri }} style={styles.previewImage} />
-                  <View style={styles.previewBadge}>
-                    <Text style={styles.previewBadgeText}>{foto.orden}</Text>
-                  </View>
-                </View>
-              ))}
-              {sessionInfografia.video && (
-                <View style={styles.previewItem}>
-                  <View style={[styles.previewImage, styles.videoPreview]}>
-                    <Text style={{ fontSize: 28 }}>🎥</Text>
-                  </View>
-                </View>
-              )}
-            </ScrollView>
-          )}
-
-          {/* Errores de validación */}
-          {validation && !validation.isValid && (
-            <View style={styles.validationBox}>
-              {validation.errors?.map((err, i) => (
-                <Text key={i} style={styles.validationText}>• {err}</Text>
-              ))}
-            </View>
-          )}
-
-          {/* Eliminar sesión */}
-          {!disabled && (
-            <TouchableOpacity style={styles.deleteRow} onPress={handleDeleteSession}>
-              <Text style={styles.deleteText}>🗑 Eliminar evidencia</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      ) : canAddNew ? (
-        /* Estado: sin sesión activa, puede agregar una nueva */
+      {/* ── Agregar nueva ────────────────────────────────────────────────── */}
+      {!disabled && (
         <TouchableOpacity style={styles.addCard} onPress={handleAddSessionInfografia} activeOpacity={0.7}>
           <Text style={styles.addCardIcon}>📷</Text>
           <Text style={styles.addCardTitle}>
-            {historicalInfografias.length > 0
-              ? 'Agregar evidencia para esta actualización'
+            {sessionInfografias.length > 0 || historicalInfografias.length > 0
+              ? 'Agregar otra evidencia'
               : 'Agregar evidencia fotográfica'}
           </Text>
           <Text style={styles.addCardSub}>Fotos y video de este momento</Text>
         </TouchableOpacity>
-      ) : null}
+      )}
 
       {/* Modal captura */}
-      {sessionInfografia && (
+      {captureTarget && (
         <Modal
-          visible={showCaptureModal}
+          visible={captureTargetNumero !== null}
           animationType="slide"
-          onRequestClose={() => setShowCaptureModal(false)}
+          onRequestClose={() => setCaptureTargetNumero(null)}
         >
           <SafeAreaView style={styles.modalContainer}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle} numberOfLines={1}>{sessionInfografia.titulo}</Text>
-              <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowCaptureModal(false)}>
+              <Text style={styles.modalTitle} numberOfLines={1}>{captureTarget.titulo}</Text>
+              <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setCaptureTargetNumero(null)}>
                 <Text style={styles.modalCloseText}>✕ Cerrar</Text>
               </TouchableOpacity>
             </View>
             <MultimediaCaptureOffline
-              draftUuid={`${situacionId}_I${sessionInfografia.numero}`}
+              draftUuid={`${situacionId}_I${captureTarget.numero}`}
               tipoSituacion="INFOGRAFIA"
               manualMode
-              initialMedia={getMultimediaForCapture(sessionInfografia)}
-              onMultimediaChange={handleMultimediaChange}
+              initialMedia={getMultimediaForCapture(captureTarget)}
+              onMultimediaChange={(media) => handleMultimediaChange(captureTarget.numero, media)}
             />
-            <TouchableOpacity style={styles.modalDoneBtn} onPress={() => setShowCaptureModal(false)}>
+            <TouchableOpacity style={styles.modalDoneBtn} onPress={() => setCaptureTargetNumero(null)}>
               <Text style={styles.modalDoneText}>Listo</Text>
             </TouchableOpacity>
           </SafeAreaView>
@@ -364,6 +367,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
+    marginBottom: 10,
   },
   fieldGroup: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6 },
   fieldLabel: {
@@ -447,7 +451,7 @@ const styles = StyleSheet.create({
   },
   deleteText: { fontSize: 14, color: COLORS.danger, fontWeight: '500' },
 
-  // ── Añadir nueva (cuando no hay sesión activa) ─────────────────────────
+  // ── Añadir nueva ──────────────────────────────────────────────────────
   addCard: {
     borderWidth: 1.5,
     borderColor: COLORS.primary + '50',
@@ -456,6 +460,7 @@ const styles = StyleSheet.create({
     paddingVertical: 28,
     alignItems: 'center',
     backgroundColor: COLORS.primary + '06',
+    marginTop: 4,
   },
   addCardIcon: { fontSize: 36, marginBottom: 10 },
   addCardTitle: {
