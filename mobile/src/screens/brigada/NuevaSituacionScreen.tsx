@@ -288,7 +288,7 @@ export default function NuevaSituacionScreen() {
         ]);
 
         if (newMedia.length > 0) {
-          require('../../services/multimediaSync').uploadSituacionMultimedia(situacionId, newMedia);
+          await require('../../services/multimediaSync').uploadSituacionMultimedia(situacionId, newMedia);
         }
       } else if (FORMULARIOS_ACTIVIDAD.includes(formularioTipo)) {
         // ============================================
@@ -487,9 +487,7 @@ export default function NuevaSituacionScreen() {
           });
 
           if (allMedia.length > 0) {
-            // No esperamos a que termine, se ejecuta en "segundo plano"
-            // Importar dinámicamente para evitar ciclos si fuera necesario, o usar el import estático
-            require('../../services/multimediaSync').uploadSituacionMultimedia(nuevaSituacion.id, allMedia)
+            await require('../../services/multimediaSync').uploadSituacionMultimedia(nuevaSituacion.id, allMedia);
           }
         }
 
