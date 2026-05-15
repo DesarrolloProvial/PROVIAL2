@@ -30,7 +30,7 @@ type RegistroBitacora = {
 
 export default function BitacoraScreen() {
   const navigation = useNavigation();
-  const { situacionesHoy, actividadesHoy, fetchMisSituacionesHoy, cambiarTipoSituacion, isLoading } = useSituacionesStore();
+  const { situacionesHoy, situacionActiva, actividadesHoy, fetchMisSituacionesHoy, cambiarTipoSituacion, isLoading } = useSituacionesStore();
   const { salidaActiva, refreshSalidaActiva } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
   const [filtroTipo, setFiltroTipo] = useState<TipoSituacion | 'SALIDA' | 'INGRESO' | null>(null);
@@ -343,7 +343,7 @@ export default function BitacoraScreen() {
       });
     }
 
-    // Agregar situaciones
+    // Agregar situaciones de hoy
     situacionesHoy.forEach((situacion) => {
       registros.push({
         tipo: 'SITUACION',
@@ -352,6 +352,16 @@ export default function BitacoraScreen() {
         data: situacion,
       });
     });
+
+    // Incluir situación activa aunque sea de un día anterior (no está en situacionesHoy)
+    if (situacionActiva && !situacionesHoy.find(s => s.id === situacionActiva.id)) {
+      registros.push({
+        tipo: 'SITUACION',
+        id: situacionActiva.id,
+        created_at: situacionActiva.created_at,
+        data: situacionActiva,
+      });
+    }
 
     // Agregar ingresos a sede
     ingresosHoy.forEach((ingreso) => {
@@ -375,7 +385,7 @@ export default function BitacoraScreen() {
 
     // Ordenar por fecha (más reciente primero)
     return registros.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [salidaActiva, situacionesHoy, ingresosHoy, actividadesHoy]);
+  }, [salidaActiva, situacionesHoy, situacionActiva, ingresosHoy, actividadesHoy]);
 
   const registrosFiltrados = filtroTipo
     ? registrosBitacora.filter((r) => {
