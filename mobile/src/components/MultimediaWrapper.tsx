@@ -84,16 +84,16 @@ const toGroupedInfografias = (input?: Infografia[] | MultimediaRef[] | any): Inf
 
     // Llenar datos
     refs.forEach(ref => {
-        // Ignorar placeholders explícitamente al reconstruir la UI
-        if (ref.uri === PLACEHOLDER_URI) return;
-
         const num = ref.infografia_numero || 1;
         const inf = mapa.get(num)!;
 
-        // Recuperar título
+        // Recuperar título desde cualquier ref, incluyendo placeholders
         if (ref.infografia_titulo && inf.titulo.startsWith('Infografía')) {
             inf.titulo = ref.infografia_titulo;
         }
+
+        // Placeholders solo aportan el título — no agregan contenido
+        if (ref.uri === PLACEHOLDER_URI) return;
 
         if (ref.tipo === 'FOTO') {
             const isRemote = ref.uri.startsWith('http') || ref.uri.startsWith('https');
