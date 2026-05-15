@@ -243,6 +243,9 @@ export default function SituacionDinamicaScreen() {
                 orden: m.orden || 1,
                 id: m.id,
                 isExisting: true,
+                infografia_numero: m.infografia_numero || 1,
+                infografia_titulo: m.infografia_titulo || null,
+                estado: 'SUBIDO' as const,
             }));
         }
 
