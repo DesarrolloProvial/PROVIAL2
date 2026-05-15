@@ -80,6 +80,9 @@ backup_*.sql
 # Archive folder (old files)
 archive/
 
+# Instrucciones locales para Claude Code — contiene credenciales, nunca versionar
+CLAUDE.md
+
 # Vault Obsidian — solo ignorar config interna de Obsidian, los .md sí van al repo
 docs/vault/.obsidian/
 docs/vault/.trash/
