@@ -258,7 +258,7 @@ export default function InfografiaManager({
       {sessionInfografias.map(inf => renderSessionCard(inf))}
 
       {/* ── Agregar nueva ────────────────────────────────────────────────── */}
-      {!disabled && (
+      {!disabled && sessionInfografias.length === 0 && (
         <TouchableOpacity style={styles.addCard} onPress={handleAddSessionInfografia} activeOpacity={0.7}>
           <Text style={styles.addCardIcon}>📷</Text>
           <Text style={styles.addCardTitle}>

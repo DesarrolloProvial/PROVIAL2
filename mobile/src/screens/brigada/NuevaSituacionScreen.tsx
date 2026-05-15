@@ -111,17 +111,27 @@ export default function NuevaSituacionScreen() {
   const [unidadesList, setUnidadesList] = useState<any[]>([]);
 
   // State para multimedia/infografías
-  const [multimedia, setMultimedia] = useState<MultimediaRef[]>([]); // Mantener por compatibilidad si es necesario, o eliminar
-  const [infografias, setInfografias] = useState<Infografia[]>([
-    {
-      numero: 1,
-      titulo: 'Infografía 1',
-      fotos: [],
-      video: null,
-      created_at: new Date().toISOString(),
-      editable: true,
+  const [multimedia, setMultimedia] = useState<MultimediaRef[]>([]);
+  const [infografias, setInfografias] = useState<Infografia[]>(() => {
+    // Inicializar sincrónicamente para evitar race condition con el useEffect
+    const multimedia = route.params?.situacionData?.multimedia;
+    if (route.params?.editMode && Array.isArray(multimedia) && multimedia.length > 0) {
+      const mapa: Record<number, any> = {};
+      (multimedia as any[]).forEach((item: any) => {
+        const num = item.infografia_numero || 1;
+        if (!mapa[num]) {
+          mapa[num] = { numero: num, titulo: item.infografia_titulo || `Infografía ${num}`, fotos: [], video: null, created_at: new Date().toISOString() };
+        }
+        if (item.tipo === 'FOTO') {
+          mapa[num].fotos.push({ orden: item.orden || mapa[num].fotos.length + 1, uri: item.url || item.url_original, filename: item.nombre_archivo || `foto_${item.orden}.jpg`, url_original: item.url_original, url_thumbnail: item.thumbnail || item.url_thumbnail, estado: 'SUBIDO' as const, latitud: item.latitud, longitud: item.longitud });
+        } else if (item.tipo === 'VIDEO' && !mapa[num].video) {
+          mapa[num].video = { uri: item.url || item.url_original, filename: item.nombre_archivo || 'video.mp4', url_original: item.url_original, duracion_segundos: item.duracion_segundos, estado: 'SUBIDO' as const, latitud: item.latitud, longitud: item.longitud };
+        }
+      });
+      return Object.values(mapa).sort((a: any, b: any) => a.numero - b.numero);
     }
-  ]);
+    return [{ numero: 1, titulo: 'Infografía 1', fotos: [], video: null, created_at: new Date().toISOString(), editable: true }];
+  });
   const [draftUuid] = useState(() => `temp-${Date.now()}`); // UUID temporal para el componente
 
   // Hecho de tránsito: vehiculos form, causas, acuerdo, conteos
@@ -181,67 +191,6 @@ export default function NuevaSituacionScreen() {
       if (situacionData.carga_vehicular) setCarga(situacionData.carga_vehicular);
       if (situacionData.departamento_id) setDeptoId(situacionData.departamento_id);
       if (situacionData.municipio_id) setMuniId(situacionData.municipio_id);
-
-      // Cargar infografías desde multimedia existente
-      if (situacionData.multimedia && Array.isArray(situacionData.multimedia) && situacionData.multimedia.length > 0) {
-        // Agrupar multimedia por infografia_numero
-        const multimediaAgrupada = situacionData.multimedia.reduce((acc: any, item: any) => {
-          const infNum = item.infografia_numero || 1;
-          if (!acc[infNum]) {
-            acc[infNum] = {
-              numero: infNum,
-              titulo: item.infografia_titulo || `Infografía ${infNum}`,
-              fotos: [],
-              video: null,
-              created_at: new Date().toISOString(),
-            };
-          }
-
-          if (item.tipo === 'FOTO') {
-            acc[infNum].fotos.push({
-              orden: item.orden || acc[infNum].fotos.length + 1,
-              uri: item.url || item.url_original,
-              filename: item.nombre_archivo || `foto_${item.orden}.jpg`,
-              url_original: item.url_original,
-              url_thumbnail: item.thumbnail || item.url_thumbnail,
-              cloudinary_id: item.public_id,
-              estado: 'SUBIDO' as const,
-              latitud: item.latitud,
-              longitud: item.longitud,
-            });
-          } else if (item.tipo === 'VIDEO' && !acc[infNum].video) {
-            acc[infNum].video = {
-              uri: item.url || item.url_original,
-              filename: item.nombre_archivo || 'video.mp4',
-              url_original: item.url_original,
-              cloudinary_id: item.public_id,
-              duracion_segundos: item.duracion_segundos,
-              estado: 'SUBIDO' as const,
-              latitud: item.latitud,
-              longitud: item.longitud,
-            };
-          }
-
-          return acc;
-        }, {});
-
-        // Convertir a array y ordenar por número
-        const infografiasArray = Object.values(multimediaAgrupada).sort((a: any, b: any) => a.numero - b.numero);
-
-        if (infografiasArray.length > 0) {
-          setInfografias(infografiasArray as Infografia[]);
-        }
-      } else {
-        // Si no hay multimedia existente en modo edición, inicializar con una infografía vacía
-        setInfografias([{
-          numero: 1,
-          titulo: 'Infografía 1',
-          fotos: [],
-          video: null,
-          created_at: new Date().toISOString(),
-          editable: true,
-        }]);
-      }
     }
   }, [editMode, situacionData]);
 
