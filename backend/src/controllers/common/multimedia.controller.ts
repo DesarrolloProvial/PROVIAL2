@@ -145,7 +145,8 @@ export async function subirFoto(req: Request, res: Response) {
       alto: result.height,
       latitud: latitud ? parseFloat(latitud) : null,
       longitud: longitud ? parseFloat(longitud) : null,
-      subido_por: req.user!.userId
+      subido_por: req.user!.userId,
+      estado: 'SUBIDO'
     });
 
     const completitud = await MultimediaModel.verificarCompletitud(situacionIdNum);
@@ -230,7 +231,8 @@ export async function subirVideo(req: Request, res: Response) {
       duracion_segundos: duracion_segundos ? parseInt(duracion_segundos) : (result.duration ? Math.round(result.duration) : null),
       latitud: latitud ? parseFloat(latitud) : null,
       longitud: longitud ? parseFloat(longitud) : null,
-      subido_por: req.user!.userId
+      subido_por: req.user!.userId,
+      estado: 'SUBIDO'
     });
 
     const completitud = await MultimediaModel.verificarCompletitud(situacionIdNum);
@@ -570,7 +572,8 @@ export async function subirFotoActividad(req: Request, res: Response) {
       tamanio_bytes: result.size || req.file.size,
       ancho: result.width,
       alto: result.height,
-      subido_por: req.user!.userId
+      subido_por: req.user!.userId,
+      estado: 'SUBIDO'
     });
 
     return res.status(201).json({
@@ -613,7 +616,8 @@ export async function subirVideoActividad(req: Request, res: Response) {
       mime_type: req.file.mimetype,
       tamanio_bytes: result.size || req.file.size,
       duracion_segundos: req.body.duracion_segundos ? parseInt(req.body.duracion_segundos) : null,
-      subido_por: req.user!.userId
+      subido_por: req.user!.userId,
+      estado: 'SUBIDO'
     });
 
     return res.status(201).json({ message: 'Video subido', multimedia: { id: multimediaId, infografia_numero: infografiaNumero, url: result.url } });

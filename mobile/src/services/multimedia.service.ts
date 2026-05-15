@@ -267,6 +267,7 @@ export async function uploadPhoto(
   situacionId: number,
   photo: MediaFile,
   location?: { latitude: number; longitude: number },
+  metadata?: { infografia_numero?: number; infografia_titulo?: string },
   onProgress?: (progress: UploadProgress) => void
 ): Promise<UploadResult> {
   try {
@@ -288,6 +289,13 @@ export async function uploadPhoto(
     if (location) {
       formData.append('latitud', location.latitude.toString());
       formData.append('longitud', location.longitude.toString());
+    }
+
+    if (metadata?.infografia_numero != null) {
+      formData.append('infografia_numero', String(metadata.infografia_numero));
+    }
+    if (metadata?.infografia_titulo) {
+      formData.append('infografia_titulo', metadata.infografia_titulo);
     }
 
     return new Promise((resolve) => {
@@ -343,6 +351,7 @@ export async function uploadVideo(
   situacionId: number,
   video: MediaFile,
   location?: { latitude: number; longitude: number },
+  metadata?: { infografia_numero?: number; infografia_titulo?: string },
   onProgress?: (progress: UploadProgress) => void
 ): Promise<UploadResult> {
   try {
@@ -372,6 +381,13 @@ export async function uploadVideo(
 
     if (video.duration) {
       formData.append('duracion_segundos', Math.round(video.duration).toString());
+    }
+
+    if (metadata?.infografia_numero != null) {
+      formData.append('infografia_numero', String(metadata.infografia_numero));
+    }
+    if (metadata?.infografia_titulo) {
+      formData.append('infografia_titulo', metadata.infografia_titulo);
     }
 
     return new Promise((resolve) => {
