@@ -485,13 +485,18 @@ export default function SituacionDinamicaScreen() {
                 ? { latitude: media.latitud, longitude: media.longitud }
                 : undefined;
 
+            const infografiaMetadata = {
+                infografia_numero: media.infografia_numero,
+                infografia_titulo: media.infografia_titulo ?? undefined,
+            };
+
             try {
                 let result;
 
                 if (tipo === 'FOTO') {
-                    result = await MultimediaService.uploadPhoto(situacionId, mediaFile, location);
+                    result = await MultimediaService.uploadPhoto(situacionId, mediaFile, location, infografiaMetadata);
                 } else {
-                    result = await MultimediaService.uploadVideo(situacionId, mediaFile, location);
+                    result = await MultimediaService.uploadVideo(situacionId, mediaFile, location, infografiaMetadata);
                 }
 
                 if (result.success) {
