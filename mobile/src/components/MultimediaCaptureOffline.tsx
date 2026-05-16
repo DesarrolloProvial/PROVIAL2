@@ -7,7 +7,7 @@
  * - Persistencia temporal en memoria (manualMode) o en BD (draftUuid)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -128,27 +128,23 @@ export default function MultimediaCaptureOffline({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Solo en mount — initialMedia/draftUuid no cambian mientras el modal está abierto
 
+  // Refs estables para callbacks — evitan que funciones inline recreen el efecto
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+  const onMultimediaChangeRef = useRef(onMultimediaChange);
+  onMultimediaChangeRef.current = onMultimediaChange;
+
   // Verificar completitud y notificar cambios
   useEffect(() => {
     const fotosCompletas = slots.filter((s) => s.tipo === 'FOTO' && s.media).length;
     const videoCompleto = !!slots.find((s) => s.tipo === 'VIDEO' && s.media);
     const isComplete = fotosCompletas >= 3 && videoCompleto;
 
-    if (onComplete) {
-      onComplete(isComplete);
-    }
+    onCompleteRef.current?.(isComplete);
 
-    // Notificar cambios al padre (FormBuilder)
-    if (onMultimediaChange) {
-      const multimedia = slots
-        .filter((s) => s.media)
-        .map((s) => s.media!);
-
-      // Debounce o check para evitar emitir si no cambió realmente (opcional, pero buena práctica)
-      // Por ahora simple.
-      onMultimediaChange(multimedia);
-    }
-  }, [slots, onComplete, onMultimediaChange]);
+    const multimedia = slots.filter((s) => s.media).map((s) => s.media!);
+    onMultimediaChangeRef.current?.(multimedia);
+  }, [slots]);
 
   // Capturar foto con camara
   const takePhoto = async (slotIndex: number) => {
