@@ -1,5 +1,14 @@
 import api from './api';
 
+export interface EditActividadData {
+  km?: number | null;
+  sentido?: string | null;
+  latitud?: number | null;
+  longitud?: number | null;
+  observaciones?: string | null;
+  datos?: Record<string, any>;
+}
+
 export interface CreateActividadData {
   tipo_actividad_id: number;
   unidad_id?: number;
@@ -61,6 +70,19 @@ export const actividadApi = {
   async getById(id: number): Promise<ActividadCompleta> {
     const response = await api.get(`/actividades/${id}`);
     return response.data.actividad;
+  },
+
+  async editar(id: number, data: EditActividadData): Promise<ActividadCompleta> {
+    const response = await api.patch(`/actividades/${id}`, data);
+    if (response.status >= 400) {
+      throw new Error(response.data?.error || 'Error al editar actividad');
+    }
+    return response.data.actividad;
+  },
+
+  async getMultimedia(id: number): Promise<any[]> {
+    const response = await api.get(`/multimedia/actividad/${id}`);
+    return response.data.multimedia || [];
   },
 
   async getMiUnidadHoy(unidadId?: number): Promise<{ actividades: ActividadCompleta[]; actividad_activa: ActividadCompleta | null }> {

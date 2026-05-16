@@ -744,6 +744,14 @@ export default function BitacoraScreen() {
     );
   };
 
+  const abrirEdicionActividad = (actividad: any) => {
+    navigation.navigate('NuevaSituacion' as never, {
+      editMode: true,
+      actividadId: actividad.id,
+      actividadData: actividad,
+    } as never);
+  };
+
   const renderActividadCard = (actividad: any) => {
     const isActiva = actividad.estado === 'ACTIVA';
     const color = actividad.tipo_actividad_color || COLORS.primary;
@@ -751,6 +759,10 @@ export default function BitacoraScreen() {
     const icono = actividad.tipo_actividad_icono || '⚙️';
 
     return (
+      <TouchableOpacity
+        onPress={() => abrirEdicionActividad(actividad)}
+        activeOpacity={0.85}
+      >
       <View style={[styles.card, isActiva && { borderLeftWidth: 4, borderLeftColor: color }]}>
         <View style={styles.cardHeader}>
           <View style={styles.cardHeaderLeft}>
@@ -795,6 +807,7 @@ export default function BitacoraScreen() {
           )}
         </View>
       </View>
+      </TouchableOpacity>
     );
   };
 

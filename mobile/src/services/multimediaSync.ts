@@ -41,3 +41,29 @@ export async function uploadSituacionMultimedia(situacionId: number, mediaRefs: 
 
     return { uploaded: uploaded.length, failed: failed.length };
 }
+
+export async function uploadActividadMultimedia(actividadId: number, mediaRefs: MultimediaRef[]) {
+    if (!mediaRefs || mediaRefs.length === 0) return { uploaded: 0, failed: 0 };
+
+    const { uploaded, failed } = await uploadMultimedia(actividadId.toString(), mediaRefs, () => {});
+
+    if (uploaded.length === 0) {
+        if (failed.length > 0) throw new Error('No se pudieron subir los archivos multimedia');
+        return { uploaded: 0, failed: 0 };
+    }
+
+    const archivos = uploaded.map(item => {
+        const original = mediaRefs.find(r => r.uri === item.localUri);
+        return {
+            url: item.cloudinaryUrl,
+            public_id: item.publicId,
+            tipo: original?.tipo,
+            orden: original?.orden,
+            infografia_numero: original?.infografia_numero,
+            infografia_titulo: original?.infografia_titulo,
+        };
+    });
+
+    await api.post(`/multimedia/actividad/${actividadId}/batch`, { archivos });
+    return { uploaded: uploaded.length, failed: failed.length };
+}

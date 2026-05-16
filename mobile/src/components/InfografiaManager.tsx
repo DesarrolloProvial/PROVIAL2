@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -50,12 +50,16 @@ export default function InfografiaManager({
     ? infografias.find(inf => inf.numero === captureTargetNumero) ?? null
     : null;
 
+  // Ref estable para onChange — evita que un onChange no-memoizado recree el efecto
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
   // Auto-inicializar en creación (array completamente vacío)
   useEffect(() => {
-    if ((!propInfografias || propInfografias.length === 0) && !disabled && onChange) {
-      onChange([createNewInfografia([])]);
+    if ((!propInfografias || propInfografias.length === 0) && !disabled) {
+      onChangeRef.current?.([createNewInfografia([])]);
     }
-  }, [propInfografias, disabled, onChange]);
+  }, [propInfografias, disabled]);
 
   const handleAddSessionInfografia = () => {
     onChange([...infografias, createNewInfografia(infografias)]);

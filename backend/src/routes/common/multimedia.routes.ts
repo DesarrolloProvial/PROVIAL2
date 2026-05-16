@@ -126,6 +126,12 @@ router.get(
   multimediaController.getMultimediaActividad
 );
 
+router.post(
+  '/actividad/:actividadId/batch',
+  authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN', 'TRANSPORTES'),
+  multimediaController.guardarReferenciasCloudinaryActividad
+);
+
 // ========================================
 // ELIMINACIÓN
 // ========================================

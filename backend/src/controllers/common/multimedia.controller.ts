@@ -505,6 +505,61 @@ export async function guardarReferenciasCloudinary(req: Request, res: Response) 
   }
 }
 
+export async function guardarReferenciasCloudinaryActividad(req: Request, res: Response) {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+
+    const actividadIdNum = normalizeId(req.params.actividadId);
+    if (!actividadIdNum) return res.status(400).json({ error: 'ID inválido' });
+
+    const { archivos } = req.body;
+    if (!archivos || !Array.isArray(archivos) || archivos.length === 0) {
+      return res.status(400).json({ error: 'Se requiere un array de archivos' });
+    }
+
+    const actividad = await db.oneOrNone('SELECT id FROM actividad WHERE id = $1', [actividadIdNum]);
+    if (!actividad) return res.status(404).json({ error: 'Actividad no encontrada' });
+
+    const resultados = [];
+    for (const archivo of archivos) {
+      const { url, public_id, tipo, orden, infografia_numero, infografia_titulo } = archivo;
+      if (!url || !tipo) {
+        resultados.push({ url, error: 'Faltan campos requeridos (url, tipo)' });
+        continue;
+      }
+      try {
+        const infografiaNumero = infografia_numero ? parseInt(infografia_numero, 10) : 1;
+        let ordenFinal = orden;
+        if (tipo === 'FOTO' && !ordenFinal) {
+          ordenFinal = await MultimediaModel.getSiguienteOrdenFotoActividad(actividadIdNum, infografiaNumero);
+        }
+        const multimediaId = await MultimediaModel.create({
+          actividad_id: actividadIdNum,
+          infografia_numero: infografiaNumero,
+          infografia_titulo: infografia_titulo || null,
+          tipo: tipo as 'FOTO' | 'VIDEO',
+          orden: ordenFinal,
+          url_original: url,
+          nombre_archivo: public_id || url.split('/').pop() || 'archivo',
+          mime_type: tipo === 'VIDEO' ? 'video/mp4' : 'image/jpeg',
+          tamanio_bytes: 0,
+          subido_por: req.user!.userId,
+          estado: 'SUBIDO'
+        });
+        resultados.push({ url, id: multimediaId, success: true });
+      } catch (err: any) {
+        resultados.push({ url, error: err.message });
+      }
+    }
+
+    console.log(`[MULTIMEDIA] Batch actividad: ${resultados.filter(r => r.success).length}/${archivos.length} guardados para actividad ${actividadIdNum}`);
+    return res.status(201).json({ message: 'Referencias procesadas', resultados });
+  } catch (error) {
+    console.error('Error al guardar referencias batch actividad:', error);
+    return res.status(500).json({ error: 'Error al procesar archivos' });
+  }
+}
+
 export async function subirFotoGenerica(req: Request, res: Response) {
   try {
     if (!req.user) return res.status(401).json({ error: 'No autorizado' });
@@ -653,6 +708,7 @@ export default {
   getGaleria,
   getStats,
   guardarReferenciasCloudinary,
+  guardarReferenciasCloudinaryActividad,
   subirFotoActividad,
   subirVideoActividad,
   getMultimediaActividad

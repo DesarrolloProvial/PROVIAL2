@@ -13,6 +13,7 @@ import {
   Switch,
 } from 'react-native';
 import { useForm } from 'react-hook-form';
+import { actividadApi } from '../../services/actividadApi';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useAuthStore } from '../../store/authStore';
 import { useSituacionesStore } from '../../store/situacionesStore';
@@ -46,6 +47,8 @@ type NuevaSituacionRouteProp = RouteProp<{
     editMode?: boolean;
     situacionId?: number;
     situacionData?: any;
+    actividadId?: number;
+    actividadData?: any;
   };
 }, 'NuevaSituacion'>;
 
@@ -78,6 +81,8 @@ export default function NuevaSituacionScreen() {
   const editMode = route.params?.editMode || false;
   const situacionId = route.params?.situacionId;
   const situacionData = route.params?.situacionData;
+  const actividadId = route.params?.actividadId;
+  const actividadData = route.params?.actividadData;
 
   // Estado del formulario
   const [tipoSeleccionado, setTipoSeleccionado] = useState<TipoSituacion | null>(null);
@@ -193,6 +198,43 @@ export default function NuevaSituacionScreen() {
       if (situacionData.municipio_id) setMuniId(situacionData.municipio_id);
     }
   }, [editMode, situacionData]);
+
+  // Pre-llenar en modo edición de actividad
+  useEffect(() => {
+    if (editMode && actividadData) {
+      setTipoSituacionId(actividadData.tipo_actividad_id);
+      setNombreTipoSeleccionado(actividadData.tipo_actividad_nombre || '');
+      setFormularioTipo('ACTIVIDAD');
+      setTipoSeleccionado('PATRULLAJE');
+      if (actividadData.km) setKm(actividadData.km.toString());
+      if (actividadData.sentido) setSentido(actividadData.sentido);
+      if (actividadData.latitud) setLatitud(actividadData.latitud.toString());
+      if (actividadData.longitud) setLongitud(actividadData.longitud.toString());
+      if (actividadData.observaciones) setObservaciones(actividadData.observaciones);
+    }
+  }, [editMode, actividadData]);
+
+  // Cargar multimedia de actividad en modo edición
+  useEffect(() => {
+    if (editMode && actividadId) {
+      actividadApi.getMultimedia(actividadId).then(multimedia => {
+        if (!multimedia || multimedia.length === 0) return;
+        const mapa: Record<number, any> = {};
+        multimedia.forEach((m: any) => {
+          const num = m.infografia_numero || 1;
+          if (!mapa[num]) {
+            mapa[num] = { numero: num, titulo: m.infografia_titulo || `Infografía ${num}`, fotos: [], video: null, created_at: m.created_at || new Date().toISOString() };
+          }
+          if (m.tipo === 'FOTO') {
+            mapa[num].fotos.push({ uri: m.url_original, orden: m.orden || 1, estado: 'SUBIDO' as const });
+          } else if (m.tipo === 'VIDEO') {
+            mapa[num].video = { uri: m.url_original, estado: 'SUBIDO' as const };
+          }
+        });
+        setInfografias(Object.values(mapa).sort((a: any, b: any) => a.numero - b.numero));
+      }).catch(() => {});
+    }
+  }, [editMode, actividadId]);
 
   const obtenerUbicacionGPS = async () => {
     try {
@@ -325,7 +367,34 @@ export default function NuevaSituacionScreen() {
           datos: Object.keys(datosEspecificos).length > 0 ? datosEspecificos : {},
         };
 
-        await createActividad(actividadData);
+        const buildActividadMedia = () => infografias.flatMap(inf => [
+          ...inf.fotos
+            .filter(f => f.estado !== 'SUBIDO')
+            .map(f => ({ uri: f.uri, tipo: 'FOTO', orden: f.orden, infografia_numero: inf.numero, infografia_titulo: inf.titulo, latitud: f.latitud, longitud: f.longitud })),
+          ...(inf.video && inf.video.estado !== 'SUBIDO'
+            ? [{ uri: inf.video.uri, tipo: 'VIDEO', infografia_numero: inf.numero, infografia_titulo: inf.titulo, duracion_segundos: inf.video.duracion_segundos }]
+            : []),
+        ]);
+
+        if (editMode && actividadId) {
+          await actividadApi.editar(actividadId, {
+            km: km ? parseFloat(km) : null,
+            sentido: sentido || null,
+            latitud: latitud ? parseFloat(latitud) : null,
+            longitud: longitud ? parseFloat(longitud) : null,
+            observaciones: observaciones || null,
+          });
+          const newMedia = buildActividadMedia();
+          if (newMedia.length > 0) {
+            await require('../../services/multimediaSync').uploadActividadMultimedia(actividadId, newMedia);
+          }
+        } else {
+          const nuevaActividad = await createActividad(actividadData);
+          const allMedia = buildActividadMedia();
+          if (allMedia.length > 0 && nuevaActividad?.id) {
+            await require('../../services/multimediaSync').uploadActividadMultimedia(nuevaActividad.id, allMedia);
+          }
+        }
       } else {
         // ============================================
         // SITUACION COMPLEJA -> POST /api/situaciones
