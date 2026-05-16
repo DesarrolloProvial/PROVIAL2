@@ -516,6 +516,25 @@ El título de una infografía vacía viaja en su placeholder ref. Si se salta el
 - `SituacionDinamicaScreen` via `FormBuilder`: únicamente los form configs que declaren un field `component: 'MultimediaWrapper'`. Actualmente: `HECHO_TRANSITO`, `ASISTENCIA_VEHICULAR`, `EMERGENCIA_VIAL` (archivos en `mobile/src/config/formularios/`)
 - Para agregar infografías a un nuevo tipo: añadir la sección en su form config usando `component: 'MultimediaWrapper'`
 
-### Actividades
+### Actividades (actualizado mayo 2026)
 
-El backend tiene `subirFotoActividad`/`subirVideoActividad` (con `actividad_id`), pero ninguna pantalla de actividades usa `InfografiaManager` actualmente. Si se requiere en el futuro, el patrón es idéntico al de situaciones.
+El circuito de infografías para actividades está completo:
+- `NuevaSituacionScreen` sube multimedia al crear/editar actividades usando `uploadActividadMultimedia()` en `multimediaSync.ts`
+- Backend: `POST /multimedia/actividad/:id/batch` guarda referencias Cloudinary para actividades
+- `actividadApi.editar()` y `actividadApi.getMultimedia()` disponibles para edición
+- `BitacoraScreen`: tarjeta de actividad es presionable y navega a `NuevaSituacionScreen` en modo edición
+
+### D-033 — Fix: loop infinito en InfografiaManager (mayo 2026)
+
+`onChange` NO debe estar en el array de dependencias del useEffect de auto-inicialización. Si `onChange` no está memoizado (ej: arrow function en `MultimediaWrapper.handleChange`), se recrea en cada render → el efecto dispara continuamente → "Maximum update depth exceeded".
+
+**Fix**: usar `useRef` para `onChange` y excluirlo de deps:
+```typescript
+const onChangeRef = useRef(onChange);
+onChangeRef.current = onChange;
+useEffect(() => {
+  if ((!propInfografias || propInfografias.length === 0) && !disabled) {
+    onChangeRef.current?.([createNewInfografia([])]);
+  }
+}, [propInfografias, disabled]); // sin onChange
+```
