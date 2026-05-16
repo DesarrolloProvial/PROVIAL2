@@ -139,7 +139,29 @@ function isHistorical(inf: Infografia): boolean {
 **Qué tipos de situación muestran `InfografiaManager`:**
 - `NuevaSituacionScreen`: todos los tipos excepto los cuyo nombre contiene "baño" (check: `!nombreTipoSeleccionado.toLowerCase().includes('baño')`)
 - `SituacionDinamicaScreen`: tipos que tengan un form config en `mobile/src/config/formularios/`: `HECHO_TRANSITO`, `ASISTENCIA_VEHICULAR`, `EMERGENCIA_VIAL`
-- Actividades: el backend tiene endpoints `subirFotoActividad`/`subirVideoActividad` pero ninguna pantalla de actividades usa `InfografiaManager` actualmente
+- `NuevaSituacionScreen` (modo actividad): cuando `route.params.tipo === 'FORMULARIOS_ACTIVIDAD'`, se muestra `InfografiaManager` con máximo 3 infografías
+
+---
+
+### Flujo multimedia de actividades (Path C)
+
+Las actividades (`tipo_actividad_categoria = 'FORMULARIOS_ACTIVIDAD'`) usan `InfografiaManager` dentro de `NuevaSituacionScreen`. Máximo 3 infografías por actividad.
+
+```
+NuevaSituacionScreen (modo actividad)
+  InfografiaManager  →  multimediaSync.uploadActividadMultimedia
+    │
+    ├── getSignedUploadParams(draftUuid=`actividad_${id}`, folder=`provial/actividades/${id}`)
+    │     publicId: `actividad_${id}_I${inf}_${tipo}_${orden}`
+    ├── uploadToCloudinary (directo, sin pasar por uploadMultimedia)
+    └── POST /multimedia/actividad/:id/batch  (guardarReferenciasCloudinaryActividad)
+          ↳ guarda en actividad_multimedia con infografia_numero + estado: SUBIDO
+```
+
+**Diferencia clave respecto a situaciones**: `uploadMultimedia` no se usa porque asume
+`situacionId.split('-')[3]` para folder/tags, patrón válido solo para draftUUIDs de situación.
+Para actividades se llama `getSignedUploadParams` + `uploadToCloudinary` directamente con
+`folder = provial/actividades/:id` y `draftUuid = actividad_:id`.
 
 **Regla título en `MultimediaWrapper.toGroupedInfografias`:**
 El título se extrae del ref **antes** del skip del placeholder. Los placeholders (infografías vacías) solo aportan número y título; no agregan fotos ni video al grupo.
