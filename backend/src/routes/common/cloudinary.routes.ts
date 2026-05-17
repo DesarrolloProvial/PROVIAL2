@@ -1,19 +1,12 @@
 import { Router } from 'express';
-import { getSignature, getStatus } from '../../controllers/common/cloudinary.controller';
+import { getStatus } from '../../controllers/common/cloudinary.controller';
 import { authenticate } from '../../middlewares/auth';
 
 const router = Router();
 
 /**
- * POST /api/cloudinary/sign
- * Generar signature para signed upload (cliente sube directo a Cloudinary)
- * Requiere autenticación
- */
-router.post('/sign', authenticate, getSignature);
-
-/**
  * GET /api/cloudinary/status
- * Verificar si Cloudinary está configurado (admin only)
+ * Verificar si Cloudinary está configurado (monitoreo de infraestructura)
  */
 router.get('/status', authenticate, getStatus);
 

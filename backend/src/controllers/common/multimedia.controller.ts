@@ -22,21 +22,29 @@ import { normalizeId } from '../../utils/db.utils';
 
 const IS_LOCAL = process.env.STORAGE_TYPE === 'local';
 
+// Tipos MIME permitidos — lista explícita para reducir superficie de ataque
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/quicktime'];
+
+// Límites de tamaño por tipo (calibrar con la institución en pruebas)
+const FOTO_MAX_BYTES = 10 * 1024 * 1024;   // 10 MB
+const VIDEO_MAX_BYTES = 100 * 1024 * 1024; // 100 MB
+
 // Adaptador unificado para fotos
 async function subirFotoAdapter(
   buffer: Buffer,
   mimetype: string,
   originalname: string,
-  situacionId: number,
+  entityId: number,
   orden: number,
-  codigoSituacion?: string,
+  codigoEntidad?: string,
   infografiaNumero: number = 1
 ): Promise<{ success: boolean; url?: string; thumbnailUrl?: string; nombreArchivo?: string; width?: number; height?: number; size?: number; error?: string }> {
   if (IS_LOCAL) {
-    const r = await localUploadPhoto({ buffer, originalname, mimetype }, situacionId);
+    const r = await localUploadPhoto({ buffer, originalname, mimetype }, entityId);
     return { ...r, nombreArchivo: r.filename };
   }
-  const r = await uploadPhotoBuffer(buffer, situacionId, orden, codigoSituacion, infografiaNumero);
+  const r = await uploadPhotoBuffer(buffer, entityId, orden, codigoEntidad, infografiaNumero);
   return { ...r, nombreArchivo: r.publicId };
 }
 
@@ -45,15 +53,15 @@ async function subirVideoAdapter(
   buffer: Buffer,
   mimetype: string,
   originalname: string,
-  situacionId: number,
-  codigoSituacion?: string,
+  entityId: number,
+  codigoEntidad?: string,
   infografiaNumero: number = 1
 ): Promise<{ success: boolean; url?: string; nombreArchivo?: string; size?: number; duration?: number; error?: string }> {
   if (IS_LOCAL) {
-    const r = await localUploadVideo({ buffer, originalname, mimetype }, situacionId);
+    const r = await localUploadVideo({ buffer, originalname, mimetype }, entityId);
     return { ...r, nombreArchivo: r.filename };
   }
-  const r = await uploadVideoBuffer(buffer, situacionId, codigoSituacion, infografiaNumero);
+  const r = await uploadVideoBuffer(buffer, entityId, codigoEntidad, infografiaNumero);
   return { ...r, nombreArchivo: r.publicId };
 }
 
@@ -72,22 +80,34 @@ function storageDisponible(): boolean {
   return isCloudinaryConfiguredUnsigned();
 }
 
-const storage = multer.memoryStorage();
+const memStorage = multer.memoryStorage();
 
-export const upload = multer({
-  storage,
-  limits: {
-    fileSize: 15 * 1024 * 1024,
-    files: 4
-  },
+export const uploadFoto = multer({
+  storage: memStorage,
+  limits: { fileSize: FOTO_MAX_BYTES, files: 1 },
   fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+    if (ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Solo se permiten imágenes y videos'));
+      cb(new Error(`Tipo de imagen no permitido: ${file.mimetype}. Use JPEG, PNG o WebP.`));
     }
-  }
+  },
 });
+
+export const uploadVideo = multer({
+  storage: memStorage,
+  limits: { fileSize: VIDEO_MAX_BYTES, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    if (ALLOWED_VIDEO_TYPES.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Tipo de video no permitido: ${file.mimetype}. Use MP4 o MOV.`));
+    }
+  },
+});
+
+// Alias para compatibilidad con la ruta genérica /upload
+export const upload = uploadFoto;
 
 export async function subirFoto(req: Request, res: Response) {
   try {
@@ -96,7 +116,7 @@ export async function subirFoto(req: Request, res: Response) {
     const situacionIdNum = normalizeId(req.params.situacionId);
     if (!situacionIdNum) return res.status(400).json({ error: 'ID inválido' });
 
-    const { latitud, longitud, infografia_numero, infografia_titulo } = req.body;
+    const { latitud, longitud, infografia_numero, infografia_titulo, orden: ordenBody } = req.body;
     const infografiaNumero = infografia_numero ? parseInt(infografia_numero, 10) : 1;
 
     if (!req.file) return res.status(400).json({ error: 'No se recibió ningún archivo' });
@@ -115,6 +135,10 @@ export async function subirFoto(req: Request, res: Response) {
       });
     }
 
+    // Usar el orden que envió el móvil si es válido (1-3); si no, usar auto-incremento
+    const ordenBodyNum = ordenBody ? parseInt(ordenBody, 10) : NaN;
+    const ordenFinal = (!isNaN(ordenBodyNum) && ordenBodyNum >= 1 && ordenBodyNum <= 3) ? ordenBodyNum : ordenSiguiente;
+
     // Verificar límite de infografías (máx 10 por situación)
     const esNuevaInfografia = !(await MultimediaModel.existeInfografia({ situacion_id: situacionIdNum, infografia_numero: infografiaNumero }));
     if (esNuevaInfografia) {
@@ -131,7 +155,7 @@ export async function subirFoto(req: Request, res: Response) {
 
     const result = await subirFotoAdapter(
       req.file.buffer, req.file.mimetype, req.file.originalname,
-      situacionIdNum, ordenSiguiente, situacion.codigo_situacion, infografiaNumero
+      situacionIdNum, ordenFinal, situacion.codigo_situacion, infografiaNumero
     );
 
     if (!result.success) {
@@ -144,7 +168,7 @@ export async function subirFoto(req: Request, res: Response) {
       infografia_numero: infografiaNumero,
       infografia_titulo: infografia_titulo || null,
       tipo: 'FOTO',
-      orden: ordenSiguiente,
+      orden: ordenFinal,
       url_original: result.url!,
       url_thumbnail: result.thumbnailUrl,
       nombre_archivo: result.nombreArchivo || `foto_${ordenSiguiente}`,
@@ -160,14 +184,14 @@ export async function subirFoto(req: Request, res: Response) {
 
     const completitud = await MultimediaModel.verificarCompletitud(situacionIdNum);
 
-    console.log(`[MULTIMEDIA] Foto ${ordenSiguiente}/3 (Inf ${infografiaNumero}) subida para situación ${situacionIdNum}`);
+    console.log(`[MULTIMEDIA] Foto ${ordenFinal}/3 (Inf ${infografiaNumero}) subida para situación ${situacionIdNum}`);
 
     return res.status(201).json({
-      message: `Foto ${ordenSiguiente} de 3 subida correctamente`,
+      message: `Foto ${ordenFinal} de 3 subida correctamente`,
       multimedia: {
         id: multimediaId,
         infografia_numero: infografiaNumero,
-        orden: ordenSiguiente,
+        orden: ordenFinal,
         url: result.url,
         thumbnailUrl: result.thumbnailUrl,
         size: result.size,
@@ -176,7 +200,10 @@ export async function subirFoto(req: Request, res: Response) {
       },
       completitud
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === '23505') {
+      return res.status(409).json({ error: 'Ya existe una foto en esa posición para esta infografía', codigo: 'ORDEN_DUPLICADO' });
+    }
     console.error('Error al subir foto:', error);
     return res.status(500).json({ error: 'Error al subir la foto' });
   }
@@ -457,118 +484,6 @@ export async function getStats(req: Request, res: Response) {
   }
 }
 
-export async function guardarReferenciasCloudinary(req: Request, res: Response) {
-  try {
-    if (!req.user) return res.status(401).json({ error: 'No autorizado' });
-
-    const situacionIdNum = normalizeId(req.params.situacionId);
-    if (!situacionIdNum) return res.status(400).json({ error: 'ID inválido' });
-
-    const { archivos } = req.body;
-    if (!archivos || !Array.isArray(archivos) || archivos.length === 0) {
-      return res.status(400).json({ error: 'Se requiere un array de archivos' });
-    }
-
-    const situacion = await db.oneOrNone('SELECT id FROM situacion WHERE id = $1', [situacionIdNum]);
-    if (!situacion) return res.status(404).json({ error: 'Situación no encontrada' });
-
-    const resultados = [];
-    for (const archivo of archivos) {
-      const { url, public_id, tipo, orden, infografia_numero, infografia_titulo } = archivo;
-      if (!url || !tipo) {
-        resultados.push({ url, error: 'Faltan campos requeridos (url, tipo)' });
-        continue;
-      }
-      try {
-        const infografiaNumero = infografia_numero ? parseInt(infografia_numero, 10) : 1;
-        let ordenFinal = orden;
-        if (tipo === 'FOTO' && !ordenFinal) {
-          ordenFinal = await MultimediaModel.getSiguienteOrdenFoto(situacionIdNum, infografiaNumero);
-        }
-        const multimediaId = await MultimediaModel.create({
-          situacion_id: situacionIdNum,
-          infografia_numero: infografiaNumero,
-          infografia_titulo: infografia_titulo || null,
-          tipo: tipo as 'FOTO' | 'VIDEO',
-          orden: ordenFinal,
-          url_original: url,
-          nombre_archivo: public_id || url.split('/').pop() || 'archivo',
-          mime_type: tipo === 'VIDEO' ? 'video/mp4' : 'image/jpeg',
-          tamanio_bytes: 0,
-          subido_por: req.user!.userId,
-          estado: 'SUBIDO'
-        });
-        resultados.push({ url, id: multimediaId, success: true });
-      } catch (err: any) {
-        resultados.push({ url, error: err.message });
-      }
-    }
-
-    const completitud = await MultimediaModel.verificarCompletitud(situacionIdNum);
-    console.log(`[MULTIMEDIA] Batch: ${resultados.filter(r => r.success).length}/${archivos.length} guardados para situación ${situacionIdNum}`);
-
-    return res.status(201).json({ message: 'Referencias procesadas', resultados, completitud });
-  } catch (error) {
-    console.error('Error al guardar referencias batch:', error);
-    return res.status(500).json({ error: 'Error al procesar archivos' });
-  }
-}
-
-export async function guardarReferenciasCloudinaryActividad(req: Request, res: Response) {
-  try {
-    if (!req.user) return res.status(401).json({ error: 'No autorizado' });
-
-    const actividadIdNum = normalizeId(req.params.actividadId);
-    if (!actividadIdNum) return res.status(400).json({ error: 'ID inválido' });
-
-    const { archivos } = req.body;
-    if (!archivos || !Array.isArray(archivos) || archivos.length === 0) {
-      return res.status(400).json({ error: 'Se requiere un array de archivos' });
-    }
-
-    const actividad = await db.oneOrNone('SELECT id FROM actividad WHERE id = $1', [actividadIdNum]);
-    if (!actividad) return res.status(404).json({ error: 'Actividad no encontrada' });
-
-    const resultados = [];
-    for (const archivo of archivos) {
-      const { url, public_id, tipo, orden, infografia_numero, infografia_titulo } = archivo;
-      if (!url || !tipo) {
-        resultados.push({ url, error: 'Faltan campos requeridos (url, tipo)' });
-        continue;
-      }
-      try {
-        const infografiaNumero = infografia_numero ? parseInt(infografia_numero, 10) : 1;
-        let ordenFinal = orden;
-        if (tipo === 'FOTO' && !ordenFinal) {
-          ordenFinal = await MultimediaModel.getSiguienteOrdenFotoActividad(actividadIdNum, infografiaNumero);
-        }
-        const multimediaId = await MultimediaModel.create({
-          actividad_id: actividadIdNum,
-          infografia_numero: infografiaNumero,
-          infografia_titulo: infografia_titulo || null,
-          tipo: tipo as 'FOTO' | 'VIDEO',
-          orden: ordenFinal,
-          url_original: url,
-          nombre_archivo: public_id || url.split('/').pop() || 'archivo',
-          mime_type: tipo === 'VIDEO' ? 'video/mp4' : 'image/jpeg',
-          tamanio_bytes: 0,
-          subido_por: req.user!.userId,
-          estado: 'SUBIDO'
-        });
-        resultados.push({ url, id: multimediaId, success: true });
-      } catch (err: any) {
-        resultados.push({ url, error: err.message });
-      }
-    }
-
-    console.log(`[MULTIMEDIA] Batch actividad: ${resultados.filter(r => r.success).length}/${archivos.length} guardados para actividad ${actividadIdNum}`);
-    return res.status(201).json({ message: 'Referencias procesadas', resultados });
-  } catch (error) {
-    console.error('Error al guardar referencias batch actividad:', error);
-    return res.status(500).json({ error: 'Error al procesar archivos' });
-  }
-}
-
 export async function subirFotoGenerica(req: Request, res: Response) {
   try {
     if (!req.user) return res.status(401).json({ error: 'No autorizado' });
@@ -607,7 +522,7 @@ export async function subirFotoActividad(req: Request, res: Response) {
     const actividadIdNum = normalizeId(req.params.actividadId);
     if (!actividadIdNum) return res.status(400).json({ error: 'ID inválido' });
 
-    const { infografia_numero, infografia_titulo } = req.body;
+    const { infografia_numero, infografia_titulo, orden: ordenBody } = req.body;
     const infografiaNumero = infografia_numero ? parseInt(infografia_numero, 10) : 1;
 
     if (!req.file) return res.status(400).json({ error: 'No se recibió ningún archivo' });
@@ -617,6 +532,9 @@ export async function subirFotoActividad(req: Request, res: Response) {
 
     const ordenSiguiente = await MultimediaModel.getSiguienteOrdenFotoActividad(actividadIdNum, infografiaNumero);
     if (ordenSiguiente > 3) return res.status(400).json({ error: `Límite de fotos alcanzado para infografía ${infografiaNumero}` });
+
+    const ordenBodyNum = ordenBody ? parseInt(ordenBody, 10) : NaN;
+    const ordenFinalAct = (!isNaN(ordenBodyNum) && ordenBodyNum >= 1 && ordenBodyNum <= 3) ? ordenBodyNum : ordenSiguiente;
 
     // Verificar límite de infografías (máx 3 por actividad)
     const esNuevaInfAct = !(await MultimediaModel.existeInfografia({ actividad_id: actividadIdNum, infografia_numero: infografiaNumero }));
@@ -629,7 +547,7 @@ export async function subirFotoActividad(req: Request, res: Response) {
 
     if (!storageDisponible()) return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
 
-    const result = await subirFotoAdapter(req.file.buffer, req.file.mimetype, req.file.originalname, actividadIdNum, ordenSiguiente, `ACT-${actividadIdNum}`, infografiaNumero);
+    const result = await subirFotoAdapter(req.file.buffer, req.file.mimetype, req.file.originalname, actividadIdNum, ordenFinalAct, `ACT-${actividadIdNum}`, infografiaNumero);
     if (!result.success) return res.status(500).json({ error: result.error });
 
     const multimediaId = await MultimediaModel.create({
@@ -637,7 +555,7 @@ export async function subirFotoActividad(req: Request, res: Response) {
       infografia_numero: infografiaNumero,
       infografia_titulo: infografia_titulo || null,
       tipo: 'FOTO',
-      orden: ordenSiguiente,
+      orden: ordenFinalAct,
       url_original: result.url!,
       url_thumbnail: result.thumbnailUrl,
       nombre_archivo: result.nombreArchivo || `foto_${ordenSiguiente}`,
@@ -650,10 +568,13 @@ export async function subirFotoActividad(req: Request, res: Response) {
     });
 
     return res.status(201).json({
-      message: `Foto ${ordenSiguiente} de 3 subida`,
-      multimedia: { id: multimediaId, infografia_numero: infografiaNumero, orden: ordenSiguiente, url: result.url, thumbnailUrl: result.thumbnailUrl }
+      message: `Foto ${ordenFinalAct} de 3 subida`,
+      multimedia: { id: multimediaId, infografia_numero: infografiaNumero, orden: ordenFinalAct, url: result.url, thumbnailUrl: result.thumbnailUrl }
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === '23505') {
+      return res.status(409).json({ error: 'Ya existe una foto en esa posición para esta infografía', codigo: 'ORDEN_DUPLICADO' });
+    }
     console.error('Error al subir foto actividad:', error);
     return res.status(500).json({ error: 'Error al subir la foto' });
   }
@@ -731,6 +652,8 @@ export async function getMultimediaActividad(req: Request, res: Response) {
 
 export default {
   upload,
+  uploadFoto,
+  uploadVideo,
   subirFoto,
   subirVideo,
   subirFotoGenerica,
@@ -739,9 +662,7 @@ export default {
   eliminarMultimedia,
   getGaleria,
   getStats,
-  guardarReferenciasCloudinary,
-  guardarReferenciasCloudinaryActividad,
   subirFotoActividad,
   subirVideoActividad,
-  getMultimediaActividad
+  getMultimediaActividad,
 };

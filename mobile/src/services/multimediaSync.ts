@@ -1,6 +1,10 @@
 import { MultimediaRef } from './draftStorage';
 import { uploadEntityPhoto, uploadEntityVideo } from './multimedia.service';
 
+// URI especial usada por MultimediaWrapper para persistir infografías vacías.
+// Nunca representa un archivo real — debe filtrarse antes de cualquier upload.
+export const PLACEHOLDER_URI = 'infografia://placeholder';
+
 export interface UploadInfografiasParams {
   entityType: 'situacion' | 'actividad';
   entityId: number;
@@ -32,9 +36,13 @@ export async function uploadInfografias({
 }: UploadInfografiasParams): Promise<UploadInfografiasResult> {
   if (!mediaRefs || mediaRefs.length === 0) return { uploaded: 0, failed: 0, errors: [] };
 
-  // Solo refs pendientes: uri local, no marcadas como ya subidas
+  // Solo refs pendientes: uri local real (no placeholder, no http, no ya subida)
   const pendingRefs = mediaRefs.filter(
-    r => r.uri && !r.uri.startsWith('http') && r.estado !== 'SUBIDO'
+    r =>
+      !!r.uri &&
+      !r.uri.startsWith('http') &&
+      !r.uri.startsWith('infografia://') &&
+      r.estado !== 'SUBIDO'
   );
 
   if (pendingRefs.length === 0) return { uploaded: 0, failed: 0, errors: [] };

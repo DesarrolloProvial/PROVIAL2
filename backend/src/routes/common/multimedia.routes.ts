@@ -1,123 +1,100 @@
 /**
  * Rutas de Multimedia
- * Manejo de fotos y videos de situaciones
+ * Manejo de fotos y videos de situaciones y actividades
  */
 
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, authorize } from '../../middlewares/auth';
 import multimediaController from '../../controllers/common/multimedia.controller';
+import { uploadFoto, uploadVideo } from '../../controllers/common/multimedia.controller';
 
 const router = Router();
 
 // Todas las rutas requieren autenticación
 router.use(authenticate);
 
-// ========================================
-// SUBIDA DE ARCHIVOS
-// ========================================
+// ── Helpers para manejar errores de multer con mensajes explícitos ────────────
 
-/**
- * POST /api/multimedia/upload
- * Subir una foto genérica a Cloudinary (para inspecciones, daños, etc.)
- * Devuelve URL de Cloudinary directamente
- */
+function withFoto(req: Request, res: Response, next: NextFunction) {
+  uploadFoto.single('foto')(req, res, (err: any) => {
+    if (err?.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'La foto supera el límite de 10 MB', codigo: 'ARCHIVO_DEMASIADO_GRANDE', limite_mb: 10 });
+    }
+    if (err) return res.status(400).json({ error: err.message, codigo: 'ARCHIVO_RECHAZADO' });
+    next();
+  });
+}
+
+function withVideo(req: Request, res: Response, next: NextFunction) {
+  uploadVideo.single('video')(req, res, (err: any) => {
+    if (err?.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'El video supera el límite de 100 MB', codigo: 'ARCHIVO_DEMASIADO_GRANDE', limite_mb: 100 });
+    }
+    if (err) return res.status(400).json({ error: err.message, codigo: 'ARCHIVO_RECHAZADO' });
+    next();
+  });
+}
+
+// ── Subida de archivos ─────────────────────────────────────────────────────────
+
 router.post(
   '/upload',
   authorize('BRIGADA', 'COP', 'ADMIN'),
-  multimediaController.upload.single('foto'),
+  withFoto,
   multimediaController.subirFotoGenerica
 );
 
-/**
- * POST /api/multimedia/situacion/:situacionId/foto
- * Subir una foto a una situación
- */
 router.post(
   '/situacion/:situacionId/foto',
   authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN'),
-  multimediaController.upload.single('foto'),
+  withFoto,
   multimediaController.subirFoto
 );
 
-/**
- * POST /api/multimedia/situacion/:situacionId/video
- * Subir video a una situación
- */
 router.post(
   '/situacion/:situacionId/video',
   authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN'),
-  multimediaController.upload.single('video'),
+  withVideo,
   multimediaController.subirVideo
 );
 
-/**
- * POST /api/multimedia/situacion/:situacionId/batch
- * Guardar referencias de archivos subidos a Cloudinary (offline-first sync)
- */
-router.post(
-  '/situacion/:situacionId/batch',
-  authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN'),
-  multimediaController.guardarReferenciasCloudinary
-);
+// ── Consulta ──────────────────────────────────────────────────────────────────
 
-// ========================================
-// CONSULTA DE ARCHIVOS
-// ========================================
-
-/**
- * GET /api/multimedia/situacion/:situacionId
- * Obtener multimedia de una situación específica
- */
 router.get(
   '/situacion/:situacionId',
   multimediaController.getMultimediaSituacion
 );
 
-/**
- * GET /api/multimedia/resumen?situacionIds=1,2,3
- * Obtener resumen de multimedia para varias situaciones (para mapa)
- */
 router.get(
   '/resumen',
   multimediaController.getResumenMultimedia
 );
 
-/**
- * GET /api/multimedia/galeria
- * Galería de multimedia para Accidentología y Comunicación Social
- * Filtros: desde, hasta, tipoSituacion, soloIncompletas
- */
 router.get(
   '/galeria',
   authorize('ACCIDENTOLOGIA', 'COMUNICACION_SOCIAL', 'COP', 'ADMIN', 'OPERACIONES'),
   multimediaController.getGaleria
 );
 
-/**
- * GET /api/multimedia/stats
- * Estadísticas de almacenamiento (solo admin/operaciones)
- */
 router.get(
   '/stats',
   authorize('ADMIN', 'OPERACIONES'),
   multimediaController.getStats
 );
 
-// ========================================
-// ACTIVIDAD MULTIMEDIA
-// ========================================
+// ── Actividades ───────────────────────────────────────────────────────────────
 
 router.post(
   '/actividad/:actividadId/foto',
   authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN', 'TRANSPORTES'),
-  multimediaController.upload.single('foto'),
+  withFoto,
   multimediaController.subirFotoActividad
 );
 
 router.post(
   '/actividad/:actividadId/video',
   authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN', 'TRANSPORTES'),
-  multimediaController.upload.single('video'),
+  withVideo,
   multimediaController.subirVideoActividad
 );
 
@@ -126,20 +103,8 @@ router.get(
   multimediaController.getMultimediaActividad
 );
 
-router.post(
-  '/actividad/:actividadId/batch',
-  authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN', 'SUPER_ADMIN', 'TRANSPORTES'),
-  multimediaController.guardarReferenciasCloudinaryActividad
-);
+// ── Eliminación ───────────────────────────────────────────────────────────────
 
-// ========================================
-// ELIMINACIÓN
-// ========================================
-
-/**
- * DELETE /api/multimedia/:id
- * Eliminar un archivo multimedia
- */
 router.delete(
   '/:id',
   authorize('BRIGADA', 'COP', 'OPERACIONES', 'ADMIN'),
