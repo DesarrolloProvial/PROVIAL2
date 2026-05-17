@@ -144,6 +144,15 @@ export default function BrigadaHomeScreen() {
     );
   };
 
+  const abrirEdicionActividadActiva = () => {
+    if (!actividadActiva) return;
+    navigation.navigate('NuevaSituacion' as any, {
+      editMode: true,
+      actividadId: actividadActiva.id,
+      actividadData: actividadActiva,
+    } as any);
+  };
+
   const handleCerrarActividad = () => {
     if (!actividadActiva) return;
 
@@ -539,7 +548,11 @@ export default function BrigadaHomeScreen() {
 
         {/* Card de Actividad Activa */}
         {actividadActiva && !situacionActiva && (
-          <View style={[styles.card, styles.situacionActivaCard, { borderLeftColor: '#3b82f6' }]}>
+          <TouchableOpacity
+            style={[styles.card, styles.situacionActivaCard, { borderLeftColor: '#3b82f6' }]}
+            onPress={abrirEdicionActividadActiva}
+            activeOpacity={0.7}
+          >
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Actividad Activa</Text>
               <View style={[styles.tipoBadge, { backgroundColor: '#3b82f6' }]}>
@@ -576,18 +589,29 @@ export default function BrigadaHomeScreen() {
                 </View>
               )}
             </View>
-            <TouchableOpacity
-              style={[styles.cerrarButton]}
-              onPress={handleCerrarActividad}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.cerrarButtonText}>Cerrar Actividad</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+            <Text style={{ fontSize: 12, color: '#888', textAlign: 'center', marginBottom: 8 }}>
+              Toca para editar o agregar infografías
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                style={[styles.cerrarButton, { flex: 1, backgroundColor: COLORS.primary || '#1e40af' }]}
+                onPress={abrirEdicionActividadActiva}
+              >
+                <Text style={styles.cerrarButtonText}>Editar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.cerrarButton, { flex: 1 }]}
+                onPress={handleCerrarActividad}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.cerrarButtonText}>Cerrar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
         )}
 
         {/* Card de Situación Activa */}
