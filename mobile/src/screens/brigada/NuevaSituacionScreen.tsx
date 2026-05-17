@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useForm } from 'react-hook-form';
 import { actividadApi } from '../../services/actividadApi';
+import { uploadInfografias } from '../../services/multimediaSync';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useAuthStore } from '../../store/authStore';
 import { useSituacionesStore } from '../../store/situacionesStore';
@@ -330,7 +331,7 @@ export default function NuevaSituacionScreen() {
         ]);
 
         if (newMedia.length > 0) {
-          await require('../../services/multimediaSync').uploadSituacionMultimedia(situacionId, newMedia);
+          await uploadInfografias({ entityType: 'situacion', entityId: situacionId, mediaRefs: newMedia, maxInfografias: 10 });
         }
       } else if (FORMULARIOS_ACTIVIDAD.includes(formularioTipo)) {
         // ============================================
@@ -386,13 +387,13 @@ export default function NuevaSituacionScreen() {
           });
           const newMedia = buildActividadMedia();
           if (newMedia.length > 0) {
-            await require('../../services/multimediaSync').uploadActividadMultimedia(actividadId, newMedia);
+            await uploadInfografias({ entityType: 'actividad', entityId: actividadId, mediaRefs: newMedia, maxInfografias: 3 });
           }
         } else {
           const nuevaActividad = await createActividad(actividadData);
           const allMedia = buildActividadMedia();
           if (allMedia.length > 0 && nuevaActividad?.id) {
-            await require('../../services/multimediaSync').uploadActividadMultimedia(nuevaActividad.id, allMedia);
+            await uploadInfografias({ entityType: 'actividad', entityId: nuevaActividad.id, mediaRefs: allMedia, maxInfografias: 3 });
           }
         }
       } else {
@@ -556,7 +557,7 @@ export default function NuevaSituacionScreen() {
           });
 
           if (allMedia.length > 0) {
-            await require('../../services/multimediaSync').uploadSituacionMultimedia(nuevaSituacion.id, allMedia);
+            await uploadInfografias({ entityType: 'situacion', entityId: nuevaSituacion.id, mediaRefs: allMedia, maxInfografias: 10 });
           }
         }
 

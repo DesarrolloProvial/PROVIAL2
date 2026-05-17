@@ -261,77 +261,60 @@ async function compressImage(uri: string): Promise<{
 }
 
 /**
- * Subir foto a una situación
+ * Subir foto a cualquier entidad (situacion o actividad)
  */
-export async function uploadPhoto(
-  situacionId: number,
+export async function uploadEntityPhoto(
+  entityType: 'situacion' | 'actividad',
+  entityId: number,
   photo: MediaFile,
   location?: { latitude: number; longitude: number },
-  metadata?: { infografia_numero?: number; infografia_titulo?: string },
+  metadata?: { infografia_numero?: number; infografia_titulo?: string; orden?: number },
   onProgress?: (progress: UploadProgress) => void
 ): Promise<UploadResult> {
   try {
     const token = useAuthStore.getState().token;
-    if (!token) {
-      return { success: false, error: 'No autenticado' };
-    }
+    if (!token) return { success: false, error: 'No autenticado' };
 
     const { uuid, imei } = await getDeviceIds();
     const model = Device.modelName || 'Unknown Device';
 
     const formData = new FormData();
-    formData.append('foto', {
-      uri: photo.uri,
-      type: photo.mimeType,
-      name: photo.fileName,
-    } as any);
+    formData.append('foto', { uri: photo.uri, type: photo.mimeType, name: photo.fileName } as any);
 
     if (location) {
       formData.append('latitud', location.latitude.toString());
       formData.append('longitud', location.longitude.toString());
     }
-
-    if (metadata?.infografia_numero != null) {
-      formData.append('infografia_numero', String(metadata.infografia_numero));
-    }
-    if (metadata?.infografia_titulo) {
-      formData.append('infografia_titulo', metadata.infografia_titulo);
-    }
+    if (metadata?.infografia_numero != null) formData.append('infografia_numero', String(metadata.infografia_numero));
+    if (metadata?.infografia_titulo) formData.append('infografia_titulo', metadata.infografia_titulo);
+    if (metadata?.orden != null) formData.append('orden', String(metadata.orden));
 
     return new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
 
       xhr.upload.addEventListener('progress', (event) => {
         if (event.lengthComputable && onProgress) {
-          onProgress({
-            loaded: event.loaded,
-            total: event.total,
-            percentage: Math.round((event.loaded / event.total) * 100),
-          });
+          onProgress({ loaded: event.loaded, total: event.total, percentage: Math.round((event.loaded / event.total) * 100) });
         }
       });
 
       xhr.addEventListener('load', () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           const response = JSON.parse(xhr.responseText);
-          resolve({
-            success: true,
-            id: response.multimedia?.id,
-            url: response.multimedia?.url,
-            thumbnailUrl: response.multimedia?.thumbnailUrl,
-            completitud: response.completitud,
-          });
+          resolve({ success: true, id: response.multimedia?.id, url: response.multimedia?.url, thumbnailUrl: response.multimedia?.thumbnailUrl, completitud: response.completitud });
         } else {
-          const error = JSON.parse(xhr.responseText);
-          resolve({ success: false, error: error.error || 'Error al subir foto' });
+          try {
+            const err = JSON.parse(xhr.responseText);
+            resolve({ success: false, error: err.error || `HTTP ${xhr.status}` });
+          } catch {
+            resolve({ success: false, error: `HTTP ${xhr.status}` });
+          }
         }
       });
 
-      xhr.addEventListener('error', () => {
-        resolve({ success: false, error: 'Error de conexión' });
-      });
+      xhr.addEventListener('error', () => resolve({ success: false, error: 'Error de conexión' }));
 
-      xhr.open('POST', `${API_URL}/multimedia/situacion/${situacionId}/foto`);
+      xhr.open('POST', `${API_URL}/multimedia/${entityType}/${entityId}/foto`);
       xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       xhr.setRequestHeader('X-App-Platform', 'mobile');
       xhr.setRequestHeader('X-Device-UUID', uuid);
@@ -344,21 +327,31 @@ export async function uploadPhoto(
   }
 }
 
-/**
- * Subir video a una situación
- */
-export async function uploadVideo(
+/** @deprecated Usar uploadEntityPhoto('situacion', ...) */
+export async function uploadPhoto(
   situacionId: number,
-  video: MediaFile,
+  photo: MediaFile,
   location?: { latitude: number; longitude: number },
   metadata?: { infografia_numero?: number; infografia_titulo?: string },
   onProgress?: (progress: UploadProgress) => void
 ): Promise<UploadResult> {
+  return uploadEntityPhoto('situacion', situacionId, photo, location, metadata, onProgress);
+}
+
+/**
+ * Subir video a cualquier entidad (situacion o actividad)
+ */
+export async function uploadEntityVideo(
+  entityType: 'situacion' | 'actividad',
+  entityId: number,
+  video: MediaFile,
+  location?: { latitude: number; longitude: number },
+  metadata?: { infografia_numero?: number; infografia_titulo?: string; duracion_segundos?: number },
+  onProgress?: (progress: UploadProgress) => void
+): Promise<UploadResult> {
   try {
     const token = useAuthStore.getState().token;
-    if (!token) {
-      return { success: false, error: 'No autenticado' };
-    }
+    if (!token) return { success: false, error: 'No autenticado' };
 
     if (video.size && video.size > 10 * 1024 * 1024) {
       return { success: false, error: 'El video es muy grande. Máximo 10MB.' };
@@ -368,61 +361,43 @@ export async function uploadVideo(
     const model = Device.modelName || 'Unknown Device';
 
     const formData = new FormData();
-    formData.append('video', {
-      uri: video.uri,
-      type: video.mimeType,
-      name: video.fileName,
-    } as any);
+    formData.append('video', { uri: video.uri, type: video.mimeType, name: video.fileName } as any);
 
     if (location) {
       formData.append('latitud', location.latitude.toString());
       formData.append('longitud', location.longitude.toString());
     }
-
-    if (video.duration) {
-      formData.append('duracion_segundos', Math.round(video.duration).toString());
-    }
-
-    if (metadata?.infografia_numero != null) {
-      formData.append('infografia_numero', String(metadata.infografia_numero));
-    }
-    if (metadata?.infografia_titulo) {
-      formData.append('infografia_titulo', metadata.infografia_titulo);
-    }
+    if (metadata?.infografia_numero != null) formData.append('infografia_numero', String(metadata.infografia_numero));
+    if (metadata?.infografia_titulo) formData.append('infografia_titulo', metadata.infografia_titulo);
+    const duracion = metadata?.duracion_segundos ?? (video.duration ? Math.round(video.duration) : null);
+    if (duracion) formData.append('duracion_segundos', String(duracion));
 
     return new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
 
       xhr.upload.addEventListener('progress', (event) => {
         if (event.lengthComputable && onProgress) {
-          onProgress({
-            loaded: event.loaded,
-            total: event.total,
-            percentage: Math.round((event.loaded / event.total) * 100),
-          });
+          onProgress({ loaded: event.loaded, total: event.total, percentage: Math.round((event.loaded / event.total) * 100) });
         }
       });
 
       xhr.addEventListener('load', () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           const response = JSON.parse(xhr.responseText);
-          resolve({
-            success: true,
-            id: response.multimedia?.id,
-            url: response.multimedia?.url,
-            completitud: response.completitud,
-          });
+          resolve({ success: true, id: response.multimedia?.id, url: response.multimedia?.url, completitud: response.completitud });
         } else {
-          const error = JSON.parse(xhr.responseText);
-          resolve({ success: false, error: error.error || 'Error al subir video' });
+          try {
+            const err = JSON.parse(xhr.responseText);
+            resolve({ success: false, error: err.error || `HTTP ${xhr.status}` });
+          } catch {
+            resolve({ success: false, error: `HTTP ${xhr.status}` });
+          }
         }
       });
 
-      xhr.addEventListener('error', () => {
-        resolve({ success: false, error: 'Error de conexión' });
-      });
+      xhr.addEventListener('error', () => resolve({ success: false, error: 'Error de conexión' }));
 
-      xhr.open('POST', `${API_URL}/multimedia/situacion/${situacionId}/video`);
+      xhr.open('POST', `${API_URL}/multimedia/${entityType}/${entityId}/video`);
       xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       xhr.setRequestHeader('X-App-Platform', 'mobile');
       xhr.setRequestHeader('X-Device-UUID', uuid);
@@ -433,6 +408,17 @@ export async function uploadVideo(
   } catch (error: any) {
     return { success: false, error: error.message };
   }
+}
+
+/** @deprecated Usar uploadEntityVideo('situacion', ...) */
+export async function uploadVideo(
+  situacionId: number,
+  video: MediaFile,
+  location?: { latitude: number; longitude: number },
+  metadata?: { infografia_numero?: number; infografia_titulo?: string },
+  onProgress?: (progress: UploadProgress) => void
+): Promise<UploadResult> {
+  return uploadEntityVideo('situacion', situacionId, video, location, metadata, onProgress);
 }
 
 /**
@@ -458,6 +444,8 @@ export default {
   pickPhoto,
   recordVideo,
   pickVideo,
+  uploadEntityPhoto,
+  uploadEntityVideo,
   uploadPhoto,
   uploadVideo,
   getMultimediaSituacion,

@@ -1,103 +1,130 @@
-import api from './api';
 import { MultimediaRef } from './draftStorage';
-import { uploadMultimedia, getSignedUploadParams, uploadToCloudinary } from './cloudinaryUpload';
+import { uploadEntityPhoto, uploadEntityVideo } from './multimedia.service';
 
-/**
- * Sync multimedia for a situation
- * 1. Uploads files to Cloudinary
- * 2. Saves references to backend with infografia metadata
- */
-export async function uploadSituacionMultimedia(situacionId: number, mediaRefs: MultimediaRef[]) {
-    if (!mediaRefs || mediaRefs.length === 0) return { uploaded: 0, failed: 0 };
-
-
-    // 1. Upload to Cloudinary using offline-first strategy (signed uploads)
-    const { uploaded, failed } = await uploadMultimedia(situacionId.toString(), mediaRefs, (current, total) => {
-    });
-
-    if (uploaded.length === 0) {
-        if (failed.length > 0) {
-            throw new Error('No se pudieron subir los archivos multimedia');
-        }
-        return { uploaded: 0, failed: 0 };
-    }
-
-    // 2. Prepare payload for backend batch sync
-    // Merge uploaded results with original metadata (infografia info)
-    const archivos = uploaded.map(item => {
-        const original = mediaRefs.find(r => r.uri === item.localUri);
-        return {
-            url: item.cloudinaryUrl,
-            public_id: item.publicId,
-            tipo: original?.tipo,
-            orden: original?.orden,
-            infografia_numero: original?.infografia_numero,
-            infografia_titulo: original?.infografia_titulo
-        };
-    });
-
-    // 3. Send to backend to save references
-    await api.post(`/multimedia/situacion/${situacionId}/batch`, { archivos });
-
-    return { uploaded: uploaded.length, failed: failed.length };
+export interface UploadInfografiasParams {
+  entityType: 'situacion' | 'actividad';
+  entityId: number;
+  mediaRefs: MultimediaRef[];
+  maxInfografias?: number;
 }
 
+export interface UploadInfografiasResult {
+  uploaded: number;
+  failed: number;
+  errors: Array<{ uri: string; infografia_numero?: number; tipo: string; error: string }>;
+}
+
+/**
+ * Sube las infografías de una entidad (situacion o actividad) al backend.
+ * El backend decide si guarda en Cloudinary, almacenamiento local u otro storage.
+ *
+ * Reglas:
+ * - Ignora refs ya subidas (uri http) o con estado SUBIDO
+ * - Respeta el límite de infografías (maxInfografias)
+ * - Preserva infografia_numero, infografia_titulo y orden
+ * - Registra errores por archivo con contexto diagnóstico
+ */
+export async function uploadInfografias({
+  entityType,
+  entityId,
+  mediaRefs,
+  maxInfografias = 10,
+}: UploadInfografiasParams): Promise<UploadInfografiasResult> {
+  if (!mediaRefs || mediaRefs.length === 0) return { uploaded: 0, failed: 0, errors: [] };
+
+  // Solo refs pendientes: uri local, no marcadas como ya subidas
+  const pendingRefs = mediaRefs.filter(
+    r => r.uri && !r.uri.startsWith('http') && r.estado !== 'SUBIDO'
+  );
+
+  if (pendingRefs.length === 0) return { uploaded: 0, failed: 0, errors: [] };
+
+  // Respetar límite de infografías tomando las primeras N por número
+  const infNums = [...new Set(pendingRefs.map(r => r.infografia_numero ?? 1))].sort((a, b) => a - b);
+  const allowed = new Set(infNums.slice(0, maxInfografias));
+  const filteredRefs = pendingRefs.filter(r => allowed.has(r.infografia_numero ?? 1));
+
+  let uploaded = 0;
+  const errors: UploadInfografiasResult['errors'] = [];
+
+  for (const ref of filteredRefs) {
+    const mediaFile = {
+      uri: ref.uri,
+      type: ref.tipo === 'VIDEO' ? 'video' as const : 'image' as const,
+      fileName: ref.tipo === 'VIDEO' ? `video_${Date.now()}.mp4` : `foto_${Date.now()}.jpg`,
+      mimeType: ref.tipo === 'VIDEO' ? 'video/mp4' : 'image/jpeg',
+    };
+
+    const location =
+      ref.latitud != null && ref.longitud != null
+        ? { latitude: ref.latitud, longitude: ref.longitud }
+        : undefined;
+
+    try {
+      let result;
+      if (ref.tipo === 'VIDEO') {
+        result = await uploadEntityVideo(entityType, entityId, mediaFile, location, {
+          infografia_numero: ref.infografia_numero,
+          infografia_titulo: ref.infografia_titulo,
+          duracion_segundos: ref.duracion_segundos,
+        });
+      } else {
+        result = await uploadEntityPhoto(entityType, entityId, mediaFile, location, {
+          infografia_numero: ref.infografia_numero,
+          infografia_titulo: ref.infografia_titulo,
+          orden: ref.orden,
+        });
+      }
+
+      if (result.success) {
+        uploaded++;
+      } else {
+        console.warn('[MULTIMEDIA] Fallo al subir archivo', {
+          entityType, entityId,
+          uri: ref.uri, tipo: ref.tipo,
+          infografia_numero: ref.infografia_numero, orden: ref.orden,
+          error: result.error,
+        });
+        errors.push({
+          uri: ref.uri,
+          infografia_numero: ref.infografia_numero,
+          tipo: ref.tipo,
+          error: result.error || 'Error desconocido',
+        });
+      }
+    } catch (err: any) {
+      console.warn('[MULTIMEDIA] Error inesperado al subir', {
+        entityType, entityId,
+        uri: ref.uri, tipo: ref.tipo,
+        infografia_numero: ref.infografia_numero,
+        error: err.message,
+      });
+      errors.push({
+        uri: ref.uri,
+        infografia_numero: ref.infografia_numero,
+        tipo: ref.tipo,
+        error: err.message || 'Error inesperado',
+      });
+    }
+  }
+
+  return { uploaded, failed: errors.length, errors };
+}
+
+/**
+ * @deprecated Usar uploadInfografias({ entityType: 'situacion', entityId, mediaRefs, maxInfografias: 10 })
+ */
+export async function uploadSituacionMultimedia(situacionId: number, mediaRefs: MultimediaRef[]) {
+  const result = await uploadInfografias({ entityType: 'situacion', entityId: situacionId, mediaRefs, maxInfografias: 10 });
+  if (result.uploaded === 0 && result.failed > 0) throw new Error('No se pudieron subir los archivos multimedia');
+  return { uploaded: result.uploaded, failed: result.failed };
+}
+
+/**
+ * @deprecated Usar uploadInfografias({ entityType: 'actividad', entityId, mediaRefs, maxInfografias: 3 })
+ */
 export async function uploadActividadMultimedia(actividadId: number, mediaRefs: MultimediaRef[]) {
-    if (!mediaRefs || mediaRefs.length === 0) return { uploaded: 0, failed: 0 };
-
-    // Max 3 infografías por actividad: tomar solo las primeras 3 por número
-    const infografiaNumbers = [...new Set(mediaRefs.map(r => r.infografia_numero ?? 1))].sort((a, b) => a - b);
-    const allowedInfografias = new Set(infografiaNumbers.slice(0, 3));
-    const filteredRefs = mediaRefs.filter(r => allowedInfografias.has(r.infografia_numero ?? 1));
-
-    const uploaded: Array<{ localUri: string; cloudinaryUrl: string; publicId: string }> = [];
-    const failed: Array<{ localUri: string; error: string }> = [];
-
-    for (let i = 0; i < filteredRefs.length; i++) {
-        const media = filteredRefs[i];
-        try {
-            const fileType = media.tipo === 'VIDEO' ? 'video' : 'image';
-            const infografiaNum = media.infografia_numero ?? 1;
-            const index = media.orden ?? (i + 1);
-            const publicId = `actividad_${actividadId}_I${infografiaNum}_${media.tipo}_${index}`;
-
-            const signedParams = await getSignedUploadParams(
-                `actividad_${actividadId}`,
-                fileType,
-                publicId,
-                `provial/actividades/${actividadId}`,
-                'actividad,provial_app'
-            );
-
-            const result = await uploadToCloudinary(media.uri, signedParams, fileType);
-
-            if (result.success && result.secureUrl) {
-                uploaded.push({ localUri: media.uri, cloudinaryUrl: result.secureUrl, publicId: result.publicId! });
-            } else {
-                failed.push({ localUri: media.uri, error: result.error || 'Error desconocido' });
-            }
-        } catch (error: any) {
-            failed.push({ localUri: media.uri, error: error.message || 'Error al procesar' });
-        }
-    }
-
-    if (uploaded.length === 0) {
-        if (failed.length > 0) throw new Error('No se pudieron subir los archivos multimedia');
-        return { uploaded: 0, failed: 0 };
-    }
-
-    const archivos = uploaded.map(item => {
-        const original = filteredRefs.find(r => r.uri === item.localUri);
-        return {
-            url: item.cloudinaryUrl,
-            public_id: item.publicId,
-            tipo: original?.tipo,
-            orden: original?.orden,
-            infografia_numero: original?.infografia_numero,
-            infografia_titulo: original?.infografia_titulo,
-        };
-    });
-
-    await api.post(`/multimedia/actividad/${actividadId}/batch`, { archivos });
-    return { uploaded: uploaded.length, failed: failed.length };
+  const result = await uploadInfografias({ entityType: 'actividad', entityId: actividadId, mediaRefs, maxInfografias: 3 });
+  if (result.uploaded === 0 && result.failed > 0) throw new Error('No se pudieron subir los archivos multimedia');
+  return { uploaded: result.uploaded, failed: result.failed };
 }
