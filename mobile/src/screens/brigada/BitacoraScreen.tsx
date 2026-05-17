@@ -805,6 +805,9 @@ export default function BitacoraScreen() {
               </Text>
             </View>
           )}
+          <Text style={{ textAlign: 'center', color: COLORS.info, marginTop: 8, fontSize: 11 }}>
+            Toca para editar actividad
+          </Text>
         </View>
       </View>
       </TouchableOpacity>
