@@ -71,12 +71,26 @@ export default function MultimediaCaptureOffline({
   initialMedia = [],
 }: MultimediaCaptureOfflineProps) {
   // Estados para las 3 fotos + 1 video
-  const [slots, setSlots] = useState<MediaSlot[]>([
-    { index: 1, tipo: 'FOTO', media: null },
-    { index: 2, tipo: 'FOTO', media: null },
-    { index: 3, tipo: 'FOTO', media: null },
-    { index: 4, tipo: 'VIDEO', media: null },
-  ]);
+  // En manualMode se inicializa directamente desde initialMedia para evitar
+  // emitir [] transitoriamente antes de que el efecto de carga popule los slots.
+  const [slots, setSlots] = useState<MediaSlot[]>(() => {
+    const base: MediaSlot[] = [
+      { index: 1, tipo: 'FOTO', media: null },
+      { index: 2, tipo: 'FOTO', media: null },
+      { index: 3, tipo: 'FOTO', media: null },
+      { index: 4, tipo: 'VIDEO', media: null },
+    ];
+    if (manualMode && initialMedia && initialMedia.length > 0) {
+      initialMedia.forEach(m => {
+        if (m.tipo === 'FOTO' && m.orden && m.orden >= 1 && m.orden <= 3) {
+          base[m.orden - 1] = { ...base[m.orden - 1], media: m };
+        } else if (m.tipo === 'VIDEO') {
+          base[3] = { ...base[3], media: m };
+        }
+      });
+    }
+    return base;
+  });
 
   const [loading, setLoading] = useState(false);
 
@@ -87,62 +101,56 @@ export default function MultimediaCaptureOffline({
     uri: string;
   }>({ visible: false, type: 'FOTO', uri: '' });
 
-  // Cargar multimedia existente (del draft o props)
+  // Cargar multimedia del draft (solo para modo no-manual con draftUuid)
+  // manualMode ya inicializa los slots desde initialMedia en el useState lazy initializer.
   useEffect(() => {
-    // Definir función loadFromDraft dentro del efecto para usarla
+    if (manualMode || !draftUuid) return;
+
     async function loadFromDraft() {
       try {
         const draft = await getDraftPendiente();
         if (draft && draft.multimedia) {
-          mapMediaToSlots(draft.multimedia);
+          setSlots(prevSlots => {
+            const newSlots = [...prevSlots];
+            draft.multimedia.forEach((m: MultimediaRef) => {
+              if (m.tipo === 'FOTO' && m.orden && m.orden >= 1 && m.orden <= 3) {
+                newSlots[m.orden - 1] = { ...newSlots[m.orden - 1], media: m };
+              } else if (m.tipo === 'VIDEO') {
+                newSlots[3] = { ...newSlots[3], media: m };
+              }
+            });
+            return newSlots;
+          });
         }
-      } catch (error) {
+      } catch {
       }
     }
 
-    // Helper para mapear
-    function mapMediaToSlots(mediaItems: MultimediaRef[]) {
-      setSlots(prevSlots => {
-        const newSlots = [...prevSlots]; // Clonar
-        mediaItems.forEach((m) => {
-          if (m.tipo === 'FOTO' && m.orden && m.orden <= 3) {
-            // Actualizar slot de foto
-            newSlots[m.orden - 1] = { ...newSlots[m.orden - 1], media: m };
-          } else if (m.tipo === 'VIDEO') {
-            // Actualizar slot de video (índice 3)
-            newSlots[3] = { ...newSlots[3], media: m };
-          }
-        });
-        return newSlots;
-      });
-    }
-
-    // Carga inicial: solo en mount. No re-ejecutar si initialMedia cambia
-    // porque causaría un loop: foto capturada → onMultimediaChange → parent actualiza
-    // initialMedia → effect re-corre con slots stale → resetea fotos.
-    if (manualMode && initialMedia && initialMedia.length > 0) {
-      mapMediaToSlots(initialMedia);
-    } else if (draftUuid && !manualMode) {
-      loadFromDraft();
-    }
+    loadFromDraft();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Solo en mount — initialMedia/draftUuid no cambian mientras el modal está abierto
+  }, []); // Solo en mount
 
   // Refs estables para callbacks — evitan que funciones inline recreen el efecto
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
   const onMultimediaChangeRef = useRef(onMultimediaChange);
   onMultimediaChangeRef.current = onMultimediaChange;
+  // Guard: no emitir si el contenido no cambió realmente
+  const lastEmittedRef = useRef('');
 
   // Verificar completitud y notificar cambios
   useEffect(() => {
+    const multimedia = slots.filter((s) => s.media).map((s) => s.media!);
+    const serialized = JSON.stringify(multimedia.map(m => m.uri));
+
+    if (serialized === lastEmittedRef.current) return;
+    lastEmittedRef.current = serialized;
+
     const fotosCompletas = slots.filter((s) => s.tipo === 'FOTO' && s.media).length;
     const videoCompleto = !!slots.find((s) => s.tipo === 'VIDEO' && s.media);
     const isComplete = fotosCompletas >= 3 && videoCompleto;
 
     onCompleteRef.current?.(isComplete);
-
-    const multimedia = slots.filter((s) => s.media).map((s) => s.media!);
     onMultimediaChangeRef.current?.(multimedia);
   }, [slots]);
 
