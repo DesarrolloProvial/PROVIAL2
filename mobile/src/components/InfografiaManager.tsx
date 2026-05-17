@@ -9,8 +9,8 @@ import {
   Alert,
   StyleSheet,
   Modal,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Infografia, InfografiaManagerProps, FotoItem, VideoItem } from '../types/multimedia';
 import { COLORS } from '../constants/colors';
 import { validateInfografia, createNewInfografia } from '../utils/infografiaValidation';
@@ -86,8 +86,20 @@ export default function InfografiaManager({
 
   const getMultimediaForCapture = (inf: Infografia): MultimediaRef[] => {
     const refs: MultimediaRef[] = [];
-    inf.fotos?.forEach(foto => refs.push({ tipo: 'FOTO', uri: foto.uri, orden: foto.orden }));
-    if (inf.video) refs.push({ tipo: 'VIDEO', uri: inf.video.uri, duracion_segundos: inf.video.duracion_segundos });
+    inf.fotos?.forEach(foto => refs.push({
+      tipo: 'FOTO',
+      uri: foto.uri,
+      orden: foto.orden,
+      infografia_numero: inf.numero,
+      infografia_titulo: inf.titulo,
+    }));
+    if (inf.video) refs.push({
+      tipo: 'VIDEO',
+      uri: inf.video.uri,
+      duracion_segundos: inf.video.duracion_segundos,
+      infografia_numero: inf.numero,
+      infografia_titulo: inf.titulo,
+    });
     return refs;
   };
 

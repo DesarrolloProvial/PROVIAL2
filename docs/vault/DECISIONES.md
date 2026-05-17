@@ -538,3 +538,51 @@ useEffect(() => {
   }
 }, [propInfografias, disabled]); // sin onChange
 ```
+
+---
+
+## D-034 — Unificación multimedia: el móvil no sube directamente a ningún storage externo
+
+**Decisión (mayo 2026)**: La app móvil nunca llama a Cloudinary, S3 ni ningún servicio de almacenamiento externo directamente. Todo upload pasa por el backend como intermediario.
+
+```
+ANTES (3 paths independientes):
+  Path A: NuevaSituacionScreen → cloudinaryUpload.ts → Cloudinary (firmas en client)
+  Path B: SituacionDinamicaScreen → multimedia.service.ts → backend → Cloudinary
+  Path C: actividades → getSignedUploadParams → Cloudinary (firmas en client)
+
+AHORA (1 path unificado):
+  Cualquier entidad → multimediaSync.uploadInfografias
+                    → multimedia.service.uploadEntityPhoto/Video
+                    → POST /multimedia/:entityType/:entityId/foto|video
+                    → backend adapter (subirFotoAdapter / subirVideoAdapter)
+                    → Cloudinary o filesystem local según STORAGE_TYPE
+```
+
+**Por qué — razones de seguridad y arquitectura**:
+
+1. **Validación de archivos**: Sin el backend como intermediario, cualquier cliente puede subir malware a Cloudinary. El backend usa `multer` + filtros MIME antes de reenviar al storage.
+2. **Independencia de storage**: PROVIAL planea despliegue on-premise en VMs institucionales sin acceso a Cloudinary. `STORAGE_TYPE=local` ya enruta a `storage.service.ts` (filesystem). El móvil no necesita saber esto.
+3. **Credenciales en cliente**: Las firmas Cloudinary (API key + secret) nunca deben estar en el bundle de la app. Antes, `getSignedUploadParams` retornaba parámetros que el móvil enviaba directamente — eso exponía el flujo aunque no el secret.
+4. **Trazabilidad**: Cada upload ahora crea una fila en `situacion_multimedia` con el dispositivo, coordenadas GPS y estado en el mismo transaction que el archivo llega al storage.
+
+**Archivos modificados**:
+- `mobile/src/services/multimediaSync.ts` — reescrito, `uploadInfografias()` como función principal
+- `mobile/src/services/multimedia.service.ts` — agregados `uploadEntityPhoto` / `uploadEntityVideo`; `uploadPhoto`/`uploadVideo` marcados `@deprecated`
+- `mobile/src/services/cloudinaryUpload.ts` — marcado `@deprecated` completo
+- `mobile/src/screens/brigada/NuevaSituacionScreen.tsx` — 4 call sites migrados a `uploadInfografias()`
+- `mobile/src/components/InfografiaManager.tsx` — `getMultimediaForCapture` emite `infografia_numero` e `infografia_titulo`
+
+**Límites de infografías enforced doble (cliente + servidor)**:
+- Situaciones: máx 10 infografías (contadas por `infografia_numero` DISTINCT)
+- Actividades: máx 3 infografías
+
+**UNIQUE indexes en BD** (migración 146):
+```sql
+uq_sm_situacion_inf_foto_orden   — evita duplicar foto en misma posición
+uq_sm_actividad_inf_foto_orden   — idem para actividades
+uq_sm_situacion_inf_video        — solo 1 video por infografía de situación
+uq_sm_actividad_inf_video        — solo 1 video por infografía de actividad
+```
+
+**Regla permanente**: Nunca agregar lógica de upload directo a storage externo en la app móvil. Si se requiere cambiar el proveedor (Cloudinary → S3 → filesystem), el cambio ocurre solo en el backend (`subirFotoAdapter`/`subirVideoAdapter`).

@@ -105,21 +105,50 @@ handleSubmit(formData)
 
 ### Flujo de infografías multimedia
 
-Las infografías son grupos numerados de fotos + video bajo una misma situación. Cada item en `situacion_multimedia` tiene `infografia_numero` (INT, default 1) e `infografia_titulo`.
+Las infografías son grupos numerados de fotos + video bajo una misma situación o actividad. Cada item en `situacion_multimedia` tiene `infografia_numero` (INT, default 1) e `infografia_titulo`.
 
-**Dos paths de subida — deben enviarse con `infografia_numero` en ambos:**
+**Path unificado (mayo 2026) — situaciones Y actividades:**
 
 ```
-Path A — NuevaSituacionScreen (PATRULLAJE, OTROS, etc.)
-  InfografiaManager  →  multimediaSync.ts  →  Cloudinary (móvil)
-  → POST /multimedia/situacion/:id/batch  (guardarReferenciasCloudinary)
-  ↳ guarda con infografia_numero + infografia_titulo + estado: SUBIDO
+InfografiaManager
+  │  emite MultimediaRef[] con { tipo, uri, infografia_numero, infografia_titulo, orden, duracion_segundos }
+  ▼
+multimediaSync.uploadInfografias({ entityType, entityId, mediaRefs, maxInfografias })
+  │  filtra refs ya subidas (uri http / estado SUBIDO)
+  │  respeta límite de infografías (maxInfografias)
+  ▼
+multimedia.service.uploadEntityPhoto/Video('situacion'|'actividad', id, ...)
+  │  POST /multimedia/:entityType/:entityId/foto|video
+  │  FormData: foto|video, latitud?, longitud?, infografia_numero, infografia_titulo, orden|duracion_segundos
+  ▼
+backend multimedia.controller
+  │  multer → validación MIME → conteo infografías → limit check
+  │  subirFotoAdapter / subirVideoAdapter
+  ▼
+STORAGE_TYPE=cloudinary → cloudinary.service.ts
+STORAGE_TYPE=local      → storage.service.ts (filesystem local + sharp thumbnails)
+  │
+  ▼
+situacion_multimedia (INSERT con estado: SUBIDO)
+```
 
-Path B — SituacionDinamicaScreen (HECHO_TRANSITO, ASISTENCIA_VEHICULAR, EMERGENCIA_VIAL)
-  MultimediaWrapper → FormBuilder
-  Creación: useDraftSituacion.subirMultimedia → multimedia.service.ts
+**Límites enforced (cliente + servidor)**:
+- Situaciones: máx 10 infografías distintas (`infografia_numero`)
+- Actividades: máx 3 infografías distintas
+
+**UNIQUE indexes en `situacion_multimedia`** (migración 146):
+- `uq_sm_situacion_inf_foto_orden` — sin duplicar orden de foto en misma infografía de situación
+- `uq_sm_actividad_inf_foto_orden` — idem actividades
+- `uq_sm_situacion_inf_video` — solo 1 video por infografía de situación
+- `uq_sm_actividad_inf_video` — solo 1 video por infografía de actividad
+
+**SituacionDinamicaScreen (HECHO_TRANSITO, ASISTENCIA_VEHICULAR, EMERGENCIA_VIAL)**:
+
+```
+MultimediaWrapper → FormBuilder
+  Creación: useDraftSituacion.subirMultimedia → multimedia.service.uploadEntityPhoto/Video
            → POST /multimedia/situacion/:id/foto|video
-  Edición:  subirMultimediaEdicion → multimedia.service.ts
+  Edición:  subirMultimediaEdicion → multimedia.service.uploadEntityPhoto/Video
            → POST /multimedia/situacion/:id/foto|video
   ↳ ambos pasan infografiaMetadata = { infografia_numero, infografia_titulo }
   ↳ backend guarda con estado: SUBIDO
@@ -136,35 +165,15 @@ function isHistorical(inf: Infografia): boolean {
 - Histórica → aparece en sección "Evidencia anterior" (solo lectura)
 - No histórica (editable) → aparece como card de sesión con inputs
 
-**Qué tipos de situación muestran `InfografiaManager`:**
+**Qué pantallas muestran `InfografiaManager`:**
 - `NuevaSituacionScreen`: todos los tipos excepto los cuyo nombre contiene "baño" (check: `!nombreTipoSeleccionado.toLowerCase().includes('baño')`)
 - `SituacionDinamicaScreen`: tipos que tengan un form config en `mobile/src/config/formularios/`: `HECHO_TRANSITO`, `ASISTENCIA_VEHICULAR`, `EMERGENCIA_VIAL`
 - `NuevaSituacionScreen` (modo actividad): cuando `route.params.tipo === 'FORMULARIOS_ACTIVIDAD'`, se muestra `InfografiaManager` con máximo 3 infografías
 
----
-
-### Flujo multimedia de actividades (Path C)
-
-Las actividades (`tipo_actividad_categoria = 'FORMULARIOS_ACTIVIDAD'`) usan `InfografiaManager` dentro de `NuevaSituacionScreen`. Máximo 3 infografías por actividad.
-
-```
-NuevaSituacionScreen (modo actividad)
-  InfografiaManager  →  multimediaSync.uploadActividadMultimedia
-    │
-    ├── getSignedUploadParams(draftUuid=`actividad_${id}`, folder=`provial/actividades/${id}`)
-    │     publicId: `actividad_${id}_I${inf}_${tipo}_${orden}`
-    ├── uploadToCloudinary (directo, sin pasar por uploadMultimedia)
-    └── POST /multimedia/actividad/:id/batch  (guardarReferenciasCloudinaryActividad)
-          ↳ guarda en actividad_multimedia con infografia_numero + estado: SUBIDO
-```
-
-**Diferencia clave respecto a situaciones**: `uploadMultimedia` no se usa porque asume
-`situacionId.split('-')[3]` para folder/tags, patrón válido solo para draftUUIDs de situación.
-Para actividades se llama `getSignedUploadParams` + `uploadToCloudinary` directamente con
-`folder = provial/actividades/:id` y `draftUuid = actividad_:id`.
-
 **Regla título en `MultimediaWrapper.toGroupedInfografias`:**
 El título se extrae del ref **antes** del skip del placeholder. Los placeholders (infografías vacías) solo aportan número y título; no agregan fotos ni video al grupo.
+
+**`cloudinaryUpload.ts` — DEPRECADO**: Marcado con `@deprecated`. No usar. Toda subida va por `multimedia.service.uploadEntityPhoto/Video`.
 
 ---
 

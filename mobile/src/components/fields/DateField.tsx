@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   Platform,
   Modal,
-  SafeAreaView,
   Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useTheme } from '../../core/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';

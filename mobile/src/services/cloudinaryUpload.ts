@@ -1,9 +1,10 @@
 /**
- * Servicio de Upload a Cloudinary
- * Estrategia Offline-First:
- * 1. Captura local con expo-image-picker
- * 2. Al sincronizar, obtiene signed URL del backend
- * 3. Sube directamente a Cloudinary
+ * @deprecated
+ * Este módulo implementa subida directa al almacenamiento externo desde el móvil.
+ * El flujo oficial es: móvil → backend → storage (Cloudinary, local o MinIO según STORAGE_TYPE).
+ * Usar MultimediaService.uploadEntityPhoto / uploadEntityVideo en su lugar.
+ *
+ * Mantenido temporalmente para compatibilidad. No llamar desde nuevos flujos.
  */
 
 import api from './api';

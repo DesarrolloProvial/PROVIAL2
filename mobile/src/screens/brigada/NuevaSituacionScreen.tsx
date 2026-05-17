@@ -119,7 +119,7 @@ export default function NuevaSituacionScreen() {
   // State para multimedia/infografías
   const [multimedia, setMultimedia] = useState<MultimediaRef[]>([]);
   const [infografias, setInfografias] = useState<Infografia[]>(() => {
-    // Inicializar sincrónicamente para evitar race condition con el useEffect
+    // Edición de situación con multimedia ya cargada
     const multimedia = route.params?.situacionData?.multimedia;
     if (route.params?.editMode && Array.isArray(multimedia) && multimedia.length > 0) {
       const mapa: Record<number, any> = {};
@@ -131,10 +131,14 @@ export default function NuevaSituacionScreen() {
         if (item.tipo === 'FOTO') {
           mapa[num].fotos.push({ orden: item.orden || mapa[num].fotos.length + 1, uri: item.url || item.url_original, filename: item.nombre_archivo || `foto_${item.orden}.jpg`, url_original: item.url_original, url_thumbnail: item.thumbnail || item.url_thumbnail, estado: 'SUBIDO' as const, latitud: item.latitud, longitud: item.longitud });
         } else if (item.tipo === 'VIDEO' && !mapa[num].video) {
-          mapa[num].video = { uri: item.url || item.url_original, filename: item.nombre_archivo || 'video.mp4', url_original: item.url_original, duracion_segundos: item.duracion_segundos, estado: 'SUBIDO' as const, latitud: item.latitud, longitud: item.longitud };
+          mapa[num].video = { uri: item.url || item.url_original, filename: item.nombre_archivo || 'video.mp4', url_original: item.url_original, duracion_segundos: item.duracion_segundos, estado: 'SUBIDO' as const };
         }
       });
       return Object.values(mapa).sort((a: any, b: any) => a.numero - b.numero);
+    }
+    // Edición de actividad: [] — el useEffect de carga llena el estado de forma asíncrona
+    if (route.params?.editMode && route.params?.actividadId) {
+      return [];
     }
     return [{ numero: 1, titulo: 'Infografía 1', fotos: [], video: null, created_at: new Date().toISOString(), editable: true }];
   });
@@ -217,24 +221,41 @@ export default function NuevaSituacionScreen() {
 
   // Cargar multimedia de actividad en modo edición
   useEffect(() => {
-    if (editMode && actividadId) {
-      actividadApi.getMultimedia(actividadId).then(multimedia => {
-        if (!multimedia || multimedia.length === 0) return;
-        const mapa: Record<number, any> = {};
-        multimedia.forEach((m: any) => {
-          const num = m.infografia_numero || 1;
-          if (!mapa[num]) {
-            mapa[num] = { numero: num, titulo: m.infografia_titulo || `Infografía ${num}`, fotos: [], video: null, created_at: m.created_at || new Date().toISOString() };
-          }
-          if (m.tipo === 'FOTO') {
-            mapa[num].fotos.push({ uri: m.url_original, orden: m.orden || 1, estado: 'SUBIDO' as const });
-          } else if (m.tipo === 'VIDEO') {
-            mapa[num].video = { uri: m.url_original, estado: 'SUBIDO' as const };
-          }
-        });
-        setInfografias(Object.values(mapa).sort((a: any, b: any) => a.numero - b.numero));
-      }).catch(() => {});
-    }
+    if (!editMode || !actividadId) return;
+    actividadApi.getMultimedia(actividadId).then(multimedia => {
+      if (!multimedia || multimedia.length === 0) {
+        setInfografias([{ numero: 1, titulo: 'Infografía 1', fotos: [], video: null, created_at: new Date().toISOString(), editable: true }]);
+        return;
+      }
+      const mapa: Record<number, any> = {};
+      multimedia.forEach((m: any) => {
+        const num = m.infografia_numero || 1;
+        if (!mapa[num]) {
+          mapa[num] = { numero: num, titulo: m.infografia_titulo || `Infografía ${num}`, fotos: [], video: null, created_at: m.created_at || new Date().toISOString() };
+        }
+        if (m.tipo === 'FOTO') {
+          mapa[num].fotos.push({
+            uri: m.url_original,
+            orden: m.orden || 1,
+            filename: m.nombre_archivo || `foto_${m.orden || 1}.jpg`,
+            url_original: m.url_original,
+            url_thumbnail: m.url_thumbnail || null,
+            estado: 'SUBIDO' as const,
+          });
+        } else if (m.tipo === 'VIDEO' && !mapa[num].video) {
+          mapa[num].video = {
+            uri: m.url_original,
+            filename: m.nombre_archivo || 'video.mp4',
+            url_original: m.url_original,
+            duracion_segundos: m.duracion_segundos || null,
+            estado: 'SUBIDO' as const,
+          };
+        }
+      });
+      setInfografias(Object.values(mapa).sort((a: any, b: any) => a.numero - b.numero));
+    }).catch(() => {
+      setInfografias([{ numero: 1, titulo: 'Infografía 1', fotos: [], video: null, created_at: new Date().toISOString(), editable: true }]);
+    });
   }, [editMode, actividadId]);
 
   const obtenerUbicacionGPS = async () => {
@@ -567,14 +588,10 @@ export default function NuevaSituacionScreen() {
       const mensajeExito = FORMULARIOS_ACTIVIDAD.includes(formularioTipo) ? 'Actividad registrada' : 'Situación guardada';
       Alert.alert('Éxito', mensajeExito, [{ text: 'OK', onPress: () => navigation.goBack() }]);
     } catch (error: any) {
-
-      const errorMsg = error?.response?.data?.error
-        || error?.response?.data?.message
-        || error?.msg
-        || error?.message
-        || 'Error al guardar';
-
-      Alert.alert('Error al crear situación', errorMsg);
+      const httpError = error?.response?.data?.error || error?.response?.data?.message;
+      const errorMsg = httpError || error?.message || 'Error al guardar';
+      const titulo = httpError ? 'Error del servidor' : 'Error al guardar';
+      Alert.alert(titulo, errorMsg);
     }
   };
 

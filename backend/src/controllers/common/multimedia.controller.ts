@@ -115,6 +115,15 @@ export async function subirFoto(req: Request, res: Response) {
       });
     }
 
+    // Verificar límite de infografías (máx 10 por situación)
+    const esNuevaInfografia = !(await MultimediaModel.existeInfografia({ situacion_id: situacionIdNum, infografia_numero: infografiaNumero }));
+    if (esNuevaInfografia) {
+      const totalInfografias = await MultimediaModel.contarInfografias({ situacion_id: situacionIdNum });
+      if (totalInfografias >= 10) {
+        return res.status(400).json({ error: 'Límite de 10 infografías alcanzado para esta situación' });
+      }
+    }
+
     if (!storageDisponible()) {
       console.error('[MULTIMEDIA] Storage no configurado!');
       return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
@@ -609,6 +618,15 @@ export async function subirFotoActividad(req: Request, res: Response) {
     const ordenSiguiente = await MultimediaModel.getSiguienteOrdenFotoActividad(actividadIdNum, infografiaNumero);
     if (ordenSiguiente > 3) return res.status(400).json({ error: `Límite de fotos alcanzado para infografía ${infografiaNumero}` });
 
+    // Verificar límite de infografías (máx 3 por actividad)
+    const esNuevaInfAct = !(await MultimediaModel.existeInfografia({ actividad_id: actividadIdNum, infografia_numero: infografiaNumero }));
+    if (esNuevaInfAct) {
+      const totalInfAct = await MultimediaModel.contarInfografias({ actividad_id: actividadIdNum });
+      if (totalInfAct >= 3) {
+        return res.status(400).json({ error: 'Límite de 3 infografías alcanzado para esta actividad' });
+      }
+    }
+
     if (!storageDisponible()) return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
 
     const result = await subirFotoAdapter(req.file.buffer, req.file.mimetype, req.file.originalname, actividadIdNum, ordenSiguiente, `ACT-${actividadIdNum}`, infografiaNumero);
@@ -655,6 +673,20 @@ export async function subirVideoActividad(req: Request, res: Response) {
 
     const actividad = await db.oneOrNone('SELECT id FROM actividad WHERE id = $1', [actividadIdNum]);
     if (!actividad) return res.status(404).json({ error: 'Actividad no encontrada' });
+
+    const existeVideoAct = await MultimediaModel.existeVideoActividad(actividadIdNum, infografiaNumero);
+    if (existeVideoAct) {
+      return res.status(400).json({ error: `Ya existe un video para la infografía ${infografiaNumero} de esta actividad` });
+    }
+
+    // Verificar límite de infografías (máx 3 por actividad)
+    const esNuevaInfVideo = !(await MultimediaModel.existeInfografia({ actividad_id: actividadIdNum, infografia_numero: infografiaNumero }));
+    if (esNuevaInfVideo) {
+      const totalInfVideo = await MultimediaModel.contarInfografias({ actividad_id: actividadIdNum });
+      if (totalInfVideo >= 3) {
+        return res.status(400).json({ error: 'Límite de 3 infografías alcanzado para esta actividad' });
+      }
+    }
 
     if (!storageDisponible()) return res.status(500).json({ error: 'Servicio de almacenamiento no disponible' });
 

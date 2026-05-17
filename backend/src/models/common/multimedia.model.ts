@@ -191,6 +191,46 @@ export const MultimediaModel = {
   },
 
   /**
+   * Verificar si ya existe video para una actividad e infografía
+   */
+  async existeVideoActividad(actividadId: number, infografiaNumero: number = 1): Promise<boolean> {
+    const result = await db.oneOrNone(`
+      SELECT id FROM situacion_multimedia
+      WHERE actividad_id = $1 AND infografia_numero = $2 AND tipo = 'VIDEO'
+      LIMIT 1
+    `, [actividadId, infografiaNumero]);
+    return !!result;
+  },
+
+  /**
+   * Contar infografías distintas de una entidad
+   */
+  async contarInfografias(params: { situacion_id?: number; actividad_id?: number }): Promise<number> {
+    const [field, value] = params.situacion_id
+      ? ['situacion_id', params.situacion_id]
+      : ['actividad_id', params.actividad_id];
+    const result = await db.one(
+      `SELECT COUNT(DISTINCT infografia_numero)::int AS cnt FROM situacion_multimedia WHERE ${field} = $1`,
+      [value]
+    );
+    return result.cnt;
+  },
+
+  /**
+   * Verificar si ya existe una infografía con ese número para la entidad
+   */
+  async existeInfografia(params: { situacion_id?: number; actividad_id?: number; infografia_numero: number }): Promise<boolean> {
+    const [field, value] = params.situacion_id
+      ? ['situacion_id', params.situacion_id]
+      : ['actividad_id', params.actividad_id];
+    const result = await db.oneOrNone(
+      `SELECT 1 FROM situacion_multimedia WHERE ${field} = $1 AND infografia_numero = $2 LIMIT 1`,
+      [value, params.infografia_numero]
+    );
+    return !!result;
+  },
+
+  /**
    * Eliminar registro de multimedia
    */
   async delete(id: number): Promise<{ url_original: string; url_thumbnail: string | null } | null> {

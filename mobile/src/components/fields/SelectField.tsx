@@ -11,8 +11,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, ActivityIndicator,
-  Platform, Modal, TouchableOpacity, SafeAreaView,
+  Platform, Modal, TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import { useTheme } from '../../core/theme';
 import { FieldOption } from '../../core/FormBuilder/types';
