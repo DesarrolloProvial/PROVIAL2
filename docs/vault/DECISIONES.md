@@ -586,3 +586,31 @@ uq_sm_actividad_inf_video        — solo 1 video por infografía de actividad
 ```
 
 **Regla permanente**: Nunca agregar lógica de upload directo a storage externo en la app móvil. Si se requiere cambiar el proveedor (Cloudinary → S3 → filesystem), el cambio ocurre solo en el backend (`subirFotoAdapter`/`subirVideoAdapter`).
+
+
+---
+
+## D-035 — Bitácora por jornada (salida_id), no por fecha calendario
+
+**Decisión**: `getMiUnidadHoy` y `getByUnidadHoy` filtran por `salida_unidad_id` de la salida activa cuando existe. Si no hay salida activa, usan filtro de fecha como fallback.
+
+**Por qué**: Las jornadas pueden cruzar la medianoche (ej. turno nocturno). Filtrar `DATE(created_at) = CURRENT_DATE` excluye los registros de las primeras horas del turno que se hicieron "ayer" desde el punto de vista del calendario, pero que pertenecen a la misma jornada operacional.
+
+**Implementación**:
+- `SituacionModel.getMiUnidadHoy(unidad_id, salida_id?)` — ya tenía el código en línea 495, solo le faltaba que el controller lo pasara.
+- `ActividadModel.getByUnidadHoy(unidad_id, salida_id?)` — actualizado en mig 147.
+- `situacion.query.controller.ts` y `actividad.controller.ts` — resuelven la salida activa via `SalidaModel.getSalidaActivaDeUnidad()` antes de llamar a los modelos.
+
+**Regla**: Cualquier endpoint de "mi unidad hoy" / "historial de jornada" debe usar `salida_unidad_id = X` como filtro principal, con fecha como fallback solo cuando no hay salida activa.
+
+---
+
+## D-036 — `situacion_actual`: DELETE al cerrar jornada, no UPDATE NULL
+
+**Decisión**: Al finalizar una jornada (`iniciar_salida_unidad`, `finalizarSalidaCOP`), se elimina la fila de `situacion_actual` en lugar de poner todos los campos a NULL.
+
+**Por qué**: Una fila con todos los campos NULL es un "ghost row" que puede confundir al COP (aparece como unidad sin estado). Al eliminarla, la unidad simplemente no aparece en el mapa hasta que registra su primera situación/actividad en la nueva jornada. Los triggers recrean la fila automáticamente vía `INSERT … ON CONFLICT DO UPDATE`.
+
+**Trigger actualizado** (mig 147): `fn_actualizar_situacion_actual_actividad` usa `INSERT … ON CONFLICT (unidad_id) DO UPDATE` — atómico, elimina la race condition del patrón UPDATE + IF NOT FOUND INSERT.
+
+**Regla**: Nunca hacer `UPDATE situacion_actual SET x=NULL WHERE unidad_id=X` para "limpiar" el estado. Usar `DELETE FROM situacion_actual WHERE unidad_id=X`.

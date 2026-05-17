@@ -243,12 +243,16 @@ Actividades operativas simples (patrullaje, puesto fijo, apoyo, etc.). Añadida 
 | Columna | Tipo | Notas |
 |---|---|---|
 | id | bigint PK | |
-| codigo_actividad | text | ID similar al de situacion |
+| codigo_actividad | text UNIQUE | ID determinista enviado por el móvil para idempotencia |
 | tipo_actividad_id | integer FK→catalogo_tipo_situacion | formulario_tipo = 'ACTIVIDAD' o 'NOVEDAD' |
 | unidad_id / salida_unidad_id / ruta_id | FK | |
 | estado | varchar | ACTIVA / CERRADA |
 | observaciones | jsonb `[]` | Timeline igual que situacion |
 | datos | jsonb `{}` | Datos específicos del tipo (conteos, velocidades, etc.) |
+| clima | varchar(50) | Condición climática al momento del registro |
+| carga_vehicular | varchar(50) | Nivel de tráfico |
+| departamento_id | integer FK→departamento | **Mig 147** — ubicación geográfica |
+| municipio_id | integer FK→municipio | **Mig 147** — ubicación geográfica |
 | closed_at | timestamptz | |
 | creado_por | integer FK→usuario | |
 
@@ -506,11 +510,11 @@ El catálogo más importante. Define qué formulario usa cada tipo de evento.
 
 | Función | Propósito |
 |---|---|
-| `iniciar_salida_unidad(unidad_id, ruta_id, km, combustible, obs)` | Crea `salida_unidad`, inicializa `situacion_actual`. Atómica. |
+| `iniciar_salida_unidad(unidad_id, ruta_id, km, combustible, obs)` | Crea `salida_unidad`, **elimina** fila de `situacion_actual` de jornadas anteriores (mig 147). El trigger la recreará al registrar la primera situación/actividad. |
 | `finalizar_salida_unidad(salida_id, km, combustible, obs, user_id)` | Marca salida FINALIZADA, calcula km_recorridos |
 | `finalizar_jornada_completa(salida_id, km, combustible, obs, user_id)` | Cierra salida + crea snapshot bitácora + limpia tablas operacionales. Retorna `{success, bitacora_id, mensaje}` |
 | `fn_actualizar_situacion_actual()` | Trigger — sincroniza `situacion_actual` cuando cambia una situación |
-| `fn_actualizar_situacion_actual_actividad()` | Trigger — sincroniza `situacion_actual` cuando cambia una actividad |
+| `fn_actualizar_situacion_actual_actividad()` | Trigger — UPSERT atómico (`INSERT … ON CONFLICT unidad_id DO UPDATE`) en `situacion_actual` cuando cambia una actividad (mig 147) |
 | `fn_limpiar_situacion_actual_unidad(unidad_id)` | Limpia los campos de `situacion_actual` para una unidad |
 | `registrar_ingreso_sede(...)` | Registra ingreso validando UNIQUE de ingreso activo |
 | `fn_promover_a_persistente(situacion_id, user_id)` | Marca `situacion.persistente = true` |
