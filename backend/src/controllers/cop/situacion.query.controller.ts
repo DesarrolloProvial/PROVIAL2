@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { SituacionModel } from '../../models/cop/situacion.model';
 import { ActividadModel } from '../../models/cop/actividad.model';
+import { SalidaModel } from '../../models/common/salida.model';
 import { normalizeId } from '../../utils/db.utils';
 
 // ========================================
@@ -61,7 +62,14 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
 
     if (!unidadId) return res.json({ situaciones: [], situacion_activa: null });
 
-    const list = await SituacionModel.getMiUnidadHoy(unidadId);
+    // Resolver jornada activa de la unidad para filtrar por salida, no por fecha calendario
+    let salidaId: number | null = null;
+    try {
+      const salidaActiva = await SalidaModel.getSalidaActivaDeUnidad(unidadId);
+      salidaId = salidaActiva?.id ?? null;
+    } catch { /* silencioso — fallback a filtro por fecha */ }
+
+    const list = await SituacionModel.getMiUnidadHoy(unidadId, salidaId ?? undefined);
 
     // Buscar situación activa desde cache situacion_actual
     let situacionActiva: any = null;
@@ -70,7 +78,7 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
       if (situacionIdActiva) {
         situacionActiva = list.find((s: any) => s.id === situacionIdActiva) || null;
 
-        // Situación activa de otro día (no está en la lista de hoy)
+        // Situación activa de otra jornada (no está en la lista)
         if (!situacionActiva) {
           situacionActiva = await SituacionModel.getSituacionConMultimedia(situacionIdActiva);
         }
@@ -86,7 +94,7 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
     let actividadActiva: any = null;
     let actividadesHoy: any[] = [];
     try {
-      actividadesHoy  = await ActividadModel.getByUnidadHoy(unidadId);
+      actividadesHoy  = await ActividadModel.getByUnidadHoy(unidadId, salidaId);
       actividadActiva = actividadesHoy.find((a: any) => a.estado === 'ACTIVA') || null;
     } catch (e) {
       console.warn('[getMiUnidadHoy] Error buscando actividades:', e);

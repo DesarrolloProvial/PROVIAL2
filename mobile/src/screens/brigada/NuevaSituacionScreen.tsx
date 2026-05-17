@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Platform,
   Switch,
 } from 'react-native';
+import * as Crypto from 'expo-crypto';
 import { useForm } from 'react-hook-form';
 import { actividadApi } from '../../services/actividadApi';
 import { uploadInfografias } from '../../services/multimediaSync';
@@ -142,7 +143,18 @@ export default function NuevaSituacionScreen() {
     }
     return [{ numero: 1, titulo: 'Infografía 1', fotos: [], video: null, created_at: new Date().toISOString(), editable: true }];
   });
-  const [draftUuid] = useState(() => `temp-${Date.now()}`); // UUID temporal para el componente
+  const [draftUuid] = useState(() => `temp-${Date.now()}`);
+  // Deterministic ID for new activity — generated once at mount so retries are idempotent
+  const actividadCodigoRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!editMode) {
+      try {
+        actividadCodigoRef.current = Crypto.randomUUID();
+      } catch {
+        actividadCodigoRef.current = `act-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      }
+    }
+  }, [editMode]);
 
   // Hecho de tránsito: vehiculos form, causas, acuerdo, conteos
   const vehiculosForm = useForm({ defaultValues: { vehiculos: [] as any[] } });
@@ -216,6 +228,10 @@ export default function NuevaSituacionScreen() {
       if (actividadData.latitud) setLatitud(actividadData.latitud.toString());
       if (actividadData.longitud) setLongitud(actividadData.longitud.toString());
       if (actividadData.observaciones) setObservaciones(actividadData.observaciones);
+      if (actividadData.clima) setClima(actividadData.clima);
+      if (actividadData.carga_vehicular) setCarga(actividadData.carga_vehicular);
+      if (actividadData.departamento_id) setDeptoId(actividadData.departamento_id);
+      if (actividadData.municipio_id) setMuniId(actividadData.municipio_id);
     }
   }, [editMode, actividadData]);
 
@@ -386,7 +402,10 @@ export default function NuevaSituacionScreen() {
           observaciones: observaciones || null,
           clima: clima || null,
           carga_vehicular: carga || null,
+          departamento_id: deptoId || null,
+          municipio_id: muniId || null,
           datos: Object.keys(datosEspecificos).length > 0 ? datosEspecificos : {},
+          id: actividadCodigoRef.current ?? undefined,
         };
 
         const buildActividadMedia = () => infografias.flatMap(inf => [
@@ -405,6 +424,10 @@ export default function NuevaSituacionScreen() {
             latitud: latitud ? parseFloat(latitud) : null,
             longitud: longitud ? parseFloat(longitud) : null,
             observaciones: observaciones || null,
+            clima: clima || null,
+            carga_vehicular: carga || null,
+            departamento_id: deptoId || null,
+            municipio_id: muniId || null,
           });
           const newMedia = buildActividadMedia();
           if (newMedia.length > 0) {

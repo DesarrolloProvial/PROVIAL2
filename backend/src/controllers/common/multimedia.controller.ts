@@ -643,7 +643,8 @@ export async function getMultimediaActividad(req: Request, res: Response) {
     const multimedia = await MultimediaModel.getByActividadId(actividadIdNum);
     const fotos = multimedia.filter(m => m.tipo === 'FOTO');
     const videos = multimedia.filter(m => m.tipo === 'VIDEO');
-    return res.json({ actividad_id: actividadIdNum, fotos, videos });
+    // multimedia = fotos + videos ordenados para consumo directo desde móvil
+    return res.json({ actividad_id: actividadIdNum, fotos, videos, multimedia });
   } catch (error) {
     console.error('Error al obtener multimedia actividad:', error);
     return res.status(500).json({ error: 'Error al obtener multimedia' });

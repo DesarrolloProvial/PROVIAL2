@@ -20,6 +20,8 @@ export interface Actividad {
   datos: Record<string, any>;
   clima: string | null;
   carga_vehicular: string | null;
+  departamento_id: number | null;
+  municipio_id: number | null;
   created_at: Date;
   closed_at: Date | null;
   codigo_actividad: string | null;
@@ -50,12 +52,12 @@ export const ActividadModel = {
         tipo_actividad_id, unidad_id, salida_unidad_id, creado_por,
         ruta_id, latitud, longitud, km, sentido,
         observaciones, datos, codigo_actividad,
-        clima, carga_vehicular
+        clima, carga_vehicular, departamento_id, municipio_id
       ) VALUES (
         $/tipo_actividad_id/, $/unidad_id/, $/salida_unidad_id/, $/creado_por/,
         $/ruta_id/, $/latitud/, $/longitud/, $/km/, $/sentido/,
         $/observaciones/, $/datos/, $/codigo_actividad/,
-        $/clima/, $/carga_vehicular/
+        $/clima/, $/carga_vehicular/, $/departamento_id/, $/municipio_id/
       )
       RETURNING *
     `;
@@ -70,22 +72,24 @@ export const ActividadModel = {
       longitud: data.longitud || null,
       km: data.km || null,
       sentido: data.sentido || null,
-      observaciones: data.observaciones 
-        ? JSON.stringify([{ 
-            hora: new Intl.DateTimeFormat('en-US', { 
-              hour12: false, 
-              hour: '2-digit', 
-              minute: '2-digit', 
-              timeZone: 'America/Guatemala' 
+      observaciones: data.observaciones
+        ? JSON.stringify([{
+            hora: new Intl.DateTimeFormat('en-US', {
+              hour12: false,
+              hour: '2-digit',
+              minute: '2-digit',
+              timeZone: 'America/Guatemala'
             }).format(new Date()),
             usuario: 'Creador Actividad',
-            mensaje: data.observaciones 
-          }]) 
+            mensaje: data.observaciones
+          }])
         : JSON.stringify([]),
       datos: JSON.stringify(data.datos || {}),
       codigo_actividad: data.codigo_actividad || null,
       clima: data.clima || null,
       carga_vehicular: data.carga_vehicular || null,
+      departamento_id: data.departamento_id || null,
+      municipio_id: data.municipio_id || null,
     };
 
     return conn.one(query, params);
@@ -141,10 +145,10 @@ export const ActividadModel = {
   },
 
   /**
-   * Obtener actividades de una unidad para hoy
+   * Obtener actividades de una unidad para la jornada activa (salida_id), o del día calendario como fallback.
    */
-  async getByUnidadHoy(unidadId: number): Promise<ActividadCompleta[]> {
-    const query = `
+  async getByUnidadHoy(unidadId: number, salidaId?: number | null): Promise<ActividadCompleta[]> {
+    const base = `
       SELECT a.*,
         u.codigo as unidad_codigo,
         r.codigo as ruta_codigo,
@@ -158,11 +162,14 @@ export const ActividadModel = {
       LEFT JOIN ruta r ON a.ruta_id = r.id
       LEFT JOIN catalogo_tipo_situacion cts ON a.tipo_actividad_id = cts.id
       LEFT JOIN usuario us ON a.creado_por = us.id
-      WHERE a.unidad_id = $1
-        AND DATE(a.created_at AT TIME ZONE 'America/Guatemala') = DATE(NOW() AT TIME ZONE 'America/Guatemala')
-      ORDER BY a.created_at DESC
+      WHERE a.unidad_id = $/unidad_id/
     `;
-    return db.manyOrNone(query, [unidadId]);
+    if (salidaId) {
+      return db.manyOrNone(base + ` AND a.salida_unidad_id = $/salida_id/ ORDER BY a.created_at DESC`, { unidad_id: unidadId, salida_id: salidaId });
+    }
+    return db.manyOrNone(base + `
+        AND DATE(a.created_at AT TIME ZONE 'America/Guatemala') = DATE(NOW() AT TIME ZONE 'America/Guatemala')
+      ORDER BY a.created_at DESC`, { unidad_id: unidadId });
   },
 
   /**
@@ -223,18 +230,23 @@ export const ActividadModel = {
     patch: {
       km?: any; sentido?: any; ruta_id?: any;
       latitud?: any; longitud?: any; observaciones?: any; datos?: any;
+      clima?: any; carga_vehicular?: any; departamento_id?: any; municipio_id?: any;
     },
   ): Promise<ActividadCompleta | null> {
     const sets: string[] = [];
     const vals: any[]    = [];
     let i = 1;
 
-    if (patch.km !== undefined)        { sets.push(`km = $${i++}`);        vals.push(patch.km); }
-    if (patch.sentido !== undefined)   { sets.push(`sentido = $${i++}`);   vals.push(patch.sentido); }
-    if (patch.ruta_id !== undefined)   { sets.push(`ruta_id = $${i++}`);   vals.push(patch.ruta_id); }
-    if (patch.latitud !== undefined)   { sets.push(`latitud = $${i++}`);   vals.push(patch.latitud); }
-    if (patch.longitud !== undefined)  { sets.push(`longitud = $${i++}`);  vals.push(patch.longitud); }
-    if (patch.datos !== undefined)     { sets.push(`datos = $${i++}`);     vals.push(JSON.stringify(patch.datos)); }
+    if (patch.km !== undefined)               { sets.push(`km = $${i++}`);               vals.push(patch.km); }
+    if (patch.sentido !== undefined)          { sets.push(`sentido = $${i++}`);           vals.push(patch.sentido); }
+    if (patch.ruta_id !== undefined)          { sets.push(`ruta_id = $${i++}`);           vals.push(patch.ruta_id); }
+    if (patch.latitud !== undefined)          { sets.push(`latitud = $${i++}`);           vals.push(patch.latitud); }
+    if (patch.longitud !== undefined)         { sets.push(`longitud = $${i++}`);          vals.push(patch.longitud); }
+    if (patch.datos !== undefined)            { sets.push(`datos = $${i++}`);             vals.push(JSON.stringify(patch.datos)); }
+    if (patch.clima !== undefined)            { sets.push(`clima = $${i++}`);             vals.push(patch.clima); }
+    if (patch.carga_vehicular !== undefined)  { sets.push(`carga_vehicular = $${i++}`);   vals.push(patch.carga_vehicular); }
+    if (patch.departamento_id !== undefined)  { sets.push(`departamento_id = $${i++}`);   vals.push(patch.departamento_id); }
+    if (patch.municipio_id !== undefined)     { sets.push(`municipio_id = $${i++}`);      vals.push(patch.municipio_id); }
     if (patch.observaciones !== undefined) {
       if (typeof patch.observaciones === 'string' && patch.observaciones.trim()) {
         const hora = new Intl.DateTimeFormat('en-US', {

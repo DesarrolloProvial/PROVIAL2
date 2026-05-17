@@ -690,13 +690,7 @@ export const SalidaModel = {
       if (!success) throw new Error('finalizar_salida_unidad retornó false');
 
       await conn.none(
-        `UPDATE situacion_actual
-         SET situacion_id = NULL, tipo_situacion = NULL, estado = NULL,
-             latitud = NULL, longitud = NULL, km = NULL, sentido = NULL,
-             ruta_id = NULL, ruta_codigo = NULL, situacion_created_at = NULL,
-             actividad_id = NULL, actividad_tipo_nombre = NULL, actividad_estado = NULL,
-             actividad_created_at = NULL, icono = NULL, updated_at = NOW()
-         WHERE unidad_id = $1`,
+        `DELETE FROM situacion_actual WHERE unidad_id = $1`,
         [salidaInfo.unidad_id],
       );
     });

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { ActividadModel } from '../../models/cop/actividad.model';
+import { SalidaModel } from '../../models/common/salida.model';
 import { db } from '../../config/database';
 import { emitToAll } from '../../services/common/socket.service';
 import { resolveContextoActivo } from '../../utils/operaciones.utils';
@@ -39,6 +40,8 @@ export async function createActividad(req: Request, res: Response) {
       datos,
       clima,
       carga_vehicular,
+      departamento_id,
+      municipio_id,
     } = req.body;
 
     const userId = req.user!.userId;
@@ -94,6 +97,8 @@ export async function createActividad(req: Request, res: Response) {
         codigo_actividad: codigo_actividad ?? null,
         clima:            clima          ?? null,
         carga_vehicular:  carga_vehicular ?? null,
+        departamento_id:  departamento_id ?? null,
+        municipio_id:     municipio_id    ?? null,
       }, t);
     });
 
@@ -116,13 +121,14 @@ export async function updateActividad(req: Request, res: Response) {
     const id = normalizeId(req.params.id);
     if (!id) return res.status(400).json({ error: 'ID inválido' });
 
-    const { km, sentido, ruta_id, latitud, longitud, observaciones, datos } = req.body;
+    const { km, sentido, ruta_id, latitud, longitud, observaciones, datos, clima, carga_vehicular, departamento_id, municipio_id } = req.body;
 
     const actividadActual = await ActividadModel.getById(id);
     if (!actividadActual) return res.status(404).json({ error: 'Actividad no encontrada' });
 
     const actividadCompleta = await ActividadModel.update(id, {
       km, sentido, ruta_id, latitud, longitud, observaciones, datos,
+      clima, carga_vehicular, departamento_id, municipio_id,
     });
 
     return res.json({ actividad: actividadCompleta });
@@ -187,7 +193,13 @@ export async function getMiUnidadHoy(req: Request, res: Response) {
       return res.json({ actividades: [], actividad_activa: null });
     }
 
-    const actividades      = await ActividadModel.getByUnidadHoy(ctx.unidad_id);
+    let salidaId: number | null = null;
+    try {
+      const salidaActiva = await SalidaModel.getSalidaActivaDeUnidad(ctx.unidad_id);
+      salidaId = salidaActiva?.id ?? null;
+    } catch { /* silencioso */ }
+
+    const actividades      = await ActividadModel.getByUnidadHoy(ctx.unidad_id, salidaId);
     const actividad_activa = actividades.find(a => a.estado === 'ACTIVA') || null;
 
     return res.json({ actividades, actividad_activa });

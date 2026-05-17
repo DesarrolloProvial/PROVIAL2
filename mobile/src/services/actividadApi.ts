@@ -7,6 +7,10 @@ export interface EditActividadData {
   longitud?: number | null;
   observaciones?: string | null;
   datos?: Record<string, any>;
+  clima?: string | null;
+  carga_vehicular?: string | null;
+  departamento_id?: number | null;
+  municipio_id?: number | null;
 }
 
 export interface CreateActividadData {
@@ -21,6 +25,10 @@ export interface CreateActividadData {
   observaciones?: string | null;
   datos?: Record<string, any>;
   id?: string; // Código determinista para idempotencia
+  clima?: string | null;
+  carga_vehicular?: string | null;
+  departamento_id?: number | null;
+  municipio_id?: number | null;
 }
 
 export interface ActividadCompleta {
@@ -40,6 +48,10 @@ export interface ActividadCompleta {
   created_at: string;
   closed_at: string | null;
   codigo_actividad: string | null;
+  clima: string | null;
+  carga_vehicular: string | null;
+  departamento_id: number | null;
+  municipio_id: number | null;
   // Denormalizados
   unidad_codigo?: string;
   ruta_codigo?: string;
@@ -82,7 +94,10 @@ export const actividadApi = {
 
   async getMultimedia(id: number): Promise<any[]> {
     const response = await api.get(`/multimedia/actividad/${id}`);
-    return response.data.multimedia || [];
+    // Backend returns { fotos, videos, multimedia } — prefer the flat array when present
+    const data = response.data;
+    if (Array.isArray(data.multimedia)) return data.multimedia;
+    return [...(data.fotos || []), ...(data.videos || [])];
   },
 
   async getMiUnidadHoy(unidadId?: number): Promise<{ actividades: ActividadCompleta[]; actividad_activa: ActividadCompleta | null }> {
