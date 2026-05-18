@@ -386,6 +386,67 @@ Promise.all([syncCatalogosAuxiliares(), syncGeografia()])
 
 ---
 
+## 12. Bitácora de jornada — filtro por salida_id (mig 147)
+
+Los endpoints de "mi unidad hoy" filtran por jornada activa, no por fecha calendario. Esto permite que un turno nocturno que cruza la medianoche muestre todos sus registros como una sola jornada.
+
+### Lógica de filtro
+
+```
+GET /situaciones/mi-unidad-hoy
+GET /actividades/mi-unidad-hoy
+
+  Controller
+    │
+    ├── SalidaModel.getSalidaActivaDeUnidad(unidad_id)
+    │     └── Retorna salida_id si hay salida activa, null si no
+    │
+    ├── Si salida_id existe:
+    │     └── WHERE salida_unidad_id = $salida_id    ← filtro por jornada
+    │
+    └── Si salida_id es null (sin jornada activa):
+          └── WHERE DATE(created_at AT TIME ZONE 'America/Guatemala') = CURRENT_DATE  ← fallback por fecha
+```
+
+**Modelos involucrados:**
+- `SituacionModel.getMiUnidadHoy(unidad_id, salida_id?)`
+- `ActividadModel.getByUnidadHoy(unidad_id, salida_id?)`
+
+**Regla**: Todo endpoint de "historial de jornada" debe usar `salida_unidad_id = X` como filtro primario. Ver [[DECISIONES#D-035]].
+
+---
+
+## 13. Edición de actividad activa (móvil)
+
+La brigada puede editar una actividad ACTIVA directamente desde `BrigadaHomeScreen`.
+
+```
+BrigadaHomeScreen
+  │  Botón "Editar actividad"  (visible si hay actividad activa en situacion_actual)
+  │
+  └── navigate('NuevaSituacionScreen', {
+          modo: 'editar',
+          tipo: 'FORMULARIOS_ACTIVIDAD',
+          actividadId: id,
+          datosExistentes: { ...actividad }
+      })
+
+NuevaSituacionScreen (modo edición)
+  │
+  ├── Pre-rellena clima, carga_vehicular, departamento_id, municipio_id desde datosExistentes
+  ├── transformarDatosParaFormulario() mapea campos planos + JSONB datos
+  │
+  └── Al guardar:
+        PATCH /actividades/:id
+          body: { clima, carga_vehicular, departamento_id, municipio_id, datos, observaciones }
+```
+
+### Idempotencia en creación de actividades
+
+Al crear una nueva actividad, el móvil genera un `codigo_actividad` determinista con `expo-crypto` (UUID v4). Si la request falla y se reintenta, el backend rechaza el duplicado por la restricción `UNIQUE(codigo_actividad)` y retorna el registro existente (no crea duplicado).
+
+---
+
 ## Reglas de negocio críticas
 
 - **Solo BRIGADA** puede iniciar su propia salida (`POST /salidas/iniciar`)
