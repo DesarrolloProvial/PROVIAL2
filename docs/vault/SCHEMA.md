@@ -2,7 +2,7 @@
 
 > Fuente de verdad: PostgreSQL en Railway  
 > Conexión: `maglev.proxy.rlwy.net:31911/railway`  
-> Actualizado: 2026-04-29
+> Actualizado: 2026-05-19
 
 ---
 
@@ -37,6 +37,13 @@ Tabla central de usuarios. Reemplazó a `brigada` (migración 129).
 | rol_id                  | integer FK→rol  |                                               |
 | sede_id                 | integer FK→sede | Sede base del usuario                         |
 | activo                  | boolean         |                                               |
+| fecha_nacimiento        | date            | **Mig 129** — migrado de tabla brigada        |
+| licencia_tipo           | varchar(5)      | A/B/C/M/E                                     |
+| licencia_numero         | varchar(30)     |                                               |
+| licencia_vencimiento    | date            |                                               |
+| direccion               | text            |                                               |
+| contacto_emergencia     | varchar(150)    |                                               |
+| telefono_emergencia     | varchar(20)     |                                               |
 | created_at / updated_at | timestamptz     |                                               |
 
 **Roles válidos:** `BRIGADA`, `OPERACIONES`, `COP`, `TRANSPORTES`, `ADMIN`, `SUPER_ADMIN`, `ENCARGADO_NOMINAS`, `MANDOS`, `ACCIDENTOLOGIA`, `COMUNICACION_SOCIAL`
@@ -411,14 +418,19 @@ Inspección vehicular pre-salida.
 **Regla**: Solo inspecciones con `estado='APROBADA'` y `fecha_aprobacion > NOW()-24h` y `salida_id IS NULL` se asocian automáticamente al iniciar salida.
 
 ### `unidad_reparacion`
-Períodos en taller.
+Períodos en taller (migración 128).
 
-| Columna | Notas |
-|---|---|
-| unidad_id FK→unidad | |
-| fecha_entrada / fecha_salida | date |
-| motivo / descripcion | |
-| activa | boolean — si sigue en taller |
+| Columna | Tipo | Notas |
+|---|---|---|
+| id | serial PK | |
+| unidad_id | integer FK→unidad ON DELETE CASCADE | |
+| motivo | varchar(200) | Razón del ingreso a taller |
+| descripcion | text | Detalle adicional |
+| fecha_inicio | date | DEFAULT CURRENT_DATE |
+| fecha_fin | date | NULL si sigue en taller |
+| estado | varchar(20) | **EN_REPARACION** / COMPLETADA / CANCELADA |
+| registrado_por | integer FK→usuario | |
+| created_at / updated_at | timestamptz | |
 
 ---
 
@@ -503,6 +515,7 @@ El catálogo más importante. Define qué formulario usa cada tipo de evento.
 | `v_historial_inspecciones_360` | Historial de inspecciones por unidad |
 | `v_asignaciones_por_sede` | Asignaciones agrupadas por sede — base del dashboard de Operaciones. Todos los JOINs son LEFT JOIN; soporta `unidad_id = NULL`. Columnas: turno_id, fecha, turno_estado, publicado, sede_*, asignacion_id, unidad_*, ruta_*, km_inicio/km_final, sentido, acciones, acciones_formato, hora_salida, estado_nomina, en_ruta, salida_estado, asignacion_created_at |
 | `v_asignaciones_pendientes` | Asignaciones en turnos no CERRADO — sin filtro de fecha |
+| `v_estadisticas_unidades` | Estadísticas por unidad: turnos último mes/trimestre, km, combustible, días sin uso. Columnas: unidad_id/codigo/tipo_unidad/marca/modelo/sede_id/sede_nombre/activa/nivel_combustible/combustible_actual/tipo_combustible/odometro_actual/turnos_ultimo_mes/turnos_ultimo_trimestre/ultimo_turno_fecha/dias_desde_ultimo_uso/proximo_turno_fecha/km_ultimo_mes |
 
 ---
 

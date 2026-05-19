@@ -53,6 +53,9 @@ web/dist/
 *.sqlite
 *.sqlite3
 
+# Dumps de base de datos (contienen datos de producción)
+scripts/dumps/
+
 # Docker volumes
 postgres_data/
 redis_data/
