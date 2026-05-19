@@ -21,8 +21,15 @@ services:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # Base schema — se ejecuta al iniciar SI la BD está vacía
+      - ./docker/schema/000_base_schema.sql:/docker-entrypoint-initdb.d/00_base_schema.sql:ro
+      # Extensiones
+      - ./docker/init-scripts/01-enable-extensions.sql:/docker-entrypoint-initdb.d/01-extensions.sql:ro
+      # Datos iniciales (turnos de ejemplo)
+      - ./docker/schema/001_initial_data.sql:/docker-entrypoint-initdb.d/02_initial_data.sql:ro
+      # Migraciones incrementales (para aplicar después)
       - ./backend/migrations:/migrations:ro
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
@@ -50,6 +57,39 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+    networks:
+      - provial_network
+
+  # ============================================================
+  # MIGRATOR (aplica migraciones incrementales después del init)
+  # ============================================================
+  migrator:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: provial_migrator
+    volumes:
+      - ./backend/migrations:/migrations:ro
+    environment:
+      PGHOST: postgres
+      PGUSER: ${DB_USER:-postgres}
+      PGPASSWORD: ${DB_PASSWORD:-postgres}
+      PGDATABASE: provial_db
+    command: >
+      sh -c "
+        echo 'Esperando postgres...';
+        until psql -h $$PGHOST -U $$PGUSER -d $$PGDATABASE -c 'SELECT 1' > /dev/null 2>&1; do
+          sleep 2;
+        done;
+        echo 'Postgres listo. Ejecutando migraciones...';
+        for f in $$(ls /migrations/*.sql | sort); do
+          echo \"Ejecutando: $$f\";
+          psql -h $$PGHOST -U $$PGUSER -d $$PGDATABASE -f $$f 2>&1 || true;
+        done;
+        echo 'Migraciones completadas';
+      "
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
     networks:
       - provial_network
 
@@ -83,10 +123,8 @@ services:
       STORAGE_TYPE: local
       STORAGE_BASE_URL: ${STORAGE_BASE_URL}
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
