@@ -6,8 +6,11 @@ WORKDIR /app
 # Copiar package files
 COPY package*.json ./
 
-# Instalar dependencias (install funciona sin lock file)
+# Instalar dependencias
 RUN npm install
+
+# Copiar tsconfig (necesario para que tsc funcione)
+COPY tsconfig.json ./
 
 # Copiar código fuente
 COPY src ./src
@@ -25,6 +28,9 @@ RUN mkdir -p /app/uploads && chown -R node:node /app
 
 # Copiar package files
 COPY package*.json ./
+
+# Copiar tsconfig para validar en producción (opcional)
+COPY tsconfig.json ./
 
 # Instalar solo dependencias de producción
 RUN npm install --omit=dev && npm cache clean --force
