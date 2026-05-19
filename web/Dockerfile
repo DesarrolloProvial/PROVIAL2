@@ -4,7 +4,9 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+
+# npm install no requiere lock file (funciona igual en ci/local)
+RUN npm install
 
 COPY . .
 

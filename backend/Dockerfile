@@ -6,11 +6,11 @@ WORKDIR /app
 # Copiar package files
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm ci
+# Instalar dependencias (install funciona sin lock file)
+RUN npm install
 
 # Copiar código fuente
-COPY . .
+COPY src ./src
 
 # Compilar TypeScript
 RUN npm run build
@@ -27,7 +27,7 @@ RUN mkdir -p /app/uploads && chown -R node:node /app
 COPY package*.json ./
 
 # Instalar solo dependencias de producción
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 # Copiar código compilado
 COPY --from=builder /app/dist ./dist
