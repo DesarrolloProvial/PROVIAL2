@@ -614,3 +614,25 @@ uq_sm_actividad_inf_video        — solo 1 video por infografía de actividad
 **Trigger actualizado** (mig 147): `fn_actualizar_situacion_actual_actividad` usa `INSERT … ON CONFLICT (unidad_id) DO UPDATE` — atómico, elimina la race condition del patrón UPDATE + IF NOT FOUND INSERT.
 
 **Regla**: Nunca hacer `UPDATE situacion_actual SET x=NULL WHERE unidad_id=X` para "limpiar" el estado. Usar `DELETE FROM situacion_actual WHERE unidad_id=X`.
+
+---
+
+## D-037 — `asignacion_id` en `salida_unidad` y `bitacora_historica`
+
+**Antes (sin mig 148-151):**
+- `salida_unidad` no tenía `asignacion_id` → la única forma de vincular una salida a su asignación era por `unidad_id + fecha + estado = 'EN_SALIDA'` (frágil, solo funcionaba para activas).
+- `v_asignaciones_por_sede` usaba ese join frágil; en cuanto la salida pasaba a FINALIZADA o era borrada por `finalizar_jornada_completa`, se perdía el vínculo.
+- `finalizar_jornada_completa` buscaba la asignación a limpiar mediante `tripulacion_turno → asignacion_unidad → turno` + filtro de fecha — podía fallar si había cruce de medianoche o multiples turnos.
+- Salidas de emergencia COP no tenían asignación → `resolveContextoActivo()` funcionaba para COP (tiene hint de unidad_id) pero la brigada en campo no podía registrar situaciones (no encontraba contexto).
+
+**Después (mig 148-151):**
+- `salida_unidad.asignacion_id FK→asignacion_unidad ON DELETE SET NULL` → vínculo directo y exacto desde el momento de creación de la salida.
+- `bitacora_historica.asignacion_id INTEGER` (sin FK) → persiste el vínculo histórico antes de que `finalizar_jornada_completa` borre la asignación.
+- `finalizar_jornada_completa` lee `salida_unidad.asignacion_id` directamente (con fallback al join antiguo para salidas sin el campo).
+- `v_asignaciones_por_sede` usa LATERAL con prioridad a `asignacion_id`, fallback a `unidad_id + fecha` para retrocompatibilidad.
+- Salida emergencia COP (`POST /salidas/cop/salida-emergencia`): crea turno+asignacion+tripulacion_turno+salida en una sola transacción → `resolveContextoActivo` funciona para la brigada desde el móvil.
+
+**Regla**: Toda salida (APP, COP_EMERGENCIA) debe tener `asignacion_id` seteado. El setter se llama en:
+- `iniciarSalida` (brigada): `SalidaModel.setAsignacionId()` tras `iniciarSalidaBrigada()`
+- `iniciarSalidaCOP` (con asignacion_id en body): `setAsignacionId()` + `TurnoModel.marcarSalida()`
+- `iniciarSalidaEmergenciaCOP`: la transacción atómica lo setea internamente

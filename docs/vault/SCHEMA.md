@@ -194,10 +194,13 @@ Registro de cada salida real de una unidad a campo. Una por día operativo.
 | combustible_inicial / combustible_final | numeric(5,2) | 0.0–1.0 (VACIO→LLENO) |
 | km_recorridos | numeric(10,2) | Calculado |
 | tripulacion | jsonb | Snapshot de la tripulación al salir |
+| asignacion_id | integer FK→asignacion_unidad ON DELETE SET NULL | **Mig 148** — vínculo con la asignación que originó la salida |
 | sede_origen_id | integer FK→sede | Sede desde donde salió |
 | inspeccion_360_id | integer FK→inspeccion_360 | Inspección asociada |
-| origen | varchar | APP / COP_EMERGENCIA |
+| origen | varchar | APP / COP_EMERGENCIA / MANUAL |
 | finalizada_por | integer FK→usuario | |
+
+**Nota**: `finalizar_jornada_completa()` **borra** la fila de `salida_unidad` al terminar. Solo existen filas con `estado = EN_SALIDA` o `FINALIZADA` (override COP sin jornada completa). El histórico permanente está en `bitacora_historica`.
 
 ### `salida_evento`
 Auditoría operacional: cada edición, cambio de ruta, inicio COP, etc.
@@ -463,10 +466,18 @@ Historial de notificaciones enviadas.
 ## Auditoría y Bitácora
 
 ### `bitacora_historica`
-Snapshot de jornadas finalizadas. Particionada por año:
-- `bitacora_historica_2024`
-- `bitacora_historica_2025`
-- `bitacora_historica_2026`
+Snapshot permanente de jornadas finalizadas. Creado por `crear_snapshot_bitacora()` antes de que `finalizar_jornada_completa()` borre la `salida_unidad`. Particionada por año.
+
+| Columna clave | Notas |
+|---|---|
+| salida_id | ID de la salida_unidad (ya borrada cuando se consulta) |
+| asignacion_id | **Mig 148/149** — integer sin FK (la asignacion también fue borrada); referencia histórica al turno/asignacion que originó la salida |
+| unidad_id | FK permanente |
+| tripulacion_ids | JSONB snapshot `[{"usuario_id": X, "rol": "PILOTO"}]` |
+| situaciones_resumen | JSONB con id, tipo, km, hora, estado de cada situación |
+| total_incidentes / total_asistencias / total_emergencias / total_regulaciones / total_patrullajes | Contadores denormalizados |
+
+Particiones: `bitacora_historica_2024`, `bitacora_historica_2025`, `bitacora_historica_2026`
 
 ### `auditoria_log`
 Log general de cambios en el sistema.

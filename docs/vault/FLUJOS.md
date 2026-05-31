@@ -447,6 +447,55 @@ Al crear una nueva actividad, el móvil genera un `codigo_actividad` determinist
 
 ---
 
+## 14. COP — Salidas desde asignación y emergencia (mig 148-151)
+
+### Feature A: COP da salida desde asignación publicada
+
+El COP ve todas las asignaciones publicadas del día (`/cop/asignaciones`) y puede iniciar la salida de cualquiera que no haya salido aún.
+
+```
+GET /asignaciones-avanzadas/por-sede?fecha=hoy
+  └── Filtra: publicado=true, en_ruta=false, unidad_id IS NOT NULL
+
+COP presiona "Dar salida" → IniciarDesdeAsignacionModal → km + combustible
+
+POST /salidas/cop/iniciar-unidad
+  body: { unidad_id, asignacion_id, km_inicial, combustible_fraccion }
+    │
+    ├── iniciarSalidaCOPCompleto()     → crea salida_unidad (origen='COP_EMERGENCIA' si emergencia, 'APP' si planeada)
+    ├── SalidaModel.setAsignacionId()  → salida_unidad.asignacion_id = asignacion_id
+    ├── TurnoModel.marcarSalida()      → asignacion_unidad.hora_salida_real = NOW()
+    └── TurnoModel.updateEstado()      → turno.estado = 'ACTIVO'
+```
+
+**Resultado**: idéntico a la brigada dando salida desde el móvil. `resolveContextoActivo()` funciona para cualquier brigadista en la tripulacion_turno de esa asignación.
+
+---
+
+### Feature B: COP salida de emergencia (sin asignación previa)
+
+```
+COPSalidaEmergenciaModal → selecciona unidad + tripulación + ruta + km + combustible
+
+POST /salidas/cop/salida-emergencia
+  body: { unidad_id, ruta_id, km_inicial, combustible_fraccion, tripulacion[] }
+    │
+    └── SalidaModel.iniciarSalidaEmergenciaCOP() — transacción atómica:
+          1. Buscar turno ACTIVO/PLANIFICADO de hoy para la sede de la unidad
+             (o crear turno nuevo si no existe)
+          2. INSERT asignacion_unidad (unidad_id, ruta_id, tipo='PATRULLA')
+          3. INSERT tripulacion_turno por cada integrante
+          4. SELECT iniciar_salida_unidad()
+             └── Lee tripulacion_turno recién creado → tripulacion snapshot
+          5. UPDATE salida_unidad SET asignacion_id, origen='COP_EMERGENCIA'
+          6. UPDATE asignacion_unidad SET hora_salida_real = NOW()
+          7. INSERT salida_evento tipo='INICIO_COP'
+```
+
+**Resultado**: la salida queda con `asignacion_id` → aparece en bitácora, `resolveContextoActivo()` funciona para los brigadistas incluidos en la tripulación, y al finalizar la jornada `finalizar_jornada_completa()` limpia todo correctamente.
+
+---
+
 ## Reglas de negocio críticas
 
 - **Solo BRIGADA** puede iniciar su propia salida (`POST /salidas/iniciar`)
