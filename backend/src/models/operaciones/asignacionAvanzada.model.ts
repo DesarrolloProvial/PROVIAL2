@@ -478,5 +478,15 @@ export const AsignacionAvanzadaModel = {
       [asignacionId, accionesFormato]
     );
     return result.rowCount > 0;
-  }
+  },
+
+  async getAsignacionById(asignacionId: number): Promise<{ id: number; unidad_id: number; ruta_id: number | null; turno_id: number } | null> {
+    return db.oneOrNone(
+      `SELECT au.id, au.unidad_id, au.ruta_id, au.turno_id
+       FROM asignacion_unidad au
+       JOIN turno t ON au.turno_id = t.id
+       WHERE au.id = $1 AND t.publicado = true AND t.estado != 'CERRADO'`,
+      [asignacionId],
+    );
+  },
 };

@@ -4,6 +4,7 @@ import {
   getMiSalidaHoy,
   iniciarSalida,
   iniciarSalidaCOP,
+  iniciarSalidaEmergencia,
   finalizarSalida,
   cambiarRuta,
   getSalida,
@@ -30,8 +31,11 @@ router.patch('/editar-datos-salida', authenticate, authorize('BRIGADA'), editarD
 
 // ── COP (inicio y cierre administrativo) ────────────────────────────────────
 
-// Iniciar salida de emergencia desde COP sin inspección 360
+// Iniciar salida desde asignación publicada (COP da salida igual que brigada desde móvil)
 router.post('/cop/iniciar-unidad', authenticate, authorize('COP', 'OPERACIONES', 'ADMIN'), iniciarSalidaCOP);
+
+// Iniciar salida de emergencia: crea turno+asignacion+tripulacion+salida en una sola transacción
+router.post('/cop/salida-emergencia', authenticate, authorize('COP', 'OPERACIONES', 'ADMIN'), iniciarSalidaEmergencia);
 
 // Finalizar salida por ID — override administrativo (COP/Admin únicamente)
 // Brigada finaliza su jornada por POST /ingresos/finalizar-jornada

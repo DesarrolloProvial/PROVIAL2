@@ -39,6 +39,7 @@ import FlotaAnalyticsPage from './pages/transportes/FlotaAnalyticsPage';
 import AsignacionesPage from './pages/transportes/AsignacionesPage';
 import COPBitacoraPage from './pages/cop/COPBitacoraPage';
 import COPBitacoraDiaPage from './pages/cop/COPBitacoraDiaPage';
+import COPAsignacionesPage from './pages/cop/COPAsignacionesPage';
 import ComunicacionSocialPage from './pages/comunicacion-social/ComunicacionSocialPage';
 
 // Crear QueryClient
@@ -413,6 +414,14 @@ function App() {
             element={
               <COPRoute>
                 <COPBitacoraPage />
+              </COPRoute>
+            }
+          />
+          <Route
+            path="/cop/asignaciones"
+            element={
+              <COPRoute>
+                <COPAsignacionesPage />
               </COPRoute>
             }
           />

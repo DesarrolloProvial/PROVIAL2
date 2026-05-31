@@ -122,8 +122,9 @@ export async function iniciarSalida(req: Request, res: Response) {
       observaciones_salida: observaciones_salida || null,
     });
 
-    // Actualizar turno (no fatal si falla)
+    // Vincular salida con asignacion y actualizar turno (no fatal si falla)
     try {
+      await SalidaModel.setAsignacionId(salidaId, asignacionTurno.asignacion_id);
       if (ruta_inicial_id && asignacionTurno.ruta_id !== normalizeId(ruta_inicial_id)) {
         await TurnoModel.updateAsignacion(asignacionTurno.asignacion_id, {
           ruta_id: normalizeId(ruta_inicial_id)!,
@@ -175,6 +176,7 @@ export async function iniciarSalidaCOP(req: Request, res: Response) {
   try {
     const {
       unidad_id,
+      asignacion_id,
       ruta_inicial_id,
       km_inicial,
       combustible_inicial,
@@ -184,20 +186,32 @@ export async function iniciarSalidaCOP(req: Request, res: Response) {
     } = req.body;
 
     if (!unidad_id) return res.status(400).json({ error: 'unidad_id es requerido' });
-
     const unidadId = normalizeId(unidad_id);
     if (!unidadId) return res.status(400).json({ error: 'unidad_id inválido' });
 
-    const indicador = parseIndicador(combustible_fraccion ?? combustible_inicial);
+    const asignacionId = normalizeId(asignacion_id) ?? null;
+    const indicador    = parseIndicador(combustible_fraccion ?? combustible_inicial);
+
+    // Si viene asignacion_id: salida desde asignación publicada (misma lógica que brigada)
+    let rutaId = normalizeId(ruta_inicial_id) ?? null;
+    let turnoId: number | null = null;
+    if (asignacionId) {
+      const asig = await (await import('../../models/operaciones/asignacionAvanzada.model')).AsignacionAvanzadaModel
+        .getAsignacionById(asignacionId).catch(() => null);
+      if (!asig) return res.status(404).json({ error: 'Asignación no encontrada' });
+      if (asig.unidad_id !== unidadId) return res.status(400).json({ error: 'La asignación no corresponde a esta unidad' });
+      rutaId = rutaId ?? asig.ruta_id ?? null;
+      turnoId = asig.turno_id ?? null;
+    }
 
     const resultado = await SalidaModel.iniciarSalidaCOPCompleto({
-      unidad_id:         unidadId,
-      ruta_inicial_id:   normalizeId(ruta_inicial_id) ?? null,
-      km_inicial:        normalizeId(km_inicial) ?? null,
+      unidad_id:            unidadId,
+      ruta_inicial_id:      rutaId,
+      km_inicial:           normalizeId(km_inicial) ?? null,
       indicador,
       observaciones_salida: observaciones_salida ?? null,
-      tripulacion:       Array.isArray(tripulacion) ? tripulacion : null,
-      userId:            req.user!.userId,
+      tripulacion:          Array.isArray(tripulacion) ? tripulacion : null,
+      userId:               req.user!.userId,
     });
 
     if ('conflict' in resultado) {
@@ -205,6 +219,18 @@ export async function iniciarSalidaCOP(req: Request, res: Response) {
     }
 
     const { salidaId } = resultado;
+
+    // Vincular con asignacion y actualizar turno (igual que brigada)
+    if (asignacionId) {
+      try {
+        await SalidaModel.setAsignacionId(salidaId, asignacionId);
+        await TurnoModel.marcarSalida(asignacionId);
+        if (turnoId) await TurnoModel.updateEstado(turnoId, 'ACTIVO');
+      } catch (e) {
+        console.warn('[COP_SALIDA] No se pudo actualizar asignacion/turno:', e);
+      }
+    }
+
     const salida = await SalidaModel.getSalidaById(salidaId);
     if (salida) {
       const s = salida as any;
@@ -213,14 +239,83 @@ export async function iniciarSalidaCOP(req: Request, res: Response) {
         unidad_codigo: s.unidad_codigo || `U-${unidadId}`,
         estado: 'EN_SALIDA',
         sede_id: s.sede_id,
-        ruta_id: normalizeId(ruta_inicial_id) || undefined,
-        ultima_situacion: 'SALIDA_INICIADA_COP',
+        ruta_id: rutaId || undefined,
+        ultima_situacion: asignacionId ? 'SALIDA_INICIADA' : 'SALIDA_INICIADA_COP',
       });
     }
 
     return res.status(201).json({ message: 'Salida iniciada desde COP', salida_id: salidaId, salida });
   } catch (error) {
     console.error('Error en iniciarSalidaCOP:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+/**
+ * POST /api/salidas/cop/salida-emergencia
+ * Crea turno + asignacion + tripulacion + salida en una sola transacción.
+ */
+export async function iniciarSalidaEmergencia(req: Request, res: Response) {
+  try {
+    const {
+      unidad_id,
+      ruta_id,
+      km_inicial,
+      combustible_inicial,
+      combustible_fraccion,
+      observaciones_salida,
+      tripulacion,
+    } = req.body;
+
+    if (!unidad_id)                        return res.status(400).json({ error: 'unidad_id es requerido' });
+    if (!Array.isArray(tripulacion) || tripulacion.length === 0)
+                                           return res.status(400).json({ error: 'Se requiere al menos un integrante en la tripulación' });
+
+    const unidadId  = normalizeId(unidad_id);
+    if (!unidadId) return res.status(400).json({ error: 'unidad_id inválido' });
+    const indicador = parseIndicador(combustible_fraccion ?? combustible_inicial);
+
+    const resultado = await SalidaModel.iniciarSalidaEmergenciaCOP({
+      unidad_id:  unidadId,
+      ruta_id:    normalizeId(ruta_id) ?? null,
+      km_inicial: normalizeId(km_inicial) ?? null,
+      indicador,
+      obs:        observaciones_salida ?? null,
+      tripulacion: tripulacion.map((m: any) => ({
+        usuario_id:      Number(m.usuario_id),
+        rol_tripulacion: m.rol_en_salida ?? m.rol_tripulacion ?? 'ACOMPAÑANTE',
+        es_comandante:   m.es_comandante ?? false,
+      })),
+      userId: req.user!.userId,
+    });
+
+    if ('conflict' in resultado) {
+      return res.status(409).json({ error: 'La unidad ya tiene una salida activa' });
+    }
+
+    const { salidaId, asignacion_id, forzadaNoDisponible } = resultado;
+    const salida = await SalidaModel.getSalidaById(salidaId);
+    if (salida) {
+      const s = salida as any;
+      emitUnidadCambioEstado({
+        unidad_id: unidadId,
+        unidad_codigo: s.unidad_codigo || `U-${unidadId}`,
+        estado: 'EN_SALIDA',
+        sede_id: s.sede_id,
+        ruta_id: normalizeId(ruta_id) || undefined,
+        ultima_situacion: 'SALIDA_INICIADA_COP',
+      });
+    }
+
+    return res.status(201).json({
+      message: 'Salida de emergencia iniciada',
+      salida_id: salidaId,
+      asignacion_id,
+      forzada_no_disponible: forzadaNoDisponible,
+      salida,
+    });
+  } catch (error) {
+    console.error('Error en iniciarSalidaEmergencia:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
