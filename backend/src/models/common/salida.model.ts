@@ -777,11 +777,8 @@ export const SalidaModel = {
     if (!salidaInfo) return null;
 
     await db.tx(async (conn) => {
+      // Cerrar actividades abiertas (no se borran ni se desvinculan — datos históricos)
       await ActividadModel.cerrarActivasDeUnidad(salidaInfo.unidad_id, conn);
-      await conn.none(
-        `UPDATE actividad SET salida_unidad_id = NULL WHERE salida_unidad_id = $1`,
-        [salidaId],
-      );
 
       const { success } = await conn.one<{ success: boolean }>(
         `SELECT finalizar_salida_unidad($1, $2, $3, $4, $5) AS success`,
@@ -789,6 +786,10 @@ export const SalidaModel = {
       );
       if (!success) throw new Error('finalizar_salida_unidad retornó false');
 
+      // Crear snapshot en bitacora_historica para trazabilidad
+      await conn.one(`SELECT crear_snapshot_bitacora($1, $2) AS id`, [salidaId, data.userId]);
+
+      // Limpiar estado en tiempo real del mapa COP
       await conn.none(
         `DELETE FROM situacion_actual WHERE unidad_id = $1`,
         [salidaInfo.unidad_id],
