@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict f3w807FOZhXmfQ5iLhkLzjAc8rt3VkwHwVgWk0S5cttOIDDxV2OszXn4VKkd5UE
+\restrict fevJdaCEG1NJRHvI3MegE4fesMJLVQc8fTV3dicsZ9L5vBHMDVeNFVI78GqIT78
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -3592,23 +3592,24 @@ BEGIN
         SELECT su.id, su.finalizada_por
         FROM salida_unidad su
         WHERE su.estado = 'FINALIZADA'
-          AND DATE(su.fecha_hora_salida AT TIME ZONE 'America/Guatemala')
-              BETWEEN v_fecha_ini AND v_fecha_fin
+          -- Mismo cast que usar crear_snapshot_bitacora para calcular fecha_jornada
+          AND su.fecha_hora_salida::DATE BETWEEN v_fecha_ini AND v_fecha_fin
         ORDER BY su.fecha_hora_salida
     LOOP
         BEGIN
             PERFORM crear_snapshot_bitacora(v_salida.id, v_salida.finalizada_por);
             v_count := v_count + 1;
         EXCEPTION WHEN OTHERS THEN
-            -- Continuar aunque una salida falle (datos corruptos, etc.)
-            NULL;
+            RAISE WARNING 'Error reconstruyendo salida_id=%: %', v_salida.id, SQLERRM;
         END;
     END LOOP;
 
     RETURN QUERY SELECT
         v_count,
-        format('Reconstruidas %s entradas de bitácora entre %s y %s.',
-               v_count, v_fecha_ini, v_fecha_fin)::TEXT;
+        format(
+            'Reconstruidas %s entradas de bitacora entre %s y %s.',
+            v_count, v_fecha_ini, v_fecha_fin
+        )::TEXT;
 END;
 $$;
 
@@ -3617,7 +3618,7 @@ $$;
 -- Name: FUNCTION reconstruir_bitacora_historica(p_fecha_inicio date, p_fecha_fin date); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.reconstruir_bitacora_historica(p_fecha_inicio date, p_fecha_fin date) IS 'Regenera bitacora_historica desde las tablas operacionales (salida_unidad, situacion, actividad, ingreso_sede). Útil si se borra o corrompe la tabla de snapshots. Solo procesa salidas con estado=FINALIZADA que existan en salida_unidad.';
+COMMENT ON FUNCTION public.reconstruir_bitacora_historica(p_fecha_inicio date, p_fecha_fin date) IS 'Regenera bitacora_historica desde las tablas operacionales. Filtra por fecha_hora_salida::DATE (UTC), igual que crear_snapshot_bitacora. Solo procesa estado=FINALIZADA.';
 
 
 --
@@ -26787,7 +26788,7 @@ COPY public.vehiculo_grua (id, situacion_vehiculo_id, grua_id, datos, created_at
 -- Name: actividad_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.actividad_id_seq', 84, true);
+SELECT pg_catalog.setval('public.actividad_id_seq', 86, true);
 
 
 --
@@ -26822,7 +26823,7 @@ SELECT pg_catalog.setval('public.aseguradora_id_seq', 1, false);
 -- Name: asignacion_unidad_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.asignacion_unidad_id_seq', 78, true);
+SELECT pg_catalog.setval('public.asignacion_unidad_id_seq', 81, true);
 
 
 --
@@ -26850,7 +26851,7 @@ SELECT pg_catalog.setval('public.aviso_asignacion_id_seq', 1, false);
 -- Name: bitacora_historica_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.bitacora_historica_id_seq', 4, true);
+SELECT pg_catalog.setval('public.bitacora_historica_id_seq', 7, true);
 
 
 --
@@ -27053,7 +27054,7 @@ SELECT pg_catalog.setval('public.historial_situacion_brigada_id_seq', 1, false);
 -- Name: ingreso_sede_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.ingreso_sede_id_seq', 37, true);
+SELECT pg_catalog.setval('public.ingreso_sede_id_seq', 39, true);
 
 
 --
@@ -27235,7 +27236,7 @@ SELECT pg_catalog.setval('public.salida_evento_id_seq', 101, true);
 -- Name: salida_unidad_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.salida_unidad_id_seq', 26, true);
+SELECT pg_catalog.setval('public.salida_unidad_id_seq', 29, true);
 
 
 --
@@ -27284,7 +27285,7 @@ SELECT pg_catalog.setval('public.situacion_conflicto_id_seq', 1, false);
 -- Name: situacion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.situacion_id_seq', 11577, true);
+SELECT pg_catalog.setval('public.situacion_id_seq', 11581, true);
 
 
 --
@@ -27354,14 +27355,14 @@ SELECT pg_catalog.setval('public.topografia_via_id_seq', 3, true);
 -- Name: tripulacion_turno_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.tripulacion_turno_id_seq', 160, true);
+SELECT pg_catalog.setval('public.tripulacion_turno_id_seq', 166, true);
 
 
 --
 -- Name: turno_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.turno_id_seq', 16, true);
+SELECT pg_catalog.setval('public.turno_id_seq', 19, true);
 
 
 --
@@ -32685,5 +32686,5 @@ REFRESH MATERIALIZED VIEW public.mv_vehiculos_reincidentes;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict f3w807FOZhXmfQ5iLhkLzjAc8rt3VkwHwVgWk0S5cttOIDDxV2OszXn4VKkd5UE
+\unrestrict fevJdaCEG1NJRHvI3MegE4fesMJLVQc8fTV3dicsZ9L5vBHMDVeNFVI78GqIT78
 
