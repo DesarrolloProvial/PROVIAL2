@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict pb3tuajOofjNBxxsCBhs1bfZL7wNcwNJXrTLURfj2hN8BfmpM2S5jAUxczGfK0E
+\restrict f3w807FOZhXmfQ5iLhkLzjAc8rt3VkwHwVgWk0S5cttOIDDxV2OszXn4VKkd5UE
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -1021,6 +1021,7 @@ DROP FUNCTION IF EXISTS public.registrar_salida_de_sede(p_ingreso_id integer, p_
 DROP FUNCTION IF EXISTS public.registrar_ingreso_sede(p_salida_id integer, p_sede_id integer, p_tipo_ingreso character varying, p_km numeric, p_combustible numeric, p_observaciones text, p_es_ingreso_final boolean, p_registrado_por integer);
 DROP FUNCTION IF EXISTS public.registrar_cambio(p_tipo_cambio character varying, p_usuario_afectado_id integer, p_motivo text, p_realizado_por integer, p_valores_anteriores jsonb, p_valores_nuevos jsonb, p_asignacion_id integer, p_situacion_id bigint, p_unidad_id integer, p_autorizado_por integer);
 DROP FUNCTION IF EXISTS public.refresh_intelligence_views();
+DROP FUNCTION IF EXISTS public.reconstruir_bitacora_historica(p_fecha_inicio date, p_fecha_fin date);
 DROP FUNCTION IF EXISTS public.rechazar_inspeccion_360(p_inspeccion_id integer, p_aprobador_id integer, p_motivo text);
 DROP FUNCTION IF EXISTS public.puede_iniciar_salida_con_360(p_salida_id integer);
 DROP FUNCTION IF EXISTS public.obtener_tokens_tripulacion(p_salida_id integer);
@@ -1767,18 +1768,16 @@ CREATE FUNCTION public.crear_snapshot_bitacora(p_salida_id integer, p_finalizado
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    v_salida       RECORD;
-    v_situaciones  JSONB;
-    v_ingresos     JSONB;
-    v_tripulacion  JSONB;
-    v_contadores   RECORD;
-    v_bitacora_id  BIGINT;
+    v_salida        RECORD;
+    v_situaciones   JSONB;
+    v_actividades   JSONB;
+    v_ingresos      JSONB;
+    v_tripulacion   JSONB;
+    v_contadores    RECORD;
+    v_bitacora_id   BIGINT;
 BEGIN
-    -- Obtener datos de la salida (incluye asignacion_id agregado en mig 148)
-    SELECT
-        s.*,
-        u.id as unidad_id_ref,
-        s.fecha_hora_salida::DATE as fecha_jornada
+    -- Obtener datos de la salida
+    SELECT s.*, s.fecha_hora_salida::DATE AS fecha_jornada
     INTO v_salida
     FROM salida_unidad s
     JOIN unidad u ON s.unidad_id = u.id
@@ -1788,71 +1787,94 @@ BEGIN
         RAISE EXCEPTION 'Salida no encontrada: %', p_salida_id;
     END IF;
 
-    -- Obtener resumen de situaciones
+    -- Resumen de situaciones (todas — ya no se borran)
     SELECT COALESCE(jsonb_agg(jsonb_build_object(
-        'id', id,
-        'tipo', tipo_situacion,
-        'km', km,
-        'hora', to_char(created_at, 'HH24:MI'),
-        'estado', estado,
+        'id',      id,
+        'tipo',    tipo_situacion,
+        'km',      km,
+        'hora',    to_char(created_at, 'HH24:MI'),
+        'estado',  estado,
         'ruta_id', ruta_id
     ) ORDER BY created_at), '[]'::jsonb)
     INTO v_situaciones
     FROM situacion
     WHERE salida_unidad_id = p_salida_id;
 
-    -- Obtener resumen de ingresos
+    -- Resumen de actividades
     SELECT COALESCE(jsonb_agg(jsonb_build_object(
-        'id', id,
-        'tipo', tipo_ingreso,
-        'sede_id', sede_id,
-        'duracion_min', EXTRACT(EPOCH FROM (COALESCE(fecha_hora_salida, NOW()) - fecha_hora_ingreso))/60,
-        'es_final', es_ingreso_final
+        'id',              a.id,
+        'codigo',          a.codigo_actividad,
+        'tipo_id',         a.tipo_actividad_id,
+        'tipo_nombre',     cts.nombre,
+        'km',              a.km,
+        'hora',            to_char(a.created_at, 'HH24:MI'),
+        'estado',          a.estado,
+        'ruta_id',         a.ruta_id,
+        'clima',           a.clima,
+        'carga_vehicular', a.carga_vehicular
+    ) ORDER BY a.created_at), '[]'::jsonb)
+    INTO v_actividades
+    FROM actividad a
+    LEFT JOIN catalogo_tipo_situacion cts ON a.tipo_actividad_id = cts.id
+    WHERE a.salida_unidad_id = p_salida_id;
+
+    -- Resumen de ingresos a sede
+    SELECT COALESCE(jsonb_agg(jsonb_build_object(
+        'id',           id,
+        'tipo',         tipo_ingreso,
+        'sede_id',      sede_id,
+        'duracion_min', EXTRACT(EPOCH FROM (
+            COALESCE(fecha_hora_salida, NOW()) - fecha_hora_ingreso
+        ))/60,
+        'es_final',     es_ingreso_final
     ) ORDER BY fecha_hora_ingreso), '[]'::jsonb)
     INTO v_ingresos
     FROM ingreso_sede
     WHERE salida_unidad_id = p_salida_id;
 
-    -- Procesar tripulación (formato snapshot: [{"usuario_id": X, "rol": "PILOTO"}, ...])
+    -- Tripulación (snapshot tomado al salir, guardado en salida_unidad.tripulacion)
     SELECT COALESCE(
         jsonb_agg(jsonb_build_object(
             'usuario_id', (elem->>'brigada_id')::INTEGER,
-            'rol', UPPER(elem->>'rol')
+            'rol',        UPPER(elem->>'rol')
         )) FILTER (WHERE elem->>'brigada_id' IS NOT NULL),
         '[]'::jsonb
     )
     INTO v_tripulacion
     FROM jsonb_array_elements(COALESCE(v_salida.tripulacion, '[]'::jsonb)) elem;
 
-    -- Calcular contadores
+    -- Contadores de situaciones
     SELECT
-        COUNT(*) FILTER (WHERE tipo_situacion = 'INCIDENTE')                              AS incidentes,
-        COUNT(*) FILTER (WHERE tipo_situacion = 'ASISTENCIA')                             AS asistencias,
-        COUNT(*) FILTER (WHERE tipo_situacion = 'EMERGENCIA')                             AS emergencias,
-        COUNT(*) FILTER (WHERE tipo_situacion IN ('REGULACION', 'REGULACION_TRANSITO'))   AS regulaciones,
-        COUNT(*) FILTER (WHERE tipo_situacion = 'PATRULLAJE')                             AS patrullajes,
-        COUNT(*)                                                                           AS total
+        COUNT(*) FILTER (WHERE tipo_situacion = 'INCIDENTE')                             AS incidentes,
+        COUNT(*) FILTER (WHERE tipo_situacion = 'ASISTENCIA')                            AS asistencias,
+        COUNT(*) FILTER (WHERE tipo_situacion = 'EMERGENCIA')                            AS emergencias,
+        COUNT(*) FILTER (WHERE tipo_situacion IN ('REGULACION','REGULACION_TRANSITO'))   AS regulaciones,
+        COUNT(*) FILTER (WHERE tipo_situacion = 'PATRULLAJE')                            AS patrullajes,
+        COUNT(*)                                                                          AS total
     INTO v_contadores
     FROM situacion
     WHERE salida_unidad_id = p_salida_id;
 
-    -- Insertar snapshot en bitacora_historica (ahora incluye asignacion_id)
+    -- Insertar / actualizar snapshot
     INSERT INTO bitacora_historica (
         fecha, unidad_id, salida_id, asignacion_id,
         sede_origen_id, ruta_inicial_id,
         km_inicial, km_final, km_recorridos,
         combustible_inicial, combustible_final,
         hora_inicio, hora_fin, duracion_minutos,
-        tripulacion_ids, situaciones_resumen, total_situaciones,
-        ingresos_resumen, total_ingresos,
+        tripulacion_ids,
+        situaciones_resumen, total_situaciones,
+        actividades_resumen, total_actividades,
+        ingresos_resumen,    total_ingresos,
         total_incidentes, total_asistencias, total_emergencias,
         total_regulaciones, total_patrullajes,
-        observaciones_inicio, observaciones_fin, finalizado_por
+        observaciones_inicio, observaciones_fin,
+        finalizado_por
     ) VALUES (
         v_salida.fecha_jornada,
         v_salida.unidad_id,
         p_salida_id,
-        v_salida.asignacion_id,          -- ← NUEVO: persiste antes de que finalizar_jornada lo borre
+        v_salida.asignacion_id,
         v_salida.sede_origen_id,
         v_salida.ruta_inicial_id,
         v_salida.km_inicial,
@@ -1862,41 +1884,47 @@ BEGIN
         v_salida.combustible_final,
         v_salida.fecha_hora_salida,
         v_salida.fecha_hora_regreso,
-        EXTRACT(EPOCH FROM (COALESCE(v_salida.fecha_hora_regreso, NOW()) - v_salida.fecha_hora_salida))/60,
+        EXTRACT(EPOCH FROM (
+            COALESCE(v_salida.fecha_hora_regreso, NOW()) - v_salida.fecha_hora_salida
+        ))/60,
         v_tripulacion,
         v_situaciones,
         COALESCE(v_contadores.total, 0),
+        v_actividades,
+        (SELECT COUNT(*) FROM actividad WHERE salida_unidad_id = p_salida_id),
         v_ingresos,
         (SELECT COUNT(*) FROM ingreso_sede WHERE salida_unidad_id = p_salida_id),
-        COALESCE(v_contadores.incidentes, 0),
-        COALESCE(v_contadores.asistencias, 0),
-        COALESCE(v_contadores.emergencias, 0),
+        COALESCE(v_contadores.incidentes,   0),
+        COALESCE(v_contadores.asistencias,  0),
+        COALESCE(v_contadores.emergencias,  0),
         COALESCE(v_contadores.regulaciones, 0),
-        COALESCE(v_contadores.patrullajes, 0),
+        COALESCE(v_contadores.patrullajes,  0),
         v_salida.observaciones_salida,
         v_salida.observaciones_regreso,
         p_finalizado_por
     )
     ON CONFLICT (fecha, unidad_id)
     DO UPDATE SET
-        salida_id          = EXCLUDED.salida_id,
-        asignacion_id      = EXCLUDED.asignacion_id,
-        km_final           = EXCLUDED.km_final,
-        km_recorridos      = EXCLUDED.km_recorridos,
-        combustible_final  = EXCLUDED.combustible_final,
-        hora_fin           = EXCLUDED.hora_fin,
-        duracion_minutos   = EXCLUDED.duracion_minutos,
-        situaciones_resumen  = EXCLUDED.situaciones_resumen,
-        total_situaciones    = EXCLUDED.total_situaciones,
-        ingresos_resumen     = EXCLUDED.ingresos_resumen,
-        total_ingresos       = EXCLUDED.total_ingresos,
-        total_incidentes     = EXCLUDED.total_incidentes,
-        total_asistencias    = EXCLUDED.total_asistencias,
-        total_emergencias    = EXCLUDED.total_emergencias,
-        total_regulaciones   = EXCLUDED.total_regulaciones,
-        total_patrullajes    = EXCLUDED.total_patrullajes,
-        observaciones_fin    = EXCLUDED.observaciones_fin,
-        finalizado_por       = EXCLUDED.finalizado_por
+        salida_id           = EXCLUDED.salida_id,
+        asignacion_id       = EXCLUDED.asignacion_id,
+        km_final            = EXCLUDED.km_final,
+        km_recorridos       = EXCLUDED.km_recorridos,
+        combustible_final   = EXCLUDED.combustible_final,
+        hora_fin            = EXCLUDED.hora_fin,
+        duracion_minutos    = EXCLUDED.duracion_minutos,
+        situaciones_resumen = EXCLUDED.situaciones_resumen,
+        total_situaciones   = EXCLUDED.total_situaciones,
+        actividades_resumen = EXCLUDED.actividades_resumen,
+        total_actividades   = EXCLUDED.total_actividades,
+        ingresos_resumen    = EXCLUDED.ingresos_resumen,
+        total_ingresos      = EXCLUDED.total_ingresos,
+        total_incidentes    = EXCLUDED.total_incidentes,
+        total_asistencias   = EXCLUDED.total_asistencias,
+        total_emergencias   = EXCLUDED.total_emergencias,
+        total_regulaciones  = EXCLUDED.total_regulaciones,
+        total_patrullajes   = EXCLUDED.total_patrullajes,
+        observaciones_fin   = EXCLUDED.observaciones_fin,
+        finalizado_por      = EXCLUDED.finalizado_por
     RETURNING id INTO v_bitacora_id;
 
     RETURN v_bitacora_id;
@@ -1919,12 +1947,10 @@ CREATE FUNCTION public.finalizar_jornada_completa(p_salida_id integer, p_km_fina
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    v_salida                RECORD;
-    v_bitacora_id           BIGINT;
-    v_asignacion_id         INTEGER;
-    v_turno_id              INTEGER;
-    v_situaciones_eliminadas INTEGER;
-    v_situaciones_persistentes INTEGER;
+    v_salida        RECORD;
+    v_bitacora_id   BIGINT;
+    v_asignacion_id INTEGER;
+    v_turno_id      INTEGER;
 BEGIN
     -- 1. Verificar que la salida existe y está EN_SALIDA
     SELECT s.*, u.codigo AS unidad_codigo
@@ -1934,40 +1960,48 @@ BEGIN
     WHERE s.id = p_salida_id AND s.estado = 'EN_SALIDA';
 
     IF NOT FOUND THEN
-        RETURN QUERY SELECT FALSE, NULL::BIGINT, 'Salida no encontrada o ya finalizada'::TEXT;
+        RETURN QUERY SELECT FALSE, NULL::BIGINT,
+            'Salida no encontrada o ya finalizada'::TEXT;
         RETURN;
     END IF;
 
-    -- 2. Cerrar todos los ingresos activos de esta salida
+    -- 2. Cerrar ingresos activos de esta salida (mantener el registro histórico)
     UPDATE ingreso_sede
     SET fecha_hora_salida = NOW()
-    WHERE salida_unidad_id = p_salida_id AND fecha_hora_salida IS NULL;
+    WHERE salida_unidad_id = p_salida_id
+      AND fecha_hora_salida IS NULL;
 
-    -- 3. Actualizar la salida como FINALIZADA
+    -- 3. Marcar salida como FINALIZADA — no se borra, queda como registro histórico
     UPDATE salida_unidad SET
-        estado             = 'FINALIZADA',
-        fecha_hora_regreso = NOW(),
-        km_final           = p_km_final,
-        combustible_final  = p_combustible_final,
-        km_recorridos      = ABS(COALESCE(p_km_final, 0) - COALESCE(km_inicial, 0)),
+        estado              = 'FINALIZADA',
+        fecha_hora_regreso  = NOW(),
+        km_final            = p_km_final,
+        combustible_final   = p_combustible_final,
+        km_recorridos       = ABS(COALESCE(p_km_final, 0) - COALESCE(km_inicial, 0)),
         observaciones_regreso = p_observaciones,
-        finalizada_por     = p_finalizada_por,
-        updated_at         = NOW()
+        finalizada_por      = p_finalizada_por,
+        updated_at          = NOW()
     WHERE id = p_salida_id;
 
-    -- 4. Crear snapshot en bitacora_historica ANTES de eliminar datos temporales
-    --    crear_snapshot_bitacora (mig 149) ya lee y persiste asignacion_id
+    -- 4. Crear snapshot en bitacora_historica para consultas históricas rápidas
+    --    Los datos originales se mantienen intactos en todas sus tablas
     v_bitacora_id := crear_snapshot_bitacora(p_salida_id, p_finalizada_por);
 
-    -- 5. Buscar la asignación relacionada
-    --    Ruta directa: salida_unidad.asignacion_id (mig 148, exacto)
-    --    Fallback: join por tripulacion_turno + fecha (para salidas sin asignacion_id)
+    -- 5. Cerrar asignación operacional (sin borrar — dato histórico de planificación)
+    --    Ruta directa via asignacion_id (mig 148); fallback por fecha
     IF v_salida.asignacion_id IS NOT NULL THEN
-        SELECT v_salida.asignacion_id, au.turno_id
-        INTO v_asignacion_id, v_turno_id
-        FROM asignacion_unidad au
-        WHERE au.id = v_salida.asignacion_id;
+        v_asignacion_id := v_salida.asignacion_id;
+
+        UPDATE asignacion_unidad
+        SET hora_entrada_real = NOW()
+        WHERE id = v_asignacion_id
+          AND hora_entrada_real IS NULL;
+
+        SELECT turno_id INTO v_turno_id
+        FROM asignacion_unidad WHERE id = v_asignacion_id;
+
     ELSE
+        -- Fallback para salidas creadas antes de mig 148 (sin asignacion_id)
         SELECT tt.asignacion_id, au.turno_id
         INTO v_asignacion_id, v_turno_id
         FROM tripulacion_turno tt
@@ -1978,51 +2012,45 @@ BEGIN
               t.fecha = CURRENT_DATE
               OR t.fecha = CURRENT_DATE - INTERVAL '1 day'
               OR t.fecha = CURRENT_DATE + INTERVAL '1 day'
-              OR (t.fecha <= CURRENT_DATE AND COALESCE(t.fecha_fin, t.fecha) >= CURRENT_DATE)
           )
         LIMIT 1;
-    END IF;
 
-    -- 6. Limpiar asignación de turno si existe
-    IF v_asignacion_id IS NOT NULL THEN
-        DELETE FROM tripulacion_turno WHERE asignacion_id = v_asignacion_id;
-        DELETE FROM asignacion_unidad WHERE id = v_asignacion_id;
-        IF NOT EXISTS (SELECT 1 FROM asignacion_unidad WHERE turno_id = v_turno_id) THEN
-            DELETE FROM turno WHERE id = v_turno_id;
+        IF v_asignacion_id IS NOT NULL THEN
+            UPDATE asignacion_unidad
+            SET hora_entrada_real = NOW()
+            WHERE id = v_asignacion_id
+              AND hora_entrada_real IS NULL;
         END IF;
     END IF;
 
-    -- 7. Eliminar solo situaciones temporales (ya están en bitacora como resumen)
-    DELETE FROM situacion
-    WHERE salida_unidad_id = p_salida_id
-      AND tipo_situacion IN (
-          'PATRULLAJE', 'COMIDA', 'DESCANSO',
-          'PARADA_ESTRATEGICA', 'CAMBIO_RUTA',
-          'REGULACION_TRAFICO', 'SALIDA_SEDE'
-      );
-    GET DIAGNOSTICS v_situaciones_eliminadas = ROW_COUNT;
+    -- 6. Cerrar turno si todas sus salidas activas ya finalizaron
+    IF v_turno_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1
+            FROM asignacion_unidad au
+            JOIN salida_unidad su ON su.asignacion_id = au.id
+            WHERE au.turno_id = v_turno_id
+              AND su.estado = 'EN_SALIDA'
+        ) THEN
+            UPDATE turno
+            SET estado = 'CERRADO', updated_at = NOW()
+            WHERE id = v_turno_id
+              AND estado != 'CERRADO';
+        END IF;
+    END IF;
 
-    -- 8. Contar situaciones persistentes que se mantienen
-    SELECT COUNT(*) INTO v_situaciones_persistentes
-    FROM situacion WHERE salida_unidad_id = p_salida_id;
+    -- 7. Limpiar situacion_actual — solo el estado en tiempo real del mapa COP
+    --    Los datos históricos están en situacion, actividad, etc.
+    DELETE FROM situacion_actual WHERE unidad_id = v_salida.unidad_id;
 
-    -- 9. Desvincular situaciones persistentes de la salida
-    UPDATE situacion SET salida_unidad_id = NULL
-    WHERE salida_unidad_id = p_salida_id
-      AND tipo_situacion IN ('INCIDENTE', 'ASISTENCIA_VEHICULAR', 'OTROS');
-
-    -- 10. Eliminar ingresos y la salida (ya fue copiada a bitacora_historica)
-    DELETE FROM ingreso_sede WHERE salida_unidad_id = p_salida_id;
-    DELETE FROM salida_unidad WHERE id = p_salida_id;
-
-    -- 11. Retornar éxito
+    -- 8. Retornar éxito
     RETURN QUERY SELECT
         TRUE,
         v_bitacora_id,
         format(
-            'Jornada finalizada. Unidad %s liberada. Bitácora #%s. Situaciones eliminadas: %s, persistentes: %s',
-            v_salida.unidad_codigo, v_bitacora_id,
-            v_situaciones_eliminadas, v_situaciones_persistentes
+            'Jornada finalizada. Unidad %s. Bitácora #%s.',
+            v_salida.unidad_codigo,
+            v_bitacora_id
         )::TEXT;
 END;
 $$;
@@ -3545,6 +3573,51 @@ $$;
 --
 
 COMMENT ON FUNCTION public.rechazar_inspeccion_360(p_inspeccion_id integer, p_aprobador_id integer, p_motivo text) IS 'Rechaza una inspección 360 (solo comandante)';
+
+
+--
+-- Name: reconstruir_bitacora_historica(date, date); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.reconstruir_bitacora_historica(p_fecha_inicio date DEFAULT NULL::date, p_fecha_fin date DEFAULT NULL::date) RETURNS TABLE(reconstruidos integer, mensaje text)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_salida    RECORD;
+    v_count     INTEGER := 0;
+    v_fecha_ini DATE := COALESCE(p_fecha_inicio, '2024-01-01');
+    v_fecha_fin DATE := COALESCE(p_fecha_fin, CURRENT_DATE);
+BEGIN
+    FOR v_salida IN
+        SELECT su.id, su.finalizada_por
+        FROM salida_unidad su
+        WHERE su.estado = 'FINALIZADA'
+          AND DATE(su.fecha_hora_salida AT TIME ZONE 'America/Guatemala')
+              BETWEEN v_fecha_ini AND v_fecha_fin
+        ORDER BY su.fecha_hora_salida
+    LOOP
+        BEGIN
+            PERFORM crear_snapshot_bitacora(v_salida.id, v_salida.finalizada_por);
+            v_count := v_count + 1;
+        EXCEPTION WHEN OTHERS THEN
+            -- Continuar aunque una salida falle (datos corruptos, etc.)
+            NULL;
+        END;
+    END LOOP;
+
+    RETURN QUERY SELECT
+        v_count,
+        format('Reconstruidas %s entradas de bitácora entre %s y %s.',
+               v_count, v_fecha_ini, v_fecha_fin)::TEXT;
+END;
+$$;
+
+
+--
+-- Name: FUNCTION reconstruir_bitacora_historica(p_fecha_inicio date, p_fecha_fin date); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.reconstruir_bitacora_historica(p_fecha_inicio date, p_fecha_fin date) IS 'Regenera bitacora_historica desde las tablas operacionales (salida_unidad, situacion, actividad, ingreso_sede). Útil si se borra o corrompe la tabla de snapshots. Solo procesa salidas con estado=FINALIZADA que existan en salida_unidad.';
 
 
 --
@@ -5253,7 +5326,9 @@ CREATE TABLE public.bitacora_historica (
     observaciones_fin text,
     finalizado_por integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    asignacion_id integer
+    asignacion_id integer,
+    actividades_resumen jsonb DEFAULT '[]'::jsonb NOT NULL,
+    total_actividades integer DEFAULT 0 NOT NULL
 )
 PARTITION BY RANGE (fecha);
 
@@ -5338,7 +5413,9 @@ CREATE TABLE public.bitacora_historica_2024 (
     observaciones_fin text,
     finalizado_por integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    asignacion_id integer
+    asignacion_id integer,
+    actividades_resumen jsonb DEFAULT '[]'::jsonb NOT NULL,
+    total_actividades integer DEFAULT 0 NOT NULL
 );
 
 
@@ -5375,7 +5452,9 @@ CREATE TABLE public.bitacora_historica_2025 (
     observaciones_fin text,
     finalizado_por integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    asignacion_id integer
+    asignacion_id integer,
+    actividades_resumen jsonb DEFAULT '[]'::jsonb NOT NULL,
+    total_actividades integer DEFAULT 0 NOT NULL
 );
 
 
@@ -5412,7 +5491,9 @@ CREATE TABLE public.bitacora_historica_2026 (
     observaciones_fin text,
     finalizado_por integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    asignacion_id integer
+    asignacion_id integer,
+    actividades_resumen jsonb DEFAULT '[]'::jsonb NOT NULL,
+    total_actividades integer DEFAULT 0 NOT NULL
 );
 
 
@@ -13218,7 +13299,7 @@ COPY public.aviso_asignacion (id, asignacion_id, tipo, mensaje, color, creado_po
 -- Data for Name: bitacora_historica_2024; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.bitacora_historica_2024 (id, fecha, unidad_id, salida_id, sede_origen_id, ruta_inicial_id, km_inicial, km_final, km_recorridos, combustible_inicial, combustible_final, hora_inicio, hora_fin, duracion_minutos, tripulacion_ids, situaciones_resumen, total_situaciones, ingresos_resumen, total_ingresos, total_incidentes, total_asistencias, total_emergencias, total_regulaciones, total_patrullajes, observaciones_inicio, observaciones_fin, finalizado_por, created_at, asignacion_id) FROM stdin;
+COPY public.bitacora_historica_2024 (id, fecha, unidad_id, salida_id, sede_origen_id, ruta_inicial_id, km_inicial, km_final, km_recorridos, combustible_inicial, combustible_final, hora_inicio, hora_fin, duracion_minutos, tripulacion_ids, situaciones_resumen, total_situaciones, ingresos_resumen, total_ingresos, total_incidentes, total_asistencias, total_emergencias, total_regulaciones, total_patrullajes, observaciones_inicio, observaciones_fin, finalizado_por, created_at, asignacion_id, actividades_resumen, total_actividades) FROM stdin;
 \.
 
 
@@ -13226,7 +13307,7 @@ COPY public.bitacora_historica_2024 (id, fecha, unidad_id, salida_id, sede_orige
 -- Data for Name: bitacora_historica_2025; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.bitacora_historica_2025 (id, fecha, unidad_id, salida_id, sede_origen_id, ruta_inicial_id, km_inicial, km_final, km_recorridos, combustible_inicial, combustible_final, hora_inicio, hora_fin, duracion_minutos, tripulacion_ids, situaciones_resumen, total_situaciones, ingresos_resumen, total_ingresos, total_incidentes, total_asistencias, total_emergencias, total_regulaciones, total_patrullajes, observaciones_inicio, observaciones_fin, finalizado_por, created_at, asignacion_id) FROM stdin;
+COPY public.bitacora_historica_2025 (id, fecha, unidad_id, salida_id, sede_origen_id, ruta_inicial_id, km_inicial, km_final, km_recorridos, combustible_inicial, combustible_final, hora_inicio, hora_fin, duracion_minutos, tripulacion_ids, situaciones_resumen, total_situaciones, ingresos_resumen, total_ingresos, total_incidentes, total_asistencias, total_emergencias, total_regulaciones, total_patrullajes, observaciones_inicio, observaciones_fin, finalizado_por, created_at, asignacion_id, actividades_resumen, total_actividades) FROM stdin;
 \.
 
 
@@ -13234,10 +13315,10 @@ COPY public.bitacora_historica_2025 (id, fecha, unidad_id, salida_id, sede_orige
 -- Data for Name: bitacora_historica_2026; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.bitacora_historica_2026 (id, fecha, unidad_id, salida_id, sede_origen_id, ruta_inicial_id, km_inicial, km_final, km_recorridos, combustible_inicial, combustible_final, hora_inicio, hora_fin, duracion_minutos, tripulacion_ids, situaciones_resumen, total_situaciones, ingresos_resumen, total_ingresos, total_incidentes, total_asistencias, total_emergencias, total_regulaciones, total_patrullajes, observaciones_inicio, observaciones_fin, finalizado_por, created_at, asignacion_id) FROM stdin;
-2	2026-02-09	380	4	\N	70	123456.00	456789.00	333333.00	1.00	0.88	2026-02-09 14:52:07.262113+00	2026-02-10 13:23:38.470196+00	1352	[{"rol": "PILOTO", "usuario_id": 371}, {"rol": "COPILOTO", "usuario_id": 16}, {"rol": "ACOMPAÑANTE", "usuario_id": 74}]	[{"id": 45, "km": 30.00, "hora": "14:57", "tipo": "INCIDENTE", "estado": "CERRADA", "ruta_id": 70}]	1	[{"id": 35, "tipo": "FINALIZACION_JORNADA", "sede_id": 1, "es_final": false, "duracion_min": 12.9901644166666667}]	1	1	0	0	0	0	\N	Jornada finalizada	371	2026-02-10 13:23:38.470196+00	\N
-3	2026-02-16	378	6	\N	70	12345.00	123546.00	111201.00	0.50	0.75	2026-02-16 19:29:33.658937+00	2026-02-19 02:39:47.349+00	3310	[{"rol": "PILOTO", "usuario_id": 515}, {"rol": "COPILOTO", "usuario_id": 537}]	[{"id": 11543, "km": 63.00, "hora": "19:51", "tipo": "INCIDENTE", "estado": "CERRADA", "ruta_id": 70}]	1	[{"id": 36, "tipo": "FINALIZACION_JORNADA", "sede_id": 1, "es_final": false, "duracion_min": 0.09250445000000000000}]	1	1	0	0	0	0	\N	Jornada finalizada	537	2026-02-19 02:39:47.349+00	\N
-4	2026-02-16	379	7	\N	70	36854.00	94876.00	58022.00	0.50	0.75	2026-02-16 21:36:29.013421+00	2026-02-19 02:41:14.814591+00	3185	[{"rol": "PILOTO", "usuario_id": 72}, {"rol": "COPILOTO", "usuario_id": 16}, {"rol": "ACOMPAÑANTE", "usuario_id": 61}]	[]	0	[{"id": 37, "tipo": "FINALIZACION_JORNADA", "sede_id": 1, "es_final": false, "duracion_min": 0.09694501666666666667}]	1	0	0	0	0	0	\N	Jornada finalizada	16	2026-02-19 02:41:14.814591+00	\N
+COPY public.bitacora_historica_2026 (id, fecha, unidad_id, salida_id, sede_origen_id, ruta_inicial_id, km_inicial, km_final, km_recorridos, combustible_inicial, combustible_final, hora_inicio, hora_fin, duracion_minutos, tripulacion_ids, situaciones_resumen, total_situaciones, ingresos_resumen, total_ingresos, total_incidentes, total_asistencias, total_emergencias, total_regulaciones, total_patrullajes, observaciones_inicio, observaciones_fin, finalizado_por, created_at, asignacion_id, actividades_resumen, total_actividades) FROM stdin;
+2	2026-02-09	380	4	\N	70	123456.00	456789.00	333333.00	1.00	0.88	2026-02-09 14:52:07.262113+00	2026-02-10 13:23:38.470196+00	1352	[{"rol": "PILOTO", "usuario_id": 371}, {"rol": "COPILOTO", "usuario_id": 16}, {"rol": "ACOMPAÑANTE", "usuario_id": 74}]	[{"id": 45, "km": 30.00, "hora": "14:57", "tipo": "INCIDENTE", "estado": "CERRADA", "ruta_id": 70}]	1	[{"id": 35, "tipo": "FINALIZACION_JORNADA", "sede_id": 1, "es_final": false, "duracion_min": 12.9901644166666667}]	1	1	0	0	0	0	\N	Jornada finalizada	371	2026-02-10 13:23:38.470196+00	\N	[]	0
+3	2026-02-16	378	6	\N	70	12345.00	123546.00	111201.00	0.50	0.75	2026-02-16 19:29:33.658937+00	2026-02-19 02:39:47.349+00	3310	[{"rol": "PILOTO", "usuario_id": 515}, {"rol": "COPILOTO", "usuario_id": 537}]	[{"id": 11543, "km": 63.00, "hora": "19:51", "tipo": "INCIDENTE", "estado": "CERRADA", "ruta_id": 70}]	1	[{"id": 36, "tipo": "FINALIZACION_JORNADA", "sede_id": 1, "es_final": false, "duracion_min": 0.09250445000000000000}]	1	1	0	0	0	0	\N	Jornada finalizada	537	2026-02-19 02:39:47.349+00	\N	[]	0
+4	2026-02-16	379	7	\N	70	36854.00	94876.00	58022.00	0.50	0.75	2026-02-16 21:36:29.013421+00	2026-02-19 02:41:14.814591+00	3185	[{"rol": "PILOTO", "usuario_id": 72}, {"rol": "COPILOTO", "usuario_id": 16}, {"rol": "ACOMPAÑANTE", "usuario_id": 61}]	[]	0	[{"id": 37, "tipo": "FINALIZACION_JORNADA", "sede_id": 1, "es_final": false, "duracion_min": 0.09694501666666666667}]	1	0	0	0	0	0	\N	Jornada finalizada	16	2026-02-19 02:41:14.814591+00	\N	[]	0
 \.
 
 
@@ -13626,7 +13707,7 @@ COPY public.departamento_sistema (id, codigo, nombre, descripcion, usa_sistema_g
 
 COPY public.dispositivo_autorizado (id, device_id, usuario_id, device_model, device_os, device_os_version, app_version, estado, notas, aprobado_por, created_at, ultimo_acceso_at, imei, uuid) FROM stdin;
 14	B31EE9C7-59BA-4CF7-95F7-7DFAA6B06FF8:B31EE9C7-59BA-4CF7-95F7-7DFAA6B06FF8	\N	iPhone 15 Pro Max	\N	\N	\N	BLOQUEADO	\N	568	2026-04-29 15:15:53.585778+00	2026-04-29 15:15:55.511421+00	\N	\N
-1	uuid-3lq49cb8ims	\N	moto g85 5G	\N	\N	\N	APROBADO	\N	74	2026-04-16 18:58:23.097467+00	2026-04-17 05:30:59.738739+00	\N	\N
+1	uuid-3lq49cb8ims	\N	moto g85 5G	\N	\N	\N	APROBADO	\N	74	2026-04-16 18:58:23.097467+00	2026-06-01 03:59:42.457908+00	\N	\N
 13	B31EE9C7-59BA-4CF7-95F7-7DFAA6B06FF8	\N	iPhone 15 Pro Max	\N	\N	\N	APROBADO	Admin aprobado 2026-04-29	568	2026-04-29 14:34:20.862558+00	2026-05-19 01:33:49.914167+00	\N	\N
 \.
 
@@ -22553,8 +22634,8 @@ COPY public.usuario (id, uuid, username, password_hash, nombre_completo, email, 
 121	d777f1e7-aaba-439d-b87a-6709ebc6effe	15005	$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.	Argueta Sandoval, Delmi Odíly	\N	\N	3	1	t	2025-12-31 05:02:15.156698+00	2025-12-07 06:32:57.150814+00	2026-03-30 05:53:35.521112+00	1	\N	t	f	15005	\N	f	FEMENINO	4	f	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
 247	c76bda68-5155-4ce2-aa81-271aa0963dee	16100	$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.	Menchú Anavisca, Hilmy Julissa	\N	\N	3	1	t	2025-12-31 00:47:15.132079+00	2025-12-07 06:32:57.686461+00	2026-03-30 05:53:35.521112+00	1	\N	t	f	16100	\N	f	FEMENINO	2	f	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
 20	77d7e3de-ea32-44a3-9a9c-fb88c6f7f0b4	1022	$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.	Adriano Lopez, Manuel De Jesús	\N	\N	3	1	t	2026-04-05 17:12:42.085357+00	2025-12-07 06:32:54.938078+00	2026-04-05 17:12:42.085357+00	2	\N	t	f	1022	\N	f	MASCULINO	\N	t	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
-313	2239381e-e4bd-4db8-8202-79f1dee33a8e	18002	$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.	Adriano Hernández Joshuá Emanuel	\N	\N	3	3	t	2026-05-18 23:23:31.125761+00	2025-12-07 06:32:57.95554+00	2026-05-18 23:23:31.125761+00	1	\N	t	f	18002	COPILOTO	f	MASCULINO	\N	t	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
 136	767e6814-8667-496d-a995-7b1127216bcb	15027	$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.	Colop Xec, Abelardo Abigaíl	\N	\N	13	1	t	2026-04-10 18:25:20.212943+00	2025-12-07 06:32:57.215918+00	2026-04-10 18:25:20.212943+00	1	\N	t	f	15027	\N	f	MASCULINO	\N	f	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
+313	2239381e-e4bd-4db8-8202-79f1dee33a8e	18002	$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.	Adriano Hernández Joshuá Emanuel	\N	\N	3	3	t	2026-06-01 03:59:41.359503+00	2025-12-07 06:32:57.95554+00	2026-06-01 03:59:41.359503+00	1	\N	t	f	18002	COPILOTO	f	MASCULINO	\N	t	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
 367	d2c65557-462c-4704-a1a4-57bfff213977	19002	$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.	Aguilón Pérez, Juan Orlando	\N	\N	3	5	t	2026-05-05 21:00:02.286957+00	2025-12-07 06:32:59.781717+00	2026-05-05 21:00:02.286957+00	1	\N	t	f	19002	\N	f	MASCULINO	\N	t	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
 52	4c379f33-263e-4eed-8640-fe214ff71128	8003	$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.	Arrivillaga Oliva, Edgar Geovanni	\N	\N	3	8	t	\N	2025-12-07 06:32:55.040829+00	2026-03-30 05:53:35.521112+00	1	\N	t	f	8003	\N	f	MASCULINO	\N	t	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
 366	fa4d68e1-eaf8-423e-88f3-603bbee683d8	19001	$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.	Aguilar Melgar, Angel Humberto	\N	\N	3	4	t	\N	2025-12-07 06:32:59.780602+00	2026-03-30 05:53:35.521112+00	1	\N	t	f	19001	\N	f	MASCULINO	\N	t	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
@@ -32604,5 +32685,5 @@ REFRESH MATERIALIZED VIEW public.mv_vehiculos_reincidentes;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict pb3tuajOofjNBxxsCBhs1bfZL7wNcwNJXrTLURfj2hN8BfmpM2S5jAUxczGfK0E
+\unrestrict f3w807FOZhXmfQ5iLhkLzjAc8rt3VkwHwVgWk0S5cttOIDDxV2OszXn4VKkd5UE
 

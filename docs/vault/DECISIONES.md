@@ -632,6 +632,29 @@ uq_sm_actividad_inf_video        — solo 1 video por infografía de actividad
 - `v_asignaciones_por_sede` usa LATERAL con prioridad a `asignacion_id`, fallback a `unidad_id + fecha` para retrocompatibilidad.
 - Salida emergencia COP (`POST /salidas/cop/salida-emergencia`): crea turno+asignacion+tripulacion_turno+salida en una sola transacción → `resolveContextoActivo` funciona para la brigada desde el móvil.
 
+---
+
+## D-038 — Ningún dato operacional se borra al finalizar jornada (mig 152-153)
+
+**Decisión**: `finalizar_jornada_completa()` ya no borra nada de las tablas operacionales. Solo marca y cierra.
+
+**Antes** (hasta mig 151): la función borraba `salida_unidad`, `situacion` (temporales), `ingreso_sede`, `tripulacion_turno`, `asignacion_unidad`, `turno`. `bitacora_historica` era la ÚNICA fuente del historial.
+
+**Ahora** (mig 152+):
+- `salida_unidad` → queda como FINALIZADA
+- `situacion` → todas se conservan (temporales y persistentes) con `salida_unidad_id` intacto
+- `actividad` → se conservan con `salida_unidad_id` intacto
+- `ingreso_sede` → se conservan con `salida_unidad_id` intacto
+- `salida_evento` → se conserva (ya no hay CASCADE delete de salida_unidad)
+- `asignacion_unidad` → queda con `hora_entrada_real` seteado
+- `tripulacion_turno` → se conserva
+- `turno` → estado pasa a CERRADO si todas sus unidades finalizaron
+- `situacion_actual` → único que se borra (era el estado en tiempo real del mapa)
+
+**Por qué**: datos como conteos vehiculares, apoyos a obras, patrullajes tienen valor estadístico. La institución decide qué archivar o purgar, no el sistema. `bitacora_historica` es un snapshot derivado para consultas rápidas, no la fuente de verdad.
+
+**Invariante clave**: si se borra `bitacora_historica`, se puede reconstruir exactamente ejecutando `SELECT * FROM reconstruir_bitacora_historica()`. Esta función lee desde `salida_unidad`, `situacion`, `actividad`, `ingreso_sede`.
+
 **Regla**: Toda salida (APP, COP_EMERGENCIA) debe tener `asignacion_id` seteado. El setter se llama en:
 - `iniciarSalida` (brigada): `SalidaModel.setAsignacionId()` tras `iniciarSalidaBrigada()`
 - `iniciarSalidaCOP` (con asignacion_id en body): `setAsignacionId()` + `TurnoModel.marcarSalida()`
