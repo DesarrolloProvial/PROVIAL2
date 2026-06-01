@@ -711,19 +711,26 @@ export const SalidaModel = {
         );
       }
 
-      // 2. Crear asignacion_unidad para esta salida de emergencia
-      const asignacion = await conn.one<{ id: number }>(
-        `INSERT INTO asignacion_unidad (turno_id, unidad_id, ruta_id, tipo_asignacion, km_inicio)
-         VALUES ($1, $2, $3, 'PATRULLA', $4)
-         RETURNING id`,
-        [turno.id, data.unidad_id, data.ruta_id ?? null, data.km_inicial ?? null],
+      // 2. Crear asignacion_unidad (o reutilizar si ya existe para este turno+unidad)
+      let asignacion = await conn.oneOrNone<{ id: number }>(
+        `SELECT id FROM asignacion_unidad WHERE turno_id = $1 AND unidad_id = $2 LIMIT 1`,
+        [turno.id, data.unidad_id],
       );
+      if (!asignacion) {
+        asignacion = await conn.one<{ id: number }>(
+          `INSERT INTO asignacion_unidad (turno_id, unidad_id, ruta_id, tipo_asignacion, km_inicio)
+           VALUES ($1, $2, $3, 'PATRULLA', $4)
+           RETURNING id`,
+          [turno.id, data.unidad_id, data.ruta_id ?? null, data.km_inicial ?? null],
+        );
+      }
 
-      // 3. Registrar tripulacion_turno para que resolveContextoActivo funcione desde el móvil
+      // 3. Registrar tripulacion_turno (ignorar duplicados por usuario_id+asignacion_id)
       for (const m of data.tripulacion) {
         await conn.none(
           `INSERT INTO tripulacion_turno (asignacion_id, usuario_id, rol_tripulacion, es_comandante)
-           VALUES ($1, $2, $3, $4)`,
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT DO NOTHING`,
           [asignacion.id, m.usuario_id, m.rol_tripulacion, m.es_comandante ?? false],
         );
       }
@@ -1146,7 +1153,7 @@ export const SalidaModel = {
                'sentido',       sit.sentido,
                'observaciones', sit.observaciones,
                'created_at',    sit.created_at,
-               'cerrado_at',    sit.cerrado_at
+               'cerrado_at',    sit.fecha_hora_finalizacion
              ) ORDER BY sit.created_at)
             FROM situacion sit
             LEFT JOIN catalogo_tipo_situacion cts ON sit.tipo_situacion_id = cts.id
