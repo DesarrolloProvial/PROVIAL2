@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
-import { useAuthStore } from '../../store/authStore';
 import { Play, AlertTriangle, Users, MapPin, Clock } from 'lucide-react';
 import COPSalidaEmergenciaModal from '../../components/cop/forms/COPSalidaEmergenciaModal';
-import IniciarDesdAsignacionModal from '../../components/cop/forms/IniciarDesdeAsignacionModal';
+import IniciarDesdeAsignacionModal from '../../components/cop/forms/IniciarDesdeAsignacionModal';
 
 interface Asignacion {
   asignacion_id: number;
@@ -38,7 +37,6 @@ function estadoBadge(en_ruta: boolean, salida_estado: string | null) {
 }
 
 export default function COPAsignacionesPage() {
-  const { user } = useAuthStore();
   const qc = useQueryClient();
   const [emergenciaOpen, setEmergenciaOpen] = useState(false);
   const [asignacionParaIniciar, setAsignacionParaIniciar] = useState<Asignacion | null>(null);
