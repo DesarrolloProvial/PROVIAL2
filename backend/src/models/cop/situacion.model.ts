@@ -631,14 +631,18 @@ export const SituacionModel = {
            FROM situacion_multimedia sm WHERE sm.situacion_id = s.id AND sm.tipo = 'FOTO') as fotos,
           s.draft_created_at
         FROM situacion s
-        -- LEFT JOIN para incluir situaciones sin salida_unidad_id (creadas desde COP)
+        -- LEFT JOIN: si tiene salida_unidad_id solo aparece si esa salida está en el CTE;
+        -- si no tiene salida (creada desde COP) se incluye por ventana de tiempo
         LEFT JOIN salidas sal ON s.salida_unidad_id = sal.id
         LEFT JOIN unidad u ON s.unidad_id = u.id
         LEFT JOIN ruta r ON s.ruta_id = r.id
         LEFT JOIN catalogo_tipo_situacion cts ON s.tipo_situacion_id = cts.id
         LEFT JOIN usuario us ON s.creado_por = us.id
         WHERE s.unidad_id = $/unidad_id/
-          AND s.created_at >= (SELECT MIN(fecha_hora_salida) FROM salidas)
+          AND (
+            sal.id IS NOT NULL
+            OR (s.salida_unidad_id IS NULL AND s.created_at >= (SELECT MIN(fecha_hora_salida) FROM salidas))
+          )
 
         UNION ALL
 

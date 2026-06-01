@@ -16,7 +16,6 @@ import {
     TIPOS_HECHO_TRANSITO,
     TIPOS_EMERGENCIA,
 } from '../../constants/situacionTypes';
-import { getDepartamentosOptions, getMunicipiosOptions } from '../../data/geografia';
 
 /**
  * Resolver de referencias a catálogos
@@ -107,8 +106,8 @@ export class CatalogResolver {
     }
 
     /**
-     * Resolver municipios por departamento
-     * Usa SQLite (IDs reales de BD) con fallback a datos hardcodeados
+     * Resolver municipios por departamento desde SQLite (IDs reales de BD).
+     * Retorna [] si SQLite está vacío — syncGeografia debe correr al login.
      */
     static async resolveMunicipiosByDepartamento(
         departamentoId: number
@@ -116,12 +115,10 @@ export class CatalogResolver {
         try {
             await catalogoStorage.init();
             const fromDB = await catalogoStorage.getMunicipiosByDepartamento(departamentoId);
-            if (fromDB.length > 0) {
-                return fromDB.map(m => ({ value: m.id, label: m.nombre }));
-            }
-        } catch (error) {
+            return fromDB.map(m => ({ value: m.id, label: m.nombre }));
+        } catch {
+            return [];
         }
-        return getMunicipiosOptions(departamentoId);
     }
 
     // ============================================
@@ -132,12 +129,10 @@ export class CatalogResolver {
         try {
             await catalogoStorage.init();
             const fromDB = await catalogoStorage.getDepartamentos();
-            if (fromDB.length > 0) {
-                return fromDB.map(d => ({ value: d.id, label: d.nombre }));
-            }
-        } catch (error) {
+            return fromDB.map(d => ({ value: d.id, label: d.nombre }));
+        } catch {
+            return [];
         }
-        return getDepartamentosOptions();
     }
 
     private static async resolveTiposVehiculo(): Promise<FieldOption[]> {

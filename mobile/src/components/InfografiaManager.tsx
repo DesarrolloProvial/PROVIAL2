@@ -29,6 +29,7 @@ export default function InfografiaManager({
   infografias: propInfografias,
   onChange,
   disabled = false,
+  maxInfografias,
 }: InfografiaManagerProps) {
   // numero de la infografía cuyo modal de captura está abierto
   const [captureTargetNumero, setCaptureTargetNumero] = useState<number | null>(null);
@@ -62,6 +63,7 @@ export default function InfografiaManager({
   }, [propInfografias, disabled]);
 
   const handleAddSessionInfografia = () => {
+    if (maxInfografias !== undefined && infografias.length >= maxInfografias) return;
     onChange([...infografias, createNewInfografia(infografias)]);
   };
 
@@ -274,7 +276,7 @@ export default function InfografiaManager({
       {sessionInfografias.map(inf => renderSessionCard(inf))}
 
       {/* ── Agregar nueva ────────────────────────────────────────────────── */}
-      {!disabled && sessionInfografias.length === 0 && (
+      {!disabled && sessionInfografias.length === 0 && (maxInfografias === undefined || infografias.length < maxInfografias) && (
         <TouchableOpacity style={styles.addCard} onPress={handleAddSessionInfografia} activeOpacity={0.7}>
           <Text style={styles.addCardIcon}>📷</Text>
           <Text style={styles.addCardTitle}>

@@ -40,6 +40,7 @@ export interface InfografiaManagerProps {
     infografias: Infografia[];
     onChange: (infografias: Infografia[]) => void;
     disabled?: boolean;
+    maxInfografias?: number;
 }
 
 export interface InfografiaValidation {

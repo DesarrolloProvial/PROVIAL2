@@ -821,6 +821,7 @@ export default function NuevaSituacionScreen() {
                     situacionId={draftUuid}
                     infografias={infografias}
                     onChange={setInfografias}
+                    maxInfografias={FORMULARIOS_ACTIVIDAD.includes(formularioTipo) ? 3 : undefined}
                   />
                 </View>
               )}

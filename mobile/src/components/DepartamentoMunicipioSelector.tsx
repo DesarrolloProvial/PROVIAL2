@@ -1,7 +1,9 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import CrossPlatformPicker from './CrossPlatformPicker';
-import { DEPARTAMENTOS, getMunicipios } from '../data/geografia';
+import { catalogoStorage } from '../core/storage/catalogoStorage';
+
+interface Option { label: string; value: number; }
 
 interface Props {
   departamentoValue?: number;
@@ -22,19 +24,42 @@ export const DepartamentoMunicipioSelector: React.FC<Props> = ({
   municipioLabel = 'Municipio',
   required = false,
 }) => {
-  const departamentoOptions = useMemo(() =>
-    DEPARTAMENTOS.map(depto => ({
-      label: depto.nombre,
-      value: depto.id,
-    })),
-  []);
+  const [departamentos, setDepartamentos] = useState<Option[]>([]);
+  const [municipios, setMunicipios] = useState<Option[]>([]);
+  const [loadingDeptos, setLoadingDeptos] = useState(true);
+  const [loadingMunis, setLoadingMunis] = useState(false);
 
-  const municipioOptions = useMemo(() => {
-    if (!departamentoValue) return [];
-    return getMunicipios(departamentoValue).map(muni => ({
-      label: muni.nombre,
-      value: muni.id,
-    }));
+  useEffect(() => {
+    (async () => {
+      try {
+        await catalogoStorage.init();
+        const deptos = await catalogoStorage.getDepartamentos();
+        setDepartamentos(deptos.map(d => ({ label: d.nombre, value: d.id })));
+      } catch {
+        setDepartamentos([]);
+      } finally {
+        setLoadingDeptos(false);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!departamentoValue) {
+      setMunicipios([]);
+      return;
+    }
+    setLoadingMunis(true);
+    (async () => {
+      try {
+        await catalogoStorage.init();
+        const munis = await catalogoStorage.getMunicipiosByDepartamento(departamentoValue);
+        setMunicipios(munis.map(m => ({ label: m.nombre, value: m.id })));
+      } catch {
+        setMunicipios([]);
+      } finally {
+        setLoadingMunis(false);
+      }
+    })();
   }, [departamentoValue]);
 
   const handleDepartamentoChange = (value: any) => {
@@ -59,25 +84,31 @@ export const DepartamentoMunicipioSelector: React.FC<Props> = ({
   return (
     <View style={styles.container}>
       <View style={styles.selectorContainer}>
-        <CrossPlatformPicker
-          label={departamentoLabel}
-          required={required}
-          selectedValue={departamentoValue || null}
-          onValueChange={handleDepartamentoChange}
-          options={departamentoOptions}
-          placeholder="Seleccionar departamento..."
-        />
+        {loadingDeptos ? (
+          <ActivityIndicator size="small" />
+        ) : (
+          <CrossPlatformPicker
+            label={departamentoLabel}
+            required={required}
+            selectedValue={departamentoValue || null}
+            onValueChange={handleDepartamentoChange}
+            options={departamentos}
+            placeholder="Seleccionar departamento..."
+          />
+        )}
       </View>
 
       {departamentoValue && (
         <View style={styles.selectorContainer}>
-          {municipioOptions.length > 0 ? (
+          {loadingMunis ? (
+            <ActivityIndicator size="small" />
+          ) : municipios.length > 0 ? (
             <CrossPlatformPicker
               label={municipioLabel}
               required={required}
               selectedValue={municipioValue || null}
               onValueChange={handleMunicipioChange}
-              options={municipioOptions}
+              options={municipios}
               placeholder="Seleccionar municipio..."
             />
           ) : (

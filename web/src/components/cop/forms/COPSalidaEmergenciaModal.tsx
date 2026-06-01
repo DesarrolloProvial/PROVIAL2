@@ -284,11 +284,11 @@ export default function COPSalidaEmergenciaModal({ isOpen, onClose, onCreated }:
     if (tripulacion.length === 0) { setError('Agrega al menos un integrante a la tripulación'); return; }
     setSaving(true);
     try {
-      await api.post('/salidas/cop/iniciar-unidad', {
+      await api.post('/salidas/cop/salida-emergencia', {
         unidad_id: Number(unidadId),
-        ruta_inicial_id: rutaId ? Number(rutaId) : undefined,
+        ruta_id: rutaId ? Number(rutaId) : undefined,
         km_inicial: kmInicial ? Number(kmInicial) : undefined,
-        combustible_inicial: combustibleInicial || undefined,
+        combustible_fraccion: combustibleInicial || undefined,
         observaciones_salida: observaciones || undefined,
         tripulacion,
       });

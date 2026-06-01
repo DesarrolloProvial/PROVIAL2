@@ -664,6 +664,113 @@ export const SalidaModel = {
     return { salidaId, forzadaNoDisponible, instrucciones: estadoUnidad?.instrucciones_transportes ?? null };
   },
 
+  async setAsignacionId(salidaId: number, asignacionId: number): Promise<void> {
+    await db.none(
+      `UPDATE salida_unidad SET asignacion_id = $1 WHERE id = $2`,
+      [asignacionId, salidaId],
+    );
+  },
+
+  async iniciarSalidaEmergenciaCOP(data: {
+    unidad_id: number;
+    ruta_id?: number | null;
+    km_inicial?: number | null;
+    indicador?: number | null;
+    obs?: string | null;
+    tripulacion: Array<{ usuario_id: number; rol_tripulacion: string; es_comandante?: boolean }>;
+    userId: number;
+  }): Promise<{ salidaId: number; asignacion_id: number; forzadaNoDisponible: boolean } | { conflict: true }> {
+    const salidaActiva = await db.oneOrNone<{ id: number }>(
+      `SELECT id FROM salida_unidad WHERE unidad_id = $1 AND estado = 'EN_SALIDA'`,
+      [data.unidad_id],
+    );
+    if (salidaActiva) return { conflict: true };
+
+    const estadoUnidad = await db.oneOrNone<{ disponible_transportes: boolean; sede_id: number }>(
+      `SELECT disponible_transportes, sede_id FROM unidad WHERE id = $1`,
+      [data.unidad_id],
+    );
+    const forzadaNoDisponible = estadoUnidad?.disponible_transportes === false;
+    const sedeId = estadoUnidad?.sede_id;
+
+    const { salidaId, asignacion_id } = await db.tx(async (conn) => {
+      // 1. Buscar turno activo de hoy para la sede, o crear uno nuevo
+      const fechaHoy = `(CURRENT_TIMESTAMP AT TIME ZONE 'America/Guatemala')::date`;
+      let turno = await conn.oneOrNone<{ id: number }>(
+        `SELECT id FROM turno
+         WHERE fecha = ${fechaHoy} AND sede_id = $1 AND estado != 'CERRADO'
+         ORDER BY id DESC LIMIT 1`,
+        [sedeId],
+      );
+      if (!turno) {
+        turno = await conn.one<{ id: number }>(
+          `INSERT INTO turno (fecha, sede_id, estado, publicado, publicado_por, creado_por)
+           VALUES (${fechaHoy}, $1, 'ACTIVO', true, $2, $2)
+           RETURNING id`,
+          [sedeId, data.userId],
+        );
+      }
+
+      // 2. Crear asignacion_unidad (o reutilizar si ya existe para este turno+unidad)
+      let asignacion = await conn.oneOrNone<{ id: number }>(
+        `SELECT id FROM asignacion_unidad WHERE turno_id = $1 AND unidad_id = $2 LIMIT 1`,
+        [turno.id, data.unidad_id],
+      );
+      if (!asignacion) {
+        asignacion = await conn.one<{ id: number }>(
+          `INSERT INTO asignacion_unidad (turno_id, unidad_id, ruta_id, tipo_asignacion, km_inicio)
+           VALUES ($1, $2, $3, 'PATRULLA', $4)
+           RETURNING id`,
+          [turno.id, data.unidad_id, data.ruta_id ?? null, data.km_inicial ?? null],
+        );
+      }
+
+      // 3. Registrar tripulacion_turno (ignorar duplicados por usuario_id+asignacion_id)
+      for (const m of data.tripulacion) {
+        await conn.none(
+          `INSERT INTO tripulacion_turno (asignacion_id, usuario_id, rol_tripulacion, es_comandante)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT DO NOTHING`,
+          [asignacion.id, m.usuario_id, m.rol_tripulacion, m.es_comandante ?? false],
+        );
+      }
+
+      // 4. Iniciar salida — la PG function lee tripulacion_turno que acabamos de crear
+      const salidaId: number = await conn.one(
+        `SELECT iniciar_salida_unidad($1, $2, $3, $4, $5) AS salida_id`,
+        [data.unidad_id, data.ruta_id ?? null, data.km_inicial ?? null, data.indicador ?? null, data.obs ?? null],
+      ).then((r) => r.salida_id);
+
+      // 5. Vincular salida con asignacion + marcar como emergencia COP
+      await conn.none(
+        `UPDATE salida_unidad SET asignacion_id = $1, origen = 'COP_EMERGENCIA' WHERE id = $2`,
+        [asignacion.id, salidaId],
+      );
+
+      // 6. Registrar hora_salida_real en asignacion
+      await conn.none(
+        `UPDATE asignacion_unidad SET hora_salida_real = NOW() WHERE id = $1`,
+        [asignacion.id],
+      );
+
+      // 7. Evento de auditoría
+      await conn.none(
+        `INSERT INTO salida_evento (salida_id, tipo, descripcion, datos_new, realizado_por)
+         VALUES ($1, 'INICIO_COP', $2, $3, $4)`,
+        [
+          salidaId,
+          `Salida de emergencia iniciada desde COP con ${data.tripulacion.length} integrante(s)${forzadaNoDisponible ? ' [FORZADA: unidad no disponible]' : ''}`,
+          JSON.stringify({ unidad_id: data.unidad_id, asignacion_id: asignacion.id, tripulacion: data.tripulacion }),
+          data.userId,
+        ],
+      );
+
+      return { salidaId, asignacion_id: asignacion.id };
+    });
+
+    return { salidaId, asignacion_id, forzadaNoDisponible };
+  },
+
   async finalizarSalidaCOP(salidaId: number, data: {
     km_final?: number | null;
     indicador?: number | null;
@@ -677,11 +784,8 @@ export const SalidaModel = {
     if (!salidaInfo) return null;
 
     await db.tx(async (conn) => {
+      // Cerrar actividades abiertas (no se borran ni se desvinculan — datos históricos)
       await ActividadModel.cerrarActivasDeUnidad(salidaInfo.unidad_id, conn);
-      await conn.none(
-        `UPDATE actividad SET salida_unidad_id = NULL WHERE salida_unidad_id = $1`,
-        [salidaId],
-      );
 
       const { success } = await conn.one<{ success: boolean }>(
         `SELECT finalizar_salida_unidad($1, $2, $3, $4, $5) AS success`,
@@ -689,6 +793,10 @@ export const SalidaModel = {
       );
       if (!success) throw new Error('finalizar_salida_unidad retornó false');
 
+      // Crear snapshot en bitacora_historica para trazabilidad
+      await conn.one(`SELECT crear_snapshot_bitacora($1, $2) AS id`, [salidaId, data.userId]);
+
+      // Limpiar estado en tiempo real del mapa COP
       await conn.none(
         `DELETE FROM situacion_actual WHERE unidad_id = $1`,
         [salidaInfo.unidad_id],
@@ -1045,7 +1153,7 @@ export const SalidaModel = {
                'sentido',       sit.sentido,
                'observaciones', sit.observaciones,
                'created_at',    sit.created_at,
-               'cerrado_at',    sit.cerrado_at
+               'cerrado_at',    sit.fecha_hora_finalizacion
              ) ORDER BY sit.created_at)
             FROM situacion sit
             LEFT JOIN catalogo_tipo_situacion cts ON sit.tipo_situacion_id = cts.id

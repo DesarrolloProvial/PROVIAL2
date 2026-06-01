@@ -2,7 +2,7 @@
 
 > Fuente de verdad: PostgreSQL en Railway  
 > Conexión: `maglev.proxy.rlwy.net:31911/railway`  
-> Actualizado: 2026-04-29
+> Actualizado: 2026-05-19
 
 ---
 
@@ -37,6 +37,13 @@ Tabla central de usuarios. Reemplazó a `brigada` (migración 129).
 | rol_id                  | integer FK→rol  |                                               |
 | sede_id                 | integer FK→sede | Sede base del usuario                         |
 | activo                  | boolean         |                                               |
+| fecha_nacimiento        | date            | **Mig 129** — migrado de tabla brigada        |
+| licencia_tipo           | varchar(5)      | A/B/C/M/E                                     |
+| licencia_numero         | varchar(30)     |                                               |
+| licencia_vencimiento    | date            |                                               |
+| direccion               | text            |                                               |
+| contacto_emergencia     | varchar(150)    |                                               |
+| telefono_emergencia     | varchar(20)     |                                               |
 | created_at / updated_at | timestamptz     |                                               |
 
 **Roles válidos:** `BRIGADA`, `OPERACIONES`, `COP`, `TRANSPORTES`, `ADMIN`, `SUPER_ADMIN`, `ENCARGADO_NOMINAS`, `MANDOS`, `ACCIDENTOLOGIA`, `COMUNICACION_SOCIAL`
@@ -187,10 +194,13 @@ Registro de cada salida real de una unidad a campo. Una por día operativo.
 | combustible_inicial / combustible_final | numeric(5,2) | 0.0–1.0 (VACIO→LLENO) |
 | km_recorridos | numeric(10,2) | Calculado |
 | tripulacion | jsonb | Snapshot de la tripulación al salir |
+| asignacion_id | integer FK→asignacion_unidad ON DELETE SET NULL | **Mig 148** — vínculo con la asignación que originó la salida |
 | sede_origen_id | integer FK→sede | Sede desde donde salió |
 | inspeccion_360_id | integer FK→inspeccion_360 | Inspección asociada |
-| origen | varchar | APP / COP_EMERGENCIA |
+| origen | varchar | APP / COP_EMERGENCIA / MANUAL |
 | finalizada_por | integer FK→usuario | |
+
+**Nota**: `finalizar_jornada_completa()` **borra** la fila de `salida_unidad` al terminar. Solo existen filas con `estado = EN_SALIDA` o `FINALIZADA` (override COP sin jornada completa). El histórico permanente está en `bitacora_historica`.
 
 ### `salida_evento`
 Auditoría operacional: cada edición, cambio de ruta, inicio COP, etc.
@@ -411,14 +421,19 @@ Inspección vehicular pre-salida.
 **Regla**: Solo inspecciones con `estado='APROBADA'` y `fecha_aprobacion > NOW()-24h` y `salida_id IS NULL` se asocian automáticamente al iniciar salida.
 
 ### `unidad_reparacion`
-Períodos en taller.
+Períodos en taller (migración 128).
 
-| Columna | Notas |
-|---|---|
-| unidad_id FK→unidad | |
-| fecha_entrada / fecha_salida | date |
-| motivo / descripcion | |
-| activa | boolean — si sigue en taller |
+| Columna | Tipo | Notas |
+|---|---|---|
+| id | serial PK | |
+| unidad_id | integer FK→unidad ON DELETE CASCADE | |
+| motivo | varchar(200) | Razón del ingreso a taller |
+| descripcion | text | Detalle adicional |
+| fecha_inicio | date | DEFAULT CURRENT_DATE |
+| fecha_fin | date | NULL si sigue en taller |
+| estado | varchar(20) | **EN_REPARACION** / COMPLETADA / CANCELADA |
+| registrado_por | integer FK→usuario | |
+| created_at / updated_at | timestamptz | |
 
 ---
 
@@ -451,10 +466,18 @@ Historial de notificaciones enviadas.
 ## Auditoría y Bitácora
 
 ### `bitacora_historica`
-Snapshot de jornadas finalizadas. Particionada por año:
-- `bitacora_historica_2024`
-- `bitacora_historica_2025`
-- `bitacora_historica_2026`
+Snapshot permanente de jornadas finalizadas. Creado por `crear_snapshot_bitacora()` antes de que `finalizar_jornada_completa()` borre la `salida_unidad`. Particionada por año.
+
+| Columna clave | Notas |
+|---|---|
+| salida_id | ID de la salida_unidad (ya borrada cuando se consulta) |
+| asignacion_id | **Mig 148/149** — integer sin FK (la asignacion también fue borrada); referencia histórica al turno/asignacion que originó la salida |
+| unidad_id | FK permanente |
+| tripulacion_ids | JSONB snapshot `[{"usuario_id": X, "rol": "PILOTO"}]` |
+| situaciones_resumen | JSONB con id, tipo, km, hora, estado de cada situación |
+| total_incidentes / total_asistencias / total_emergencias / total_regulaciones / total_patrullajes | Contadores denormalizados |
+
+Particiones: `bitacora_historica_2024`, `bitacora_historica_2025`, `bitacora_historica_2026`
 
 ### `auditoria_log`
 Log general de cambios en el sistema.
@@ -503,6 +526,7 @@ El catálogo más importante. Define qué formulario usa cada tipo de evento.
 | `v_historial_inspecciones_360` | Historial de inspecciones por unidad |
 | `v_asignaciones_por_sede` | Asignaciones agrupadas por sede — base del dashboard de Operaciones. Todos los JOINs son LEFT JOIN; soporta `unidad_id = NULL`. Columnas: turno_id, fecha, turno_estado, publicado, sede_*, asignacion_id, unidad_*, ruta_*, km_inicio/km_final, sentido, acciones, acciones_formato, hora_salida, estado_nomina, en_ruta, salida_estado, asignacion_created_at |
 | `v_asignaciones_pendientes` | Asignaciones en turnos no CERRADO — sin filtro de fecha |
+| `v_estadisticas_unidades` | Estadísticas por unidad: turnos último mes/trimestre, km, combustible, días sin uso. Columnas: unidad_id/codigo/tipo_unidad/marca/modelo/sede_id/sede_nombre/activa/nivel_combustible/combustible_actual/tipo_combustible/odometro_actual/turnos_ultimo_mes/turnos_ultimo_trimestre/ultimo_turno_fecha/dias_desde_ultimo_uso/proximo_turno_fecha/km_ultimo_mes |
 
 ---
 
