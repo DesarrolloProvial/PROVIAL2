@@ -21,12 +21,8 @@ services:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     volumes:
-      # Base schema — se ejecuta al iniciar SI la BD está vacía
-      - ./docker/schema/000_base_schema.sql:/docker-entrypoint-initdb.d/00_base_schema.sql:ro
-      # Extensiones
-      - ./docker/init-scripts/01-enable-extensions.sql:/docker-entrypoint-initdb.d/01-extensions.sql:ro
-      # Datos iniciales (turnos de ejemplo)
-      - ./docker/schema/001_initial_data.sql:/docker-entrypoint-initdb.d/02_initial_data.sql:ro
+      # Snapshot completo de la base — se ejecuta al iniciar SI la BD está vacía
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/00_seed.sql:ro
       # Migraciones incrementales (para aplicar después)
       - ./backend/migrations:/migrations:ro
       - postgres_data:/var/lib/postgresql/data
