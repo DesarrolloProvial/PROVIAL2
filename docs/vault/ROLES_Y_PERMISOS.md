@@ -34,8 +34,9 @@ El middleware `authorize(...roles)` rechaza con **403** si el rol del usuario no
 | `POST /salidas/iniciar` | BRIGADA | Requiere inspeccion_360 previa |
 | `POST /salidas/cambiar-ruta` | BRIGADA, COP, OPERACIONES, ADMIN | BRIGADA usa su ctx activo; otros pasan unidad_id |
 | `PATCH /salidas/editar-datos-salida` | BRIGADA | Edita km/combustible de su salida activa |
-| `POST /salidas/cop/iniciar-unidad` | COP, OPERACIONES, ADMIN | Inicio de emergencia sin inspección 360 |
-| `POST /salidas/:id/finalizar` | COP, ADMIN, SUPER_ADMIN | Override administrativo — **NO BRIGADA** |
+| `POST /salidas/cop/iniciar-unidad` | COP, OPERACIONES, ADMIN | Dar salida desde asignación publicada — acepta `asignacion_id` opcional; si se pasa, usa datos del plan (ruta, tripulación) y actualiza turno a ACTIVO igual que brigada desde móvil |
+| `POST /salidas/cop/salida-emergencia` | COP, OPERACIONES, ADMIN | Crea turno + asignacion + tripulacion + salida en una sola transacción atómica. `resolveContextoActivo` funciona para la brigada desde el móvil después de este inicio |
+| `POST /salidas/:id/finalizar` | COP, ADMIN, SUPER_ADMIN | Override administrativo — **NO BRIGADA**. Marca FINALIZADA + crea snapshot bitácora |
 | `GET /salidas/admin/unidades-en-salida` | COP, OPERACIONES, ADMIN | |
 | `GET /salidas/historial/:unidadId` | Cualquier autenticado | |
 | `GET /salidas/bitacora/:unidadId` | COP, OPERACIONES, ADMIN, SUPER_ADMIN | |
@@ -160,7 +161,7 @@ El middleware `authorize(...roles)` rechaza con **403** si el rol del usuario no
 | `GET /asignaciones/mi-asignacion` | Todos (autenticados) | Brigada ve su próxima asignación |
 | `GET /asignaciones/:id` | Todos (autenticados) | Detalle con tripulación |
 | `PUT /asignaciones/:id/cancelar` | OPERACIONES, ADMIN, SUPER_ADMIN | Soft-close: dia_cerrado=true |
-| `GET /asignaciones-avanzadas/por-sede` | ADMIN, OPERACIONES, COP, ENCARGADO_NOMINAS | Dashboard de sedes — borradores solo para ADMIN/OPERACIONES/ENCARGADO_NOMINAS/TRANSPORTES |
+| `GET /asignaciones-avanzadas/por-sede` | ADMIN, OPERACIONES, COP, ENCARGADO_NOMINAS | Dashboard de sedes — borradores solo para ADMIN/OPERACIONES/ENCARGADO_NOMINAS/TRANSPORTES. COP lo usa en `/cop/asignaciones` para ver pendientes del día |
 | `POST /asignaciones-avanzadas/turno/:id/publicar` | OPERACIONES, ADMIN | Bloquea si MISSING_UNITS (PATRULLA sin unidad) |
 
 
@@ -287,6 +288,22 @@ Permite editar una situación si el usuario cumple **cualquiera** de estas condi
 ## Middleware `deviceSecurity`
 
 Valida que `X-Device-UUID` y `X-Device-IMEI` (headers enviados por la app móvil) correspondan a un dispositivo registrado y autorizado en la tabla `dispositivo_movil`. Aplica en endpoints críticos de brigada.
+
+---
+
+---
+
+## Rutas del panel web (frontend React)
+
+Protegidas por `COPRoute`, `AdminRoute`, etc. en `App.tsx`.
+
+| Ruta | Guard | Roles |
+|---|---|---|
+| `/cop/mapa` | COPRoute | COP, ADMIN, SUPER_ADMIN |
+| `/cop/situaciones` | COPRoute | COP, ADMIN, SUPER_ADMIN |
+| `/cop/bitacora` | COPRoute | COP, ADMIN, SUPER_ADMIN |
+| `/cop/bitacora-unidad` | COPRoute | COP, ADMIN, SUPER_ADMIN |
+| `/cop/asignaciones` | COPRoute | COP, ADMIN, SUPER_ADMIN — **nueva** (mig 148): lista asignaciones publicadas del día listas para salir; botón "Dar salida" llama `POST /salidas/cop/iniciar-unidad`; botón "Salida de emergencia" llama `POST /salidas/cop/salida-emergencia` |
 
 ---
 
