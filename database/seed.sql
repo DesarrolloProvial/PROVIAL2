@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict fevJdaCEG1NJRHvI3MegE4fesMJLVQc8fTV3dicsZ9L5vBHMDVeNFVI78GqIT78
+\restrict vRrOXLsT0jTqqsn3EaGWFzXx6C0nJawkzMg22HjrWz8zBDO2My9k3cZPQBi2mdx
 
 -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -11926,6 +11926,7 @@ COPY public.actividad (id, tipo_actividad_id, unidad_id, salida_unidad_id, cread
 78	50	385	25	313	83	14.57658200	-90.53298500	50.00	NORTE	CERRADA	[]	{}	2026-05-15 23:48:50.545347+00	2026-05-16 03:01:38.831358+00	\N	f	DESPEJADO	FLUIDO	\N	\N
 80	50	385	25	313	83	14.57655700	-90.53294600	58.00	NORTE	CERRADA	[]	{}	2026-05-16 03:32:32.373743+00	2026-05-16 14:21:00.420188+00	\N	f	DESPEJADO	FLUIDO	\N	\N
 84	50	385	25	313	83	14.57657000	-90.53300200	80.00	SUR	ACTIVA	[]	{}	2026-05-17 21:22:28.904734+00	\N	\N	f	NUBLADO	FLUIDO	2	201
+88	31	382	31	568	71	\N	\N	5602.00	NORTE	CERRADA	[]	{"conteo": 55}	2026-06-01 06:15:24.291392+00	2026-06-01 06:15:25.744042+00	\N	f	\N	\N	\N	\N
 82	50	385	25	313	83	14.85626700	-90.06972300	50.00	ORIENTE	CERRADA	[]	{}	2026-05-16 14:22:24.167246+00	2026-05-16 18:37:55.187033+00	\N	f	NUBLADO	FLUIDO	1	\N
 54	50	383	\N	433	70	\N	\N	30.00	ORIENTE	CERRADA	[]	{}	2026-04-04 15:30:19.632678+00	2026-04-04 16:07:21.469728+00	\N	f	\N	\N	\N	\N
 74	66	383	\N	423	70	14.60823200	-90.66496800	30.00	OCCIDENTE	CERRADA	[]	{"municipio_id": 33, "tiempo_comida": "Cena", "departamento_id": 3}	2026-04-05 01:08:50.357869+00	2026-04-05 01:52:10.50266+00	\N	f	\N	\N	\N	\N
@@ -11952,6 +11953,7 @@ COPY public.actividad (id, tipo_actividad_id, unidad_id, salida_unidad_id, cread
 50	50	383	\N	433	118	14.56586900	-90.68647000	36.00	NORTE	CERRADA	[]	{"municipio_id": 34, "departamento_id": 3}	2026-04-04 14:27:21.075357+00	2026-04-04 15:16:29.753738+00	\N	f	\N	\N	\N	\N
 44	50	357	\N	433	76	15.25962000	-91.48259100	210.00	OCCIDENTE	CERRADA	[]	{"municipio_id": 60, "departamento_id": 9}	2026-04-04 11:10:53.524657+00	2026-04-04 11:14:09.215495+00	\N	f	\N	\N	\N	\N
 83	50	385	25	313	83	14.85640700	-90.06960900	58.00	NORTE	CERRADA	[]	{}	2026-05-16 18:39:28.520147+00	2026-05-17 21:22:28.904734+00	\N	f	DESPEJADO	FLUIDO	\N	\N
+87	31	382	\N	568	71	\N	\N	5501.00	NORTE	CERRADA	[]	{"conteo": 42}	2026-06-01 05:15:20.074954+00	2026-06-01 05:15:20.685445+00	\N	f	\N	\N	\N	\N
 53	50	383	\N	433	118	14.56750500	-90.68361700	36.00	NORTE	CERRADA	[]	{"municipio_id": 34, "departamento_id": 3}	2026-04-04 15:16:29.769783+00	2026-04-04 15:30:19.618817+00	\N	f	\N	\N	\N	\N
 67	50	383	\N	423	118	\N	\N	40.00	SUR	CERRADA	[]	{"municipio_id": 26, "departamento_id": 3}	2026-04-04 22:32:32.758073+00	2026-04-04 23:28:18.319388+00	\N	f	\N	\N	\N	\N
 47	50	383	\N	433	70	14.57751700	-90.53212400	\N	OCCIDENTE	CERRADA	[]	{"municipio_id": 1, "departamento_id": 1}	2026-04-04 12:13:20.11115+00	2026-04-04 12:18:41.091215+00	\N	f	\N	\N	\N	\N
@@ -12025,6 +12027,8 @@ COPY public.asignacion_unidad (id, turno_id, unidad_id, ruta_id, km_inicio, km_f
 76	14	399	76	\N	50.00	\N	locura	\N	\N	\N	\N	\N	\N	\N	\N	Cerrado manualmente - logica antigua 2026-04-27	2026-04-18 00:41:02.120229+00	2026-04-28 04:38:00.558862+00	t	2026-04-28 04:38:00.558862+00	\N	f	\N	\N	\N	f	\N	f	\N	\N	PATRULLA	BORRADOR
 77	15	385	75	5.00	50.00	NORTE	patrullaje de prueba post refactorizacion	\N	\N	04:30:00	\N	2026-04-29 17:17:44.932264+00	\N	\N	\N	\N	2026-04-28 23:36:50.545805+00	2026-04-29 17:17:44.932264+00	f	\N	\N	f	\N	\N	\N	f	\N	f	\N	\N	PATRULLA	BORRADOR
 78	16	395	75	5.00	50.00	NORTE	pATRULLAR A LO LOCO	\N	\N	04:30:00	\N	2026-05-05 21:17:12.150868+00	\N	\N	\N	\N	2026-05-05 20:53:38.242652+00	2026-05-05 21:17:12.150868+00	f	\N	\N	f	\N	\N	\N	f	\N	f	\N	\N	PATRULLA	BORRADOR
+82	20	382	71	5500.00	\N	\N	\N	\N	\N	\N	\N	2026-06-01 05:15:18.646605+00	\N	\N	\N	\N	2026-06-01 05:15:18.646605+00	2026-06-01 05:15:18.646605+00	f	\N	\N	f	\N	\N	\N	f	\N	f	\N	\N	PATRULLA	BORRADOR
+84	21	382	71	5600.00	\N	\N	\N	\N	\N	\N	\N	2026-06-01 06:15:22.793604+00	\N	\N	\N	\N	2026-06-01 06:15:22.793604+00	2026-06-01 06:15:22.793604+00	f	\N	\N	f	\N	\N	\N	f	\N	f	\N	\N	PATRULLA	BORRADOR
 \.
 
 
@@ -13320,6 +13324,7 @@ COPY public.bitacora_historica_2026 (id, fecha, unidad_id, salida_id, sede_orige
 2	2026-02-09	380	4	\N	70	123456.00	456789.00	333333.00	1.00	0.88	2026-02-09 14:52:07.262113+00	2026-02-10 13:23:38.470196+00	1352	[{"rol": "PILOTO", "usuario_id": 371}, {"rol": "COPILOTO", "usuario_id": 16}, {"rol": "ACOMPAÑANTE", "usuario_id": 74}]	[{"id": 45, "km": 30.00, "hora": "14:57", "tipo": "INCIDENTE", "estado": "CERRADA", "ruta_id": 70}]	1	[{"id": 35, "tipo": "FINALIZACION_JORNADA", "sede_id": 1, "es_final": false, "duracion_min": 12.9901644166666667}]	1	1	0	0	0	0	\N	Jornada finalizada	371	2026-02-10 13:23:38.470196+00	\N	[]	0
 3	2026-02-16	378	6	\N	70	12345.00	123546.00	111201.00	0.50	0.75	2026-02-16 19:29:33.658937+00	2026-02-19 02:39:47.349+00	3310	[{"rol": "PILOTO", "usuario_id": 515}, {"rol": "COPILOTO", "usuario_id": 537}]	[{"id": 11543, "km": 63.00, "hora": "19:51", "tipo": "INCIDENTE", "estado": "CERRADA", "ruta_id": 70}]	1	[{"id": 36, "tipo": "FINALIZACION_JORNADA", "sede_id": 1, "es_final": false, "duracion_min": 0.09250445000000000000}]	1	1	0	0	0	0	\N	Jornada finalizada	537	2026-02-19 02:39:47.349+00	\N	[]	0
 4	2026-02-16	379	7	\N	70	36854.00	94876.00	58022.00	0.50	0.75	2026-02-16 21:36:29.013421+00	2026-02-19 02:41:14.814591+00	3185	[{"rol": "PILOTO", "usuario_id": 72}, {"rol": "COPILOTO", "usuario_id": 16}, {"rol": "ACOMPAÑANTE", "usuario_id": 61}]	[]	0	[{"id": 37, "tipo": "FINALIZACION_JORNADA", "sede_id": 1, "es_final": false, "duracion_min": 0.09694501666666666667}]	1	0	0	0	0	0	\N	Jornada finalizada	16	2026-02-19 02:41:14.814591+00	\N	[]	0
+9	2026-06-01	382	31	\N	71	5500.00	5650.00	50.00	0.75	0.50	2026-06-01 05:15:18.646605+00	2026-06-01 06:15:25.744042+00	0	[]	[{"id": 11583, "km": 5605.00, "hora": "06:15", "tipo": "INCIDENTE", "estado": "CERRADA", "ruta_id": 71}]	1	[]	0	1	0	0	0	0	Test API	Jornada completada API test	568	2026-06-01 06:15:55.114659+00	84	[{"id": 88, "km": 5602.00, "hora": "06:15", "clima": null, "codigo": null, "estado": "CERRADA", "ruta_id": 71, "tipo_id": 31, "tipo_nombre": "Parada Estratégica", "carga_vehicular": null}]	1
 \.
 
 
@@ -17118,6 +17123,9 @@ COPY public.salida_evento (id, salida_id, tipo, descripcion, datos_ant, datos_ne
 99	25	EDICION_SITUACION	Situación #11577 editada	\N	{"situacion_id": 11577}	313	2026-05-17 21:20:33.306776+00
 100	25	EDICION_SITUACION	Situación #11577 editada	\N	{"situacion_id": 11577}	568	2026-05-17 21:21:25.484727+00
 101	25	CIERRE_SITUACION	Situación #11577 cerrada	\N	{"situacion_id": 11577, "observaciones": null}	313	2026-05-17 21:21:35.039391+00
+102	30	INICIO_COP	Salida de emergencia iniciada desde COP con 2 integrante(s) [FORZADA: unidad no disponible]	\N	{"unidad_id": 382, "tripulacion": [{"usuario_id": 1865, "es_comandante": true, "rol_tripulacion": "PILOTO"}, {"usuario_id": 293, "es_comandante": false, "rol_tripulacion": "COPILOTO"}], "asignacion_id": 82}	568	2026-06-01 05:15:18.646605+00
+103	31	INICIO_COP	Salida de emergencia iniciada desde COP con 2 integrante(s) [FORZADA: unidad no disponible]	\N	{"unidad_id": 382, "tripulacion": [{"usuario_id": 1865, "es_comandante": true, "rol_tripulacion": "PILOTO"}, {"usuario_id": 293, "es_comandante": false, "rol_tripulacion": "COPILOTO"}], "asignacion_id": 84}	568	2026-06-01 06:15:22.793604+00
+104	31	EDICION_SITUACION	Situación #11583 editada	\N	{"situacion_id": 11583}	568	2026-06-01 06:15:24.894722+00
 \.
 
 
@@ -17137,6 +17145,8 @@ COPY public.salida_unidad (id, unidad_id, fecha_hora_salida, fecha_hora_regreso,
 24	384	2026-04-08 20:31:42.733935+00	\N	EN_SALIDA	77	3457345.00	7.00	\N	\N	\N	[{"chapa": "16031", "nombre": "Chén Xuc, José Luis", "usuario_id": 209, "rol_en_salida": "ACOMPAÑANTE"}, {"chapa": "5006", "nombre": "Cifuentes Cu Jose Luis", "usuario_id": 40, "rol_en_salida": "PILOTO"}, {"chapa": "9015", "nombre": "Fuentes Fuentes, Federico Margarito", "usuario_id": 60, "rol_en_salida": "COPILOTO"}]	\N	\N	\N	2026-04-08 20:31:42.733935+00	2026-05-31 18:05:28.132167+00	\N	\N	COP_EMERGENCIA	\N
 25	385	2026-04-29 17:17:44.912707+00	\N	EN_SALIDA	83	123456.00	1.00	\N	\N	\N	[{"rol": "PILOTO", "chapa": "18002", "nombre": "Adriano Hernández Joshuá Emanuel", "brigada_id": 313}]	\N	\N	\N	2026-04-29 17:17:44.912707+00	2026-05-31 18:05:28.132167+00	\N	\N	APP	77
 26	395	2026-05-05 21:17:12.138557+00	\N	EN_SALIDA	75	123456.00	0.63	\N	\N	\N	\N	\N	\N	\N	2026-05-05 21:17:12.138557+00	2026-05-31 18:05:28.132167+00	\N	\N	APP	\N
+30	382	2026-06-01 05:15:18.646605+00	2026-06-01 05:15:20.685445+00	FINALIZADA	71	5500.00	0.75	5510	0.50	10.00	\N	568	Test API	Test API finalizado	2026-06-01 05:15:18.646605+00	2026-06-01 05:15:20.685445+00	\N	\N	COP_EMERGENCIA	82
+31	382	2026-06-01 06:15:22.793604+00	2026-06-01 06:15:25.744042+00	FINALIZADA	71	5600.00	0.75	5650	0.50	50.00	[{"rol": "PILOTO", "chapa": "20007", "nombre": "Quevedo Donis Helen Paola", "brigada_id": 1865}, {"rol": "COPILOTO", "chapa": "17022", "nombre": "Divas Anavisca Carla Yohana", "brigada_id": 293}]	568	Test API completo	Jornada completada API test	2026-06-01 06:15:22.793604+00	2026-06-01 06:15:25.744042+00	\N	\N	COP_EMERGENCIA	84
 \.
 
 
@@ -19063,7 +19073,9 @@ COPY public.situacion (id, tipo_situacion, estado, asignacion_id, unidad_id, tur
 11574	ASISTENCIA_VEHICULAR	CERRADA	\N	385	\N	75	50.00	SUR	14.57648027	-90.53288839	[]	313	313	2026-04-30 19:56:09.119468+00	2026-05-03 16:00:06.589229+00	1	1	25	{"tipo_obstruccion": "ninguna", "sentido_contrario": null, "sentido_principal": null, "descripcion_manual": "Vehiculo fuera de la via", "hay_vehiculo_fuera_via": true}	92	DESPEJADO	FLUIDO	20260429-1-009-70-75-50-0-25	BRIGADA	2026-04-30 19:56:09.119+00	2026-04-30 19:56:09.119+00	2026-05-03 16:00:06.587+00	PAVIMENTO	\N	\N	\N	URBANA	\N	\N	\N	\N	f	f	\N	\N	\N	\N	\N	\N	\N	\N	\N	0	0	f	\N	\N	\N	0	0	0	0	0	\N	\N	\N	\N	\N	\N	APP	f	\N	\N	NORMAL	\N	\N	\N	\N
 11576	INCIDENTE	ACTIVA	\N	395	\N	75	56.00	SUR	14.57651351	-90.53279413	[{"hora": "15:21", "mensaje": "Muerto", "usuario": "19002 - Aguilón Pérez, Juan Orlando"}]	367	\N	2026-05-05 21:21:25.770574+00	2026-05-05 21:21:25.770574+00	15	279	26	{"tipo_obstruccion": "ninguna", "sentido_contrario": null, "sentido_principal": null, "descripcion_manual": "", "hay_vehiculo_fuera_via": true}	128	DESPEJADO	\N	20260505-1-019-50-75-56-0-26	BRIGADA	2026-05-05 21:21:25.768+00	2026-05-05 21:21:25.768+00	\N	\N	\N	\N	\N	URBANA	\N	\N	\N	\N	f	f	\N	\N	\N	\N	\N	\N	\N	\N	\N	0	0	f	\N	\N	\N	0	0	0	0	0	\N	\N	\N	\N	\N	\N	APP	f	\N	\N	NORMAL	\N	\N	\N	\N
 11575	INCIDENTE	CERRADA	\N	385	\N	83	201.00	SUR	14.57654045	-90.53293274	[{"hora": "16:38", "mensaje": "Brigadas de PROVIAL, en regulación y ordenamiento vehicular. E hecho de tránsito deja daños materiales en el vehículo", "usuario": "18002 - Adriano Hernández Joshuá Emanuel"}, {"hora": "08:59", "mensaje": "Observación 2", "usuario": "18002 - Adriano Hernández Joshuá Emanuel"}]	313	313	2026-05-03 22:38:40.328884+00	2026-05-15 21:42:00.549709+00	9	70	25	{"tipo_obstruccion": "parcial", "sentido_contrario": null, "sentido_principal": {"carriles": [{"nombre": "Carril izquierdo", "porcentaje": 0}, {"nombre": "Carril derecho", "porcentaje": 75}], "cantidad_carriles": 2}, "descripcion_manual": "Obstruccion parcial: Carril derecho (75%)", "hay_vehiculo_fuera_via": false}	139	NUBLADO	MODERADO	20260503-1-009-50-83-201-0-25	BRIGADA	2026-05-03 22:38:40.332+00	2026-05-03 22:38:40.332+00	2026-05-15 21:42:00.547+00	PAVIMENTO	DIURNA	BUENA	BUENA	URBANA	Causa	\N	\N	\N	f	f	\N	\N	\N	\N	\N	\N	\N	\N	\N	0	0	f	\N	\N	\N	0	0	0	0	0	MALO	\N	\N	\N	\N	\N	APP	f	\N	\N	NORMAL	\N	\N	\N	\N
+11583	INCIDENTE	CERRADA	\N	382	\N	71	5605.00	NORTE	\N	\N	[]	568	568	2026-06-01 06:15:23.678108+00	2026-06-01 06:15:24.879286+00	\N	\N	31	\N	\N	\N	\N	WEB-b8998d8e-d43e-450a-a92b-06d70ce0027b	BRIGADA	2026-06-01 06:15:23.679+00	2026-06-01 06:15:23.679+00	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	\N	\N	\N	\N	\N	\N	\N	\N	\N	0	0	f	\N	\N	\N	0	0	0	0	0	\N	\N	\N	\N	\N	\N	APP	f	\N	\N	NORMAL	\N	\N	\N	\N
 11577	ASISTENCIA_VEHICULAR	CERRADA	\N	385	\N	83	54.00	NORTE	14.57656252	-90.53298379	[]	313	313	2026-05-17 21:20:07.091436+00	2026-05-17 21:21:35.029815+00	15	279	25	{"tipo_obstruccion": "ninguna", "sentido_contrario": null, "sentido_principal": null, "descripcion_manual": "Vehiculo fuera de la via", "hay_vehiculo_fuera_via": true}	93	DESPEJADO	FLUIDO	20260517-1-009-70-83-54-0-25	BRIGADA	2026-05-17 21:20:07.089+00	2026-05-17 21:20:07.089+00	2026-05-17 21:21:35.028+00	ASFALTO	\N	\N	\N	URBANA	\N	\N	\N	\N	f	f	\N	\N	\N	\N	\N	\N	\N	\N	\N	0	0	f	\N	\N	\N	0	0	0	0	0	\N	\N	\N	\N	\N	\N	APP	f	\N	\N	NORMAL	\N	\N	\N	\N
+11582	INCIDENTE	CERRADA	\N	382	\N	71	5502.00	NORTE	\N	\N	[]	568	\N	2026-06-01 05:15:19.419543+00	2026-06-01 05:15:20.074954+00	\N	\N	30	\N	127	\N	\N	WEB-d0fcfff8-9e62-472d-a36b-ebce151a9aac	BRIGADA	2026-06-01 05:15:19.416+00	2026-06-01 05:15:19.416+00	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	\N	\N	\N	\N	\N	\N	\N	\N	\N	0	0	f	\N	\N	\N	0	0	0	0	0	\N	\N	\N	\N	\N	\N	APP	f	\N	\N	NORMAL	\N	\N	\N	\N
 \.
 
 
@@ -19115,7 +19127,6 @@ COPY public.situacion_actual (unidad_id, situacion_id, tipo_situacion, estado, l
 384	11573	INCIDENTE	ACTIVA	15.9968750	-89.2968750	320.00	NORTE	77	CA-13	2026-04-08 20:34:16.61188+00	2026-04-08 20:34:16.61188+00	\N	\N	\N	\N	\N
 380	\N	\N	\N	14.7017600	-90.3907320	20.00	NORTE	73	CA-9 Norte	2026-04-07 11:31:55.278736+00	2026-04-28 04:38:08.21571+00	\N	\N	\N	\N	\N
 399	\N	\N	\N	\N	\N	20.50	OCCIDENTE	70	CA-1 Occidente	2025-12-31 05:40:00+00	2026-04-28 04:38:08.21571+00	\N	\N	\N	\N	\N
-382	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	2026-04-05 22:35:30.828777+00	\N	\N	\N	\N	\N
 385	\N	\N	ACTIVA	14.5765700	-90.5330020	80.00	SUR	83	CITO-180	2026-05-17 21:20:07.091436+00	2026-05-19 01:33:45.748533+00	84	Patrullaje de Ruta	ACTIVA	2026-05-17 21:22:28.904734+00	car-emergency
 381	11289	INCIDENTE	CERRADA	\N	\N	80.60	OCCIDENTE	72	CA-2 Occidente	2025-11-28 04:30:00+00	2026-02-16 04:17:25.875632+00	\N	\N	\N	\N	\N
 402	11354	INCIDENTE	CERRADA	\N	\N	30.00	NORTE	73	CA-9 Norte	2025-12-10 10:45:00+00	2026-02-16 04:17:28.16046+00	\N	\N	\N	\N	\N
@@ -22398,6 +22409,10 @@ COPY public.tripulacion_turno (id, asignacion_id, usuario_id, rol_tripulacion, p
 158	76	369	PILOTO	t	\N	2026-04-18 00:41:02.120229+00	\N	t
 159	77	313	PILOTO	t	\N	2026-04-28 23:36:50.545805+00	\N	t
 160	78	367	PILOTO	t	\N	2026-05-05 20:53:38.242652+00	\N	t
+167	82	1865	PILOTO	t	\N	2026-06-01 05:15:18.646605+00	\N	t
+168	82	293	COPILOTO	t	\N	2026-06-01 05:15:18.646605+00	\N	f
+169	84	1865	PILOTO	t	\N	2026-06-01 06:15:22.793604+00	\N	t
+170	84	293	COPILOTO	t	\N	2026-06-01 06:15:22.793604+00	\N	f
 \.
 
 
@@ -22413,6 +22428,8 @@ COPY public.turno (id, fecha, estado, observaciones, creado_por, aprobado_por, f
 14	2026-04-19	CERRADO	\N	1852	\N	\N	2026-04-18 00:41:02.120229+00	2026-04-28 04:44:02.589533+00	\N	f	\N	\N	1
 15	2026-04-29	ACTIVO	\N	1852	\N	\N	2026-04-28 23:36:50.541534+00	2026-04-29 17:17:44.941498+00	\N	t	2026-04-29 14:19:36.523572+00	1852	1
 16	2026-05-06	ACTIVO	\N	1852	\N	\N	2026-05-05 20:53:38.234666+00	2026-05-05 21:17:12.158561+00	\N	t	2026-05-05 20:59:18.606635+00	1852	1
+20	2026-05-31	ACTIVO	\N	568	\N	\N	2026-06-01 05:15:18.646605+00	2026-06-01 05:15:18.646605+00	\N	t	\N	568	4
+21	2026-06-01	ACTIVO	\N	568	\N	\N	2026-06-01 06:15:22.793604+00	2026-06-01 06:15:22.793604+00	\N	t	\N	568	4
 \.
 
 
@@ -22429,7 +22446,6 @@ COPY public.ubicacion_brigada (id, usuario_id, asignacion_origen_id, unidad_orig
 --
 
 COPY public.unidad (id, codigo, tipo_unidad, marca, modelo, anio, placa, sede_id, activa, created_at, updated_at, combustible_actual, capacidad_combustible, odometro_actual, custom_fields, tipo_combustible, nivel_combustible, disponible_transportes, instrucciones_transportes) FROM stdin;
-382	006	PICKUP	Toyota	2020	\N	P006XXX	4	t	2025-12-07 06:30:42.70216+00	2026-04-10 18:01:23.741391+00	\N	100.00	\N	{}	DIESEL	\N	f	\N
 455	O722BBZ	PICKUP	\N	\N	\N	O722BBZ	1	t	2026-04-05 18:02:46.303636+00	2026-04-05 21:32:27.390855+00	\N	\N	\N	{}	DIESEL	\N	f	\N
 420	041	PICKUP	Isuzu	\N	\N	\N	1	t	2026-02-16 00:01:46.605459+00	2026-04-05 21:32:27.390855+00	\N	\N	\N	{}	DIESEL	\N	t	\N
 421	042	PICKUP	Isuzu	\N	\N	\N	1	t	2026-02-16 00:01:46.605459+00	2026-04-05 21:32:27.390855+00	\N	\N	\N	{}	DIESEL	\N	t	\N
@@ -22444,6 +22460,7 @@ COPY public.unidad (id, codigo, tipo_unidad, marca, modelo, anio, placa, sede_id
 467	M020	MOTORIZADA	\N	\N	\N	\N	1	t	2026-04-05 18:02:46.303636+00	2026-04-05 21:32:27.390855+00	\N	\N	\N	{}	GASOLINA	\N	f	\N
 468	M021	MOTORIZADA	\N	\N	\N	\N	1	t	2026-04-05 18:02:46.303636+00	2026-04-05 21:32:27.390855+00	\N	\N	\N	{}	GASOLINA	\N	f	\N
 469	M022	MOTORIZADA	\N	\N	\N	\N	1	t	2026-04-05 18:02:46.303636+00	2026-04-05 21:32:27.390855+00	\N	\N	\N	{}	GASOLINA	\N	f	\N
+382	006	PICKUP	Toyota	2020	\N	P006XXX	4	t	2025-12-07 06:30:42.70216+00	2026-06-01 06:15:22.793604+00	\N	100.00	\N	{}	DIESEL	\N	f	\N
 470	M023	MOTORIZADA	\N	\N	\N	\N	1	t	2026-04-05 18:02:46.303636+00	2026-04-05 21:32:27.390855+00	\N	\N	\N	{}	GASOLINA	\N	f	\N
 471	M024	MOTORIZADA	\N	\N	\N	\N	1	t	2026-04-05 18:02:46.303636+00	2026-04-05 21:32:27.390855+00	\N	\N	\N	{}	GASOLINA	\N	f	\N
 393	017	PICKUP	Toyota	2018	\N	P017XXX	4	t	2025-12-07 06:30:42.70216+00	2026-04-05 21:32:27.390855+00	\N	100.00	\N	{}	DIESEL	\N	t	\N
@@ -22611,7 +22628,7 @@ COPY public.usuario (id, uuid, username, password_hash, nombre_completo, email, 
 259	e9a82b38-e91a-4f98-9364-d94417f7aaf2	16119	$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.	Pérez Garrido Mailyng Leilani	\N	\N	3	6	f	\N	2025-12-07 06:32:57.750676+00	2026-03-30 05:53:35.521112+00	\N	\N	t	f	16119	\N	f	\N	\N	f	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
 117	e0034ba7-1d1e-4114-b731-bd628e1a21ce	15001	$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.	Adriano Hernández, Adolfo Estuardo	\N	\N	3	6	f	\N	2025-12-07 06:32:57.041018+00	2026-03-30 05:53:35.521112+00	\N	\N	t	f	15001	\N	f	\N	\N	f	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
 1852	5d23a744-2fcf-48ff-a6b1-015aaa8c7d34	admin.test	$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.	Usuario Admin	\N	\N	1	1	t	2026-05-05 20:58:22.166622+00	2026-01-03 05:13:39.073793+00	2026-05-05 20:58:22.166622+00	\N	\N	t	f	\N	\N	f	\N	\N	f	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
-568	ed8f9943-dfff-474e-8e3a-46f1c34afdc2	19109	$2a$10$ntWTGXE4Z4OSNRIqDAzup.F3EtKWmW5tsMGi2lPgn/hU34LEYpn9q	Morales Mejía, Yair Alexander	\N	\N	10	1	t	2026-05-17 21:20:58.254697+00	2025-12-10 16:11:45.720995+00	2026-05-17 21:20:58.254697+00	1	\N	t	f	19109	\N	f	MASCULINO	1	f	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
+568	ed8f9943-dfff-474e-8e3a-46f1c34afdc2	19109	$2a$10$ntWTGXE4Z4OSNRIqDAzup.F3EtKWmW5tsMGi2lPgn/hU34LEYpn9q	Morales Mejía, Yair Alexander	\N	\N	10	1	t	2026-06-01 06:15:22.2692+00	2025-12-10 16:11:45.720995+00	2026-06-01 06:15:22.2692+00	1	\N	t	f	19109	\N	f	MASCULINO	1	f	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
 222	d83cae24-0a04-43fe-b4cc-0ca2ec2025b0	16057	$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.	Florián Morán, Luis Fernando	\N	\N	3	1	t	\N	2025-12-07 06:32:57.61101+00	2026-03-30 05:53:35.521112+00	1	\N	t	f	16057	\N	f	MASCULINO	4	f	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
 66	b6286402-4a12-4b40-98af-8f4d5a9da972	10013	$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.	Gonzales Cardona Luis Alberto	\N	\N	3	7	t	\N	2025-12-07 06:32:55.107343+00	2026-03-30 05:53:35.521112+00	2	\N	t	f	10013	\N	f	MASCULINO	\N	f	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
 430	43eb8a53-cb0a-44f2-8508-58d1cd2504bc	19065	$2a$10$xh43niDeIiVJOi3hJsoegecPfbQ/xs/311Pgak6OFrDqlh70xIwj.	Gómez Sales Baudilio	\N	\N	3	7	t	\N	2025-12-07 06:33:00.060121+00	2026-03-30 05:53:35.521112+00	2	\N	t	f	19065	\N	f	MASCULINO	\N	f	f	\N	\N	\N	{}	f	\N	\N	\N	\N	\N	\N	\N
@@ -26788,7 +26805,7 @@ COPY public.vehiculo_grua (id, situacion_vehiculo_id, grua_id, datos, created_at
 -- Name: actividad_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.actividad_id_seq', 86, true);
+SELECT pg_catalog.setval('public.actividad_id_seq', 88, true);
 
 
 --
@@ -26823,7 +26840,7 @@ SELECT pg_catalog.setval('public.aseguradora_id_seq', 1, false);
 -- Name: asignacion_unidad_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.asignacion_unidad_id_seq', 81, true);
+SELECT pg_catalog.setval('public.asignacion_unidad_id_seq', 84, true);
 
 
 --
@@ -26851,7 +26868,7 @@ SELECT pg_catalog.setval('public.aviso_asignacion_id_seq', 1, false);
 -- Name: bitacora_historica_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.bitacora_historica_id_seq', 7, true);
+SELECT pg_catalog.setval('public.bitacora_historica_id_seq', 10, true);
 
 
 --
@@ -27229,14 +27246,14 @@ SELECT pg_catalog.setval('public.ruta_id_seq', 189, true);
 -- Name: salida_evento_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.salida_evento_id_seq', 101, true);
+SELECT pg_catalog.setval('public.salida_evento_id_seq', 104, true);
 
 
 --
 -- Name: salida_unidad_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.salida_unidad_id_seq', 29, true);
+SELECT pg_catalog.setval('public.salida_unidad_id_seq', 31, true);
 
 
 --
@@ -27285,7 +27302,7 @@ SELECT pg_catalog.setval('public.situacion_conflicto_id_seq', 1, false);
 -- Name: situacion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.situacion_id_seq', 11581, true);
+SELECT pg_catalog.setval('public.situacion_id_seq', 11583, true);
 
 
 --
@@ -27355,14 +27372,14 @@ SELECT pg_catalog.setval('public.topografia_via_id_seq', 3, true);
 -- Name: tripulacion_turno_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.tripulacion_turno_id_seq', 166, true);
+SELECT pg_catalog.setval('public.tripulacion_turno_id_seq', 170, true);
 
 
 --
 -- Name: turno_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.turno_id_seq', 19, true);
+SELECT pg_catalog.setval('public.turno_id_seq', 21, true);
 
 
 --
@@ -32686,5 +32703,5 @@ REFRESH MATERIALIZED VIEW public.mv_vehiculos_reincidentes;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict fevJdaCEG1NJRHvI3MegE4fesMJLVQc8fTV3dicsZ9L5vBHMDVeNFVI78GqIT78
+\unrestrict vRrOXLsT0jTqqsn3EaGWFzXx6C0nJawkzMg22HjrWz8zBDO2My9k3cZPQBi2mdx
 
